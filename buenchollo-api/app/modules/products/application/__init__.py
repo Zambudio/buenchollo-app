@@ -1,0 +1,2 @@
+"""Product application use cases."""
+
