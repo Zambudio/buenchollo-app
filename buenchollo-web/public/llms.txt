@@ -1,0 +1,20 @@
+# BuencholloTech
+
+> Portal en español de chollos y ofertas de tecnología y electrónica. Curamos descuentos en móviles, portátiles, audio, TV, gaming, periféricos y smart home, y permitimos crear alertas personalizadas para avisar cuando aparece un chollo que cumple tus criterios.
+
+BuencholloTech publica chollos verificados con enlaces de afiliado, temperatura comunitaria (votos) y comentarios. También difunde las mejores ofertas en su canal de Telegram.
+
+## Pages
+
+- [Inicio](/): Últimas ofertas, chollos más populares y categorías destacadas.
+- [Explorar chollos](/explorar): Buscador y filtros por categoría, subcategoría, tienda, precio y descuento mínimo.
+- [Categorías](/categorias): Listado de todas las categorías y subcategorías con sus chollos.
+- [Alertas](/alertas): Crea radares personalizados por palabra clave, marca, categoría, tienda, rango de precio y descuento mínimo.
+- [Registro](/registro): Crear cuenta gratuita.
+- [Acceder](/login): Iniciar sesión.
+
+## Optional
+
+- [Notificaciones](/notificaciones): Bandeja de avisos de alertas (requiere cuenta).
+- [Favoritos](/favoritos): Chollos guardados (requiere cuenta).
+- [Perfil](/perfil): Ajustes de cuenta.

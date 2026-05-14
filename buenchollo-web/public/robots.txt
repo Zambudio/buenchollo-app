@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /perfil
+Disallow: /favoritos
+Disallow: /alertas
+Disallow: /alertas/
+Disallow: /notificaciones
+Disallow: /login
+Disallow: /registro
+
+Sitemap: https://buenchollotech.lovable.app/sitemap.xml

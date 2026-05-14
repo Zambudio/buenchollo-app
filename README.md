@@ -28,4 +28,3 @@ http://127.0.0.1:8000/docs
 ## Frontend
 
 Consulta las instrucciones dentro de `buenchollo-web/`.
-
