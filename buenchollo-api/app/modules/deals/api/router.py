@@ -6,9 +6,9 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.modules.deals.infrastructure.repository import DealRepository
-from app.modules.deals.api.schemas import DealCardResponse, DealDetailResponse, DealCreate, DealUpdate
+from app.modules.deals.api.schemas import DealCardResponse, DealDetailResponse, DealCreate, DealUpdate, VoteRequest, VoteResponse
 from app.modules.deals.domain.models import Deal
-from app.core.security import require_admin
+from app.core.security import require_admin, get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +63,50 @@ async def search_deals(
         limit=limit
     )
     return deals
+
+@router.post("/{deal_id}/vote", response_model=VoteResponse)
+async def vote_on_deal(
+    deal_id: str,
+    vote_in: VoteRequest,
+    repo: DealRepository = Depends(get_deal_repository),
+    current_user = Depends(get_current_user),
+) -> VoteResponse:
+    """Votar en un chollo (👍/👎). Repetir el mismo voto lo anula (toggle off)."""
+    deal = await repo.get_by_id(deal_id)
+    if not deal:
+        raise HTTPException(status_code=404, detail="Deal not found")
+
+    user_id = str(current_user.id)
+    current_vote = await repo.get_user_vote(deal_id, user_id)
+
+    if current_vote == vote_in.vote:
+        await repo.delete_vote(deal_id, user_id)
+        my_vote = 0
+    else:
+        await repo.upsert_vote(deal_id, user_id, vote_in.vote)
+        my_vote = vote_in.vote
+
+    # Refrescar el deal: el trigger de PostgreSQL ya actualizó temperature/votes_up/votes_down
+    await repo.session.refresh(deal)
+    return VoteResponse(
+        temperature=deal.temperature,
+        votes_up=deal.votes_up,
+        votes_down=deal.votes_down,
+        my_vote=my_vote,
+    )
+
+
+@router.get("/{deal_id}/my-vote")
+async def get_my_vote(
+    deal_id: str,
+    repo: DealRepository = Depends(get_deal_repository),
+    current_user = Depends(get_current_user),
+) -> dict:
+    """Devuelve el voto actual del usuario para un chollo (-1, 0 o 1)."""
+    user_id = str(current_user.id)
+    my_vote = await repo.get_user_vote(deal_id, user_id)
+    return {"my_vote": my_vote or 0}
+
 
 @router.get("/{slug}", response_model=DealDetailResponse)
 async def get_deal_by_slug(

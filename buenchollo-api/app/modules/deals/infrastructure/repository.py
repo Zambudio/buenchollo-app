@@ -1,7 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
-from app.modules.deals.domain.models import Deal
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from app.modules.deals.domain.models import Deal, DealVote
 
 class DealRepository:
     """Repository for managing deals in the database."""
@@ -80,3 +81,30 @@ class DealRepository:
     async def delete(self, deal: Deal) -> None:
         await self.session.delete(deal)
         await self.session.flush()
+
+    # --- Votos ---
+
+    async def get_user_vote(self, deal_id: str, user_id: str) -> int | None:
+        result = await self.session.execute(
+            select(DealVote.vote).where(DealVote.deal_id == deal_id, DealVote.user_id == user_id)
+        )
+        return result.scalar()
+
+    async def upsert_vote(self, deal_id: str, user_id: str, vote: int) -> None:
+        stmt = pg_insert(DealVote).values(
+            deal_id=deal_id, user_id=user_id, vote=vote
+        ).on_conflict_do_update(
+            index_elements=["deal_id", "user_id"],
+            set_={"vote": vote}
+        )
+        await self.session.execute(stmt)
+        await self.session.flush()
+
+    async def delete_vote(self, deal_id: str, user_id: str) -> None:
+        result = await self.session.execute(
+            select(DealVote).where(DealVote.deal_id == deal_id, DealVote.user_id == user_id)
+        )
+        vote_obj = result.scalars().first()
+        if vote_obj:
+            await self.session.delete(vote_obj)
+            await self.session.flush()

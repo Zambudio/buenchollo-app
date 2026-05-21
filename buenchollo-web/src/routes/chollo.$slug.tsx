@@ -98,11 +98,11 @@ function DealDetail() {
       setCommentCount(data.comment_count ?? 0);
 
       if (user) {
-        const [{ data: v }, { data: f }] = await Promise.all([
-          supabase.from("deal_votes").select("vote").eq("deal_id", data.id).eq("user_id", user.id).maybeSingle(),
+        const [myVoteVal, { data: f }] = await Promise.all([
+          dealsService.getMyVote(data.id).catch(() => 0),
           supabase.from("favorites").select("id").eq("deal_id", data.id).eq("user_id", user.id).maybeSingle(),
         ]);
-        setMyVote(v?.vote ?? 0);
+        setMyVote(myVoteVal);
         setFav(!!f);
       }
       setLoading(false);
@@ -118,15 +118,9 @@ function DealDetail() {
   const vote = async (v: number) => {
     if (!user) { toast.error("Inicia sesión para votar"); return; }
     if (!deal) return;
-    if (myVote === v) {
-      await supabase.from("deal_votes").delete().eq("deal_id", deal.id).eq("user_id", user.id);
-      setMyVote(0);
-    } else {
-      await supabase.from("deal_votes").upsert({ deal_id: deal.id, user_id: user.id, vote: v }, { onConflict: "deal_id,user_id" });
-      setMyVote(v);
-    }
-    const { data } = await supabase.from("deals").select("temperature,votes_up,votes_down").eq("id", deal.id).single();
-    setDeal((d: any) => ({ ...d, ...data }));
+    const result = await dealsService.vote(deal.id, v as 1 | -1);
+    setMyVote(result.my_vote);
+    setDeal((d: any) => ({ ...d, temperature: result.temperature, votes_up: result.votes_up, votes_down: result.votes_down }));
   };
 
   const toggleFav = async () => {

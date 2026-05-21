@@ -1,6 +1,13 @@
 import { apiClient } from "./client";
 import type { DealCardData } from "@/components/DealCard";
 
+export interface VoteResponse {
+  temperature: number;
+  votes_up: number;
+  votes_down: number;
+  my_vote: number;
+}
+
 export interface DealDetailData extends DealCardData {
   description: string | null;
   short_description: string | null;
@@ -60,6 +67,16 @@ export const dealsService = {
     apiClient.put<DealDetailData>(`/deals/admin/${id}`, data),
 
   /** Elimina un chollo */
-  delete: (id: string): Promise<void> => 
+  delete: (id: string): Promise<void> =>
     apiClient.delete(`/deals/admin/${id}`),
+
+  // --- VOTOS ---
+
+  /** Vota en un chollo (1 = arriba, -1 = abajo). Repetir el mismo voto lo anula. */
+  vote: (dealId: string, vote: 1 | -1): Promise<VoteResponse> =>
+    apiClient.post<VoteResponse>(`/deals/${dealId}/vote`, { vote }),
+
+  /** Devuelve el voto actual del usuario para un chollo (-1, 0 o 1) */
+  getMyVote: (dealId: string): Promise<number> =>
+    apiClient.get<{ my_vote: number }>(`/deals/${dealId}/my-vote`).then(r => r.my_vote),
 };

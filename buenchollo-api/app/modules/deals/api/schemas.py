@@ -1,4 +1,5 @@
 from pydantic import BaseModel, ConfigDict
+from typing import Literal
 from datetime import datetime
 
 class StoreBasic(BaseModel):
@@ -44,6 +45,15 @@ class DealDetailResponse(DealCardResponse):
     click_count: int = 0
     
     model_config = ConfigDict(from_attributes=True)
+
+class VoteRequest(BaseModel):
+    vote: Literal[-1, 1]
+
+class VoteResponse(BaseModel):
+    temperature: int
+    votes_up: int
+    votes_down: int
+    my_vote: int  # -1, 0 o 1
 
 class DealCreate(BaseModel):
     title: str
