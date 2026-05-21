@@ -86,12 +86,16 @@ async def vote_on_deal(
         await repo.upsert_vote(deal_id, user_id, vote_in.vote)
         my_vote = vote_in.vote
 
-    # Refrescar el deal: el trigger de PostgreSQL ya actualizó temperature/votes_up/votes_down
-    await repo.session.refresh(deal)
+    # Leer temperatura actualizada directamente — bypasa el identity map de SQLAlchemy
+    # para garantizar que vemos los cambios del trigger trg_votes_recalc
+    row = (await repo.session.execute(
+        text("SELECT temperature, votes_up, votes_down FROM deals WHERE id::text = :id"),
+        {"id": deal_id},
+    )).mappings().first()
     return VoteResponse(
-        temperature=deal.temperature,
-        votes_up=deal.votes_up,
-        votes_down=deal.votes_down,
+        temperature=row["temperature"] if row else 0,
+        votes_up=row["votes_up"] if row else 0,
+        votes_down=row["votes_down"] if row else 0,
         my_vote=my_vote,
     )
 

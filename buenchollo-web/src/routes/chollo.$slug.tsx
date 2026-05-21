@@ -83,6 +83,7 @@ function DealDetail() {
   const [related, setRelated] = useState<DealCardData[]>([]);
   const [commentCount, setCommentCount] = useState(0);
   const [myVote, setMyVote] = useState<number>(0);
+  const [votingLoading, setVotingLoading] = useState(false);
   const [fav, setFav] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeImg, setActiveImg] = useState(0);
@@ -117,10 +118,17 @@ function DealDetail() {
 
   const vote = async (v: number) => {
     if (!user) { toast.error("Inicia sesión para votar"); return; }
-    if (!deal) return;
-    const result = await dealsService.vote(deal.id, v as 1 | -1);
-    setMyVote(result.my_vote);
-    setDeal((d: any) => ({ ...d, temperature: result.temperature, votes_up: result.votes_up, votes_down: result.votes_down }));
+    if (!deal || votingLoading) return;
+    setVotingLoading(true);
+    try {
+      const result = await dealsService.vote(deal.id, v as 1 | -1);
+      setMyVote(result.my_vote);
+      setDeal((d: any) => ({ ...d, temperature: result.temperature, votes_up: result.votes_up, votes_down: result.votes_down }));
+    } catch (e: any) {
+      toast.error(e?.message ?? "Error al votar");
+    } finally {
+      setVotingLoading(false);
+    }
   };
 
   const toggleFav = async () => {
@@ -250,10 +258,10 @@ function DealDetail() {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <button onClick={() => vote(1)} className={`flex items-center gap-2 border px-3 py-2 font-mono text-xs ${myVote === 1 ? "border-cyan-glow text-cyan-glow bg-cyan-glow/10" : "border-surface-700 hover:border-cyan-glow"}`}>
+              <button onClick={() => vote(1)} disabled={votingLoading} className={`flex items-center gap-2 border px-3 py-2 font-mono text-xs disabled:opacity-50 ${myVote === 1 ? "border-cyan-glow text-cyan-glow bg-cyan-glow/10" : "border-surface-700 hover:border-cyan-glow"}`}>
                 <ArrowUp className="size-4" /> {deal.votes_up}
               </button>
-              <button onClick={() => vote(-1)} className={`flex items-center gap-2 border px-3 py-2 font-mono text-xs ${myVote === -1 ? "border-alert-red text-alert-red bg-alert-red/10" : "border-surface-700 hover:border-alert-red"}`}>
+              <button onClick={() => vote(-1)} disabled={votingLoading} className={`flex items-center gap-2 border px-3 py-2 font-mono text-xs disabled:opacity-50 ${myVote === -1 ? "border-alert-red text-alert-red bg-alert-red/10" : "border-surface-700 hover:border-alert-red"}`}>
                 <ArrowDown className="size-4" /> {deal.votes_down}
               </button>
               <div className="flex items-center gap-2 border border-surface-700 px-3 py-2 font-mono text-xs">
