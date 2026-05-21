@@ -9,6 +9,9 @@ from app.modules.products.application.preview_product_from_url import (
 from app.modules.products.domain.entities import ProductPreview
 
 
+from unittest.mock import MagicMock
+
+
 class FakeProductProvider:
     """Small fake provider for use case tests."""
 
@@ -19,9 +22,18 @@ class FakeProductProvider:
         return self.product
 
 
+def _make_use_case(product):
+    category_client = MagicMock()
+    category_client.get_categories_hierarchy.return_value = []
+    category_client.format_categories_for_prompt.return_value = ""
+    ai_assistant = MagicMock()
+    ai_assistant.enrich_product.return_value = {}
+    return PreviewProductFromUrlUseCase(FakeProductProvider(product), category_client, ai_assistant)
+
+
 def test_preview_product_from_url_returns_product() -> None:
     product = ProductPreview(title="Producto Test", asin="B08TEST123")
-    use_case = PreviewProductFromUrlUseCase(FakeProductProvider(product))
+    use_case = _make_use_case(product)
 
     result = use_case.execute("https://www.amazon.es/dp/B08TEST123")
 
@@ -29,7 +41,7 @@ def test_preview_product_from_url_returns_product() -> None:
 
 
 def test_preview_product_from_url_raises_not_found() -> None:
-    use_case = PreviewProductFromUrlUseCase(FakeProductProvider(None))
+    use_case = _make_use_case(None)
 
     with pytest.raises(ProductNotFoundError):
         use_case.execute("https://www.amazon.es/dp/INVALID")

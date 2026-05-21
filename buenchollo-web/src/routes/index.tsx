@@ -5,6 +5,8 @@ import { Layout } from "@/components/Layout";
 import { DealCard, type DealCardData } from "@/components/DealCard";
 import { useAuth } from "@/hooks/useAuth";
 import { ArrowRight, Bell, Sparkles, Smartphone, Laptop, Headphones, Tv, Gamepad2, Cpu, Home as HomeIcon, Watch, HardDrive, Keyboard, Camera, Router, BatteryCharging, Send, Zap } from "lucide-react";
+import { dealsService } from "@/services/api/deals";
+import { categoriesService, type Category } from "@/services/api/categories";
 
 const TELEGRAM_URL = "https://t.me/buenchollotech";
 
@@ -26,30 +28,43 @@ export const Route = createFileRoute("/")({
 });
 
 const ICONS: Record<string, any> = {
-  smartphone: Smartphone, laptop: Laptop, headphones: Headphones, tv: Tv,
-  "gamepad-2": Gamepad2, cpu: Cpu, home: HomeIcon, watch: Watch,
-  "hard-drive": HardDrive, keyboard: Keyboard, camera: Camera, router: Router,
-  "battery-charging": BatteryCharging,
+  smartphone: Smartphone,
+  laptop: Laptop,
+  headphones: Headphones,
+  tv: Tv,
+  gamepad: Gamepad2,
+  cpu: Cpu,
+  home: HomeIcon,
+  watch: Watch,
+  storage: HardDrive,
+  keyboard: Keyboard,
+  camera: Camera,
+  router: Router,
+  energy: Zap,
 };
 
 function HomePage() {
   const { user } = useAuth();
   const [latest, setLatest] = useState<DealCardData[]>([]);
   const [popular, setPopular] = useState<DealCardData[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const load = async () => {
-      const sel = "id,title,slug,image_url,images,current_price,previous_price,discount_percentage,temperature,published_at,store:stores(name,slug),category:categories!deals_category_id_fkey(name,slug)";
-      const [{ data: latestData }, { data: popularData }, { data: catData }] = await Promise.all([
-        supabase.from("deals").select(sel).eq("status", "active").order("published_at", { ascending: false }).limit(8),
-        supabase.from("deals").select(sel).eq("status", "active").order("temperature", { ascending: false }).limit(4),
-        supabase.from("categories").select("id,name,slug,icon").is("parent_id", null).eq("is_active", true).order("display_order"),
-      ]);
-      setLatest((latestData ?? []) as any);
-      setPopular((popularData ?? []) as any);
-      setCategories(catData ?? []);
+      try {
+        const [latestData, popularData, catData] = await Promise.all([
+          dealsService.getLatest(8),
+          dealsService.getPopular(4),
+          categoriesService.getAll()
+        ]);
+        setLatest(latestData);
+        setPopular(popularData);
+        // Filtramos solo las categorías padre (sin parent_id) para la UI principal
+        setCategories(catData.filter((c: any) => !c.parent_id));
+      } catch (error) {
+        console.error("Error cargando datos desde la API:", error);
+      }
     };
     load();
   }, []);
@@ -130,7 +145,7 @@ function HomePage() {
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
           {categories.map(c => {
-            const Icon = ICONS[c.icon] ?? Sparkles;
+            const Icon = (c.icon ? ICONS[c.icon] : null) ?? Sparkles;
             return (
               <Link key={c.id} to="/categoria/$slug" params={{ slug: c.slug }}
                 className="group bg-surface-800 border border-surface-700 hover:border-cyan-glow p-4 flex flex-col items-center gap-2 transition-all hover:glow-cyan">

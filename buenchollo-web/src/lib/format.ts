@@ -8,8 +8,10 @@ export function formatPrice(price: number | null | undefined): string {
   }).format(price);
 }
 
-export function formatRelativeTime(date: string | Date): string {
+export function formatRelativeTime(date: string | Date | null | undefined): string {
+  if (!date) return "—";
   const d = typeof date === "string" ? new Date(date) : date;
+  if (!d || isNaN(d.getTime())) return "—";
   const seconds = Math.floor((Date.now() - d.getTime()) / 1000);
   if (seconds < 60) return "ahora";
   const minutes = Math.floor(seconds / 60);

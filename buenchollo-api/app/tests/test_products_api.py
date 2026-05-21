@@ -29,33 +29,35 @@ class FakeProductProvider:
 
 
 def override_use_case() -> PreviewProductFromUrlUseCase:
-    return PreviewProductFromUrlUseCase(FakeProductProvider())
+    from unittest.mock import MagicMock
+    category_client = MagicMock()
+    category_client.get_categories_hierarchy.return_value = []
+    category_client.format_categories_for_prompt.return_value = ""
+    ai_assistant = MagicMock()
+    ai_assistant.enrich_product.return_value = {}
+    return PreviewProductFromUrlUseCase(FakeProductProvider(), category_client, ai_assistant)
 
 
-def test_health() -> None:
-    client = TestClient(app)
-
-    response = client.get("/health")
-
+def test_health(integration_client) -> None:
+    response = integration_client.get("/health")
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
 
 
-def test_preview_from_url_requires_url() -> None:
-    client = TestClient(app)
-
-    response = client.post("/products/preview-from-url", json={})
-
+def test_preview_from_url_requires_url(integration_client) -> None:
+    response = integration_client.post("/products/preview-from-url", json={})
     assert response.status_code == 422
 
 
-def test_preview_from_url_returns_normalized_response() -> None:
+def test_preview_from_url_returns_normalized_response(integration_client) -> None:
     app.dependency_overrides[get_preview_use_case] = override_use_case
-    client = TestClient(app)
 
-    response = client.post("/products/preview-from-url", json={"url": "https://www.amazon.es/dp/B08TEST123"})
+    response = integration_client.post(
+        "/products/preview-from-url",
+        json={"url": "https://www.amazon.es/dp/B08TEST123"},
+    )
 
-    app.dependency_overrides.clear()
+    app.dependency_overrides.pop(get_preview_use_case, None)
     assert response.status_code == 200
     body = response.json()
     assert body["title"] == "Producto API"

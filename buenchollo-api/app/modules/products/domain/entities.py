@@ -18,8 +18,14 @@ class ProductPreview:
     discount_percentage: int | None = None
     store: str = "Amazon"
     category: str = ""
+    category_id: str | None = None
+    subcategory_id: str | None = None
     description: str = ""
+    short_description: str = ""
+    long_description: str = ""
     telegram_text: str = ""
+    expires_at: str | None = None
     features: list[str] = field(default_factory=list)
+    images: list[str] = field(default_factory=list)
     currency: str = "EUR"
 

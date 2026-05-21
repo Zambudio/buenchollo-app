@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { dealsService } from "@/services/api/deals";
+import { categoriesService } from "@/services/api/categories";
+import { storesService } from "@/services/api/stores";
 import { formatPrice, formatRelativeTime, slugify } from "@/lib/format";
 import { Plus, Trash2, Edit3, Upload, X, GripVertical, Wand2, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -39,20 +41,18 @@ function AdminDeals() {
   }
 
   const load = () => {
-    let q = supabase.from("deals").select("*, store:stores(name), category:categories!deals_category_id_fkey(name)").order("created_at", { ascending: false }).limit(200);
-    if (statusFilter !== "all") q = q.eq("status", statusFilter as any);
-    q.then(({ data }) => setDeals(data ?? []));
+    dealsService.getAdminAll(statusFilter).then(setDeals).catch((err) => toast.error(err.message));
   };
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [statusFilter]);
 
   useEffect(() => {
     Promise.all([
-      supabase.from("stores").select("id,name").order("name"),
-      supabase.from("categories").select("id,name,parent_id").order("display_order"),
+      storesService.getAll(),
+      categoriesService.getAll(),
     ]).then(([s, c]) => {
-      setStores(s.data ?? []);
-      setCats((c.data ?? []).filter((x: any) => !x.parent_id));
-      setSubcats((c.data ?? []).filter((x: any) => x.parent_id));
+      setStores(s || []);
+      setCats((c || []).filter((x: any) => !x.parent_id));
+      setSubcats((c || []).filter((x: any) => x.parent_id));
     });
   }, []);
 
@@ -93,17 +93,24 @@ function AdminDeals() {
       }
 
       const d = await response.json();
+      const amazonStore = stores.find(s => s.name.toLowerCase().includes("amazon"));
       
       setForm((f: any) => ({
         ...f,
         title: d.title ?? f.title,
-        short_description: d.description ?? f.short_description,
+        short_description: d.short_description || f.short_description,
+        description: d.long_description || f.description,
         image_url: d.image_url ?? f.image_url,
-        images: d.image_url && !f.images.includes(d.image_url) ? [d.image_url, ...f.images] : f.images,
+        images: d.images && d.images.length > 0 ? d.images : (d.image_url ? [d.image_url] : f.images),
         brand: d.brand ?? f.brand,
         current_price: d.current_price != null ? String(d.current_price) : f.current_price,
         previous_price: d.original_price != null ? String(d.original_price) : f.previous_price,
-        affiliate_url: d.affiliate_url ?? url,
+        affiliate_url: url, // Usamos la URL que el usuario pegó
+        store_id: amazonStore?.id || f.store_id, // Seleccionamos Amazon automáticamente
+        category_id: d.category_id ?? f.category_id,
+        subcategory_id: d.subcategory_id ?? f.subcategory_id,
+        expires_at: d.expires_at ? d.expires_at.slice(0, 16) : f.expires_at,
+        telegram_text: d.telegram_text ?? f.telegram_text,
       }));
       
       if (!showForm) { setEditing(null); setShowForm(true); }
@@ -119,6 +126,8 @@ function AdminDeals() {
     setSendingTg(true);
     try {
       const publicUrl = typeof window !== "undefined" ? `${window.location.origin}/chollo/${deal.slug}` : null;
+      // Provisional: seguir usando supabase functions para Telegram si no está migrado
+      const { supabase } = await import("@/integrations/supabase/client");
       const { data, error } = await supabase.functions.invoke("notify-telegram", {
         body: {
           title: deal.title,
@@ -171,29 +180,34 @@ function AdminDeals() {
     };
     if (payload.published_at === undefined) delete payload.published_at;
     let savedDeal: any = null;
-    if (editing) {
-      const { data, error } = await supabase.from("deals").update(payload).eq("id", editing.id).select().single();
-      if (error) { toast.error(error.message); return; }
-      savedDeal = data;
-      toast.success("Chollo actualizado");
-    } else {
-      const { data, error } = await supabase.from("deals").insert({ ...payload, created_by: user.id, source: "manual" }).select().single();
-      if (error) { toast.error(error.message); return; }
-      savedDeal = data;
-      toast.success("Chollo creado");
+    try {
+      if (editing) {
+        savedDeal = await dealsService.update(editing.id, payload);
+        toast.success("Chollo actualizado");
+      } else {
+        savedDeal = await dealsService.create({ ...payload, source: "manual" });
+        toast.success("Chollo creado");
+      }
+      
+      if (postToTelegram && savedDeal && savedDeal.status === "active") {
+        await sendTelegram(savedDeal);
+      }
+      setPostToTelegram(false);
+      setShowForm(false);
+      load();
+    } catch (error: any) {
+      toast.error(error.message);
     }
-    if (postToTelegram && savedDeal && savedDeal.status === "active") {
-      await sendTelegram(savedDeal);
-    }
-    setPostToTelegram(false);
-    setShowForm(false);
-    load();
   };
 
   const remove = async (id: string) => {
     if (!confirm("¿Eliminar este chollo?")) return;
-    await supabase.from("deals").delete().eq("id", id);
-    load();
+    try {
+      await dealsService.delete(id);
+      load();
+    } catch (e: any) {
+      toast.error(e.message);
+    }
   };
 
   const addImageUrl = () => {
@@ -207,6 +221,7 @@ function AdminDeals() {
     if (!files || files.length === 0) return;
     setUploading(true);
     const newUrls: string[] = [];
+    const { supabase } = await import("@/integrations/supabase/client");
     for (const file of Array.from(files)) {
       if (!file.type.startsWith("image/")) { toast.error(`${file.name}: no es imagen`); continue; }
       if (file.size > 5 * 1024 * 1024) { toast.error(`${file.name}: máx 5MB`); continue; }

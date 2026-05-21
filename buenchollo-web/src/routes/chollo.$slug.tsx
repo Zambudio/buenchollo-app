@@ -1,26 +1,28 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { dealsService, type DealDetailData } from "@/services/api/deals";
 import { supabase } from "@/integrations/supabase/client";
 import { Layout } from "@/components/Layout";
-import { DealCard } from "@/components/DealCard";
+import { DealCard, type DealCardData } from "@/components/DealCard";
 import { Comments } from "@/components/Comments";
 import { ShareBox } from "@/components/ShareBox";
 import { useAuth } from "@/hooks/useAuth";
 import { formatPrice, formatRelativeTime } from "@/lib/format";
 import { Heart, Flame, ExternalLink, ArrowUp, ArrowDown, MessageSquare, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import ReactMarkdown from "react-markdown";
 
 const SITE = "https://buenchollotech.lovable.app";
 
 export const Route = createFileRoute("/chollo/$slug")({
   component: DealDetail,
   loader: async ({ params }) => {
-    const { data } = await supabase
-      .from("deals")
-      .select("title,short_description,description,image_url,images,current_price,previous_price,discount_percentage,published_at,store:stores(name)")
-      .eq("slug", params.slug)
-      .maybeSingle();
-    return { meta: data };
+    try {
+      const data = await dealsService.getBySlug(params.slug);
+      return { meta: data };
+    } catch {
+      return { meta: null };
+    }
   },
   head: ({ params, loaderData }) => {
     const m: any = loaderData?.meta;
@@ -77,8 +79,8 @@ export const Route = createFileRoute("/chollo/$slug")({
 function DealDetail() {
   const { slug } = Route.useParams();
   const { user, isAdmin } = useAuth();
-  const [deal, setDeal] = useState<any>(null);
-  const [related, setRelated] = useState<any[]>([]);
+  const [deal, setDeal] = useState<DealDetailData | null>(null);
+  const [related, setRelated] = useState<DealCardData[]>([]);
   const [commentCount, setCommentCount] = useState(0);
   const [myVote, setMyVote] = useState<number>(0);
   const [fav, setFav] = useState(false);
@@ -87,25 +89,27 @@ function DealDetail() {
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase.from("deals")
-      .select("*, store:stores(*), category:categories!deals_category_id_fkey(*), subcategory:categories!deals_subcategory_id_fkey(*)")
-      .eq("slug", slug).maybeSingle();
-    if (!data) { setLoading(false); return; }
-    setDeal(data);
+    try {
+      const data = await dealsService.getBySlug(slug);
+      setDeal(data);
 
-    const { data: rel } = await supabase.from("deals").select("id,title,slug,image_url,images,current_price,previous_price,discount_percentage,temperature,published_at,store:stores(name,slug),category:categories!deals_category_id_fkey(name,slug)")
-      .eq("status", "active").eq("category_id", data.category_id ?? "").neq("id", data.id).limit(4);
-    setRelated(rel ?? []);
-    setCommentCount(data.comment_count ?? 0);
-    setLoading(false);
+      const rel = await dealsService.search({ category_id: data.category?.slug, limit: 5 });
+      setRelated(rel.filter(d => d.id !== data.id).slice(0, 4));
+      setCommentCount(data.comment_count ?? 0);
 
-    if (user) {
-      const [{ data: v }, { data: f }] = await Promise.all([
-        supabase.from("deal_votes").select("vote").eq("deal_id", data.id).eq("user_id", user.id).maybeSingle(),
-        supabase.from("favorites").select("id").eq("deal_id", data.id).eq("user_id", user.id).maybeSingle(),
-      ]);
-      setMyVote(v?.vote ?? 0);
-      setFav(!!f);
+      if (user) {
+        const [{ data: v }, { data: f }] = await Promise.all([
+          supabase.from("deal_votes").select("vote").eq("deal_id", data.id).eq("user_id", user.id).maybeSingle(),
+          supabase.from("favorites").select("id").eq("deal_id", data.id).eq("user_id", user.id).maybeSingle(),
+        ]);
+        setMyVote(v?.vote ?? 0);
+        setFav(!!f);
+      }
+      setLoading(false);
+    } catch (error) {
+      console.error(error);
+      setLoading(false);
+      return;
     }
   };
 
@@ -113,6 +117,7 @@ function DealDetail() {
 
   const vote = async (v: number) => {
     if (!user) { toast.error("Inicia sesión para votar"); return; }
+    if (!deal) return;
     if (myVote === v) {
       await supabase.from("deal_votes").delete().eq("deal_id", deal.id).eq("user_id", user.id);
       setMyVote(0);
@@ -126,6 +131,7 @@ function DealDetail() {
 
   const toggleFav = async () => {
     if (!user) { toast.error("Inicia sesión para guardar"); return; }
+    if (!deal) return;
     if (fav) { await supabase.from("favorites").delete().eq("user_id", user.id).eq("deal_id", deal.id); setFav(false); }
     else { await supabase.from("favorites").insert({ user_id: user.id, deal_id: deal.id }); setFav(true); }
   };
@@ -157,7 +163,7 @@ function DealDetail() {
           <Link to="/" className="hover:text-cyan-glow">INICIO</Link> /{" "}
           <Link to="/explorar" className="hover:text-cyan-glow">EXPLORAR</Link>
           {deal.category && <> / <Link to="/categoria/$slug" params={{ slug: deal.category.slug }} className="hover:text-cyan-glow">{deal.category.name.toUpperCase()}</Link></>}
-          {deal.subcategory && <> / <Link to="/explorar" search={{ cat: deal.category?.id, sub: deal.subcategory.id } as any} className="hover:text-cyan-glow">{deal.subcategory.name.toUpperCase()}</Link></>}
+          {deal.subcategory && <> / <Link to="/explorar" search={{ cat: deal.category?.slug, sub: deal.subcategory.slug } as any} className="hover:text-cyan-glow">{deal.subcategory.name.toUpperCase()}</Link></>}
         </nav>
 
         {/* Avisos de estado */}
@@ -173,7 +179,7 @@ function DealDetail() {
         )}
         {isScheduled && isAdmin && (
           <div className="mb-4 bg-amber-500/10 border border-amber-500/40 text-amber-400 px-4 py-3 font-mono text-xs uppercase flex items-center gap-2">
-            <AlertCircle className="size-4" /> Programado · Se publicará automáticamente el {deal.scheduled_for ? fmtDateTime(deal.scheduled_for) : "—"}.
+            <AlertCircle className="size-4" /> Programado · Se publicará automáticamente el {(deal as any).scheduled_for ? fmtDateTime((deal as any).scheduled_for) : "—"}.
           </div>
         )}
 
@@ -239,7 +245,7 @@ function DealDetail() {
                   [ OFERTA CADUCADA ]
                 </div>
               ) : (
-                <a href={deal.affiliate_url} target="_blank" rel="noopener nofollow" onClick={trackClick}
+                <a href={deal.affiliate_url ?? undefined} target="_blank" rel="noopener nofollow" onClick={trackClick}
                   className="w-full inline-flex items-center justify-center gap-2 bg-cyan-glow text-surface-900 font-mono text-sm font-bold py-4 hover:bg-foreground transition-colors">
                   [ IR A LA OFERTA ] <ExternalLink className="size-4" />
                 </a>
@@ -269,8 +275,10 @@ function DealDetail() {
 
             {deal.description && (
               <div className="mt-6 bg-surface-800 border border-surface-700 p-5">
-                <h2 className="font-mono text-xs uppercase text-cyan-glow mb-2">Descripción</h2>
-                <p className="text-sm text-foreground/90 whitespace-pre-line leading-relaxed">{deal.description}</p>
+                <h2 className="font-mono text-xs uppercase text-cyan-glow mb-4">Descripción</h2>
+                <div className="prose prose-invert prose-sm max-w-none prose-p:leading-relaxed prose-p:text-foreground/90 prose-li:text-foreground/90">
+                  <ReactMarkdown>{deal.description}</ReactMarkdown>
+                </div>
               </div>
             )}
           </div>

@@ -34,8 +34,14 @@ class ProductPreviewResponse(BaseModel):
     discount_percentage: int = 0
     store: str = "Amazon"
     category: str
+    category_id: str | None = None
+    subcategory_id: str | None = None
     description: str
+    short_description: str = ""
+    long_description: str = ""
     telegram_text: str
+    images: list[str] = []
+    expires_at: str | None = None
 
     @field_validator("current_price", "original_price", mode="before")
     @classmethod

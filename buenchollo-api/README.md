@@ -1,152 +1,179 @@
 # buenchollo-api
 
-Backend FastAPI de BuenCholloTech para consultar productos de Amazon y preparar previews de chollos.
+Backend **FastAPI** de BuenCholloTech. Actúa como **API Gateway** centralizado: gestiona autenticación, lógica de negocio, acceso a la base de datos (SQLAlchemy + Supabase PostgreSQL) e integración con Amazon y OpenAI.
 
-Esta API reutiliza como referencia el comportamiento que funciona en `API_Amazon_CloudCode`, pero queda desacoplada en una arquitectura modular propia. La integracion de Amazon usa el cliente `creators` con `AMAZON_API_VERSION=3.2`.
+Documentación interactiva (Swagger): `http://localhost:8000/docs`
+
+---
 
 ## Requisitos
 
-- Python 3.12 o superior. Validado en este equipo con Python 3.14.
-- Credenciales reales de Amazon Creators API en `.env`.
-- Ejecutar los comandos desde la carpeta `buenchollo-api`.
+- Python 3.12+. Validado con Python 3.14.
+- `asyncpg` instalado para la versión de Python que uses.
+- Variables de entorno configuradas en `.env` (ver `.env.example`).
+- Ejecutar todos los comandos desde la carpeta `buenchollo-api/`.
 
-## Instalacion
+---
 
-```bash
-python -m pip install -r requirements.txt
-```
-
-Crea `.env` si aun no existe:
+## Instalación y arranque local
 
 ```bash
-copy .env.example .env
-```
+# 1. Instalar dependencias
+pip install -r requirements.txt
 
-Configura estas variables en `.env`:
+# 2. Crear .env a partir del ejemplo y rellenar credenciales
+cp .env.example .env
 
-```env
-AMAZON_CLIENT_ID=...
-AMAZON_CLIENT_SECRET=...
-AMAZON_AFFILIATE_TAG=...
-AMAZON_API_VERSION=3.2
-AMAZON_CREDENTIAL_VERSION=
-AMAZON_MARKETPLACE=www.amazon.es
-```
-
-No subas `.env` ni credenciales reales al repositorio.
-
-## Arrancar la API
-
-```bash
+# 3. Arrancar en modo desarrollo (hot-reload)
 python -m uvicorn app.main:app --reload
 ```
 
-Swagger:
+**Endpoints de comprobación:**
 
-```text
-http://127.0.0.1:8000/docs
+```
+GET  http://localhost:8000/health     → {"status": "ok", ...}
+GET  http://localhost:8000/auth/me    → info del usuario autenticado (requiere JWT)
+GET  http://localhost:8000/docs       → Swagger UI
 ```
 
-Healthcheck:
+---
 
-```text
-http://127.0.0.1:8000/health
+## Variables de entorno
+
+Ver [`.env.example`](.env.example) para la referencia completa y comentada.
+
+Las más importantes:
+
+| Variable | Descripción |
+|---|---|
+| `DATABASE_URL` | `postgresql+asyncpg://...@pooler.supabase.com:6543/postgres` |
+| `SUPABASE_URL` | `https://[ref].supabase.co` |
+| `SUPABASE_KEY` | **Service role key** (no la anon key) |
+| `CORS_ORIGINS` | Orígenes permitidos, separados por comas. En local: `*` |
+| `OPENAI_API_KEY` | Clave de OpenAI |
+| `AMAZON_CLIENT_ID / SECRET` | Credenciales Amazon Creators API |
+
+> ⚠️ Nunca subas `.env` al repositorio.
+
+---
+
+## Estructura de módulos
+
+```
+app/
+├── core/
+│   ├── config.py        # Settings (Pydantic Settings, .env)
+│   ├── database.py      # Motor SQLAlchemy async, sesión get_db
+│   ├── security.py      # JWT validation (get_current_user, require_admin)
+│   └── logging.py       # Configuración de logs
+│
+├── modules/
+│   ├── deals/           # Chollos — modelo, repositorio, router, schemas
+│   ├── categories/      # Categorías y subcategorías
+│   ├── stores/          # Tiendas
+│   ├── products/        # Preview desde Amazon (scraping + IA)
+│   └── users/           # Auth: endpoint /auth/me
+│
+├── tests/
+│   ├── test_deals_api.py          # Integración: ciclo completo CRUD admin
+│   ├── test_products_api.py       # Productos
+│   ├── test_product_preview_use_case.py
+│   └── test_amazon_client.py
+│
+└── main.py              # Entrypoint: lifespan, CORS, routers
 ```
 
-Respuesta esperada:
+---
 
-```json
-{
-  "status": "ok",
-  "app": "BuenChollo API",
-  "environment": "local"
-}
-```
+## API Reference
 
-## Probar el endpoint
+### 🔓 Públicos
 
-En Swagger, abre:
+| Método | Ruta | Descripción |
+|---|---|---|
+| `GET` | `/health` | Estado de la API |
+| `GET` | `/deals/latest` | Últimos chollos activos (`?limit=8`) |
+| `GET` | `/deals/popular` | Chollos más calientes por temperatura (`?limit=4`) |
+| `GET` | `/deals` | Buscar chollos (`?category_id=&store_id=&search=&limit=20`) |
+| `GET` | `/deals/{slug}` | Detalle de un chollo por slug |
+| `GET` | `/categories` | Listado de categorías |
+| `GET` | `/stores` | Listado de tiendas |
 
-```text
-POST /products/preview-from-url
-```
+### 🔐 Requieren JWT de Supabase (`Authorization: Bearer <token>`)
 
-Payload de prueba:
+| Método | Ruta | Descripción |
+|---|---|---|
+| `GET` | `/auth/me` | Diagnóstico: usuario, roles y perfil |
 
-```json
-{
-  "url": "B0DTHWQJXN"
-}
-```
+### 🔐🔴 Requieren JWT + rol `admin`
 
-Tambien puedes probar una URL de Amazon:
+| Método | Ruta | Descripción |
+|---|---|---|
+| `GET` | `/deals/admin/all` | Todos los chollos (`?status=&limit=200`) |
+| `POST` | `/deals/admin` | Crear chollo |
+| `PUT` | `/deals/admin/{id}` | Actualizar chollo |
+| `DELETE` | `/deals/admin/{id}` | Eliminar chollo |
+| `POST` | `/products/preview-from-url` | Preview de producto Amazon con IA |
 
-```json
-{
-  "url": "https://www.amazon.es/dp/B0DTHWQJXN"
-}
-```
-
-Respuesta esperada: `200 OK` con datos normalizados del producto:
-
-```json
-{
-  "title": "...",
-  "brand": "...",
-  "asin": "...",
-  "product_url": "...",
-  "affiliate_url": "...",
-  "image_url": "...",
-  "current_price": 329.99,
-  "original_price": 349.99,
-  "discount_percentage": 6,
-  "store": "Amazon",
-  "category": "...",
-  "description": "...",
-  "telegram_text": "..."
-}
-```
-
-Ejemplo con PowerShell:
-
-```powershell
-$body = @{ url = "B0DTHWQJXN" } | ConvertTo-Json
-Invoke-RestMethod `
-  -Uri "http://127.0.0.1:8000/products/preview-from-url" `
-  -Method POST `
-  -Body $body `
-  -ContentType "application/json"
-```
-
-## Si el puerto 8000 esta ocupado
-
-El error tipico es:
-
-```text
-[WinError 10013] Intento de acceso a un socket no permitido por sus permisos de acceso
-```
-
-Comprueba que proceso usa el puerto:
-
-```powershell
-netstat -ano | Select-String ':8000'
-```
-
-Para parar una instancia vieja de `uvicorn`, identifica el PID y ejecuta:
-
-```powershell
-Stop-Process -Id <PID> -Force
-```
-
-Luego vuelve a arrancar:
+### Ejemplo — Preview de Amazon con IA
 
 ```bash
-python -m uvicorn app.main:app --reload
+curl -X POST http://localhost:8000/products/preview-from-url \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://www.amazon.es/dp/B0DTHWQJXN"}'
 ```
+
+Respuesta: título, precio, imágenes, descripción generada por GPT-4o, categoría sugerida y texto para Telegram.
+
+---
+
+## Autenticación y roles
+
+El backend valida JWTs emitidos por **Supabase Auth**:
+
+1. El frontend obtiene el `access_token` de la sesión de Supabase.
+2. Lo envía en la cabecera `Authorization: Bearer <token>`.
+3. `get_current_user` llama a `supabase.auth.get_user(token)` para verificarlo.
+4. `require_admin` comprueba el rol en la tabla `user_roles` mediante la función `has_role()` de la BD.
+
+> Para diagnosticar problemas de sesión en producción, llama a `GET /auth/me` con las DevTools abiertas.
+
+---
 
 ## Tests
 
 ```bash
-python -m pytest
+python -m pytest app/tests/ -v
 ```
 
+El test de integración `test_deals_api.py` requiere conexión real a la BD de Supabase (usa `.env`) y prueba el ciclo completo: crear chollo → actualizarlo → borrarlo.
+
+---
+
+## Despliegue en NAS
+
+Ver [`DEPLOY_NAS.md`](DEPLOY_NAS.md) y [`docs/NAS_DEPLOYMENT_ARCHITECTURE.md`](docs/NAS_DEPLOYMENT_ARCHITECTURE.md).
+
+Flujo resumido:
+1. Copiar archivos modificados al NAS (carpeta `/volume1/docker/buenchollo-api`).
+2. Reconstruir y relanzar el contenedor:
+   ```bash
+   sudo docker-compose up -d --build
+   ```
+3. Verificar: `https://embyZambu.synology.me:8000/health`
+
+---
+
+## Tareas del scheduler
+
+El proceso de limpieza (`DealCleanerService`) se ejecuta automáticamente cada día a las 03:00 AM vía APScheduler. Elimina chollos caducados (`expires_at` pasado) o los marca como `expired`. Se gestiona mediante el `lifespan` de FastAPI en `main.py`.
+
+---
+
+## Si el puerto 8000 está ocupado (Windows)
+
+```powershell
+netstat -ano | Select-String ':8000'
+Stop-Process -Id <PID> -Force
+python -m uvicorn app.main:app --reload
+```

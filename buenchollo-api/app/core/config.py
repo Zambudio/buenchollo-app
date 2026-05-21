@@ -2,7 +2,7 @@
 
 from functools import lru_cache
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -15,6 +15,18 @@ class Settings(BaseSettings):
     app_env: str = "local"
     log_level: str = "INFO"
 
+    # Orígenes CORS permitidos, separados por comas en la variable de entorno.
+    # Ejemplo: CORS_ORIGINS=https://buenchollotech.com,https://www.buenchollotech.com
+    # En local se puede dejar vacío o usar "*" para permitir cualquier origen.
+    cors_origins: list[str] = Field(default=["*"])
+
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, v: str | list) -> list[str]:
+        if isinstance(v, str):
+            return [origin.strip() for origin in v.split(",") if origin.strip()]
+        return v
+
     amazon_client_id: str = ""
     amazon_client_secret: str = ""
     amazon_affiliate_tag: str = "buenchollo0b-21"
@@ -24,6 +36,13 @@ class Settings(BaseSettings):
     amazon_auth_endpoint: str = "https://api.amazon.co.uk/auth/o2/token"
     amazon_oauth_scope: str = "creatorsapi::default"
     amazon_supported_credential_versions: tuple[str, ...] = Field(default=("3.2", "3.1", "3.3"))
+
+    openai_api_key: str = ""
+    openai_model: str = "gpt-4o"
+
+    supabase_url: str = ""
+    supabase_key: str = ""
+    database_url: str = ""
 
     @property
     def amazon_effective_credential_version(self) -> str:

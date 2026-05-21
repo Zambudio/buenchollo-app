@@ -200,10 +200,38 @@ class AmazonProductClient:
         product.features = self._extract_features(item)
         product.description = " ".join(product.features[:2]) if product.features else ""
         product.image_url = _safe(item, "images", "primary", "large", "url", default="")
+        
+        # Extract all variant images
+        variants = _safe(item, "images", "variants", default=[])
+        variant_urls = [getattr(v.large, "url", None) for v in variants if getattr(v, "large", None)]
+        # Filter None and duplicates, and prepend primary image if not already there
+        all_images = []
+        if product.image_url:
+            all_images.append(product.image_url)
+        for url in variant_urls:
+            if url and url not in all_images:
+                all_images.append(url)
+        product.images = all_images
 
         self._fill_price_data(product, item)
+        self._fill_deal_data(product, item)
         product.telegram_text = build_telegram_text(product)
         return product
+
+    @staticmethod
+    def _fill_deal_data(product: ProductPreview, item: Any) -> None:
+        listings = _safe(item, "offers_v2", "listings", default=[])
+        if not listings:
+            return
+        
+        # Buscar detalles de la oferta
+        listing = next((entry for entry in listings if getattr(entry, "is_buy_box_winner", False)), listings[0])
+        deal_end = _safe(listing, "deal_details", "end_time")
+        logger.info(f"DEBUG: ASIN {product.asin} - deal_end raw: {deal_end}")
+        if deal_end:
+            # Forzamos que la hora sea siempre al final del día
+            date_part = str(deal_end).split("T")[0]
+            product.expires_at = f"{date_part}T23:59:59"
 
     @staticmethod
     def _clean_title(raw_title: str) -> str:

@@ -1,10 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Layout } from "@/components/Layout";
 import { DealCard, type DealCardData } from "@/components/DealCard";
 import { useAuth } from "@/hooks/useAuth";
 import { z } from "zod";
+import { dealsService } from "@/services/api/deals";
+import { categoriesService, type Category } from "@/services/api/categories";
+import { storesService, type Store } from "@/services/api/stores";
+import { supabase } from "@/integrations/supabase/client";
 
 const search = z.object({
   q: z.string().optional(),
@@ -40,21 +43,21 @@ function ExplorePage() {
   const params = Route.useSearch();
   const nav = Route.useNavigate();
   const [deals, setDeals] = useState<DealCardData[]>([]);
-  const [stores, setStores] = useState<any[]>([]);
-  const [cats, setCats] = useState<any[]>([]);
-  const [subs, setSubs] = useState<any[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
+  const [cats, setCats] = useState<Category[]>([]);
+  const [subs, setSubs] = useState<Category[]>([]);
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
-      supabase.from("stores").select("id,name,slug").eq("is_active", true).order("name"),
-      supabase.from("categories").select("id,name,slug,parent_id").eq("is_active", true).order("display_order"),
+      storesService.getAll(),
+      categoriesService.getAll()
     ]).then(([s, c]) => {
-      setStores(s.data ?? []);
-      setCats((c.data ?? []).filter((x: any) => !x.parent_id));
-      setSubs((c.data ?? []).filter((x: any) => x.parent_id));
-    });
+      setStores(s);
+      setCats(c.filter(x => !x.parent_id));
+      setSubs(c.filter(x => !!x.parent_id));
+    }).catch(console.error);
   }, []);
 
   // Subcategorías filtradas según la categoría elegida
@@ -62,21 +65,33 @@ function ExplorePage() {
 
   useEffect(() => {
     setLoading(true);
-    const sel = "id,title,slug,image_url,images,current_price,previous_price,discount_percentage,temperature,published_at,status,expires_at,store:stores(name,slug),category:categories!deals_category_id_fkey(name,slug)";
-    let q = supabase.from("deals").select(sel).eq("status", "active");
-    if (params.q) q = q.ilike("title", `%${params.q}%`);
-    if (params.cat) q = q.eq("category_id", params.cat);
-    if (params.sub) q = q.eq("subcategory_id", params.sub);
-    if (params.store) q = q.eq("store_id", params.store);
-    if (params.min != null) q = q.gte("current_price", params.min);
-    if (params.max != null) q = q.lte("current_price", params.max);
-    if (params.disc != null) q = q.gte("discount_percentage", params.disc);
-    const sort = params.sort ?? "recent";
-    if (sort === "recent") q = q.order("published_at", { ascending: false });
-    if (sort === "popular") q = q.order("temperature", { ascending: false });
-    if (sort === "discount") q = q.order("discount_percentage", { ascending: false });
-    if (sort === "price_asc") q = q.order("current_price", { ascending: true });
-    q.limit(48).then(({ data }) => { setDeals((data ?? []) as any); setLoading(false); });
+    dealsService.search({
+      category_id: params.cat,
+      store_id: params.store,
+      search: params.q,
+      limit: 48
+      // Note: price and discount filters are not fully implemented in the backend search_active yet,
+      // but we send what's supported. We'll add them to the backend next.
+    }).then(data => {
+      // Temporary client-side filtering for properties not yet in the backend
+      let filtered = data;
+      if (params.sub) filtered = filtered.filter(d => d.category?.slug === params.sub);
+      if (params.min != null) filtered = filtered.filter(d => d.current_price >= params.min!);
+      if (params.max != null) filtered = filtered.filter(d => d.current_price <= params.max!);
+      if (params.disc != null) filtered = filtered.filter(d => (d.discount_percentage ?? 0) >= params.disc!);
+      
+      const sort = params.sort ?? "recent";
+      if (sort === "recent") filtered.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
+      if (sort === "popular") filtered.sort((a, b) => b.temperature - a.temperature);
+      if (sort === "discount") filtered.sort((a, b) => (b.discount_percentage ?? 0) - (a.discount_percentage ?? 0));
+      if (sort === "price_asc") filtered.sort((a, b) => a.current_price - b.current_price);
+      
+      setDeals(filtered);
+      setLoading(false);
+    }).catch(error => {
+      console.error(error);
+      setLoading(false);
+    });
   }, [params]);
 
   useEffect(() => {

@@ -1,20 +1,21 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Layout } from "@/components/Layout";
-import { DealCard } from "@/components/DealCard";
+import { DealCard, type DealCardData } from "@/components/DealCard";
+import { categoriesService, type Category } from "@/services/api/categories";
+import { dealsService } from "@/services/api/deals";
 
 const SITE = "https://buenchollotech.lovable.app";
 
 export const Route = createFileRoute("/categoria/$slug")({
   component: CategoryPage,
   loader: async ({ params }) => {
-    const { data } = await supabase
-      .from("categories")
-      .select("name,description")
-      .eq("slug", params.slug)
-      .maybeSingle();
-    return { cat: data };
+    try {
+      const cat = await categoriesService.getBySlug(params.slug);
+      return { cat };
+    } catch {
+      return { cat: null };
+    }
   },
   head: ({ params, loaderData }) => {
     const c: any = loaderData?.cat;
@@ -48,19 +49,20 @@ export const Route = createFileRoute("/categoria/$slug")({
 
 function CategoryPage() {
   const { slug } = Route.useParams();
-  const [cat, setCat] = useState<any>(null);
-  const [deals, setDeals] = useState<any[]>([]);
+  const [cat, setCat] = useState<Category | null>(null);
+  const [deals, setDeals] = useState<DealCardData[]>([]);
 
   useEffect(() => {
     (async () => {
-      const { data: c } = await supabase.from("categories").select("*").eq("slug", slug).maybeSingle();
-      setCat(c);
-      if (!c) return;
-      const sel = "id,title,slug,image_url,images,current_price,previous_price,discount_percentage,temperature,published_at,store:stores(name,slug),category:categories!deals_category_id_fkey(name,slug)";
-      const { data } = await supabase.from("deals").select(sel).eq("status", "active")
-        .or(`category_id.eq.${c.id},subcategory_id.eq.${c.id}`)
-        .order("published_at", { ascending: false }).limit(48);
-      setDeals(data ?? []);
+      try {
+        const c = await categoriesService.getBySlug(slug);
+        setCat(c);
+        if (!c) return;
+        const data = await dealsService.search({ category_id: c.id, limit: 48 });
+        setDeals(data);
+      } catch (error) {
+        console.error("Error loading category or deals:", error);
+      }
     })();
   }, [slug]);
 

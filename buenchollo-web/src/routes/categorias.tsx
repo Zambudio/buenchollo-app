@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { categoriesService, type Category } from "@/services/api/categories";
 import { Layout } from "@/components/Layout";
 
 const SITE = "https://buenchollotech.lovable.app";
@@ -20,10 +20,9 @@ export const Route = createFileRoute("/categorias")({
 });
 
 function CategoriesPage() {
-  const [cats, setCats] = useState<any[]>([]);
+  const [cats, setCats] = useState<Category[]>([]);
   useEffect(() => {
-    supabase.from("categories").select("*").eq("is_active", true).order("display_order")
-      .then(({ data }) => setCats(data ?? []));
+    categoriesService.getAll().then(setCats).catch(console.error);
   }, []);
   const top = cats.filter(c => !c.parent_id);
   return (

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { categoriesService } from "@/services/api/categories";
 import { slugify } from "@/lib/format";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -12,22 +12,40 @@ function AdminCategories() {
   const [name, setName] = useState("");
   const [parentId, setParentId] = useState("");
 
-  const load = () => supabase.from("categories").select("*").order("display_order").then(({ data }) => setCats(data ?? []));
+  const load = () => {
+    categoriesService.getAdminAll()
+      .then(setCats)
+      .catch((err) => toast.error(err.message));
+  };
   useEffect(() => { load(); }, []);
 
   const add = async (e: React.FormEvent) => {
     e.preventDefault();
     if (name.trim().length < 2) return;
-    const { error } = await supabase.from("categories").insert({
-      name: name.trim(), slug: slugify(name) + "-" + Date.now().toString(36).slice(-4),
-      parent_id: parentId || null,
-    });
-    if (error) toast.error(error.message); else { toast.success("Creada"); setName(""); load(); }
+    try {
+      await categoriesService.create({
+        name: name.trim(),
+        slug: slugify(name) + "-" + Date.now().toString(36).slice(-4),
+        parent_id: parentId || null,
+        icon: null,
+        display_order: 0,
+        is_active: true
+      });
+      toast.success("Creada");
+      setName("");
+      load();
+    } catch (error: any) {
+      toast.error(error.message);
+    }
   };
   const remove = async (id: string) => {
     if (!confirm("¿Eliminar?")) return;
-    await supabase.from("categories").delete().eq("id", id);
-    load();
+    try {
+      await categoriesService.delete(id);
+      load();
+    } catch (error: any) {
+      toast.error(error.message);
+    }
   };
 
   const top = cats.filter(c => !c.parent_id);

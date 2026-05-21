@@ -6,8 +6,8 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Instalar dependencias del sistema si fuera necesario (para creatorsapi si tiene dependencias C)
-# RUN apt-get update && apt-get install -y --no-install-recommends gcc python3-dev && rm -rf /var/lib/apt/lists/*
+# Instalar dependencias del sistema
+RUN apt-get update && apt-get install -y --no-install-recommends gcc python3-dev && rm -rf /var/lib/apt/lists/*
 
 # Copiar requirements e instalar
 COPY requirements.txt .
