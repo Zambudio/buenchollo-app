@@ -8,7 +8,7 @@ import { Comments } from "@/components/Comments";
 import { ShareBox } from "@/components/ShareBox";
 import { useAuth } from "@/hooks/useAuth";
 import { formatPrice, formatRelativeTime } from "@/lib/format";
-import { Heart, Flame, ExternalLink, ArrowUp, ArrowDown, MessageSquare, AlertCircle } from "lucide-react";
+import { Heart, ExternalLink, ThumbsUp, ThumbsDown, MessageSquare, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 
@@ -99,12 +99,13 @@ function DealDetail() {
       setCommentCount(data.comment_count ?? 0);
 
       if (user) {
-        const [myVoteVal, { data: f }] = await Promise.all([
+        const [myVoteVal, favResult] = await Promise.all([
           dealsService.getMyVote(data.id).catch(() => 0),
           supabase.from("favorites").select("id").eq("deal_id", data.id).eq("user_id", user.id).maybeSingle(),
         ]);
         setMyVote(myVoteVal);
-        setFav(!!f);
+        if (favResult.error) console.error("favorites check:", favResult.error);
+        setFav(!!favResult.data);
       }
       setLoading(false);
     } catch (error) {
@@ -259,16 +260,13 @@ function DealDetail() {
 
             <div className="flex flex-wrap gap-2">
               <button onClick={() => vote(1)} disabled={votingLoading} className={`flex items-center gap-2 border px-3 py-2 font-mono text-xs disabled:opacity-50 ${myVote === 1 ? "border-cyan-glow text-cyan-glow bg-cyan-glow/10" : "border-surface-700 hover:border-cyan-glow"}`}>
-                <ArrowUp className="size-4" /> {deal.votes_up}
+                <ThumbsUp className="size-4" /> {deal.votes_up}
               </button>
               <button onClick={() => vote(-1)} disabled={votingLoading} className={`flex items-center gap-2 border px-3 py-2 font-mono text-xs disabled:opacity-50 ${myVote === -1 ? "border-alert-red text-alert-red bg-alert-red/10" : "border-surface-700 hover:border-alert-red"}`}>
-                <ArrowDown className="size-4" /> {deal.votes_down}
+                <ThumbsDown className="size-4" /> {deal.votes_down}
               </button>
-              <div className="flex items-center gap-2 border border-surface-700 px-3 py-2 font-mono text-xs">
-                <Flame className="size-4 text-alert-red" /> {deal.temperature}°
-              </div>
-              <button onClick={toggleFav} className={`flex items-center gap-2 border px-3 py-2 font-mono text-xs ${fav ? "border-cyan-glow text-cyan-glow bg-cyan-glow/10" : "border-surface-700 hover:border-cyan-glow"}`}>
-                <Heart className={`size-4 ${fav ? "fill-current" : ""}`} /> {deal.favorite_count}
+              <button onClick={toggleFav} aria-label={fav ? "Quitar de favoritos" : "Guardar en favoritos"} className={`flex items-center gap-2 border px-3 py-2 font-mono text-xs ${fav ? "border-pink-500 text-pink-500 bg-pink-500/10" : "border-surface-700 hover:border-pink-500"}`}>
+                <Heart className={`size-4 ${fav ? "fill-current" : ""}`} />
               </button>
               <div className="flex items-center gap-2 border border-surface-700 px-3 py-2 font-mono text-xs">
                 <MessageSquare className="size-4" /> {commentCount}

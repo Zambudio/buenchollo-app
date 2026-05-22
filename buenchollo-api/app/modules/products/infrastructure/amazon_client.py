@@ -1,30 +1,16 @@
-"""Amazon Creators API adapter for product previews."""
+"""Amazon Creators API adapter — HTTP directo con requests, sin SDK externo."""
 
 import logging
 import re
+import time
 import urllib.request
 from typing import Any
+
+import requests
 
 from app.core.config import Settings
 from app.modules.products.application.preview_product_from_url import ProductProviderUnavailableError
 from app.modules.products.domain.entities import ProductPreview
-
-try:
-    from amazon_creatorsapi import AmazonCreatorsApi
-    from amazon_creatorsapi.core.marketplaces import Country
-    from creatorsapi_python_sdk.models.get_items_request_content import GetItemsRequestContent
-    from creatorsapi_python_sdk.models.get_items_resource import GetItemsResource
-except ImportError:
-    AmazonCreatorsApi = None
-    Country = None
-    GetItemsRequestContent = None
-
-    class _MissingGetItemsResource:
-        def __getattr__(self, name: str) -> str:
-            return name
-
-    GetItemsResource = _MissingGetItemsResource()
-
 
 logger = logging.getLogger(__name__)
 
@@ -32,36 +18,49 @@ ASIN_RE = re.compile(r"/(?:dp|gp/product|product)/([A-Z0-9]{10})")
 DIRECT_ASIN_RE = re.compile(r"^[A-Z0-9]{10}$")
 
 RESOURCES = [
-    GetItemsResource.ITEM_INFO_DOT_TITLE,
-    GetItemsResource.ITEM_INFO_DOT_BY_LINE_INFO,
-    GetItemsResource.ITEM_INFO_DOT_FEATURES,
-    GetItemsResource.ITEM_INFO_DOT_PRODUCT_INFO,
-    GetItemsResource.ITEM_INFO_DOT_TECHNICAL_INFO,
-    GetItemsResource.ITEM_INFO_DOT_CLASSIFICATIONS,
-    GetItemsResource.IMAGES_DOT_PRIMARY_DOT_LARGE,
-    GetItemsResource.IMAGES_DOT_VARIANTS_DOT_LARGE,
-    GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_PRICE,
-    GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_AVAILABILITY,
-    GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_DEAL_DETAILS,
-    GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_IS_BUY_BOX_WINNER,
-    GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_MERCHANT_INFO,
-    GetItemsResource.CUSTOMER_REVIEWS_DOT_STAR_RATING,
-    GetItemsResource.CUSTOMER_REVIEWS_DOT_COUNT,
-    GetItemsResource.BROWSE_NODE_INFO_DOT_BROWSE_NODES,
+    "itemInfo.title",
+    "itemInfo.byLineInfo",
+    "itemInfo.features",
+    "itemInfo.productInfo",
+    "itemInfo.technicalInfo",
+    "itemInfo.classifications",
+    "images.primary.large",
+    "images.variants.large",
+    "offersV2.listings.price",
+    "offersV2.listings.availability",
+    "offersV2.listings.dealDetails",
+    "offersV2.listings.isBuyBoxWinner",
+    "offersV2.listings.merchantInfo",
+    "customerReviews.starRating",
+    "customerReviews.count",
+    "browseNodeInfo.browseNodes",
 ]
 
+_AUTH_ENDPOINTS: dict[str, str] = {
+    "2.1": "https://creatorsapi.auth.us-east-1.amazoncognito.com/oauth2/token",
+    "2.2": "https://creatorsapi.auth.eu-south-2.amazoncognito.com/oauth2/token",
+    "2.3": "https://creatorsapi.auth.us-west-2.amazoncognito.com/oauth2/token",
+    "3.1": "https://api.amazon.com/auth/o2/token",
+    "3.2": "https://api.amazon.co.uk/auth/o2/token",
+    "3.3": "https://api.amazon.co.jp/auth/o2/token",
+}
 
-def _safe(obj: Any, *attrs: str, default: Any = None) -> Any:
-    """Traverse nested SDK objects without leaking AttributeError."""
-    for attr in attrs:
+ITEMS_ENDPOINT = "https://creatorsapi.amazon/catalog/v1/getItems"
+
+
+def _j(obj: Any, *keys: str, default: Any = None) -> Any:
+    """Recorre dicts anidados de forma segura."""
+    for key in keys:
+        if not isinstance(obj, dict):
+            return default
+        obj = obj.get(key)
         if obj is None:
             return default
-        obj = getattr(obj, attr, None)
     return obj if obj is not None else default
 
 
 def extract_asin_from_url(url_or_asin: str) -> str | None:
-    """Extract an Amazon ASIN from a URL or accept a direct ASIN."""
+    """Extrae un ASIN de Amazon a partir de una URL o lo acepta directamente."""
     value = url_or_asin.strip().upper()
     if DIRECT_ASIN_RE.match(value):
         return value
@@ -88,12 +87,11 @@ def extract_asin_from_url(url_or_asin: str) -> str | None:
 def _format_price(value: float | None, currency: str) -> str:
     if value is None:
         return "Precio no disponible"
-    symbol = "EUR" if currency != "EUR" else "EUR"
-    return f"{value:.2f} {symbol}"
+    return f"{value:.2f} EUR"
 
 
 def build_telegram_text(product: ProductPreview) -> str:
-    """Build a first version of the Telegram deal text."""
+    """Construye el texto inicial para Telegram."""
     current_price = _format_price(product.current_price, product.currency)
     original_price = _format_price(product.original_price, product.currency)
     description = product.description or "Sin descripción técnica adicional."
@@ -113,98 +111,122 @@ def build_telegram_text(product: ProductPreview) -> str:
 
 
 class AmazonProductClient:
-    """Fetch products from Amazon Creators API and map them to domain objects."""
+    """Obtiene productos de Amazon Creators API mediante HTTP directo."""
 
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
+        self._token: str | None = None
+        self._token_expires_at: float = 0.0
 
     def get_product_preview(self, url_or_asin: str) -> ProductPreview | None:
-        """Fetch a product preview from Amazon by URL or ASIN."""
-        self._validate_configuration()
+        if not self.settings.amazon_client_id or not self.settings.amazon_client_secret:
+            raise ProductProviderUnavailableError("Faltan credenciales de Amazon en variables de entorno.")
+
         asin = extract_asin_from_url(url_or_asin)
         if not asin:
             return None
 
-        items = self._get_items(asin)
-        if not items:
+        token = self._get_token()
+        item = self._fetch_item(asin, token)
+        if not item:
             return None
 
-        return self._map_item_to_preview(items[0], asin)
+        return self._map_item(item, asin)
 
-    def _validate_configuration(self) -> None:
-        if AmazonCreatorsApi is None or Country is None or GetItemsRequestContent is None:
-            raise ProductProviderUnavailableError("La librería creators no está instalada.")
-        if not self.settings.amazon_client_id or not self.settings.amazon_client_secret:
-            raise ProductProviderUnavailableError("Faltan credenciales de Amazon en variables de entorno.")
+    def _get_token(self) -> str:
+        if self._token and time.time() < self._token_expires_at:
+            return self._token
 
-    def _get_items(self, asin: str) -> list[Any]:
-        configured_version = self.settings.amazon_effective_credential_version
-        versions = (
-            [configured_version]
-            if configured_version
-            else list(self.settings.amazon_supported_credential_versions)
-        )
-        last_error: Exception | None = None
+        version = self.settings.amazon_effective_credential_version
+        auth_url = _AUTH_ENDPOINTS.get(version)
+        if not auth_url:
+            raise ProductProviderUnavailableError(f"Versión de credencial no soportada: {version}")
 
-        for credential_version in versions:
-            try:
-                return self._get_items_with_credential_version(asin, credential_version)
-            except Exception as exc:
-                last_error = exc
-                if configured_version or "invalid_client" not in str(exc):
-                    break
+        is_lwa = version.startswith("3.")
+        payload = {
+            "grant_type": "client_credentials",
+            "client_id": self.settings.amazon_client_id,
+            "client_secret": self.settings.amazon_client_secret,
+            "scope": "creatorsapi::default" if is_lwa else "creatorsapi/default",
+        }
 
-        logger.error("Error consultando Amazon Creators API: %s", last_error)
-        error_text = str(last_error) if last_error else ""
-        if "invalid_client" in error_text:
-            raise ProductProviderUnavailableError(
-                "Amazon rechazó las credenciales configuradas (invalid_client). "
-                "Revisa AMAZON_CLIENT_ID y AMAZON_CLIENT_SECRET."
+        try:
+            resp = requests.post(
+                auth_url,
+                json=payload if is_lwa else None,
+                data=None if is_lwa else payload,
+                timeout=15,
             )
-        if "InternalServerException" in error_text or "Internal Server Error" in error_text:
+        except requests.RequestException as exc:
+            raise ProductProviderUnavailableError(f"Error obteniendo token Amazon: {exc}") from exc
+
+        if resp.status_code != 200:
+            text = resp.text
+            if "invalid_client" in text:
+                raise ProductProviderUnavailableError(
+                    "Amazon rechazó las credenciales (invalid_client). "
+                    "Revisa AMAZON_CLIENT_ID y AMAZON_CLIENT_SECRET."
+                )
             raise ProductProviderUnavailableError(
-                "Amazon autenticó la petición, pero su API devolvió un error interno. "
-                "Reintenta más tarde o prueba otro ASIN."
+                f"Error de autenticación Amazon ({resp.status_code}): {text[:200]}"
             )
-        raise ProductProviderUnavailableError("Amazon no está disponible o rechazó la configuración actual.")
 
-    def _get_items_with_credential_version(self, asin: str, credential_version: str) -> list[Any]:
-        api = AmazonCreatorsApi(
-            credential_id=self.settings.amazon_client_id,
-            credential_secret=self.settings.amazon_client_secret,
-            version=credential_version,
-            tag=self.settings.amazon_affiliate_tag,
-            country=Country.ES,
-        )
-        return api.get_items(asin, resources=RESOURCES)
+        data = resp.json()
+        self._token = data["access_token"]
+        self._token_expires_at = time.time() + data.get("expires_in", 3600) - 30
+        return self._token
 
-    @staticmethod
-    def _extract_items_from_response(response: Any) -> list[Any]:
-        if isinstance(response, list):
-            return response
-        items_result = getattr(response, "items_result", None)
-        return getattr(items_result, "items", None) or []
+    def _fetch_item(self, asin: str, token: str) -> dict | None:
+        payload = {
+            "partnerTag": self.settings.amazon_affiliate_tag,
+            "itemIds": [asin],
+            "resources": RESOURCES,
+        }
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "x-marketplace": "www.amazon.es",
+            "Content-Type": "application/json",
+        }
 
-    def _map_item_to_preview(self, item: Any, asin: str) -> ProductPreview:
-        product = ProductPreview(asin=getattr(item, "asin", None) or asin)
+        try:
+            resp = requests.post(ITEMS_ENDPOINT, json=payload, headers=headers, timeout=15)
+        except requests.RequestException as exc:
+            raise ProductProviderUnavailableError(f"Error llamando Amazon API: {exc}") from exc
+
+        if resp.status_code != 200:
+            text = resp.text
+            logger.error("Amazon API error %s: %s", resp.status_code, text[:500])
+            if resp.status_code >= 500 or "InternalServerException" in text:
+                raise ProductProviderUnavailableError(
+                    "Amazon autenticó la petición pero devolvió error interno. Reintenta más tarde."
+                )
+            raise ProductProviderUnavailableError(f"Amazon rechazó la petición ({resp.status_code})")
+
+        data = resp.json()
+        items = _j(data, "itemsResult", "items", default=[]) or []
+        if not items:
+            logger.info("Amazon no encontró el ASIN %s", asin)
+            return None
+        return items[0]
+
+    def _map_item(self, item: dict, asin: str) -> ProductPreview:
+        product = ProductPreview(asin=item.get("asin") or asin)
         product.product_url = f"https://www.amazon.es/dp/{product.asin}"
         product.affiliate_url = (
-            getattr(item, "detail_page_url", None)
+            item.get("detailPageURL")
             or f"{product.product_url}?tag={self.settings.amazon_affiliate_tag}"
         )
 
-        raw_title = _safe(item, "item_info", "title", "display_value", default="")
+        raw_title = _j(item, "itemInfo", "title", "displayValue", default="")
         product.title = self._clean_title(raw_title)
-        product.brand = _safe(item, "item_info", "by_line_info", "brand", "display_value", default="")
+        product.brand = _j(item, "itemInfo", "byLineInfo", "brand", "displayValue", default="")
         product.category = self._extract_category(item)
-        product.features = self._extract_features(item)
+        product.features = _j(item, "itemInfo", "features", "displayValues", default=[]) or []
         product.description = " ".join(product.features[:2]) if product.features else ""
-        product.image_url = _safe(item, "images", "primary", "large", "url", default="")
-        
-        # Extract all variant images
-        variants = _safe(item, "images", "variants", default=[])
-        variant_urls = [getattr(v.large, "url", None) for v in variants if getattr(v, "large", None)]
-        # Filter None and duplicates, and prepend primary image if not already there
+        product.image_url = _j(item, "images", "primary", "large", "url", default="")
+
+        variants = _j(item, "images", "variants", default=[]) or []
+        variant_urls = [_j(v, "large", "url") for v in variants if isinstance(v, dict)]
         all_images = []
         if product.image_url:
             all_images.append(product.image_url)
@@ -219,17 +241,14 @@ class AmazonProductClient:
         return product
 
     @staticmethod
-    def _fill_deal_data(product: ProductPreview, item: Any) -> None:
-        listings = _safe(item, "offers_v2", "listings", default=[])
+    def _fill_deal_data(product: ProductPreview, item: dict) -> None:
+        listings = _j(item, "offersV2", "listings", default=[]) or []
         if not listings:
             return
-        
-        # Buscar detalles de la oferta
-        listing = next((entry for entry in listings if getattr(entry, "is_buy_box_winner", False)), listings[0])
-        deal_end = _safe(listing, "deal_details", "end_time")
-        logger.info(f"DEBUG: ASIN {product.asin} - deal_end raw: {deal_end}")
+        listing = next((e for e in listings if e.get("isBuyBoxWinner")), listings[0])
+        deal_end = _j(listing, "dealDetails", "endTime")
+        logger.info("DEBUG: ASIN %s - deal_end raw: %s", product.asin, deal_end)
         if deal_end:
-            # Forzamos que la hora sea siempre al final del día
             date_part = str(deal_end).split("T")[0]
             product.expires_at = f"{date_part}T23:59:59"
 
@@ -240,37 +259,30 @@ class AmazonProductClient:
         return re.split(r"(?:,\s+|\s+-\s+|\s+–\s+|\s+—\s+|\s+_\s+|\s+\|\s+|\|)", raw_title)[0].strip()
 
     @staticmethod
-    def _extract_category(item: Any) -> str:
-        nodes = _safe(item, "browse_node_info", "browse_nodes", default=[])
-        if not nodes:
-            return ""
-        names = [getattr(node, "display_name", "") for node in nodes]
-        return " > ".join([name for name in names if name][:3])
+    def _extract_category(item: dict) -> str:
+        nodes = _j(item, "browseNodeInfo", "browseNodes", default=[]) or []
+        names = [n.get("displayName", "") for n in nodes if isinstance(n, dict)]
+        return " > ".join([n for n in names if n][:3])
 
     @staticmethod
-    def _extract_features(item: Any) -> list[str]:
-        features = _safe(item, "item_info", "features", "display_values", default=[])
-        return [feature for feature in features if feature]
-
-    @staticmethod
-    def _fill_price_data(product: ProductPreview, item: Any) -> None:
-        listings = _safe(item, "offers_v2", "listings", default=[])
+    def _fill_price_data(product: ProductPreview, item: dict) -> None:
+        listings = _j(item, "offersV2", "listings", default=[]) or []
         if not listings:
             return
+        listing = next((e for e in listings if e.get("isBuyBoxWinner")), listings[0])
 
-        listing = next((entry for entry in listings if getattr(entry, "is_buy_box_winner", False)), listings[0])
-        price_money = _safe(listing, "price", "money")
-        if price_money:
-            product.current_price = getattr(price_money, "amount", None)
-            product.currency = getattr(price_money, "currency", "EUR")
+        money = _j(listing, "price", "money")
+        if isinstance(money, dict):
+            product.current_price = money.get("amount")
+            product.currency = money.get("currency", "EUR")
 
-        original_money = _safe(listing, "price", "saving_basis", "money")
-        if original_money:
-            product.original_price = getattr(original_money, "amount", None)
+        original_money = _j(listing, "price", "savingBasis", "money")
+        if isinstance(original_money, dict):
+            product.original_price = original_money.get("amount")
 
-        savings_percentage = _safe(listing, "price", "savings", "percentage")
-        if savings_percentage:
-            product.discount_percentage = int(savings_percentage)
+        savings_pct = _j(listing, "price", "savings", "percentage")
+        if savings_pct:
+            product.discount_percentage = int(savings_pct)
         elif (
             product.current_price is not None
             and product.original_price is not None

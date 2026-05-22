@@ -55,5 +55,13 @@ desktop.ini
 # ─── Docker ─────────────────────────────────────────────────────────────────
 *.pid
 
+# ─── Paquetes vendored Amazon (ya no necesarios) ────────────────────────────
+buenchollo-api/amazon_creatorsapi/
+buenchollo-api/creatorsapi_python_sdk/
+buenchollo-api/*.whl
+
+# ─── Claude Code ────────────────────────────────────────────────────────────
+.claude/
+
 # ─── Alembic (versiones generadas localmente si aplica) ─────────────────────
 # alembic/versions/   # descomenta si no quieres versionar las migraciones
