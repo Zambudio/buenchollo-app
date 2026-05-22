@@ -86,10 +86,17 @@ async def vote_on_deal(
         await repo.upsert_vote(deal_id, user_id, vote_in.vote)
         my_vote = vote_in.vote
 
-    # Leer temperatura actualizada directamente — bypasa el identity map de SQLAlchemy
-    # para garantizar que vemos los cambios del trigger trg_votes_recalc
+    # Recalcular contadores directamente desde deal_votes y actualizar deals en un solo paso.
+    # No dependemos del trigger trg_votes_recalc (problemas de visibilidad en asyncpg).
     row = (await repo.session.execute(
-        text("SELECT temperature, votes_up, votes_down FROM deals WHERE id::text = :id"),
+        text("""
+            UPDATE deals SET
+                votes_up    = (SELECT COUNT(*) FROM deal_votes WHERE deal_id = :id::uuid AND vote = 1),
+                votes_down  = (SELECT COUNT(*) FROM deal_votes WHERE deal_id = :id::uuid AND vote = -1),
+                temperature = (SELECT COALESCE(SUM(vote), 0) FROM deal_votes WHERE deal_id = :id::uuid)
+            WHERE id = :id::uuid
+            RETURNING temperature, votes_up, votes_down
+        """),
         {"id": deal_id},
     )).mappings().first()
     return VoteResponse(
