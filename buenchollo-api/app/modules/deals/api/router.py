@@ -91,10 +91,10 @@ async def vote_on_deal(
     row = (await repo.session.execute(
         text("""
             UPDATE deals SET
-                votes_up    = (SELECT COUNT(*) FROM deal_votes WHERE deal_id = :id::uuid AND vote = 1),
-                votes_down  = (SELECT COUNT(*) FROM deal_votes WHERE deal_id = :id::uuid AND vote = -1),
-                temperature = (SELECT COALESCE(SUM(vote), 0) FROM deal_votes WHERE deal_id = :id::uuid)
-            WHERE id = :id::uuid
+                votes_up    = (SELECT COUNT(*) FROM deal_votes WHERE deal_id = CAST(:id AS uuid) AND vote = 1),
+                votes_down  = (SELECT COUNT(*) FROM deal_votes WHERE deal_id = CAST(:id AS uuid) AND vote = -1),
+                temperature = (SELECT COALESCE(SUM(vote), 0) FROM deal_votes WHERE deal_id = CAST(:id AS uuid))
+            WHERE id = CAST(:id AS uuid)
             RETURNING temperature, votes_up, votes_down
         """),
         {"id": deal_id},
