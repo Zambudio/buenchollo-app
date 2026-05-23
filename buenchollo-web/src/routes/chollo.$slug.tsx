@@ -185,11 +185,18 @@ function DealDetail() {
         </nav>
 
         {/* Avisos de estado */}
-        {isExpired && (
-          <div className="mb-4 bg-alert-red/10 border border-alert-red/40 text-alert-red px-4 py-3 font-mono text-xs uppercase flex items-center gap-2">
-            <AlertCircle className="size-4" /> Esta oferta ha caducado{deal.expires_at && <> el {fmtDateTime(deal.expires_at)}</>} · Es posible que el precio o la disponibilidad hayan cambiado.
-          </div>
-        )}
+        {isExpired && (() => {
+          const deleteDate = deal.expires_at ? new Date(new Date(deal.expires_at).getTime() + 2 * 24 * 60 * 60 * 1000) : null;
+          return (
+            <div className="mb-4 bg-alert-red/10 border border-alert-red/40 text-alert-red px-4 py-3 font-mono text-xs uppercase flex items-center gap-2">
+              <AlertCircle className="size-4" />
+              <span>
+                Esta oferta ha caducado{deal.expires_at && <> el {fmtDateTime(deal.expires_at)}</>} · Es posible que el precio o la disponibilidad hayan cambiado.
+                {deleteDate && <> · <strong>Esta publicación se borrará el {fmtDateTime(deleteDate.toISOString())}.</strong></>}
+              </span>
+            </div>
+          );
+        })()}
         {isDraft && isAdmin && (
           <div className="mb-4 bg-surface-700 border border-surface-600 text-foreground px-4 py-3 font-mono text-xs uppercase flex items-center gap-2">
             <AlertCircle className="size-4" /> Vista previa · Esta publicación está en BORRADOR y no es visible para el público.
@@ -201,26 +208,21 @@ function DealDetail() {
           </div>
         )}
 
-        <div className={`grid lg:grid-cols-2 gap-8 ${isExpired ? "opacity-90" : ""}`}>
+        <div className="grid lg:grid-cols-2 gap-8">
           <div>
             {(() => {
               const gallery: string[] = (deal.images && deal.images.length > 0 ? deal.images : (deal.image_url ? [deal.image_url] : [])).filter(Boolean);
               const current = gallery[activeImg] ?? gallery[0];
               return (
                 <>
-                  <div className={`relative bg-surface-800 border border-surface-700 aspect-[4/3] overflow-hidden ${isExpired ? "grayscale" : ""}`}>
+                  <div className="relative bg-surface-800 border border-surface-700 aspect-[4/3] overflow-hidden">
                     {current && <img src={current} alt={deal.title} className="w-full h-full object-cover" />}
-                    {isExpired && (
-                      <div className="absolute inset-0 bg-surface-900/60 flex items-center justify-center">
-                        <span className="bg-alert-red text-white font-mono font-bold text-sm px-4 py-2 -rotate-6 border-2 border-white/40">CHOLLO CADUCADO</span>
-                      </div>
-                    )}
                   </div>
                   {gallery.length > 1 && (
                     <div className="grid grid-cols-5 gap-2 mt-2">
                       {gallery.map((src, i) => (
                         <button key={src + i} onClick={() => setActiveImg(i)}
-                          className={`aspect-square bg-surface-800 border overflow-hidden transition ${isExpired ? "grayscale" : ""} ${i === activeImg ? "border-cyan-glow" : "border-surface-700 hover:border-surface-600"}`}>
+                          className={`aspect-square bg-surface-800 border overflow-hidden transition ${i === activeImg ? "border-cyan-glow" : "border-surface-700 hover:border-surface-600"}`}>
                           <img src={src} alt="" className="w-full h-full object-cover" />
                         </button>
                       ))}
@@ -258,16 +260,14 @@ function DealDetail() {
                 </div>
               )}
 
-              {isExpired ? (
-                <div className="w-full inline-flex items-center justify-center gap-2 bg-surface-700 text-muted-foreground font-mono text-sm font-bold py-4 cursor-not-allowed">
-                  [ OFERTA CADUCADA ]
-                </div>
-              ) : (
-                <a href={deal.affiliate_url ?? undefined} target="_blank" rel="noopener nofollow" onClick={trackClick}
-                  className="w-full inline-flex items-center justify-center gap-2 bg-cyan-glow text-surface-900 font-mono text-sm font-bold py-4 hover:bg-foreground transition-colors">
-                  [ IR A LA OFERTA ] <ExternalLink className="size-4" />
-                </a>
-              )}
+              <a href={deal.affiliate_url ?? undefined} target="_blank" rel="noopener nofollow" onClick={trackClick}
+                className={`w-full inline-flex items-center justify-center gap-2 font-mono text-sm font-bold py-4 transition-colors ${
+                  isExpired
+                    ? "bg-surface-700 text-muted-foreground border border-alert-red/30 hover:bg-surface-600"
+                    : "bg-cyan-glow text-surface-900 hover:bg-foreground"
+                }`}>
+                {isExpired ? <>[ VER OFERTA — PUEDE HABER CADUCADO ] <ExternalLink className="size-4" /></> : <>[ IR A LA OFERTA ] <ExternalLink className="size-4" /></>}
+              </a>
               <p className="flex items-start gap-2 text-[10px] font-mono text-muted-foreground mt-3 leading-relaxed">
                 <AlertCircle className="size-3 shrink-0 mt-0.5" /> Enlace de afiliado. Si compras a través de él, recibimos una pequeña comisión sin coste para ti.
               </p>

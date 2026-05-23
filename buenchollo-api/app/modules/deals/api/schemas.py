@@ -37,13 +37,14 @@ class DealDetailResponse(DealCardResponse):
     affiliate_url: str | None = None
     status: str
     expires_at: datetime | None = None
+    scheduled_for: datetime | None = None
     shipping_info: str | None = None
     comment_count: int = 0
     favorite_count: int = 0
     votes_up: int = 0
     votes_down: int = 0
     click_count: int = 0
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 class VoteRequest(BaseModel):

@@ -124,6 +124,17 @@ class DealRepository:
         )).mappings().first()
         return dict(row) if row else {"temperature": 0, "votes_up": 0, "votes_down": 0}
 
+    async def get_due_scheduled(self) -> list[Deal]:
+        """Devuelve los chollos con status='scheduled' cuyo scheduled_for ya ha llegado."""
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc)
+        result = await self.session.execute(
+            select(Deal)
+            .where(Deal.status == "scheduled")
+            .where(Deal.scheduled_for <= now)
+        )
+        return list(result.scalars().all())
+
     async def user_has_profile(self, user_id: str) -> bool:
         """Comprueba si existe un perfil en la tabla profiles para el user_id dado."""
         result = await self.session.execute(

@@ -31,9 +31,14 @@ async def lifespan(app: FastAPI):
 
         scheduler = BackgroundScheduler()
         cleaner = DealCleanerService(settings)
+        scheduler.add_job(cleaner.mark_expired_deals, "interval", minutes=5)
+        scheduler.add_job(cleaner.activate_scheduled_deals, "interval", minutes=5)
         scheduler.add_job(cleaner.clean_expired_deals, "cron", hour=3, minute=0)
         scheduler.start()
-        logger.info("Background scheduler iniciado (limpieza diaria a las 03:00).")
+        logger.info(
+            "Background scheduler iniciado: "
+            "mark_expired + activate_scheduled (cada 5 min) | clean (03:00 diario)"
+        )
     except Exception as exc:
         logger.warning("Scheduler no disponible, la API arranca sin él: %s", exc)
 
