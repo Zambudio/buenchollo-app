@@ -1,9 +1,10 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { Search, Bell, Heart, User as UserIcon, LogOut, Shield, Menu, X } from "lucide-react";
+import { Search, Bell, Heart, User as UserIcon, LogOut, Shield, Menu, X, LayoutGrid } from "lucide-react";
 import { Logo } from "./Logo";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { CategoriesDrawer } from "./CategoriesDrawer";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -13,6 +14,7 @@ export function Header() {
   const [q, setQ] = useState("");
   const [unread, setUnread] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const nav = useNavigate();
 
   useEffect(() => {
@@ -21,15 +23,27 @@ export function Header() {
       .then(({ count }) => setUnread(count ?? 0));
   }, [user]);
 
-  const onSearch = (e: React.FormEvent) => {
+  const onSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     nav({ to: "/explorar", search: { q: q.trim() || undefined } as any });
   };
 
   return (
+    <>
+    <CategoriesDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
     <header className="border-b border-surface-700 bg-surface-900/95 sticky top-0 z-50 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-        <Link to="/" className="shrink-0"><Logo /></Link>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(true)}
+            aria-label="Abrir menú de categorías"
+            className="p-2 border border-surface-700 hover:border-cyan-glow hover:text-cyan-glow transition-colors"
+          >
+            <LayoutGrid className="size-4" />
+          </button>
+          <Link to="/"><Logo /></Link>
+        </div>
 
         <form onSubmit={onSearch} className="hidden md:flex flex-1 max-w-md">
           <div className="w-full flex items-center bg-surface-800 border border-surface-700 px-3 py-1.5 focus-within:border-cyan-glow focus-within:glow-cyan transition-all">
@@ -89,7 +103,7 @@ export function Header() {
               [ ACCEDER ]
             </Link>
           )}
-          <button className="md:hidden p-2" aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"} aria-expanded={mobileOpen} onClick={() => setMobileOpen(v => !v)}>
+          <button type="button" className="md:hidden p-2" aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"} aria-expanded={mobileOpen ? "true" : "false"} onClick={() => setMobileOpen(v => !v)}>
             {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
           </button>
         </div>
@@ -109,5 +123,6 @@ export function Header() {
         </div>
       )}
     </header>
+    </>
   );
 }

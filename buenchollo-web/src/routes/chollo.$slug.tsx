@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { dealsService, favoritesApi, type DealDetailData } from "@/services/api/deals";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,7 +8,7 @@ import { Comments } from "@/components/Comments";
 import { ShareBox } from "@/components/ShareBox";
 import { useAuth } from "@/hooks/useAuth";
 import { formatPrice, formatRelativeTime } from "@/lib/format";
-import { Heart, ExternalLink, ThumbsUp, ThumbsDown, MessageSquare, AlertCircle } from "lucide-react";
+import { Heart, ExternalLink, ThumbsUp, ThumbsDown, MessageSquare, AlertCircle, ChevronLeft, ChevronRight, Maximize2, X } from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 
@@ -87,6 +87,7 @@ function DealDetail() {
   const [fav, setFav] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeImg, setActiveImg] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   // Efecto 1: carga los datos públicos del deal (no necesita auth)
   useEffect(() => {
@@ -213,19 +214,134 @@ function DealDetail() {
             {(() => {
               const gallery: string[] = (deal.images && deal.images.length > 0 ? deal.images : (deal.image_url ? [deal.image_url] : [])).filter(Boolean);
               const current = gallery[activeImg] ?? gallery[0];
+              const prev = () => setActiveImg(i => Math.max(0, i - 1));
+              const next = () => setActiveImg(i => Math.min(gallery.length - 1, i + 1));
               return (
                 <>
-                  <div className="relative bg-surface-800 border border-surface-700 aspect-[4/3] overflow-hidden">
-                    {current && <img src={current} alt={deal.title} className="w-full h-full object-cover" />}
+                  {/* Imagen principal con flechas y botón agrandar */}
+                  <div className="relative bg-white border border-surface-700 aspect-[4/3] overflow-hidden flex items-center justify-center group/img">
+                    {current && (
+                      <img
+                        src={current} alt={deal.title}
+                        className="w-full h-full object-contain p-4"
+                      />
+                    )}
+
+                    {/* Flechas de navegación */}
+                    {gallery.length > 1 && (
+                      <>
+                        <button
+                          type="button" onClick={prev} disabled={activeImg === 0}
+                          className="absolute left-2 top-1/2 -translate-y-1/2 bg-surface-900/80 border border-surface-600 p-1.5 hover:border-cyan-glow disabled:opacity-20 transition z-10"
+                          aria-label="Foto anterior"
+                        >
+                          <ChevronLeft className="size-5" />
+                        </button>
+                        <button
+                          type="button" onClick={next} disabled={activeImg === gallery.length - 1}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 bg-surface-900/80 border border-surface-600 p-1.5 hover:border-cyan-glow disabled:opacity-20 transition z-10"
+                          aria-label="Foto siguiente"
+                        >
+                          <ChevronRight className="size-5" />
+                        </button>
+                      </>
+                    )}
+
+                    {/* Botón agrandar */}
+                    <button
+                      type="button" onClick={() => setLightboxOpen(true)}
+                      className="absolute bottom-2 right-2 bg-surface-900/90 border border-surface-600 px-2 py-1.5 flex items-center gap-1.5 font-mono text-[10px] uppercase hover:border-cyan-glow transition z-10"
+                      aria-label="Ver imagen ampliada"
+                    >
+                      <Maximize2 className="size-3" /> Agrandar
+                    </button>
+
+                    {/* Contador */}
+                    {gallery.length > 1 && (
+                      <span className="absolute bottom-2 left-2 bg-surface-900/80 font-mono text-[10px] px-2 py-1 text-muted-foreground z-10">
+                        {activeImg + 1} / {gallery.length}
+                      </span>
+                    )}
                   </div>
+
+                  {/* Miniaturas */}
                   {gallery.length > 1 && (
-                    <div className="grid grid-cols-5 gap-2 mt-2">
+                    <div className="grid grid-cols-6 gap-1.5 mt-2">
                       {gallery.map((src, i) => (
-                        <button key={src + i} onClick={() => setActiveImg(i)}
-                          className={`aspect-square bg-surface-800 border overflow-hidden transition ${i === activeImg ? "border-cyan-glow" : "border-surface-700 hover:border-surface-600"}`}>
-                          <img src={src} alt="" className="w-full h-full object-cover" />
+                        <button key={src + i} type="button" onClick={() => setActiveImg(i)}
+                          className={`aspect-square bg-white border overflow-hidden transition ${i === activeImg ? "border-cyan-glow" : "border-surface-700 hover:border-surface-500"}`}>
+                          <img src={src} alt="" className="w-full h-full object-contain p-1" />
                         </button>
                       ))}
+                    </div>
+                  )}
+
+                  {/* Lightbox — estilo Amazon */}
+                  {lightboxOpen && (
+                    <div
+                      role="dialog" aria-modal="true" aria-label="Visor de imágenes"
+                      className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-6"
+                      onClick={() => setLightboxOpen(false)}
+                      onKeyDown={e => e.key === "Escape" && setLightboxOpen(false)}
+                    >
+                      <div
+                        role="document"
+                        className="bg-surface-900 border border-surface-700 flex w-full max-w-5xl h-[88vh] shadow-2xl"
+                        onClick={e => e.stopPropagation()}
+                      >
+                        {/* Imagen principal */}
+                        <div className="relative flex-1 flex items-center justify-center overflow-hidden border-r border-surface-700 bg-white">
+                          <img
+                            src={current} alt={deal.title}
+                            className="w-full h-full object-contain p-8"
+                          />
+                          {gallery.length > 1 && (
+                            <>
+                              <button
+                                type="button" onClick={prev} disabled={activeImg === 0}
+                                aria-label="Foto anterior"
+                                className="absolute left-3 top-1/2 -translate-y-1/2 bg-surface-900/90 border border-surface-600 p-2.5 hover:border-cyan-glow disabled:opacity-20 transition"
+                              >
+                                <ChevronLeft className="size-6" />
+                              </button>
+                              <button
+                                type="button" onClick={next} disabled={activeImg === gallery.length - 1}
+                                aria-label="Foto siguiente"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 bg-surface-900/90 border border-surface-600 p-2.5 hover:border-cyan-glow disabled:opacity-20 transition"
+                              >
+                                <ChevronRight className="size-6" />
+                              </button>
+                              <span className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-surface-900/80 font-mono text-[10px] px-2 py-1 text-muted-foreground">
+                                {activeImg + 1} / {gallery.length}
+                              </span>
+                            </>
+                          )}
+                        </div>
+
+                        {/* Panel derecho: cerrar + miniaturas */}
+                        <div className="w-36 shrink-0 flex flex-col bg-surface-900">
+                          <div className="flex justify-end p-2 border-b border-surface-700">
+                            <button
+                              type="button" onClick={() => setLightboxOpen(false)}
+                              aria-label="Cerrar"
+                              className="p-1.5 border border-surface-600 hover:border-alert-red hover:text-alert-red transition"
+                            >
+                              <X className="size-4" />
+                            </button>
+                          </div>
+                          <div className="flex-1 overflow-y-auto p-2 grid grid-cols-2 gap-1.5 content-start">
+                            {gallery.map((src, i) => (
+                              <button
+                                key={src + i} type="button" onClick={() => setActiveImg(i)}
+                                aria-label={`Ver foto ${i + 1}`}
+                                className={`aspect-square bg-white border overflow-hidden transition ${i === activeImg ? "border-cyan-glow ring-1 ring-cyan-glow/30" : "border-surface-700 hover:border-surface-500"}`}
+                              >
+                                <img src={src} alt="" className="w-full h-full object-contain p-0.5" />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </>
@@ -274,13 +390,13 @@ function DealDetail() {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <button onClick={() => vote(1)} disabled={votingLoading} className={`flex items-center gap-2 border px-3 py-2 font-mono text-xs disabled:opacity-50 ${myVote === 1 ? "border-cyan-glow text-cyan-glow bg-cyan-glow/10" : "border-surface-700 hover:border-cyan-glow"}`}>
+              <button type="button" onClick={() => vote(1)} disabled={votingLoading} className={`flex items-center gap-2 border px-3 py-2 font-mono text-xs disabled:opacity-50 ${myVote === 1 ? "border-cyan-glow text-cyan-glow bg-cyan-glow/10" : "border-surface-700 hover:border-cyan-glow"}`}>
                 <ThumbsUp className="size-4" /> {deal.votes_up}
               </button>
-              <button onClick={() => vote(-1)} disabled={votingLoading} className={`flex items-center gap-2 border px-3 py-2 font-mono text-xs disabled:opacity-50 ${myVote === -1 ? "border-alert-red text-alert-red bg-alert-red/10" : "border-surface-700 hover:border-alert-red"}`}>
+              <button type="button" onClick={() => vote(-1)} disabled={votingLoading} className={`flex items-center gap-2 border px-3 py-2 font-mono text-xs disabled:opacity-50 ${myVote === -1 ? "border-alert-red text-alert-red bg-alert-red/10" : "border-surface-700 hover:border-alert-red"}`}>
                 <ThumbsDown className="size-4" /> {deal.votes_down}
               </button>
-              <button onClick={toggleFav} aria-label={fav ? "Quitar de favoritos" : "Guardar en favoritos"} className={`flex items-center gap-2 border px-3 py-2 font-mono text-xs ${fav ? "border-pink-500 text-pink-500 bg-pink-500/10" : "border-surface-700 hover:border-pink-500"}`}>
+              <button type="button" onClick={toggleFav} aria-label={fav ? "Quitar de favoritos" : "Guardar en favoritos"} className={`flex items-center gap-2 border px-3 py-2 font-mono text-xs ${fav ? "border-pink-500 text-pink-500 bg-pink-500/10" : "border-surface-700 hover:border-pink-500"}`}>
                 <Heart className={`size-4 ${fav ? "fill-current" : ""}`} />
               </button>
               <div className="flex items-center gap-2 border border-surface-700 px-3 py-2 font-mono text-xs">

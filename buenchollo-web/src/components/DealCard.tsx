@@ -70,13 +70,13 @@ export function DealCard({ deal, isFavorite: initialFav = false }: { deal: DealC
       onMouseLeave={() => { setHover(false); setImgIdx(0); }}
       className={`group bg-surface-800 border border-surface-700 transition-all duration-300 flex flex-col h-full ${isExpired ? "opacity-70" : "hover:border-cyan-glow hover:glow-cyan"}`}
     >
-      <div className="relative aspect-[4/3] bg-surface-700 overflow-hidden border-b border-surface-700">
+      <div className="relative aspect-[4/3] bg-white overflow-hidden border-b border-surface-700">
         {gallery.length > 0 ? (
           <>
             {gallery.map((src, i) => (
               <img
                 key={src + i} src={src} alt={deal.title} loading="lazy"
-                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${isExpired ? "grayscale" : ""} ${i === imgIdx ? "opacity-100" : "opacity-0"} ${i === imgIdx && !isExpired ? "group-hover:scale-105 transition-transform duration-500" : ""}`}
+                className={`absolute inset-0 w-full h-full object-contain p-3 transition-opacity duration-500 ${isExpired ? "grayscale" : ""} ${i === imgIdx ? "opacity-100" : "opacity-0"} ${i === imgIdx && !isExpired ? "group-hover:scale-105 transition-transform duration-500" : ""}`}
               />
             ))}
             {isExpired && (

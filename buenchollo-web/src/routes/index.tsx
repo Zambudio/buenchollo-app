@@ -4,9 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Layout } from "@/components/Layout";
 import { DealCard, type DealCardData } from "@/components/DealCard";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowRight, Bell, Sparkles, Smartphone, Laptop, Headphones, Tv, Gamepad2, Cpu, Home as HomeIcon, Watch, HardDrive, Keyboard, Camera, Router, BatteryCharging, Send, Zap } from "lucide-react";
+import { ArrowRight, Bell, Send, Zap } from "lucide-react";
 import { dealsService } from "@/services/api/deals";
-import { categoriesService, type Category } from "@/services/api/categories";
 
 const TELEGRAM_URL = "https://t.me/buenchollotech";
 
@@ -27,41 +26,21 @@ export const Route = createFileRoute("/")({
   }),
 });
 
-const ICONS: Record<string, any> = {
-  smartphone: Smartphone,
-  laptop: Laptop,
-  headphones: Headphones,
-  tv: Tv,
-  gamepad: Gamepad2,
-  cpu: Cpu,
-  home: HomeIcon,
-  watch: Watch,
-  storage: HardDrive,
-  keyboard: Keyboard,
-  camera: Camera,
-  router: Router,
-  energy: Zap,
-};
-
 function HomePage() {
   const { user } = useAuth();
   const [latest, setLatest] = useState<DealCardData[]>([]);
   const [popular, setPopular] = useState<DealCardData[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [latestData, popularData, catData] = await Promise.all([
+        const [latestData, popularData] = await Promise.all([
           dealsService.getLatest(8),
           dealsService.getPopular(4),
-          categoriesService.getAll()
         ]);
         setLatest(latestData);
         setPopular(popularData);
-        // Filtramos solo las categorías padre (sin parent_id) para la UI principal
-        setCategories(catData.filter((c: any) => !c.parent_id));
       } catch (error) {
         console.error("Error cargando datos desde la API:", error);
       }
@@ -134,26 +113,6 @@ function HomePage() {
               [ UNIRME AL CANAL ]
             </a>
           </div>
-        </div>
-      </section>
-
-      {/* CATEGORÍAS */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
-        <div className="flex items-center justify-between border-b border-surface-700 pb-3 mb-6">
-          <h2 className="text-foreground font-bold text-lg tracking-tight font-mono">CATEGORÍAS_DESTACADAS</h2>
-          <Link to="/categorias" className="font-mono text-xs text-cyan-glow hover:text-foreground">[ VER TODAS ]</Link>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-          {categories.map(c => {
-            const Icon = (c.icon ? ICONS[c.icon] : null) ?? Sparkles;
-            return (
-              <Link key={c.id} to="/categoria/$slug" params={{ slug: c.slug }}
-                className="group bg-surface-800 border border-surface-700 hover:border-cyan-glow p-4 flex flex-col items-center gap-2 transition-all hover:glow-cyan">
-                <Icon className="size-6 text-cyan-glow group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-mono uppercase text-center text-muted-foreground group-hover:text-foreground transition-colors">{c.name}</span>
-              </Link>
-            );
-          })}
         </div>
       </section>
 
