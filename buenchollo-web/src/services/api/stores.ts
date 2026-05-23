@@ -6,9 +6,37 @@ export interface Store {
   slug: string;
   domain: string | null;
   logo_url: string | null;
+  affiliate_id: string | null;
+  affiliate_url_template: string | null;
+  is_active: boolean;
+}
+
+export interface StoreCreate {
+  name: string;
+  slug: string;
+  domain?: string | null;
+  logo_url?: string | null;
+  affiliate_id?: string | null;
+  affiliate_url_template?: string | null;
+  is_active?: boolean;
+}
+
+export interface StoreUpdate {
+  name?: string;
+  slug?: string;
+  domain?: string | null;
+  logo_url?: string | null;
+  affiliate_id?: string | null;
+  affiliate_url_template?: string | null;
+  is_active?: boolean;
 }
 
 export const storesService = {
-  /** Obtiene todas las tiendas activas */
   getAll: (): Promise<Store[]> => apiClient.get<Store[]>("/stores"),
+
+  // --- ADMIN ---
+  getAdminAll: (): Promise<Store[]> => apiClient.get<Store[]>("/stores/admin/all"),
+  create: (data: StoreCreate): Promise<Store> => apiClient.post<Store>("/stores/admin", data),
+  update: (id: string, data: StoreUpdate): Promise<Store> => apiClient.put<Store>(`/stores/admin/${id}`, data),
+  delete: (id: string): Promise<void> => apiClient.delete(`/stores/admin/${id}`),
 };
