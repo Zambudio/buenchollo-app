@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import selectinload
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from app.modules.deals.domain.models import Deal, DealVote
@@ -108,3 +108,26 @@ class DealRepository:
         if vote_obj:
             await self.session.delete(vote_obj)
             await self.session.flush()
+
+    async def recalculate_votes(self, deal_id: str) -> dict:
+        """Recalcula votes_up, votes_down y temperature desde deal_votes y actualiza el deal."""
+        row = (await self.session.execute(
+            text("""
+                UPDATE deals SET
+                    votes_up    = (SELECT COUNT(*) FROM deal_votes WHERE deal_id = CAST(:id AS uuid) AND vote = 1),
+                    votes_down  = (SELECT COUNT(*) FROM deal_votes WHERE deal_id = CAST(:id AS uuid) AND vote = -1),
+                    temperature = (SELECT COALESCE(SUM(vote), 0) FROM deal_votes WHERE deal_id = CAST(:id AS uuid))
+                WHERE id = CAST(:id AS uuid)
+                RETURNING temperature, votes_up, votes_down
+            """),
+            {"id": deal_id},
+        )).mappings().first()
+        return dict(row) if row else {"temperature": 0, "votes_up": 0, "votes_down": 0}
+
+    async def user_has_profile(self, user_id: str) -> bool:
+        """Comprueba si existe un perfil en la tabla profiles para el user_id dado."""
+        result = await self.session.execute(
+            text("SELECT 1 FROM profiles WHERE user_id::text = :uid LIMIT 1"),
+            {"uid": user_id},
+        )
+        return result.scalar() is not None
