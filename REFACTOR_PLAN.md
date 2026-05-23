@@ -195,10 +195,10 @@ Las fases están ordenadas por impacto/dependencia. No empezar la siguiente sin 
 
 | Fase | Tarea | Estado |
 |---|---|---|
-| 1 | Documentación y onboarding | ⬜ Pendiente |
-| 2 | Limpiar router deals | ⬜ Pendiente |
-| 3 | Favoritos vía FastAPI | ⬜ Pendiente |
-| 4 | Stores CRUD admin | ⬜ Pendiente |
-| 5 | Scheduler deals programados | ⬜ Pendiente |
-| 6 | Telegram migración | ⬜ Pendiente |
+| 1 | Documentación y onboarding | ✅ Completado |
+| 2 | Limpiar router deals | ✅ Completado |
+| 3 | Favoritos vía FastAPI | ✅ Completado |
+| 4 | Stores CRUD admin | ✅ Completado |
+| 5 | Scheduler deals programados | ✅ Completado |
+| 6 | Telegram migración + panel completo | ✅ Completado |
 | 7 | Tests actualizados | ⬜ Pendiente |
