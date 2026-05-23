@@ -7,6 +7,7 @@ import { formatPrice, formatRelativeTime, slugify } from "@/lib/format";
 import { Plus, Trash2, Edit3, Upload, X, GripVertical, Wand2, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { TelegramPanel } from "@/components/TelegramPanel";
 
 export const Route = createFileRoute("/admin/chollos")({ component: AdminDeals });
 
@@ -31,8 +32,8 @@ function AdminDeals() {
   const [uploading, setUploading] = useState(false);
   const [amazonUrl, setAmazonUrl] = useState("");
   const [autofilling, setAutofilling] = useState(false);
-  const [postToTelegram, setPostToTelegram] = useState(false);
-  const [sendingTg, setSendingTg] = useState(false);
+  const [showTelegramPanel, setShowTelegramPanel] = useState(false);
+  const [telegramDealData, setTelegramDealData] = useState<any>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   function empty() {
@@ -95,7 +96,7 @@ function AdminDeals() {
       const d = await response.json();
       const amazonStore = stores.find(s => s.name.toLowerCase().includes("amazon"));
       
-      setForm((f: any) => ({
+      const updatedForm = (f: any) => ({
         ...f,
         title: d.title ?? f.title,
         short_description: d.short_description || f.short_description,
@@ -105,16 +106,31 @@ function AdminDeals() {
         brand: d.brand ?? f.brand,
         current_price: d.current_price != null ? String(d.current_price) : f.current_price,
         previous_price: d.original_price != null ? String(d.original_price) : f.previous_price,
-        affiliate_url: url, // Usamos la URL que el usuario pegó
-        store_id: amazonStore?.id || f.store_id, // Seleccionamos Amazon automáticamente
+        affiliate_url: url,
+        store_id: amazonStore?.id || f.store_id,
         category_id: d.category_id ?? f.category_id,
         subcategory_id: d.subcategory_id ?? f.subcategory_id,
         expires_at: d.expires_at ? d.expires_at.slice(0, 16) : f.expires_at,
         telegram_text: d.telegram_text ?? f.telegram_text,
-      }));
-      
+      });
+      setForm(updatedForm);
+
       if (!showForm) { setEditing(null); setShowForm(true); }
       toast.success("Datos importados desde tu NAS");
+
+      // Abrir panel Telegram automáticamente con los datos importados
+      const allImages = d.images && d.images.length > 0 ? d.images : (d.image_url ? [d.image_url] : []);
+      openTelegramPanel({
+        title: d.title || "",
+        current_price: d.current_price != null ? String(d.current_price) : "",
+        previous_price: d.original_price != null ? String(d.original_price) : "",
+        short_description: d.short_description || "",
+        description: d.long_description || "",
+        affiliate_url: url,
+        expires_at: d.expires_at ? d.expires_at.slice(0, 16) : "",
+        images: allImages,
+        image_url: allImages[0] ?? null,
+      });
     } catch (e: any) {
       toast.error("Error desde el NAS: " + e.message);
     } finally {
@@ -122,27 +138,25 @@ function AdminDeals() {
     }
   };
 
-  const sendTelegram = async (deal: any) => {
-    setSendingTg(true);
-    try {
-      const publicUrl = typeof window !== "undefined" ? `${window.location.origin}/chollo/${deal.slug}` : null;
-      const { apiClient } = await import("@/services/api/client");
-      await apiClient.post("/telegram/notify", {
-        title: deal.title,
-        current_price: deal.current_price,
-        previous_price: deal.previous_price,
-        discount_percentage: deal.discount_percentage,
-        short_description: deal.short_description,
-        image_url: deal.image_url,
-        affiliate_url: deal.affiliate_url,
-        public_url: publicUrl,
-      });
-      toast.success("Publicado en Telegram");
-    } catch (e: any) {
-      toast.error("Telegram: " + e.message);
-    } finally {
-      setSendingTg(false);
-    }
+  /** Abre el panel completo con los datos del formulario actual */
+  const openTelegramPanel = (source?: any) => {
+    const data = source ?? form;
+    const allImages = (data.images ?? []).filter(Boolean);
+    if (data.image_url && !allImages.includes(data.image_url)) allImages.unshift(data.image_url);
+    setTelegramDealData({
+      title: data.title || "",
+      current_price: parseFloat(data.current_price) || 0,
+      previous_price: data.previous_price ? parseFloat(data.previous_price) : null,
+      discount_percentage: data.previous_price && data.current_price
+        ? Math.round((1 - parseFloat(data.current_price) / parseFloat(data.previous_price)) * 100)
+        : null,
+      description: data.description || data.short_description || null,
+      affiliate_url: data.affiliate_url || "",
+      expires_at: data.expires_at ? new Date(data.expires_at).toISOString() : null,
+      images: allImages,
+      image_url: allImages[0] ?? null,
+    });
+    setShowTelegramPanel(true);
   };
 
   const save = async (e: React.FormEvent) => {
@@ -185,10 +199,6 @@ function AdminDeals() {
         toast.success("Chollo creado");
       }
       
-      if (postToTelegram && savedDeal && savedDeal.status === "active") {
-        await sendTelegram(savedDeal);
-      }
-      setPostToTelegram(false);
       setShowForm(false);
       load();
     } catch (error: any) {
@@ -251,6 +261,13 @@ function AdminDeals() {
 
   return (
     <div>
+      {/* Panel lateral de Telegram */}
+      {showTelegramPanel && telegramDealData && (
+        <TelegramPanel
+          dealData={telegramDealData}
+          onClose={() => setShowTelegramPanel(false)}
+        />
+      )}
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <h2 className="font-mono text-sm uppercase text-cyan-glow">Gestión de chollos</h2>
         <div className="flex items-center gap-2">
@@ -382,25 +399,13 @@ function AdminDeals() {
             <p className="font-mono text-[10px] text-alert-red">⛔ CADUCADO · Aparecerá en gris con aviso de oferta finalizada.</p>
           )}
           {/* PUBLICAR EN TELEGRAM */}
-          <div className="border border-surface-700 bg-surface-900/50 p-3">
-            <label className="flex items-start gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={postToTelegram}
-                onChange={(e) => setPostToTelegram(e.target.checked)}
-                className="mt-1 size-4 accent-cyan-glow"
-              />
-              <span className="flex-1">
-                <span className="flex items-center gap-2 font-mono text-xs uppercase text-cyan-glow">
-                  <Send className="size-3.5" /> Publicar también en Telegram
-                </span>
-                <span className="block font-mono text-[10px] text-muted-foreground mt-1">
-                  Solo se enviará si el estado es "Activo". Usa los secretos TELEGRAM_BOT_TOKEN y TELEGRAM_CHAT_ID.
-                </span>
-              </span>
-              {sendingTg && <Loader2 className="size-4 animate-spin text-cyan-glow" />}
-            </label>
-          </div>
+          <button
+            type="button"
+            onClick={() => openTelegramPanel()}
+            className="w-full border border-cyan-glow/50 text-cyan-glow font-mono text-xs py-2 flex items-center justify-center gap-2 hover:bg-cyan-glow/10"
+          >
+            <Send className="size-3.5" /> 🚀 Publicar en Telegram
+          </button>
 
           <div className="flex gap-2">
             <button type="submit" className="bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-4 py-2">[ GUARDAR ]</button>
@@ -412,7 +417,7 @@ function AdminDeals() {
       <div className="bg-surface-800 border border-surface-700 overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="border-b border-surface-700 font-mono text-xs uppercase text-muted-foreground">
-            <tr><th className="text-left p-3">Título</th><th className="text-left p-3">Tienda</th><th className="text-right p-3">Precio</th><th className="text-left p-3">Estado</th><th className="text-left p-3">Fecha</th><th></th></tr>
+            <tr><th className="text-left p-3">Título</th><th className="text-left p-3">Tienda</th><th className="text-right p-3">Precio</th><th className="text-left p-3">Estado</th><th className="text-left p-3">Fecha</th><th className="p-3">Acciones</th></tr>
           </thead>
           <tbody>
             {deals.map(d => {
@@ -432,8 +437,9 @@ function AdminDeals() {
                     : formatRelativeTime(d.created_at)}
                 </td>
                 <td className="p-3 flex gap-1">
-                  <button onClick={() => startEdit(d)} className="p-1.5 hover:text-cyan-glow"><Edit3 className="size-4" /></button>
-                  <button onClick={() => remove(d.id)} className="p-1.5 hover:text-alert-red"><Trash2 className="size-4" /></button>
+                  <button type="button" onClick={() => startEdit(d)} className="p-1.5 hover:text-cyan-glow" title="Editar"><Edit3 className="size-4" /></button>
+                  <button type="button" onClick={() => openTelegramPanel(d)} className="p-1.5 hover:text-cyan-glow" title="Publicar en Telegram"><Send className="size-4" /></button>
+                  <button type="button" onClick={() => remove(d.id)} className="p-1.5 hover:text-alert-red" title="Eliminar"><Trash2 className="size-4" /></button>
                 </td>
               </tr>
               );
