@@ -44,6 +44,9 @@ class Settings(BaseSettings):
     supabase_key: str = ""
     database_url: str = ""
 
+    telegram_bot_token: str = ""
+    telegram_chat_id: str = ""
+
     @property
     def amazon_effective_credential_version(self) -> str:
         """Return the configured Amazon credential version, accepting the legacy env name."""

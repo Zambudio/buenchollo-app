@@ -126,21 +126,17 @@ function AdminDeals() {
     setSendingTg(true);
     try {
       const publicUrl = typeof window !== "undefined" ? `${window.location.origin}/chollo/${deal.slug}` : null;
-      // Provisional: seguir usando supabase functions para Telegram si no está migrado
-      const { supabase } = await import("@/integrations/supabase/client");
-      const { data, error } = await supabase.functions.invoke("notify-telegram", {
-        body: {
-          title: deal.title,
-          current_price: deal.current_price,
-          previous_price: deal.previous_price,
-          discount_percentage: deal.discount_percentage,
-          short_description: deal.short_description,
-          image_url: deal.image_url,
-          affiliate_url: deal.affiliate_url,
-          public_url: publicUrl,
-        },
+      const { apiClient } = await import("@/services/api/client");
+      await apiClient.post("/telegram/notify", {
+        title: deal.title,
+        current_price: deal.current_price,
+        previous_price: deal.previous_price,
+        discount_percentage: deal.discount_percentage,
+        short_description: deal.short_description,
+        image_url: deal.image_url,
+        affiliate_url: deal.affiliate_url,
+        public_url: publicUrl,
       });
-      if (error || !data?.ok) throw new Error(data?.error ?? error?.message ?? "Error");
       toast.success("Publicado en Telegram");
     } catch (e: any) {
       toast.error("Telegram: " + e.message);
