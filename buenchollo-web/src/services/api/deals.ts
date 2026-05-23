@@ -80,3 +80,17 @@ export const dealsService = {
   getMyVote: (dealId: string): Promise<number> =>
     apiClient.get<{ my_vote: number }>(`/deals/${dealId}/my-vote`).then(r => r.my_vote),
 };
+
+export const favoritesApi = {
+  /** Lista de chollos favoritos del usuario autenticado */
+  getFavorites: (): Promise<DealCardData[]> =>
+    apiClient.get<DealCardData[]>("/deals/favorites"),
+
+  /** Toggle: añade o elimina el favorito. Devuelve el estado resultante. */
+  toggle: (dealId: string): Promise<{ is_favorited: boolean }> =>
+    apiClient.post<{ is_favorited: boolean }>(`/deals/${dealId}/favorite`, {}),
+
+  /** Comprueba si un chollo está en favoritos del usuario */
+  check: (dealId: string): Promise<boolean> =>
+    apiClient.get<{ is_favorited: boolean }>(`/deals/${dealId}/favorite`).then(r => r.is_favorited),
+};

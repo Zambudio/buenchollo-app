@@ -1,8 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { favoritesApi } from "@/services/api/deals";
 import { Layout } from "@/components/Layout";
-import { DealCard } from "@/components/DealCard";
+import { DealCard, type DealCardData } from "@/components/DealCard";
 import { useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/favoritos")({
@@ -22,7 +22,7 @@ export const Route = createFileRoute("/favoritos")({
 function FavoritesPage() {
   const { user, loading: authLoading } = useAuth();
   const nav = useNavigate();
-  const [deals, setDeals] = useState<any[]>([]);
+  const [deals, setDeals] = useState<DealCardData[]>([]);
 
   useEffect(() => {
     if (!authLoading && !user) nav({ to: "/login" });
@@ -30,10 +30,7 @@ function FavoritesPage() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("favorites")
-      .select("deal:deals(id,title,slug,image_url,images,current_price,previous_price,discount_percentage,temperature,published_at,store:stores(name,slug),category:categories!deals_category_id_fkey(name,slug))")
-      .eq("user_id", user.id).order("created_at", { ascending: false })
-      .then(({ data }) => setDeals((data ?? []).map((x: any) => x.deal).filter(Boolean)));
+    favoritesApi.getFavorites().then(setDeals).catch(console.error);
   }, [user]);
 
   return (

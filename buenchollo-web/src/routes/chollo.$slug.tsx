@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { dealsService, type DealDetailData } from "@/services/api/deals";
+import { dealsService, favoritesApi, type DealDetailData } from "@/services/api/deals";
 import { supabase } from "@/integrations/supabase/client";
 import { Layout } from "@/components/Layout";
 import { DealCard, type DealCardData } from "@/components/DealCard";
@@ -88,34 +88,45 @@ function DealDetail() {
   const [loading, setLoading] = useState(true);
   const [activeImg, setActiveImg] = useState(0);
 
-  const load = async () => {
-    setLoading(true);
-    try {
-      const data = await dealsService.getBySlug(slug);
-      setDeal(data);
-
-      const rel = await dealsService.search({ category_id: data.category?.slug, limit: 5 });
-      setRelated(rel.filter(d => d.id !== data.id).slice(0, 4));
-      setCommentCount(data.comment_count ?? 0);
-
-      if (user) {
-        const [myVoteVal, favResult] = await Promise.all([
-          dealsService.getMyVote(data.id).catch(() => 0),
-          supabase.from("favorites").select("id").eq("deal_id", data.id).eq("user_id", user.id).maybeSingle(),
-        ]);
-        setMyVote(myVoteVal);
-        if (favResult.error) console.error("favorites check:", favResult.error);
-        setFav(!!favResult.data);
+  // Efecto 1: carga los datos públicos del deal (no necesita auth)
+  useEffect(() => {
+    let cancelled = false;
+    const loadDeal = async () => {
+      setLoading(true);
+      try {
+        const data = await dealsService.getBySlug(slug);
+        if (cancelled) return;
+        setDeal(data);
+        const rel = await dealsService.search({ category_id: data.category?.slug, limit: 5 });
+        if (cancelled) return;
+        setRelated(rel.filter(d => d.id !== data.id).slice(0, 4));
+        setCommentCount(data.comment_count ?? 0);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      setLoading(false);
-    } catch (error) {
-      console.error(error);
-      setLoading(false);
-      return;
-    }
-  };
+    };
+    loadDeal();
+    return () => { cancelled = true; };
+  }, [slug]);
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [slug, user?.id]);
+  // Efecto 2: carga el estado del usuario (voto y favorito) — solo cuando deal y user están listos
+  useEffect(() => {
+    if (!user || !deal) return;
+    let cancelled = false;
+    const loadUserState = async () => {
+      const [myVoteVal, isFav] = await Promise.all([
+        dealsService.getMyVote(deal.id).catch(() => 0),
+        favoritesApi.check(deal.id).catch(() => false),
+      ]);
+      if (cancelled) return;
+      setMyVote(myVoteVal);
+      setFav(isFav);
+    };
+    loadUserState();
+    return () => { cancelled = true; };
+  }, [deal?.id, user?.id]);
 
   const vote = async (v: number) => {
     if (!user) { toast.error("Inicia sesión para votar"); return; }
@@ -135,8 +146,12 @@ function DealDetail() {
   const toggleFav = async () => {
     if (!user) { toast.error("Inicia sesión para guardar"); return; }
     if (!deal) return;
-    if (fav) { await supabase.from("favorites").delete().eq("user_id", user.id).eq("deal_id", deal.id); setFav(false); }
-    else { await supabase.from("favorites").insert({ user_id: user.id, deal_id: deal.id }); setFav(true); }
+    try {
+      const result = await favoritesApi.toggle(deal.id);
+      setFav(result.is_favorited);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Error al guardar el favorito");
+    }
   };
 
   const trackClick = async () => {

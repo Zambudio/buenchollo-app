@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, text
 from sqlalchemy.orm import selectinload
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from app.modules.deals.domain.models import Deal, DealVote
+from app.modules.deals.domain.models import Deal, DealVote, Favorite
 
 class DealRepository:
     """Repository for managing deals in the database."""
@@ -131,3 +131,35 @@ class DealRepository:
             {"uid": user_id},
         )
         return result.scalar() is not None
+
+    # --- Favoritos ---
+
+    async def get_favorites(self, user_id: str) -> list[Deal]:
+        result = await self.session.execute(
+            select(Deal)
+            .options(selectinload(Deal.category), selectinload(Deal.subcategory), selectinload(Deal.store))
+            .join(Favorite, Favorite.deal_id == Deal.id)
+            .where(Favorite.user_id == user_id)
+            .order_by(Favorite.created_at.desc())
+        )
+        return list(result.scalars().all())
+
+    async def is_favorite(self, deal_id: str, user_id: str) -> bool:
+        result = await self.session.execute(
+            select(Favorite.id).where(Favorite.deal_id == deal_id, Favorite.user_id == user_id)
+        )
+        return result.scalar() is not None
+
+    async def add_favorite(self, deal_id: str, user_id: str) -> None:
+        fav = Favorite(deal_id=deal_id, user_id=user_id)
+        self.session.add(fav)
+        await self.session.flush()
+
+    async def remove_favorite(self, deal_id: str, user_id: str) -> None:
+        result = await self.session.execute(
+            select(Favorite).where(Favorite.deal_id == deal_id, Favorite.user_id == user_id)
+        )
+        fav = result.scalars().first()
+        if fav:
+            await self.session.delete(fav)
+            await self.session.flush()

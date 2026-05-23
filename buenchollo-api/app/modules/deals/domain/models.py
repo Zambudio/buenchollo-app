@@ -71,3 +71,16 @@ class DealVote(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     __table_args__ = (UniqueConstraint("deal_id", "user_id"),)
+
+
+class Favorite(Base):
+    __tablename__ = "favorites"
+
+    id: Mapped[str] = mapped_column(Uuid(as_uuid=False), primary_key=True, server_default=func.gen_random_uuid())
+    deal_id: Mapped[str] = mapped_column(Uuid(as_uuid=False), ForeignKey("deals.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[str] = mapped_column(Uuid(as_uuid=False), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    deal = relationship("Deal")
+
+    __table_args__ = (UniqueConstraint("deal_id", "user_id"),)

@@ -51,6 +51,41 @@ async def search_deals(
 
 # ── Endpoints autenticados ────────────────────────────────────────────────────
 
+@router.get("/favorites", response_model=list[DealCardResponse])
+async def get_favorites(
+    repo: DealRepository = Depends(get_deal_repository),
+    current_user=Depends(get_current_user),
+):
+    return await repo.get_favorites(str(current_user.id))
+
+
+@router.get("/{deal_id}/favorite")
+async def get_favorite_status(
+    deal_id: str,
+    repo: DealRepository = Depends(get_deal_repository),
+    current_user=Depends(get_current_user),
+) -> dict:
+    is_fav = await repo.is_favorite(deal_id, str(current_user.id))
+    return {"is_favorited": is_fav}
+
+
+@router.post("/{deal_id}/favorite")
+async def toggle_favorite(
+    deal_id: str,
+    repo: DealRepository = Depends(get_deal_repository),
+    current_user=Depends(get_current_user),
+) -> dict:
+    user_id = str(current_user.id)
+    deal = await repo.get_by_id(deal_id)
+    if not deal:
+        raise HTTPException(status_code=404, detail="Deal not found")
+    if await repo.is_favorite(deal_id, user_id):
+        await repo.remove_favorite(deal_id, user_id)
+        return {"is_favorited": False}
+    await repo.add_favorite(deal_id, user_id)
+    return {"is_favorited": True}
+
+
 @router.post("/{deal_id}/vote", response_model=VoteResponse)
 async def vote_on_deal(
     deal_id: str,
