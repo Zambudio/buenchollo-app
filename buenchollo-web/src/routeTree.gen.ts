@@ -23,7 +23,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as CholloSlugRouteImport } from './routes/chollo.$slug'
 import { Route as CategoriaSlugRouteImport } from './routes/categoria.$slug'
-import { Route as AlertasNuevaRouteImport } from './routes/alertas.nueva'
+import { Route as AlertasNuevaRouteImport } from './routes/alertas_.nueva'
 import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
 import { Route as AdminTiendasRouteImport } from './routes/admin.tiendas'
 import { Route as AdminChollosRouteImport } from './routes/admin.chollos'
@@ -100,9 +100,9 @@ const CategoriaSlugRoute = CategoriaSlugRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const AlertasNuevaRoute = AlertasNuevaRouteImport.update({
-  id: '/nueva',
-  path: '/nueva',
-  getParentRoute: () => AlertasRoute,
+  id: '/alertas_/nueva',
+  path: '/alertas/nueva',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminUsuariosRoute = AdminUsuariosRouteImport.update({
   id: '/usuarios',
@@ -128,7 +128,7 @@ const AdminCategoriasRoute = AdminCategoriasRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/alertas': typeof AlertasRouteWithChildren
+  '/alertas': typeof AlertasRoute
   '/categorias': typeof CategoriasRoute
   '/explorar': typeof ExplorarRoute
   '/favoritos': typeof FavoritosRoute
@@ -148,7 +148,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/alertas': typeof AlertasRouteWithChildren
+  '/alertas': typeof AlertasRoute
   '/categorias': typeof CategoriasRoute
   '/explorar': typeof ExplorarRoute
   '/favoritos': typeof FavoritosRoute
@@ -170,7 +170,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/alertas': typeof AlertasRouteWithChildren
+  '/alertas': typeof AlertasRoute
   '/categorias': typeof CategoriasRoute
   '/explorar': typeof ExplorarRoute
   '/favoritos': typeof FavoritosRoute
@@ -183,7 +183,7 @@ export interface FileRoutesById {
   '/admin/chollos': typeof AdminChollosRoute
   '/admin/tiendas': typeof AdminTiendasRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
-  '/alertas/nueva': typeof AlertasNuevaRoute
+  '/alertas_/nueva': typeof AlertasNuevaRoute
   '/categoria/$slug': typeof CategoriaSlugRoute
   '/chollo/$slug': typeof CholloSlugRoute
   '/admin/': typeof AdminIndexRoute
@@ -247,7 +247,7 @@ export interface FileRouteTypes {
     | '/admin/chollos'
     | '/admin/tiendas'
     | '/admin/usuarios'
-    | '/alertas/nueva'
+    | '/alertas_/nueva'
     | '/categoria/$slug'
     | '/chollo/$slug'
     | '/admin/'
@@ -256,7 +256,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
-  AlertasRoute: typeof AlertasRouteWithChildren
+  AlertasRoute: typeof AlertasRoute
   CategoriasRoute: typeof CategoriasRoute
   ExplorarRoute: typeof ExplorarRoute
   FavoritosRoute: typeof FavoritosRoute
@@ -265,6 +265,7 @@ export interface RootRouteChildren {
   PerfilRoute: typeof PerfilRoute
   RegistroRoute: typeof RegistroRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  AlertasNuevaRoute: typeof AlertasNuevaRoute
   CategoriaSlugRoute: typeof CategoriaSlugRoute
   CholloSlugRoute: typeof CholloSlugRoute
 }
@@ -369,12 +370,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CategoriaSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/alertas/nueva': {
-      id: '/alertas/nueva'
-      path: '/nueva'
+    '/alertas_/nueva': {
+      id: '/alertas_/nueva'
+      path: '/alertas/nueva'
       fullPath: '/alertas/nueva'
       preLoaderRoute: typeof AlertasNuevaRouteImport
-      parentRoute: typeof AlertasRoute
+      parentRoute: typeof rootRouteImport
     }
     '/admin/usuarios': {
       id: '/admin/usuarios'
@@ -425,21 +426,10 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
-interface AlertasRouteChildren {
-  AlertasNuevaRoute: typeof AlertasNuevaRoute
-}
-
-const AlertasRouteChildren: AlertasRouteChildren = {
-  AlertasNuevaRoute: AlertasNuevaRoute,
-}
-
-const AlertasRouteWithChildren =
-  AlertasRoute._addFileChildren(AlertasRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
-  AlertasRoute: AlertasRouteWithChildren,
+  AlertasRoute: AlertasRoute,
   CategoriasRoute: CategoriasRoute,
   ExplorarRoute: ExplorarRoute,
   FavoritosRoute: FavoritosRoute,
@@ -448,6 +438,7 @@ const rootRouteChildren: RootRouteChildren = {
   PerfilRoute: PerfilRoute,
   RegistroRoute: RegistroRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  AlertasNuevaRoute: AlertasNuevaRoute,
   CategoriaSlugRoute: CategoriaSlugRoute,
   CholloSlugRoute: CholloSlugRoute,
 }

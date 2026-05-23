@@ -44,9 +44,10 @@ async def search_deals(
     store_id: str | None = None,
     search: str | None = None,
     limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     repo: DealRepository = Depends(get_deal_repository)
 ):
-    return await repo.search_active(category_id=category_id, store_id=store_id, search=search, limit=limit)
+    return await repo.search_active(category_id=category_id, store_id=store_id, search=search, limit=limit, offset=offset)
 
 
 # ── Endpoints autenticados ────────────────────────────────────────────────────

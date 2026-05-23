@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { Search, Bell, Heart, User as UserIcon, LogOut, Shield, Menu, X, LayoutGrid } from "lucide-react";
+import { Search, Bell, Heart, User as UserIcon, LogOut, Shield, Menu, X, LayoutGrid, BellPlus } from "lucide-react";
 import { Logo } from "./Logo";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,9 +38,9 @@ export function Header() {
             type="button"
             onClick={() => setDrawerOpen(true)}
             aria-label="Abrir menú de categorías"
-            className="p-2 border border-surface-700 hover:border-cyan-glow hover:text-cyan-glow transition-colors"
+            className="p-2 border border-surface-600 text-foreground hover:border-cyan-glow hover:text-cyan-glow transition-colors"
           >
-            <LayoutGrid className="size-4" />
+            <LayoutGrid className="size-5" />
           </button>
           <Link to="/"><Logo /></Link>
         </div>
@@ -74,6 +74,9 @@ export function Header() {
               </Link>
               <Link to="/favoritos" className="hidden sm:block p-2 hover:text-cyan-glow transition-colors" title="Favoritos">
                 <Heart className="size-5" />
+              </Link>
+              <Link to="/alertas/nueva" className="hidden sm:block p-2 hover:text-cyan-glow transition-colors" title="Crear alerta">
+                <BellPlus className="size-5" />
               </Link>
               <DropdownMenu>
                 <DropdownMenuTrigger aria-label="Menú de perfil" className="size-9 rounded-full bg-surface-700 border border-surface-600 flex items-center justify-center hover:border-cyan-glow transition-colors">

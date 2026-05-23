@@ -1,15 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Layout } from "@/components/Layout";
 import { DealCard, type DealCardData } from "@/components/DealCard";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowRight, Bell, Send, Zap } from "lucide-react";
-import { dealsService } from "@/services/api/deals";
+import { ArrowRight, Send, Zap } from "lucide-react";
+import { dealsService, favoritesApi } from "@/services/api/deals";
 
 const TELEGRAM_URL = "https://t.me/buenchollotech";
 
 const SITE = "https://buenchollotech.lovable.app";
+const FEED_PAGE_SIZE = 16;
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -28,18 +28,53 @@ export const Route = createFileRoute("/")({
 
 function HomePage() {
   const { user } = useAuth();
-  const [latest, setLatest] = useState<DealCardData[]>([]);
+  const [feed, setFeed] = useState<DealCardData[]>([]);
   const [popular, setPopular] = useState<DealCardData[]>([]);
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
+  const [feedOffset, setFeedOffset] = useState(0);
+  const [feedLoading, setFeedLoading] = useState(false);
+  const [hasMoreFeed, setHasMoreFeed] = useState(true);
+  const feedSentinelRef = useRef<HTMLDivElement | null>(null);
+  const feedLoadingRef = useRef(false);
+  const hasMoreFeedRef = useRef(true);
+
+  useEffect(() => {
+    hasMoreFeedRef.current = hasMoreFeed;
+  }, [hasMoreFeed]);
+
+  const loadFeedPage = useCallback(async () => {
+    if (feedLoadingRef.current || !hasMoreFeedRef.current) return;
+    feedLoadingRef.current = true;
+    setFeedLoading(true);
+    try {
+      const data = await dealsService.search({ limit: FEED_PAGE_SIZE, offset: feedOffset });
+      const seenBefore = new Set(feed.map((deal) => deal.id));
+      let page = data;
+      let newDeals = page.filter((deal) => !seenBefore.has(deal.id));
+
+      if (feed.length > 0 && data.length > 0 && newDeals.length === 0) {
+        page = await dealsService.search({ limit: Math.min(feed.length + FEED_PAGE_SIZE, 100) });
+        newDeals = page.filter((deal) => !seenBefore.has(deal.id));
+      }
+
+      setFeed((current) => {
+        const seen = new Set(current.map((deal) => deal.id));
+        return [...current, ...page.filter((deal) => !seen.has(deal.id))];
+      });
+      setFeedOffset((current) => current + page.length);
+      setHasMoreFeed(page.length >= FEED_PAGE_SIZE && newDeals.length > 0);
+    } catch (error) {
+      console.error("Error cargando el feed de chollos:", error);
+    } finally {
+      feedLoadingRef.current = false;
+      setFeedLoading(false);
+    }
+  }, [feed, feedOffset]);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [latestData, popularData] = await Promise.all([
-          dealsService.getLatest(8),
-          dealsService.getPopular(4),
-        ]);
-        setLatest(latestData);
+        const popularData = await dealsService.getPopular(4);
         setPopular(popularData);
       } catch (error) {
         console.error("Error cargando datos desde la API:", error);
@@ -49,9 +84,31 @@ function HomePage() {
   }, []);
 
   useEffect(() => {
+    loadFeedPage();
+  }, []);
+
+  useEffect(() => {
+    const node = feedSentinelRef.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          loadFeedPage();
+        }
+      },
+      { rootMargin: "600px 0px" },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [loadFeedPage]);
+
+  useEffect(() => {
     if (!user) { setFavIds(new Set()); return; }
-    supabase.from("favorites").select("deal_id").eq("user_id", user.id)
-      .then(({ data }) => setFavIds(new Set((data ?? []).map(f => f.deal_id))));
+    favoritesApi.getFavorites()
+      .then((data) => setFavIds(new Set(data.map((deal) => deal.id))))
+      .catch(() => setFavIds(new Set()));
   }, [user]);
 
   return (
@@ -69,9 +126,6 @@ function HomePage() {
             Las mejores ofertas de tecnología, monitorizadas en tiempo real. Sin spam, sin ruido — solo chollos que merecen tu atención.
           </p>
           <div className="flex flex-wrap gap-3">
-            <Link to="/explorar" className="inline-flex items-center gap-2 bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-5 py-3 hover:bg-foreground transition-colors">
-              [ EXPLORAR CHOLLOS ] <ArrowRight className="size-4" />
-            </Link>
             {!user && (
               <Link to="/registro" className="inline-flex items-center gap-2 border border-surface-700 bg-surface-800 text-foreground font-mono text-xs font-bold px-5 py-3 hover:border-cyan-glow hover:text-cyan-glow transition-colors">
                 [ CREAR CUENTA ]
@@ -137,34 +191,26 @@ function HomePage() {
             <div className="size-2 bg-cyan-glow rounded-full animate-pulse" />
             <h2 className="text-foreground font-bold text-lg tracking-tight font-mono">TRANSMISIÓN_EN_VIVO</h2>
           </div>
-          <span className="font-mono text-xs text-muted-foreground hidden sm:block">ACTUALIZANDO...</span>
+          <span className="inline-flex items-center gap-2 font-mono text-xs text-muted-foreground">
+            PUBLICADOS <ArrowRight className="size-3.5" />
+          </span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {latest.map(d => <DealCard key={d.id} deal={d} isFavorite={favIds.has(d.id)} />)}
+          {feed.map(d => <DealCard key={d.id} deal={d} isFavorite={favIds.has(d.id)} />)}
+        </div>
+        <div ref={feedSentinelRef} className="min-h-16 flex items-center justify-center py-8">
+          {feedLoading && (
+            <span className="font-mono text-xs text-muted-foreground">CARGANDO_CHOLLOS...</span>
+          )}
+          {!feedLoading && !hasMoreFeed && feed.length > 0 && (
+            <span className="font-mono text-xs text-muted-foreground">FIN_DE_TRANSMISION</span>
+          )}
+          {!feedLoading && feed.length === 0 && (
+            <span className="font-mono text-xs text-muted-foreground">SIN_CHOLLOS_PUBLICADOS</span>
+          )}
         </div>
       </section>
 
-      {/* CTA ALERTAS */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-16">
-        <div className="bg-surface-800 border-l-4 border-cyan-glow border-y border-r border-surface-700 p-8 sm:p-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-glow/10 blur-[100px] pointer-events-none" />
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-2">
-              <Bell className="size-5 text-cyan-glow" />
-              <h3 className="text-2xl font-bold text-foreground tracking-tight">Configura tu radar de precios</h3>
-            </div>
-            <p className="text-muted-foreground max-w-xl">
-              Define qué te interesa (marca, categoría, precio máximo) y te avisamos cuando aparezca un chollo que cumpla tus criterios.
-            </p>
-          </div>
-          <Link
-            to={user ? "/alertas/nueva" : "/registro"}
-            className="relative z-10 inline-flex items-center gap-2 bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-6 py-3 hover:bg-foreground transition-colors whitespace-nowrap"
-          >
-            [ {user ? "CREAR ALERTA" : "EMPEZAR GRATIS"} ] <ArrowRight className="size-4" />
-          </Link>
-        </div>
-      </section>
     </Layout>
   );
 }
