@@ -13,12 +13,12 @@ async def notify_deal(
     _auth=Depends(require_admin),
 ) -> dict:
     settings = get_settings()
-    if not settings.telegram_bot_token or not settings.telegram_chat_id:
+    if not settings.telegram_bot_token or not settings.telegram_main_channel_id:
         raise HTTPException(
             status_code=503,
-            detail="Telegram no configurado. Añade TELEGRAM_BOT_TOKEN y TELEGRAM_CHAT_ID al .env",
+            detail="Telegram no configurado. Añade TELEGRAM_BOT_TOKEN y TELEGRAM_MAIN_CHANNEL_ID al .env",
         )
-    bot = TelegramBot(settings.telegram_bot_token, settings.telegram_chat_id)
+    bot = TelegramBot(settings.telegram_bot_token, settings.telegram_main_channel_id)
     ok = bot.send_deal(
         title=payload.title,
         current_price=payload.current_price,

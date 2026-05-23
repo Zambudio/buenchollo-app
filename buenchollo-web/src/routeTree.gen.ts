@@ -25,6 +25,7 @@ import { Route as CholloSlugRouteImport } from './routes/chollo.$slug'
 import { Route as CategoriaSlugRouteImport } from './routes/categoria.$slug'
 import { Route as AlertasNuevaRouteImport } from './routes/alertas.nueva'
 import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
+import { Route as AdminTiendasRouteImport } from './routes/admin.tiendas'
 import { Route as AdminChollosRouteImport } from './routes/admin.chollos'
 import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
 
@@ -108,6 +109,11 @@ const AdminUsuariosRoute = AdminUsuariosRouteImport.update({
   path: '/usuarios',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminTiendasRoute = AdminTiendasRouteImport.update({
+  id: '/tiendas',
+  path: '/tiendas',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminChollosRoute = AdminChollosRouteImport.update({
   id: '/chollos',
   path: '/chollos',
@@ -133,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/chollos': typeof AdminChollosRoute
+  '/admin/tiendas': typeof AdminTiendasRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/alertas/nueva': typeof AlertasNuevaRoute
   '/categoria/$slug': typeof CategoriaSlugRoute
@@ -152,6 +159,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/chollos': typeof AdminChollosRoute
+  '/admin/tiendas': typeof AdminTiendasRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/alertas/nueva': typeof AlertasNuevaRoute
   '/categoria/$slug': typeof CategoriaSlugRoute
@@ -173,6 +181,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/chollos': typeof AdminChollosRoute
+  '/admin/tiendas': typeof AdminTiendasRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/alertas/nueva': typeof AlertasNuevaRoute
   '/categoria/$slug': typeof CategoriaSlugRoute
@@ -195,6 +204,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/admin/categorias'
     | '/admin/chollos'
+    | '/admin/tiendas'
     | '/admin/usuarios'
     | '/alertas/nueva'
     | '/categoria/$slug'
@@ -214,6 +224,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/admin/categorias'
     | '/admin/chollos'
+    | '/admin/tiendas'
     | '/admin/usuarios'
     | '/alertas/nueva'
     | '/categoria/$slug'
@@ -234,6 +245,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/admin/categorias'
     | '/admin/chollos'
+    | '/admin/tiendas'
     | '/admin/usuarios'
     | '/alertas/nueva'
     | '/categoria/$slug'
@@ -371,6 +383,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUsuariosRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/tiendas': {
+      id: '/admin/tiendas'
+      path: '/tiendas'
+      fullPath: '/admin/tiendas'
+      preLoaderRoute: typeof AdminTiendasRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/chollos': {
       id: '/admin/chollos'
       path: '/chollos'
@@ -391,6 +410,7 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminCategoriasRoute: typeof AdminCategoriasRoute
   AdminChollosRoute: typeof AdminChollosRoute
+  AdminTiendasRoute: typeof AdminTiendasRoute
   AdminUsuariosRoute: typeof AdminUsuariosRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -398,6 +418,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminCategoriasRoute: AdminCategoriasRoute,
   AdminChollosRoute: AdminChollosRoute,
+  AdminTiendasRoute: AdminTiendasRoute,
   AdminUsuariosRoute: AdminUsuariosRoute,
   AdminIndexRoute: AdminIndexRoute,
 }

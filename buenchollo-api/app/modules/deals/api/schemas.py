@@ -44,6 +44,9 @@ class DealDetailResponse(DealCardResponse):
     votes_up: int = 0
     votes_down: int = 0
     click_count: int = 0
+    store_id: str | None = None
+    category_id: str | None = None
+    subcategory_id: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

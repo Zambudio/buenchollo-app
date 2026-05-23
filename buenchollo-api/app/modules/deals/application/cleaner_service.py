@@ -27,7 +27,7 @@ class DealCleanerService:
     def clean_expired_deals(self) -> int:
         """Elimina deals con expires_at hace más de 2 días. Devuelve el número borrado."""
         try:
-            threshold = (datetime.now() - timedelta(days=2)).isoformat()
+            threshold = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
             logger.info("Limpieza de chollos caducados antes de: %s", threshold)
             response = self.client.table("deals").delete().lt("expires_at", threshold).execute()
             count = len(response.data) if response.data else 0

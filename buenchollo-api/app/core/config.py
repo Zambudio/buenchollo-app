@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     database_url: str = ""
 
     telegram_bot_token: str = ""
-    telegram_chat_id: str = ""
+    telegram_main_channel_id: str = ""
 
     @property
     def amazon_effective_credential_version(self) -> str:

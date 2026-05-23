@@ -36,6 +36,8 @@ async def lifespan(app: FastAPI):
         scheduler.add_job(cleaner.activate_scheduled_deals, "interval", minutes=5)
         scheduler.add_job(cleaner.clean_expired_deals, "cron", hour=3, minute=0)
         scheduler.start()
+        # Ejecutar limpieza una vez al arrancar para no esperar a las 3am
+        cleaner.clean_expired_deals()
         logger.info(
             "Background scheduler iniciado: "
             "mark_expired + activate_scheduled (cada 5 min) | clean (03:00 diario)"
