@@ -1,85 +1,91 @@
 # buenchollo-api
 
-Backend **FastAPI** de BuenCholloTech. Actúa como **API Gateway** centralizado: gestiona autenticación, lógica de negocio, acceso a la base de datos (SQLAlchemy + Supabase PostgreSQL) e integración con Amazon y OpenAI.
+Backend **FastAPI** de BuenCholloTech. Actúa como **API Gateway** centralizado: autenticación, lógica de negocio, acceso a PostgreSQL (Supabase) e integración con Amazon Creators API y OpenAI.
 
-Documentación interactiva (Swagger): `http://localhost:8000/docs`
-
----
-
-## Requisitos
-
-- Python 3.12+. Validado con Python 3.14.
-- `asyncpg` instalado para la versión de Python que uses.
-- Variables de entorno configuradas en `.env` (ver `.env.example`).
-- Ejecutar todos los comandos desde la carpeta `buenchollo-api/`.
+- Swagger UI: `http://localhost:8000/docs`
+- Health check: `http://localhost:8000/health`
 
 ---
 
-## Instalación y arranque local
+## Prerequisitos
+
+- **Python 3.11+** (el contenedor Docker usa `python:3.11-slim`)
+- Acceso a un proyecto de **Supabase** (BD PostgreSQL + Auth)
+- Credenciales de **Amazon Creators API** y **OpenAI** (opcionales para arrancar, obligatorias para el autocomplete)
+
+---
+
+## Setup local (desarrollo)
 
 ```bash
-# 1. Instalar dependencias
+cd buenchollo-api
+
+# 1. Crear y activar entorno virtual
+python -m venv .venv
+source .venv/bin/activate          # Linux/Mac
+.venv\Scripts\Activate.ps1         # Windows PowerShell
+
+# 2. Instalar dependencias
 pip install -r requirements.txt
 
-# 2. Crear .env a partir del ejemplo y rellenar credenciales
+# 3. Configurar variables de entorno
 cp .env.example .env
+# Editar .env con los valores reales (ver sección Variables de entorno)
 
-# 3. Arrancar en modo desarrollo (hot-reload)
-python -m uvicorn app.main:app --reload
-```
-
-**Endpoints de comprobación:**
-
-```
-GET  http://localhost:8000/health     → {"status": "ok", ...}
-GET  http://localhost:8000/auth/me    → info del usuario autenticado (requiere JWT)
-GET  http://localhost:8000/docs       → Swagger UI
+# 4. Arrancar en modo desarrollo (hot-reload)
+uvicorn app.main:app --reload
 ```
 
 ---
 
 ## Variables de entorno
 
-Ver [`.env.example`](.env.example) para la referencia completa y comentada.
+Copia `.env.example` a `.env` y rellena cada valor. Nunca subas `.env` al repositorio.
 
-Las más importantes:
+| Variable | Obligatoria | Descripción |
+|---|---|---|
+| `DATABASE_URL` | ✅ | Conexión asyncpg al pooler de Supabase. Formato: `postgresql+asyncpg://postgres.[REF]:[PWD]@aws-0-[region].pooler.supabase.com:6543/postgres` |
+| `SUPABASE_URL` | ✅ | URL del proyecto: `https://[REF].supabase.co` |
+| `SUPABASE_KEY` | ✅ | **Service role key** (no la anon key). Empieza por `eyJ...` y tiene `"role":"service_role"` |
+| `CORS_ORIGINS` | ✅ | Orígenes CORS permitidos, separados por comas. En local: `*` |
+| `OPENAI_API_KEY` | ⚠️ | Necesaria para el autocomplete con IA. Sin ella, el endpoint `/products/preview-from-url` falla |
+| `AMAZON_CLIENT_ID` | ⚠️ | Necesaria para el autocomplete de Amazon |
+| `AMAZON_CLIENT_SECRET` | ⚠️ | Necesaria para el autocomplete de Amazon |
+| `AMAZON_AFFILIATE_TAG` | ⚠️ | Tag de afiliado Amazon (p.ej. `buenchollo0b-21`) |
+| `AMAZON_API_VERSION` | — | Versión LWA. Por defecto: `3.2` |
+| `APP_ENV` | — | `local` \| `staging` \| `production`. Por defecto: `local` |
+| `LOG_LEVEL` | — | `DEBUG` \| `INFO` \| `WARNING`. Por defecto: `INFO` |
 
-| Variable | Descripción |
-|---|---|
-| `DATABASE_URL` | `postgresql+asyncpg://...@pooler.supabase.com:6543/postgres` |
-| `SUPABASE_URL` | `https://[ref].supabase.co` |
-| `SUPABASE_KEY` | **Service role key** (no la anon key) |
-| `CORS_ORIGINS` | Orígenes permitidos, separados por comas. En local: `*` |
-| `OPENAI_API_KEY` | Clave de OpenAI |
-| `AMAZON_CLIENT_ID / SECRET` | Credenciales Amazon Creators API |
-
-> ⚠️ Nunca subas `.env` al repositorio.
+> **Nota sobre `SUPABASE_KEY`**: usa siempre la `service_role key`, nunca la `anon key`. El backend la necesita para validar JWTs y acceder a tablas con RLS desactivada.
 
 ---
 
-## Estructura de módulos
+## Estructura del proyecto
 
 ```
 app/
 ├── core/
-│   ├── config.py        # Settings (Pydantic Settings, .env)
-│   ├── database.py      # Motor SQLAlchemy async, sesión get_db
-│   ├── security.py      # JWT validation (get_current_user, require_admin)
-│   └── logging.py       # Configuración de logs
+│   ├── config.py        # Settings cargadas desde .env (Pydantic Settings)
+│   ├── database.py      # Motor SQLAlchemy async, sesión get_db()
+│   ├── security.py      # get_current_user, require_admin
+│   └── logging.py       # Configuración de logs estructurados
 │
-├── modules/
-│   ├── deals/           # Chollos — modelo, repositorio, router, schemas
-│   ├── categories/      # Categorías y subcategorías
-│   ├── stores/          # Tiendas
-│   ├── products/        # Preview desde Amazon (scraping + IA)
-│   └── users/           # Auth: endpoint /auth/me
+├── modules/             # Cada módulo es independiente
+│   ├── deals/
+│   │   ├── domain/      # Modelos ORM: Deal, DealVote
+│   │   ├── application/ # DealCleanerService (scheduler)
+│   │   ├── infrastructure/ # DealRepository — único acceso a BD
+│   │   └── api/         # Router FastAPI + schemas Pydantic
+│   ├── categories/      # (mismo patrón)
+│   ├── stores/          # (mismo patrón)
+│   ├── products/
+│   │   ├── domain/      # ProductPreview entity + Protocols (DIP)
+│   │   ├── application/ # PreviewProductFromUrlUseCase
+│   │   └── infrastructure/ # AmazonProductClient, OpenAIAssistant
+│   ├── users/           # Endpoint /auth/me
+│   └── telegram/        # (pendiente de implementar)
 │
-├── tests/
-│   ├── test_deals_api.py          # Integración: ciclo completo CRUD admin
-│   ├── test_products_api.py       # Productos
-│   ├── test_product_preview_use_case.py
-│   └── test_amazon_client.py
-│
+├── tests/               # Unitarios e integración
 └── main.py              # Entrypoint: lifespan, CORS, routers
 ```
 
@@ -87,7 +93,7 @@ app/
 
 ## API Reference
 
-### 🔓 Públicos
+### Públicos (sin autenticación)
 
 | Método | Ruta | Descripción |
 |---|---|---|
@@ -99,13 +105,15 @@ app/
 | `GET` | `/categories` | Listado de categorías |
 | `GET` | `/stores` | Listado de tiendas |
 
-### 🔐 Requieren JWT de Supabase (`Authorization: Bearer <token>`)
+### Requieren JWT (`Authorization: Bearer <token>`)
 
 | Método | Ruta | Descripción |
 |---|---|---|
 | `GET` | `/auth/me` | Diagnóstico: usuario, roles y perfil |
+| `POST` | `/deals/{id}/vote` | Votar un chollo (👍/👎, toggle) |
+| `GET` | `/deals/{id}/my-vote` | Voto actual del usuario en un chollo |
 
-### 🔐🔴 Requieren JWT + rol `admin`
+### Requieren JWT + rol `admin`
 
 | Método | Ruta | Descripción |
 |---|---|---|
@@ -115,65 +123,85 @@ app/
 | `DELETE` | `/deals/admin/{id}` | Eliminar chollo |
 | `POST` | `/products/preview-from-url` | Preview de producto Amazon con IA |
 
-### Ejemplo — Preview de Amazon con IA
-
-```bash
-curl -X POST http://localhost:8000/products/preview-from-url \
-  -H "Content-Type: application/json" \
-  -d '{"url": "https://www.amazon.es/dp/B0DTHWQJXN"}'
-```
-
-Respuesta: título, precio, imágenes, descripción generada por GPT-4o, categoría sugerida y texto para Telegram.
-
 ---
 
-## Autenticación y roles
+## Autenticación
 
-El backend valida JWTs emitidos por **Supabase Auth**:
-
-1. El frontend obtiene el `access_token` de la sesión de Supabase.
+1. El frontend obtiene el `access_token` de la sesión de Supabase Auth.
 2. Lo envía en la cabecera `Authorization: Bearer <token>`.
-3. `get_current_user` llama a `supabase.auth.get_user(token)` para verificarlo.
-4. `require_admin` comprueba el rol en la tabla `user_roles` mediante la función `has_role()` de la BD.
+3. `get_current_user()` llama a `supabase.auth.get_user(token)` con la `service_role key`.
+4. `require_admin()` comprueba la tabla `user_roles` en la BD.
 
-> Para diagnosticar problemas de sesión en producción, llama a `GET /auth/me` con las DevTools abiertas.
+Para diagnosticar problemas de sesión en producción: `GET /auth/me` con el token en las DevTools.
 
 ---
 
 ## Tests
 
 ```bash
+# Desde buenchollo-api/ con el venv activado
 python -m pytest app/tests/ -v
 ```
 
-El test de integración `test_deals_api.py` requiere conexión real a la BD de Supabase (usa `.env`) y prueba el ciclo completo: crear chollo → actualizarlo → borrarlo.
+Los tests de integración (`test_deals_api.py`, `test_categories_stores_api.py`) necesitan el `.env` configurado porque conectan con la BD real de Supabase.
+
+Los tests unitarios (`test_preview_use_case.py`) usan mocks y no necesitan credenciales.
 
 ---
 
-## Despliegue en NAS
+## Despliegue en NAS Synology (Docker)
 
-Ver [`DEPLOY_NAS.md`](DEPLOY_NAS.md) y [`docs/NAS_DEPLOYMENT_ARCHITECTURE.md`](docs/NAS_DEPLOYMENT_ARCHITECTURE.md).
+### Primera vez
 
-Flujo resumido:
-1. Copiar archivos modificados al NAS (carpeta `/volume1/docker/buenchollo-api`).
-2. Reconstruir y relanzar el contenedor:
-   ```bash
-   sudo docker-compose up -d --build
-   ```
-3. Verificar: `https://embyZambu.synology.me:8000/health`
+```bash
+# En el NAS, desde la carpeta del proyecto (p.ej. /volume1/docker/buenchollo-api)
+docker-compose build
+docker-compose up -d
+```
+
+### Actualizar tras cambios en el código
+
+```bash
+# El volumen .:/app hace que los cambios de código se reflejen sin rebuild
+docker-compose restart
+
+# Si cambiaron requirements.txt o el Dockerfile:
+docker-compose build --no-cache && docker-compose up -d
+```
+
+### Verificar que funciona
+
+```
+GET https://[tu-ddns]:8000/health
+→ {"status": "ok", "app": "BuenChollo API", "environment": "production"}
+```
+
+### Configuración de producción
+
+El archivo `docker-compose.yml` monta el directorio del proyecto como volumen (`.:/app`), por lo que los cambios de código en el NAS se reflejan sin rebuild. El `.env` debe estar en la misma carpeta que `docker-compose.yml`.
+
+> **CORS en producción**: configura `CORS_ORIGINS` con los dominios exactos del frontend. Ejemplo: `CORS_ORIGINS=https://tudominio.com,https://www.tudominio.com`
 
 ---
 
-## Tareas del scheduler
+## Scheduler (tareas automáticas)
 
-El proceso de limpieza (`DealCleanerService`) se ejecuta automáticamente cada día a las 03:00 AM vía APScheduler. Elimina chollos caducados (`expires_at` pasado) o los marca como `expired`. Se gestiona mediante el `lifespan` de FastAPI en `main.py`.
+`DealCleanerService` se ejecuta cada día a las **03:00 AM** vía APScheduler:
+- Marca como `expired` los chollos con `expires_at` pasado.
+- Se arranca y para automáticamente con el `lifespan` de FastAPI en `main.py`.
 
 ---
 
-## Si el puerto 8000 está ocupado (Windows)
+## Solución de problemas frecuentes
 
+**Puerto 8000 ocupado (Windows)**
 ```powershell
 netstat -ano | Select-String ':8000'
 Stop-Process -Id <PID> -Force
-python -m uvicorn app.main:app --reload
 ```
+
+**Error `statement_cache_size` al conectar con PostgreSQL**  
+Asegúrate de que `DATABASE_URL` apunta al pooler de PgBouncer (puerto **6543**, no 5432). La configuración en `database.py` ya incluye `statement_cache_size=0` para compatibilidad.
+
+**`La librería creators no está instalada`**  
+Este error ya no debería ocurrir. El cliente Amazon fue reescrito usando `requests` directamente (sin SDK externo). Si aparece, revisa que estás usando el código más reciente.
