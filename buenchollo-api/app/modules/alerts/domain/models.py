@@ -5,10 +5,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
 
-# Importar modelos referenciados en relationships para que SQLAlchemy los registre
-import app.modules.categories.domain.models  # noqa: F401
-import app.modules.stores.domain.models  # noqa: F401
-
 
 class Alert(Base):
     __tablename__ = "alerts"
@@ -32,6 +28,10 @@ class Alert(Base):
     min_discount: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    frequency: Mapped[str] = mapped_column(String(20), default="instant", nullable=False)
+    notify_email: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    notify_in_app: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    last_triggered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), default=lambda: datetime.now(timezone.utc)

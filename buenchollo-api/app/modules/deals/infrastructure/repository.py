@@ -53,15 +53,17 @@ class DealRepository:
         limit: int = 20,
         offset: int = 0,
     ) -> list[Deal]:
-        query = select(Deal).options(selectinload(Deal.category), selectinload(Deal.subcategory), selectinload(Deal.store)).where(Deal.status == "active")
-        
+        query = (
+            select(Deal)
+            .options(selectinload(Deal.category), selectinload(Deal.subcategory), selectinload(Deal.store))
+            .where(Deal.status == "active")
+        )
         if category_id:
             query = query.where(Deal.category_id == category_id)
         if store_id:
             query = query.where(Deal.store_id == store_id)
         if search:
             query = query.where(Deal.title.ilike(f"%{search}%"))
-            
         query = query.order_by(Deal.published_at.desc()).offset(offset).limit(limit)
         result = await self.session.execute(query)
         return list(result.scalars().all())

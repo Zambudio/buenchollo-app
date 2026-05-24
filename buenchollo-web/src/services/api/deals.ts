@@ -36,15 +36,14 @@ export const dealsService = {
   getBySlug: (slug: string): Promise<DealDetailData> => 
     apiClient.get<DealDetailData>(`/deals/${slug}`),
 
-  /** Busca chollos (opcional: por categoría) */
+  /** Busca chollos con paginación opcional */
   search: (params?: { category_id?: string; store_id?: string; search?: string; limit?: number; offset?: number }): Promise<DealCardData[]> => {
     const queryParams = new URLSearchParams();
     if (params?.category_id) queryParams.append("category_id", params.category_id);
     if (params?.store_id) queryParams.append("store_id", params.store_id);
     if (params?.search) queryParams.append("search", params.search);
-    if (params?.limit) queryParams.append("limit", params.limit.toString());
-    if (params?.offset) queryParams.append("offset", params.offset.toString());
-    
+    if (params?.limit != null) queryParams.append("limit", params.limit.toString());
+    if (params?.offset != null && params.offset > 0) queryParams.append("offset", params.offset.toString());
     const qs = queryParams.toString();
     return apiClient.get<DealCardData[]>(`/deals${qs ? `?${qs}` : ''}`);
   },

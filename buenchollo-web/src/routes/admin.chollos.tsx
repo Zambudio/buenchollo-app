@@ -9,7 +9,12 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { TelegramPanel } from "@/components/TelegramPanel";
 
-export const Route = createFileRoute("/admin/chollos")({ component: AdminDeals });
+export const Route = createFileRoute("/admin/chollos")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    edit: typeof search.edit === "string" ? search.edit : undefined,
+  }),
+  component: AdminDeals,
+});
 
 const STATUS_OPTIONS = [
   { value: "all", label: "Todos" },
@@ -56,6 +61,15 @@ function AdminDeals() {
       setSubcats((c || []).filter((x: any) => x.parent_id));
     });
   }, []);
+
+  // Auto-abrir edición si llega ?edit=<id> (desde el botón de edición rápida en el detalle del chollo)
+  const { edit: editId } = Route.useSearch();
+  useEffect(() => {
+    if (!editId || deals.length === 0 || showForm) return;
+    const target = deals.find((d) => d.id === editId);
+    if (target) startEdit(target);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deals, editId]);
 
   const startNew = () => { setEditing(null); setForm(empty()); setShowForm(true); };
   const startEdit = (d: any) => {
@@ -417,7 +431,7 @@ function AdminDeals() {
       <div className="bg-surface-800 border border-surface-700 overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="border-b border-surface-700 font-mono text-xs uppercase text-muted-foreground">
-            <tr><th className="text-left p-3">Título</th><th className="text-left p-3">Tienda</th><th className="text-right p-3">Precio</th><th className="text-left p-3">Estado</th><th className="text-left p-3">Fecha</th><th className="p-3">Acciones</th></tr>
+            <tr><th className="p-3 w-14"><span className="sr-only">Imagen</span></th><th className="text-left p-3">Título</th><th className="text-left p-3">Tienda</th><th className="text-right p-3">Precio</th><th className="text-left p-3">Estado</th><th className="text-left p-3">Fecha</th><th className="p-3">Acciones</th></tr>
           </thead>
           <tbody>
             {deals.map(d => {
@@ -427,6 +441,17 @@ function AdminDeals() {
                 : "bg-surface-700 text-muted-foreground";
               return (
               <tr key={d.id} className="border-b border-surface-700/50 hover:bg-surface-700/30">
+                <td className="p-2">
+                  {(d.image_url || (d.images && d.images[0])) ? (
+                    <img
+                      src={d.images?.[0] ?? d.image_url}
+                      alt=""
+                      className="w-10 h-10 object-contain bg-white rounded-sm shrink-0"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 bg-surface-700 rounded-sm" />
+                  )}
+                </td>
                 <td className="p-3"><Link to="/chollo/$slug" params={{ slug: d.slug }} className="hover:text-cyan-glow">{d.title}</Link></td>
                 <td className="p-3 text-muted-foreground font-mono text-xs">{d.store?.name ?? "—"}</td>
                 <td className="p-3 text-right font-mono text-cyan-glow">{formatPrice(d.current_price)}</td>

@@ -1,15 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Layout } from "@/components/Layout";
 import { DealCard, type DealCardData } from "@/components/DealCard";
 import { useAuth } from "@/hooks/useAuth";
 import { ArrowRight, Send, Zap } from "lucide-react";
-import { dealsService, favoritesApi } from "@/services/api/deals";
+import { dealsService } from "@/services/api/deals";
 
 const TELEGRAM_URL = "https://t.me/buenchollotech";
-
 const SITE = "https://buenchollotech.lovable.app";
-const FEED_PAGE_SIZE = 16;
+const LIVE_LIMIT = 8;
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -28,87 +28,61 @@ export const Route = createFileRoute("/")({
 
 function HomePage() {
   const { user } = useAuth();
-  const [feed, setFeed] = useState<DealCardData[]>([]);
   const [popular, setPopular] = useState<DealCardData[]>([]);
+  const [latest, setLatest] = useState<DealCardData[]>([]);
+  const [liveLoading, setLiveLoading] = useState(false);
+  const [liveHasMore, setLiveHasMore] = useState(true);
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
-  const [feedOffset, setFeedOffset] = useState(0);
-  const [feedLoading, setFeedLoading] = useState(false);
-  const [hasMoreFeed, setHasMoreFeed] = useState(true);
-  const feedSentinelRef = useRef<HTMLDivElement | null>(null);
-  const feedLoadingRef = useRef(false);
-  const hasMoreFeedRef = useRef(true);
 
-  useEffect(() => {
-    hasMoreFeedRef.current = hasMoreFeed;
-  }, [hasMoreFeed]);
+  // Refs para evitar stale closures en el IntersectionObserver
+  const offsetRef = useRef(0);
+  const loadingRef = useRef(false);
+  const hasMoreRef = useRef(true);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
-  const loadFeedPage = useCallback(async () => {
-    if (feedLoadingRef.current || !hasMoreFeedRef.current) return;
-    feedLoadingRef.current = true;
-    setFeedLoading(true);
+  const loadLive = useCallback(async () => {
+    if (loadingRef.current || !hasMoreRef.current) return;
+    loadingRef.current = true;
+    setLiveLoading(true);
     try {
-      const data = await dealsService.search({ limit: FEED_PAGE_SIZE, offset: feedOffset });
-      const seenBefore = new Set(feed.map((deal) => deal.id));
-      let page = data;
-      let newDeals = page.filter((deal) => !seenBefore.has(deal.id));
-
-      if (feed.length > 0 && data.length > 0 && newDeals.length === 0) {
-        page = await dealsService.search({ limit: Math.min(feed.length + FEED_PAGE_SIZE, 100) });
-        newDeals = page.filter((deal) => !seenBefore.has(deal.id));
+      const data = await dealsService.search({ limit: LIVE_LIMIT, offset: offsetRef.current });
+      setLatest((prev) => [...prev, ...data]);
+      offsetRef.current += data.length;
+      if (data.length < LIVE_LIMIT) {
+        hasMoreRef.current = false;
+        setLiveHasMore(false);
       }
-
-      setFeed((current) => {
-        const seen = new Set(current.map((deal) => deal.id));
-        return [...current, ...page.filter((deal) => !seen.has(deal.id))];
-      });
-      setFeedOffset((current) => current + page.length);
-      setHasMoreFeed(page.length >= FEED_PAGE_SIZE && newDeals.length > 0);
-    } catch (error) {
-      console.error("Error cargando el feed de chollos:", error);
+    } catch {
+      // silent — no bloqueamos la UI por un fallo de paginación
     } finally {
-      feedLoadingRef.current = false;
-      setFeedLoading(false);
+      loadingRef.current = false;
+      setLiveLoading(false);
     }
-  }, [feed, feedOffset]);
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const popularData = await dealsService.getPopular(4);
-        setPopular(popularData);
-      } catch (error) {
-        console.error("Error cargando datos desde la API:", error);
-      }
-    };
-    load();
   }, []);
 
+  // Carga inicial: populares + primera página de live
   useEffect(() => {
-    loadFeedPage();
-  }, []);
+    dealsService.getPopular(4).then(setPopular).catch(console.error);
+    loadLive();
+  }, [loadLive]);
 
+  // IntersectionObserver para scroll infinito
   useEffect(() => {
-    const node = feedSentinelRef.current;
-    if (!node) return;
-
+    const el = sentinelRef.current;
+    if (!el) return;
     const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          loadFeedPage();
-        }
-      },
-      { rootMargin: "600px 0px" },
+      (entries) => { if (entries[0].isIntersecting) loadLive(); },
+      { rootMargin: "300px" },
     );
-
-    observer.observe(node);
+    observer.observe(el);
     return () => observer.disconnect();
-  }, [loadFeedPage]);
+  }, [loadLive]);
 
+  // Favoritos del usuario
   useEffect(() => {
     if (!user) { setFavIds(new Set()); return; }
-    favoritesApi.getFavorites()
-      .then((data) => setFavIds(new Set(data.map((deal) => deal.id))))
-      .catch(() => setFavIds(new Set()));
+    supabase.from("favorites").select("deal_id").eq("user_id", user.id)
+      .then(({ data }) => setFavIds(new Set((data ?? []).map((f) => f.deal_id))));
   }, [user]);
 
   return (
@@ -180,37 +154,44 @@ function HomePage() {
           <Link to="/explorar" search={{ sort: "popular" } as any} className="font-mono text-xs text-cyan-glow hover:text-foreground">[ VER MÁS ]</Link>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {popular.map(d => <DealCard key={d.id} deal={d} isFavorite={favIds.has(d.id)} />)}
+          {popular.map((d) => <DealCard key={d.id} deal={d} isFavorite={favIds.has(d.id)} />)}
         </div>
       </section>
 
-      {/* ÚLTIMAS OFERTAS */}
+      {/* TRANSMISIÓN EN VIVO — scroll infinito */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex items-center justify-between border-b border-surface-700 pb-3 mb-6">
           <div className="flex items-center gap-3">
             <div className="size-2 bg-cyan-glow rounded-full animate-pulse" />
             <h2 className="text-foreground font-bold text-lg tracking-tight font-mono">TRANSMISIÓN_EN_VIVO</h2>
           </div>
-          <span className="inline-flex items-center gap-2 font-mono text-xs text-muted-foreground">
-            PUBLICADOS <ArrowRight className="size-3.5" />
-          </span>
+          <Link
+            to="/explorar"
+            className="inline-flex items-center gap-2 bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-4 py-2 hover:bg-foreground transition-colors"
+          >
+            [ EXPLORAR CHOLLOS ] <ArrowRight className="size-3.5" />
+          </Link>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {feed.map(d => <DealCard key={d.id} deal={d} isFavorite={favIds.has(d.id)} />)}
-        </div>
-        <div ref={feedSentinelRef} className="min-h-16 flex items-center justify-center py-8">
-          {feedLoading && (
-            <span className="font-mono text-xs text-muted-foreground">CARGANDO_CHOLLOS...</span>
-          )}
-          {!feedLoading && !hasMoreFeed && feed.length > 0 && (
-            <span className="font-mono text-xs text-muted-foreground">FIN_DE_TRANSMISION</span>
-          )}
-          {!feedLoading && feed.length === 0 && (
-            <span className="font-mono text-xs text-muted-foreground">SIN_CHOLLOS_PUBLICADOS</span>
-          )}
-        </div>
-      </section>
 
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {latest.map((d) => <DealCard key={d.id} deal={d} isFavorite={favIds.has(d.id)} />)}
+        </div>
+
+        {/* Sentinel — dispara la carga del siguiente lote */}
+        <div ref={sentinelRef} className="h-1" />
+
+        {liveLoading && (
+          <div className="py-8 text-center font-mono text-xs text-muted-foreground animate-pulse">
+            CARGANDO...
+          </div>
+        )}
+
+        {!liveHasMore && latest.length > 0 && (
+          <div className="py-8 text-center font-mono text-xs text-muted-foreground border-t border-surface-700 mt-6">
+            — FIN DE LA TRANSMISIÓN —
+          </div>
+        )}
+      </section>
     </Layout>
   );
 }

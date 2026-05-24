@@ -48,6 +48,7 @@ class AlertOut(BaseModel):
     max_price: float | None
     min_discount: int | None
     is_active: bool
+    last_triggered_at: datetime | None
     created_at: datetime
     category: CategorySlim | None
     store: StoreSlim | None

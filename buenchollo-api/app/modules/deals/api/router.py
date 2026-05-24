@@ -6,6 +6,9 @@ from app.modules.deals.infrastructure.repository import DealRepository
 from app.modules.deals.application.deal_service import DealService
 from app.modules.deals.api.schemas import DealCardResponse, DealDetailResponse, DealCreate, DealUpdate, VoteRequest, VoteResponse
 from app.core.security import require_admin, get_current_user
+from app.modules.alerts.infrastructure.repository import AlertRepository
+from app.modules.alerts.application.alert_matcher import AlertMatcher
+from app.modules.notifications.infrastructure.repository import NotificationRepository
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +21,10 @@ def get_deal_repository(db: AsyncSession = Depends(get_db)) -> DealRepository:
 
 def get_deal_service(repo: DealRepository = Depends(get_deal_repository)) -> DealService:
     return DealService(repo)
+
+
+def get_alert_matcher(db: AsyncSession = Depends(get_db)) -> AlertMatcher:
+    return AlertMatcher(AlertRepository(db), NotificationRepository(db))
 
 
 # ── Endpoints públicos ────────────────────────────────────────────────────────
@@ -47,7 +54,9 @@ async def search_deals(
     offset: int = Query(0, ge=0),
     repo: DealRepository = Depends(get_deal_repository)
 ):
-    return await repo.search_active(category_id=category_id, store_id=store_id, search=search, limit=limit, offset=offset)
+    return await repo.search_active(
+        category_id=category_id, store_id=store_id, search=search, limit=limit, offset=offset
+    )
 
 
 # ── Endpoints autenticados ────────────────────────────────────────────────────
@@ -138,10 +147,14 @@ async def get_all_admin_deals(
 async def create_deal(
     deal_in: DealCreate,
     service: DealService = Depends(get_deal_service),
+    matcher: AlertMatcher = Depends(get_alert_matcher),
     current_user=Depends(require_admin)
 ):
     deal_data = deal_in.model_dump(exclude_none=True)
-    return await service.create_deal(deal_data, str(current_user.id))
+    deal = await service.create_deal(deal_data, str(current_user.id))
+    if deal.status == "active":
+        await matcher.notify_matching_alerts(deal)
+    return deal
 
 
 @router.put("/admin/{deal_id}", response_model=DealDetailResponse)
@@ -149,11 +162,14 @@ async def update_deal(
     deal_id: str,
     deal_in: DealUpdate,
     service: DealService = Depends(get_deal_service),
+    matcher: AlertMatcher = Depends(get_alert_matcher),
     _auth=Depends(require_admin)
 ):
     updated = await service.update_deal(deal_id, deal_in.model_dump(exclude_unset=True))
     if not updated:
         raise HTTPException(status_code=404, detail="Deal not found")
+    # notify_matching_alerts ya comprueba internamente que status == "active"
+    await matcher.notify_matching_alerts(updated)
     return updated
 
 

@@ -17,6 +17,7 @@ from app.modules.stores.api.router import router as stores_router
 from app.modules.users.api.router import router as auth_router
 from app.modules.telegram.api.router import router as telegram_router
 from app.modules.alerts.api.router import router as alerts_router
+from app.modules.notifications.api.router import router as notifications_router
 
 settings = get_settings()
 configure_logging(settings.log_level)
@@ -88,6 +89,7 @@ app.include_router(deals_router)
 app.include_router(stores_router)
 app.include_router(telegram_router)
 app.include_router(alerts_router)
+app.include_router(notifications_router)
 
 
 @app.get("/health", tags=["health"])

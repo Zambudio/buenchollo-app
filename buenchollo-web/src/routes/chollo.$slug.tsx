@@ -8,7 +8,7 @@ import { Comments } from "@/components/Comments";
 import { ShareBox } from "@/components/ShareBox";
 import { useAuth } from "@/hooks/useAuth";
 import { formatPrice, formatRelativeTime } from "@/lib/format";
-import { Heart, ExternalLink, ThumbsUp, ThumbsDown, MessageSquare, AlertCircle, ChevronLeft, ChevronRight, Maximize2, X } from "lucide-react";
+import { Heart, ExternalLink, ThumbsUp, ThumbsDown, MessageSquare, AlertCircle, ChevronLeft, ChevronRight, Maximize2, X, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 
@@ -402,6 +402,15 @@ function DealDetail() {
               <div className="flex items-center gap-2 border border-surface-700 px-3 py-2 font-mono text-xs">
                 <MessageSquare className="size-4" /> {commentCount}
               </div>
+              {isAdmin && (
+                <Link
+                  to="/admin/chollos"
+                  search={{ edit: deal.id }}
+                  className="flex items-center gap-2 border border-amber-500/50 text-amber-400 px-3 py-2 font-mono text-xs hover:border-amber-400 hover:bg-amber-400/10 transition-colors"
+                >
+                  <Pencil className="size-4" /> EDITAR
+                </Link>
+              )}
             </div>
 
             {deal.description && (
