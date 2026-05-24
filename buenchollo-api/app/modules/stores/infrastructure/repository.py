@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, text
 from app.modules.stores.domain.models import Store
 
 
@@ -10,6 +10,24 @@ class StoreRepository:
     async def get_all_active(self) -> list[Store]:
         result = await self.session.execute(
             select(Store).where(Store.is_active == True).order_by(Store.name)
+        )
+        return list(result.scalars().all())
+
+    async def get_with_active_deals(self) -> list[Store]:
+        """Solo tiendas activas que tienen al menos un deal activo."""
+        result = await self.session.execute(
+            select(Store)
+            .where(
+                Store.is_active == True,
+                text(
+                    "EXISTS ("
+                    "  SELECT 1 FROM deals"
+                    "  WHERE deals.status = 'active'"
+                    "  AND deals.store_id = stores.id"
+                    ")"
+                ),
+            )
+            .order_by(Store.name)
         )
         return list(result.scalars().all())
 

@@ -52,15 +52,27 @@ class OpenAIAssistant:
         today = datetime.now().strftime("%Y-%m-%d")
         prompt = f"""
         Eres un copywriter de ventas para "BuenCholloTech". Hoy es {today}.
-        Genera un JSON con:
-        1. 'short_description': Un eslogan corto con un emoji (máx 10 palabras).
-        2. 'long_description': Descripción en Markdown con negritas y puntos (•).
-        3. 'telegram_text': Post para Telegram con emojis.
-        
+        Genera un JSON con exactamente estos tres campos:
+
+        1. "short_description": eslogan corto y directo (máx 10 palabras, sin emojis). Ej: "El portátil gaming más potente del mercado".
+
+        2. "long_description": descripción detallada para la web en Markdown.
+           Usa negritas (**texto**) y puntos con bullet (•) para destacar características.
+           Máximo 5-6 puntos clave.
+
+        3. "telegram_description": texto corto y directo para un canal de Telegram de chollos.
+           Máximo 2-3 líneas. Sin markdown, sin bullets, sin listas.
+           Empieza con el beneficio principal. Estilo persuasivo y conciso.
+           Ejemplo: "Ventilador de cuello sin aspas con flujo de 360°. Silencioso, ligero y recargable por USB. Perfecto para el verano."
+
         PRODUCTO: {product.title}
         INFO: {product.description}
         """
-        return self._ask_json(prompt)
+        result = self._ask_json(prompt)
+        # Normalizar: el campo que genera la IA puede llamarse telegram_description o telegram_text
+        if "telegram_description" in result and "telegram_text" not in result:
+            result["telegram_text"] = result.pop("telegram_description")
+        return result
 
     def _get_categorization(self, title: str, categories_prompt: str) -> dict:
         prompt = f"""

@@ -43,7 +43,8 @@ function AdminDeals() {
 
   function empty() {
     return { title: "", short_description: "", description: "", image_url: "", images: [] as string[], current_price: "", previous_price: "",
-      shipping_info: "", affiliate_url: "", store_id: "", category_id: "", subcategory_id: "", brand: "", status: "active", expires_at: "", scheduled_for: "" };
+      shipping_info: "", affiliate_url: "", store_id: "", category_id: "", subcategory_id: "", brand: "", status: "active", expires_at: "", scheduled_for: "",
+      external_id: "", show_keepa_chart: false };
   }
 
   const load = () => {
@@ -82,6 +83,8 @@ function AdminDeals() {
       scheduled_for: d.scheduled_for ? d.scheduled_for.slice(0, 16) : "",
       images: d.images ?? [],
       subcategory_id: d.subcategory_id ?? "",
+      external_id: d.external_id ?? "",
+      show_keepa_chart: d.show_keepa_chart ?? false,
     });
     setShowForm(true);
   };
@@ -126,6 +129,8 @@ function AdminDeals() {
         subcategory_id: d.subcategory_id ?? f.subcategory_id,
         expires_at: d.expires_at ? d.expires_at.slice(0, 16) : f.expires_at,
         telegram_text: d.telegram_text ?? f.telegram_text,
+        external_id: d.asin || f.external_id,
+        show_keepa_chart: !!d.asin || f.show_keepa_chart,
       });
       setForm(updatedForm);
 
@@ -139,7 +144,7 @@ function AdminDeals() {
         current_price: d.current_price != null ? String(d.current_price) : "",
         previous_price: d.original_price != null ? String(d.original_price) : "",
         short_description: d.short_description || "",
-        description: d.long_description || "",
+        telegram_text: d.telegram_text || "",
         affiliate_url: url,
         expires_at: d.expires_at ? d.expires_at.slice(0, 16) : "",
         images: allImages,
@@ -164,7 +169,7 @@ function AdminDeals() {
       discount_percentage: data.previous_price && data.current_price
         ? Math.round((1 - parseFloat(data.current_price) / parseFloat(data.previous_price)) * 100)
         : null,
-      description: data.description || data.short_description || null,
+      description: data.telegram_text || data.short_description || null,
       affiliate_url: data.affiliate_url || "",
       expires_at: data.expires_at ? new Date(data.expires_at).toISOString() : null,
       images: allImages,
@@ -201,6 +206,8 @@ function AdminDeals() {
       expires_at: form.expires_at ? new Date(form.expires_at).toISOString() : null,
       scheduled_for: form.status === "scheduled" && form.scheduled_for ? new Date(form.scheduled_for).toISOString() : null,
       published_at: form.status === "active" && !editing ? new Date().toISOString() : undefined,
+      external_id: form.external_id || null,
+      show_keepa_chart: form.show_keepa_chart,
     };
     if (payload.published_at === undefined) delete payload.published_at;
     let savedDeal: any = null;
@@ -394,6 +401,24 @@ function AdminDeals() {
               <option value="draft">Borrador</option>
             </select>
           </div>
+          <div className="flex items-center gap-3 bg-surface-900 border border-surface-600 px-3 py-2.5">
+            <input
+              placeholder="ASIN de Amazon (para gráfica de precios)"
+              value={form.external_id}
+              onChange={(e) => setForm({ ...form, external_id: e.target.value })}
+              className="flex-1 bg-transparent font-mono text-xs outline-none text-foreground placeholder:text-muted-foreground"
+            />
+            <label className="flex items-center gap-2 font-mono text-xs text-muted-foreground whitespace-nowrap cursor-pointer select-none shrink-0">
+              <input
+                type="checkbox"
+                checked={form.show_keepa_chart}
+                onChange={(e) => setForm({ ...form, show_keepa_chart: e.target.checked })}
+                className="accent-cyan-500"
+              />
+              Mostrar gráfica Keepa
+            </label>
+          </div>
+
           <div className="grid sm:grid-cols-2 gap-3">
             <label className="block">
               <span className="font-mono text-[10px] uppercase text-muted-foreground block mb-1">Caduca el (opcional)</span>

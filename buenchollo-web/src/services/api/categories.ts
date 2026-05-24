@@ -13,6 +13,9 @@ export const categoriesService = {
   /** Obtiene todas las categorías principales activas */
   getAll: (): Promise<Category[]> => apiClient.get<Category[]>("/categories"),
 
+  /** Solo categorías con al menos un deal activo (para el drawer) */
+  getWithDeals: (): Promise<Category[]> => apiClient.get<Category[]>("/categories?has_deals=true"),
+
   /** Obtiene una categoría por su slug */
   getBySlug: (slug: string): Promise<Category> => apiClient.get<Category>(`/categories/${slug}`),
 

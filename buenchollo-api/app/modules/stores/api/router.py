@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.security import require_admin
@@ -14,7 +14,13 @@ def get_store_repository(db: AsyncSession = Depends(get_db)) -> StoreRepository:
 
 
 @router.get("", response_model=list[StoreResponse])
-async def list_stores(repo: StoreRepository = Depends(get_store_repository)):
+async def list_stores(
+    has_deals: bool = Query(False),
+    repo: StoreRepository = Depends(get_store_repository),
+):
+    """Con has_deals=true solo devuelve tiendas con deals activos."""
+    if has_deals:
+        return await repo.get_with_active_deals()
     return await repo.get_all_active()
 
 

@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import String, Integer, Numeric, ForeignKey, DateTime, JSON, Uuid, SmallInteger, UniqueConstraint
+from sqlalchemy import Boolean, String, Integer, Numeric, ForeignKey, DateTime, JSON, Uuid, SmallInteger, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
@@ -42,6 +42,7 @@ class Deal(Base):
     shipping_info: Mapped[str | None] = mapped_column(String, nullable=True)
     external_id: Mapped[str | None] = mapped_column(String, nullable=True)
     duplicate_hash: Mapped[str | None] = mapped_column(String, nullable=True)
+    show_keepa_chart: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     
     # Foreign keys
     category_id: Mapped[str | None] = mapped_column(ForeignKey("categories.id", ondelete="SET NULL"), type_=Uuid(as_uuid=False), nullable=True)

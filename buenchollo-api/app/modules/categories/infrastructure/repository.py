@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, text
 from app.modules.categories.domain.models import Category
 
 class CategoryRepository:
@@ -10,6 +10,25 @@ class CategoryRepository:
     async def get_all_active(self) -> list[Category]:
         result = await self.session.execute(
             select(Category).where(Category.is_active == True).order_by(Category.display_order)
+        )
+        return list(result.scalars().all())
+
+    async def get_with_active_deals(self) -> list[Category]:
+        """Solo categorías raíz activas que tienen al menos un deal activo."""
+        result = await self.session.execute(
+            select(Category)
+            .where(
+                Category.is_active == True,
+                Category.parent_id.is_(None),
+                text(
+                    "EXISTS ("
+                    "  SELECT 1 FROM deals"
+                    "  WHERE deals.status = 'active'"
+                    "  AND deals.category_id = categories.id"
+                    ")"
+                ),
+            )
+            .order_by(Category.display_order)
         )
         return list(result.scalars().all())
 

@@ -47,6 +47,8 @@ class DealDetailResponse(DealCardResponse):
     store_id: str | None = None
     category_id: str | None = None
     subcategory_id: str | None = None
+    external_id: str | None = None
+    show_keepa_chart: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -80,6 +82,8 @@ class DealCreate(BaseModel):
     scheduled_for: datetime | None = None
     published_at: datetime | None = None
     source: str = "manual"
+    external_id: str | None = None
+    show_keepa_chart: bool = False
 
 class DealUpdate(BaseModel):
     title: str | None = None
@@ -101,3 +105,5 @@ class DealUpdate(BaseModel):
     expires_at: datetime | None = None
     scheduled_for: datetime | None = None
     published_at: datetime | None = None
+    external_id: str | None = None
+    show_keepa_chart: bool | None = None

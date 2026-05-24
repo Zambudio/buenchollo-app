@@ -276,6 +276,20 @@ function DealDetail() {
                     </div>
                   )}
 
+                  {/* Gráfica Keepa — histórico de precios */}
+                  {(deal as any).show_keepa_chart && (deal as any).external_id && (
+                    <div className="mt-3 border border-surface-700 bg-surface-900 p-3">
+                      <p className="font-mono text-[10px] uppercase text-muted-foreground mb-2">Histórico de precios</p>
+                      <img
+                        src={`https://graph.keepa.com/pricehistory.png?asin=${(deal as any).external_id}&domain=es`}
+                        alt="Histórico de precios en Amazon"
+                        className="w-full"
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+                  )}
+
                   {/* Lightbox — estilo Amazon */}
                   {lightboxOpen && (
                     <div

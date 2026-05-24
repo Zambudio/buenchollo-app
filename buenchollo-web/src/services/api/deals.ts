@@ -21,6 +21,8 @@ export interface DealDetailData extends DealCardData {
   votes_down: number;
   click_count: number;
   subcategory?: { name: string; slug: string } | null;
+  external_id?: string | null;
+  show_keepa_chart?: boolean;
 }
 
 export const dealsService = {
@@ -45,7 +47,8 @@ export const dealsService = {
     if (params?.limit != null) queryParams.append("limit", params.limit.toString());
     if (params?.offset != null && params.offset > 0) queryParams.append("offset", params.offset.toString());
     const qs = queryParams.toString();
-    return apiClient.get<DealCardData[]>(`/deals${qs ? `?${qs}` : ''}`);
+    const url = qs ? `/deals?${qs}` : "/deals";
+    return apiClient.get<DealCardData[]>(url);
   },
 
   // --- ADMIN ENDPOINTS ---

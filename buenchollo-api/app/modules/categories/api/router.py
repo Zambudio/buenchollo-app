@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.modules.categories.infrastructure.repository import CategoryRepository
@@ -13,11 +13,13 @@ def get_category_repository(db: AsyncSession = Depends(get_db)) -> CategoryRepos
 
 @router.get("", response_model=list[CategoryResponse])
 async def list_categories(
-    repo: CategoryRepository = Depends(get_category_repository)
+    has_deals: bool = Query(False),
+    repo: CategoryRepository = Depends(get_category_repository),
 ) -> list[CategoryResponse]:
-    """Retrieve all active categories."""
-    categories = await repo.get_all_active()
-    return categories
+    """Retrieve active categories. Con has_deals=true solo devuelve las que tienen deals activos."""
+    if has_deals:
+        return await repo.get_with_active_deals()
+    return await repo.get_all_active()
 
 @router.get("/{slug}", response_model=CategoryResponse)
 async def get_category_by_slug(

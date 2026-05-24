@@ -28,10 +28,10 @@ export function CategoriesDrawer({ open, onClose }: Props) {
 
   useEffect(() => {
     if (!open || loaded) return;
-    Promise.all([categoriesService.getAll(), storesService.getAll()])
+    Promise.all([categoriesService.getWithDeals(), storesService.getWithDeals()])
       .then(([cats, sts]) => {
-        setCategories(cats.filter((c: any) => !c.parent_id));
-        setStores(sts.filter(s => s.is_active));
+        setCategories(cats);
+        setStores(sts);
         setLoaded(true);
       })
       .catch(console.error);
