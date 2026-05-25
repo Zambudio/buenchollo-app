@@ -1,30 +1,48 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { formatRelativeTime } from "@/lib/format";
+import { adminUsersApi, type AdminUserItem } from "@/services/api/auth";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/usuarios")({ component: AdminUsers });
 
 function AdminUsers() {
-  const [profiles, setProfiles] = useState<any[]>([]);
+  const [users, setUsers] = useState<AdminUserItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    supabase.from("profiles").select("*, roles:user_roles(role)").order("created_at", { ascending: false }).limit(200)
-      .then(({ data }) => setProfiles(data ?? []));
+    adminUsersApi.list()
+      .then(setUsers)
+      .catch(() => toast.error("No se pudieron cargar los usuarios"))
+      .finally(() => setLoading(false));
   }, []);
+
   return (
     <div>
-      <h2 className="font-mono text-sm uppercase text-cyan-glow mb-4">Usuarios ({profiles.length})</h2>
+      <h2 className="font-mono text-sm uppercase text-cyan-glow mb-4">Usuarios ({users.length})</h2>
       <div className="bg-surface-800 border border-surface-700 overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="border-b border-surface-700 font-mono text-xs uppercase text-muted-foreground">
-            <tr><th className="text-left p-3">Nombre</th><th className="text-left p-3">Roles</th><th className="text-left p-3">Registro</th></tr>
+            <tr>
+              <th className="text-left p-3">Nombre</th>
+              <th className="text-left p-3">Roles</th>
+              <th className="text-left p-3">Registro</th>
+            </tr>
           </thead>
           <tbody>
-            {profiles.map(p => (
-              <tr key={p.id} className="border-b border-surface-700/50">
-                <td className="p-3">{p.display_name ?? "—"}</td>
-                <td className="p-3 font-mono text-xs">{(p.roles ?? []).map((r: any) => r.role).join(", ") || "user"}</td>
-                <td className="p-3 text-muted-foreground font-mono text-xs">{formatRelativeTime(p.created_at)}</td>
+            {loading && (
+              <tr><td colSpan={3} className="p-3 font-mono text-xs text-muted-foreground">Cargando...</td></tr>
+            )}
+            {!loading && users.length === 0 && (
+              <tr><td colSpan={3} className="p-3 font-mono text-xs text-muted-foreground">Sin usuarios.</td></tr>
+            )}
+            {users.map(u => (
+              <tr key={u.user_id} className="border-b border-surface-700/50">
+                <td className="p-3">{u.display_name ?? u.username ?? "—"}</td>
+                <td className="p-3 font-mono text-xs">{u.roles.length > 0 ? u.roles.join(", ") : "user"}</td>
+                <td className="p-3 text-muted-foreground font-mono text-xs">
+                  {u.created_at ? formatRelativeTime(u.created_at) : "—"}
+                </td>
               </tr>
             ))}
           </tbody>
