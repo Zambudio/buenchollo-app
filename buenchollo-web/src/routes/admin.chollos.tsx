@@ -10,6 +10,7 @@ import { categoriesService, type Category } from "@/services/api/categories";
 import { storesService, type Store } from "@/services/api/stores";
 import { productsApi, type AmazonPreviewResponse } from "@/services/api/products";
 import { formatPrice, formatRelativeTime, slugify } from "@/lib/format";
+import { errorMessage } from "@/lib/errors";
 import { Plus, Trash2, Edit3, Upload, X, GripVertical, Wand2, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -92,10 +93,6 @@ function dealToForm(d: DealDetailData): DealForm {
     external_id: d.external_id ?? "",
     show_keepa_chart: d.show_keepa_chart ?? false,
   };
-}
-
-function errorMessage(e: unknown): string {
-  return e instanceof Error ? e.message : "Error desconocido";
 }
 
 function AdminDeals() {

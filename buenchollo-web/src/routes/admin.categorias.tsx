@@ -1,21 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { categoriesService } from "@/services/api/categories";
+import { categoriesService, type Category } from "@/services/api/categories";
 import { slugify } from "@/lib/format";
+import { errorMessage } from "@/lib/errors";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/categorias")({ component: AdminCategories });
 
 function AdminCategories() {
-  const [cats, setCats] = useState<any[]>([]);
+  const [cats, setCats] = useState<Category[]>([]);
   const [name, setName] = useState("");
   const [parentId, setParentId] = useState("");
 
   const load = () => {
     categoriesService.getAdminAll()
       .then(setCats)
-      .catch((err) => toast.error(err.message));
+      .catch((err: unknown) => toast.error(errorMessage(err)));
   };
   useEffect(() => { load(); }, []);
 
@@ -34,8 +35,8 @@ function AdminCategories() {
       toast.success("Creada");
       setName("");
       load();
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(errorMessage(error));
     }
   };
   const remove = async (id: string) => {
@@ -43,8 +44,8 @@ function AdminCategories() {
     try {
       await categoriesService.delete(id);
       load();
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(errorMessage(error));
     }
   };
 

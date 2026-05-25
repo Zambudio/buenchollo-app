@@ -8,6 +8,7 @@ import { Comments } from "@/components/Comments";
 import { ShareBox } from "@/components/ShareBox";
 import { useAuth } from "@/hooks/useAuth";
 import { formatPrice, formatRelativeTime } from "@/lib/format";
+import { errorMessage } from "@/lib/errors";
 import { Heart, ExternalLink, ThumbsUp, ThumbsDown, MessageSquare, AlertCircle, ChevronLeft, ChevronRight, Maximize2, X, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
@@ -137,8 +138,8 @@ function DealDetail() {
       const result = await dealsService.vote(deal.id, v as 1 | -1);
       setMyVote(result.my_vote);
       setDeal((d: any) => ({ ...d, temperature: result.temperature, votes_up: result.votes_up, votes_down: result.votes_down }));
-    } catch (e: any) {
-      toast.error(e?.message ?? "Error al votar");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "Error al votar"));
     } finally {
       setVotingLoading(false);
     }
@@ -150,8 +151,8 @@ function DealDetail() {
     try {
       const result = await favoritesApi.toggle(deal.id);
       setFav(result.is_favorited);
-    } catch (e: any) {
-      toast.error(e?.message ?? "Error al guardar el favorito");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "Error al guardar el favorito"));
     }
   };
 

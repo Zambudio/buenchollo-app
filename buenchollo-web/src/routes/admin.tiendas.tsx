@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { storesService, type Store, type StoreCreate } from "@/services/api/stores";
 import { slugify } from "@/lib/format";
+import { errorMessage } from "@/lib/errors";
 import { Plus, Pencil, Trash2, X, Check } from "lucide-react";
 import { toast } from "sonner";
 
@@ -14,7 +15,7 @@ function AdminStores() {
   const [form, setForm] = useState<StoreCreate>({ name: "", slug: "", domain: "", logo_url: "", affiliate_id: "", affiliate_url_template: "", is_active: true });
   const [editing, setEditing] = useState<Store | null>(null);
 
-  const load = () => storesService.getAdminAll().then(setStores).catch(e => toast.error(e.message));
+  const load = () => storesService.getAdminAll().then(setStores).catch((e: unknown) => toast.error(errorMessage(e)));
   useEffect(() => { load(); }, []);
 
   const handleNameChange = (name: string) => {
@@ -29,7 +30,7 @@ function AdminStores() {
       toast.success("Tienda creada");
       setForm({ name: "", slug: "", domain: "", logo_url: "", affiliate_id: "", affiliate_url_template: "", is_active: true });
       load();
-    } catch (e: any) { toast.error(e.message); }
+    } catch (e: unknown) { toast.error(errorMessage(e)); }
   };
 
   const save = async () => {
@@ -47,7 +48,7 @@ function AdminStores() {
       toast.success("Guardado");
       setEditing(null);
       load();
-    } catch (e: any) { toast.error(e.message); }
+    } catch (e: unknown) { toast.error(errorMessage(e)); }
   };
 
   const remove = async (id: string) => {
@@ -55,7 +56,7 @@ function AdminStores() {
     try {
       await storesService.delete(id);
       load();
-    } catch (e: any) { toast.error(e.message); }
+    } catch (e: unknown) { toast.error(errorMessage(e)); }
   };
 
   return (
