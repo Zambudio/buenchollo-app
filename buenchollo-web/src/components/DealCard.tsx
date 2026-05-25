@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Heart, Flame } from "lucide-react";
 import { formatPrice, formatRelativeTime } from "@/lib/format";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { favoritesApi } from "@/services/api/deals";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -49,14 +49,14 @@ export function DealCard({ deal, isFavorite: initialFav = false }: { deal: DealC
       return;
     }
     setLoading(true);
-    if (fav) {
-      await supabase.from("favorites").delete().eq("user_id", user.id).eq("deal_id", deal.id);
-      setFav(false);
-    } else {
-      const { error } = await supabase.from("favorites").insert({ user_id: user.id, deal_id: deal.id });
-      if (error && error.code !== "23505") toast.error("No se pudo guardar"); else setFav(true);
+    try {
+      const { is_favorited } = await favoritesApi.toggle(deal.id);
+      setFav(is_favorited);
+    } catch {
+      toast.error("No se pudo actualizar el favorito");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const tempColor = deal.temperature >= 200 ? "text-alert-red" : deal.temperature >= 100 ? "text-cyan-glow" : "text-muted-foreground";

@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
+import { authApi } from "@/services/api/auth";
 
 interface AuthContextValue {
   user: User | null;
@@ -19,35 +20,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const refreshAdmin = async (sess: Session | null) => {
+      if (!sess?.user) {
+        setIsAdmin(false);
+        return;
+      }
+      try {
+        const me = await authApi.me();
+        setIsAdmin(me.is_admin);
+      } catch {
+        setIsAdmin(false);
+      }
+    };
+
     // 1) Listener primero
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sess) => {
       setSession(sess);
       setUser(sess?.user ?? null);
-      if (sess?.user) {
-        // diferimos consulta de rol
-        setTimeout(async () => {
-          const { data } = await supabase
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", sess.user.id)
-            .eq("role", "admin")
-            .maybeSingle();
-          setIsAdmin(!!data);
-        }, 0);
-      } else {
-        setIsAdmin(false);
-      }
+      // diferimos para evitar carreras con el cliente HTTP
+      setTimeout(() => { void refreshAdmin(sess); }, 0);
     });
 
     // 2) Sesión existente
     supabase.auth.getSession().then(({ data: { session: sess } }) => {
       setSession(sess);
       setUser(sess?.user ?? null);
-      if (sess?.user) {
-        supabase.from("user_roles").select("role").eq("user_id", sess.user.id).eq("role", "admin").maybeSingle()
-          .then(({ data }) => setIsAdmin(!!data));
-      }
-      setLoading(false);
+      void refreshAdmin(sess).finally(() => setLoading(false));
     });
 
     return () => subscription.unsubscribe();

@@ -1,26 +1,9 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { formatRelativeTime } from "@/lib/format";
+import { commentsApi, type CommentItem } from "@/services/api/comments";
 import { ArrowUp, ArrowDown, MessageSquare, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-
-interface CommentRow {
-  id: string;
-  deal_id: string;
-  user_id: string;
-  parent_id: string | null;
-  content: string;
-  created_at: string;
-  votes_up: number;
-  votes_down: number;
-}
-
-interface ProfileLite {
-  user_id: string;
-  display_name: string | null;
-  avatar_url: string | null;
-}
 
 interface Props {
   dealId: string;
@@ -29,9 +12,7 @@ interface Props {
 
 export function Comments({ dealId, onCountChange }: Props) {
   const { user } = useAuth();
-  const [comments, setComments] = useState<CommentRow[]>([]);
-  const [profiles, setProfiles] = useState<Record<string, ProfileLite>>({});
-  const [myVotes, setMyVotes] = useState<Record<string, number>>({});
+  const [comments, setComments] = useState<CommentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<string | null>(null);
@@ -39,40 +20,14 @@ export function Comments({ dealId, onCountChange }: Props) {
 
   const load = async () => {
     setLoading(true);
-    const { data: cmts } = await supabase
-      .from("deal_comments")
-      .select("id,deal_id,user_id,parent_id,content,created_at,votes_up,votes_down")
-      .eq("deal_id", dealId)
-      .order("created_at", { ascending: true });
-    const list = (cmts ?? []) as CommentRow[];
-    setComments(list);
-
-    const userIds = [...new Set(list.map((c) => c.user_id))];
-    if (userIds.length > 0) {
-      const { data: profs } = await supabase
-        .from("profiles")
-        .select("user_id, display_name, avatar_url")
-        .in("user_id", userIds);
-      const map: Record<string, ProfileLite> = {};
-      (profs ?? []).forEach((p: any) => (map[p.user_id] = p));
-      setProfiles(map);
-    } else {
-      setProfiles({});
+    try {
+      const list = await commentsApi.list(dealId, !!user);
+      setComments(list);
+    } catch {
+      toast.error("No se pudieron cargar los comentarios");
+    } finally {
+      setLoading(false);
     }
-
-    if (user && list.length > 0) {
-      const { data: votes } = await supabase
-        .from("comment_votes")
-        .select("comment_id,vote")
-        .eq("user_id", user.id)
-        .in("comment_id", list.map((c) => c.id));
-      const vm: Record<string, number> = {};
-      (votes ?? []).forEach((v: any) => (vm[v.comment_id] = v.vote));
-      setMyVotes(vm);
-    } else {
-      setMyVotes({});
-    }
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -90,19 +45,15 @@ export function Comments({ dealId, onCountChange }: Props) {
       toast.error("Comentario demasiado corto");
       return false;
     }
-    const { error } = await supabase.from("deal_comments").insert({
-      deal_id: dealId,
-      user_id: user.id,
-      parent_id: parentId,
-      content: trimmed.slice(0, 1000),
-    });
-    if (error) {
+    try {
+      await commentsApi.create(dealId, trimmed.slice(0, 1000), parentId);
+      await load();
+      onCountChange?.();
+      return true;
+    } catch {
       toast.error("Error al comentar");
       return false;
     }
-    await load();
-    onCountChange?.();
-    return true;
   };
 
   const vote = async (commentId: string, value: 1 | -1) => {
@@ -110,35 +61,32 @@ export function Comments({ dealId, onCountChange }: Props) {
       toast.error("Inicia sesión para votar");
       return;
     }
-    const current = myVotes[commentId] ?? 0;
-    if (current === value) {
-      await supabase.from("comment_votes").delete().eq("comment_id", commentId).eq("user_id", user.id);
-    } else {
-      await supabase
-        .from("comment_votes")
-        .upsert({ comment_id: commentId, user_id: user.id, vote: value }, { onConflict: "comment_id,user_id" });
+    try {
+      await commentsApi.vote(commentId, value);
+      await load();
+    } catch {
+      toast.error("No se pudo registrar el voto");
     }
-    await load();
   };
 
   const remove = async (commentId: string, ownerId: string) => {
     if (!user || user.id !== ownerId) return;
     if (!confirm("¿Eliminar este comentario?")) return;
-    const { error } = await supabase.from("deal_comments").delete().eq("id", commentId);
-    if (error) {
+    try {
+      await commentsApi.remove(commentId);
+      await load();
+      onCountChange?.();
+    } catch {
       toast.error("Error al eliminar");
-      return;
     }
-    await load();
-    onCountChange?.();
   };
 
   const roots = comments.filter((c) => !c.parent_id);
   const childrenOf = (id: string) => comments.filter((c) => c.parent_id === id);
 
-  const renderComment = (c: CommentRow, depth: number) => {
-    const prof = profiles[c.user_id];
-    const my = myVotes[c.id] ?? 0;
+  const renderComment = (c: CommentItem, depth: number) => {
+    const prof = c.author;
+    const my = c.my_vote ?? 0;
     const score = (c.votes_up ?? 0) - (c.votes_down ?? 0);
     const kids = childrenOf(c.id);
     return (

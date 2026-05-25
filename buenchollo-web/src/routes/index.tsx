@@ -1,11 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Layout } from "@/components/Layout";
 import { DealCard, type DealCardData } from "@/components/DealCard";
 import { useAuth } from "@/hooks/useAuth";
 import { ArrowRight, Send, Zap } from "lucide-react";
-import { dealsService } from "@/services/api/deals";
+import { dealsService, favoritesApi } from "@/services/api/deals";
 
 const TELEGRAM_URL = "https://t.me/buenchollotech";
 const SITE = "https://buenchollotech.lovable.app";
@@ -81,8 +80,9 @@ function HomePage() {
   // Favoritos del usuario
   useEffect(() => {
     if (!user) { setFavIds(new Set()); return; }
-    supabase.from("favorites").select("deal_id").eq("user_id", user.id)
-      .then(({ data }) => setFavIds(new Set((data ?? []).map((f) => f.deal_id))));
+    favoritesApi.getFavorites()
+      .then((deals) => setFavIds(new Set(deals.map((d) => d.id))))
+      .catch(() => setFavIds(new Set()));
   }, [user]);
 
   return (
