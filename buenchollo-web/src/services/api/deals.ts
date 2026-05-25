@@ -14,6 +14,7 @@ export interface DealDetailData extends DealCardData {
   affiliate_url: string | null;
   status: string;
   expires_at: string | null;
+  scheduled_for?: string | null;
   shipping_info: string | null;
   comment_count: number;
   favorite_count: number;
@@ -21,6 +22,10 @@ export interface DealDetailData extends DealCardData {
   votes_down: number;
   click_count: number;
   subcategory?: { name: string; slug: string } | null;
+  store_id?: string | null;
+  category_id?: string | null;
+  subcategory_id?: string | null;
+  brand?: string | null;
   external_id?: string | null;
   show_keepa_chart?: boolean;
 }

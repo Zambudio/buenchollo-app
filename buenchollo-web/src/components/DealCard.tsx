@@ -17,8 +17,10 @@ export interface DealCardData {
   discount_percentage: number | null;
   temperature: number;
   published_at: string;
+  created_at?: string | null;
   status?: string;
   expires_at?: string | null;
+  scheduled_for?: string | null;
   store?: { name: string; slug: string } | null;
   category?: { name: string; slug: string } | null;
 }

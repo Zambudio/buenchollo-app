@@ -1,13 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, useRef } from "react";
-import { dealsService } from "@/services/api/deals";
-import { categoriesService } from "@/services/api/categories";
-import { storesService } from "@/services/api/stores";
+import {
+  dealsService,
+  type DealDetailData,
+  type DealCreatePayload,
+  type DealUpdatePayload,
+} from "@/services/api/deals";
+import { categoriesService, type Category } from "@/services/api/categories";
+import { storesService, type Store } from "@/services/api/stores";
+import { productsApi, type AmazonPreviewResponse } from "@/services/api/products";
 import { formatPrice, formatRelativeTime, slugify } from "@/lib/format";
 import { Plus, Trash2, Edit3, Upload, X, GripVertical, Wand2, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { TelegramPanel } from "@/components/TelegramPanel";
+import type { TelegramGenerateRequest } from "@/services/api/telegram";
 
 export const Route = createFileRoute("/admin/chollos")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -24,46 +31,107 @@ const STATUS_OPTIONS = [
   { value: "draft", label: "Borradores" },
 ];
 
+type DealStatus = "active" | "expired" | "scheduled" | "draft";
+
+/** Estado del formulario de admin. Los precios viven como string mientras el
+ *  usuario edita (los <input type="number"> trabajan con string). */
+interface DealForm {
+  title: string;
+  short_description: string;
+  description: string;
+  image_url: string;
+  images: string[];
+  current_price: string;
+  previous_price: string;
+  shipping_info: string;
+  affiliate_url: string;
+  store_id: string;
+  category_id: string;
+  subcategory_id: string;
+  brand: string;
+  status: DealStatus;
+  expires_at: string;   // datetime-local sin zona
+  scheduled_for: string; // datetime-local sin zona
+  external_id: string;
+  show_keepa_chart: boolean;
+  telegram_text?: string;
+}
+
+type TelegramPanelData = TelegramGenerateRequest & {
+  images?: string[];
+  image_url?: string | null;
+};
+
+function emptyForm(): DealForm {
+  return {
+    title: "", short_description: "", description: "", image_url: "", images: [],
+    current_price: "", previous_price: "", shipping_info: "", affiliate_url: "",
+    store_id: "", category_id: "", subcategory_id: "", brand: "", status: "active",
+    expires_at: "", scheduled_for: "", external_id: "", show_keepa_chart: false,
+  };
+}
+
+function dealToForm(d: DealDetailData): DealForm {
+  return {
+    title: d.title,
+    short_description: d.short_description ?? "",
+    description: d.description ?? "",
+    image_url: d.image_url ?? "",
+    images: d.images ?? [],
+    current_price: String(d.current_price),
+    previous_price: d.previous_price != null ? String(d.previous_price) : "",
+    shipping_info: d.shipping_info ?? "",
+    affiliate_url: d.affiliate_url ?? "",
+    store_id: d.store_id ?? "",
+    category_id: d.category_id ?? "",
+    subcategory_id: d.subcategory_id ?? "",
+    brand: d.brand ?? "",
+    status: (d.status as DealStatus) || "active",
+    expires_at: d.expires_at ? d.expires_at.slice(0, 16) : "",
+    scheduled_for: d.scheduled_for ? d.scheduled_for.slice(0, 16) : "",
+    external_id: d.external_id ?? "",
+    show_keepa_chart: d.show_keepa_chart ?? false,
+  };
+}
+
+function errorMessage(e: unknown): string {
+  return e instanceof Error ? e.message : "Error desconocido";
+}
+
 function AdminDeals() {
   const { user } = useAuth();
-  const [deals, setDeals] = useState<any[]>([]);
-  const [stores, setStores] = useState<any[]>([]);
-  const [cats, setCats] = useState<any[]>([]);
-  const [subcats, setSubcats] = useState<any[]>([]);
+  const [deals, setDeals] = useState<DealDetailData[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
+  const [cats, setCats] = useState<Category[]>([]);
+  const [subcats, setSubcats] = useState<Category[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [editing, setEditing] = useState<any>(null);
-  const [form, setForm] = useState<any>(empty());
+  const [editing, setEditing] = useState<DealDetailData | null>(null);
+  const [form, setForm] = useState<DealForm>(emptyForm);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [uploading, setUploading] = useState(false);
   const [amazonUrl, setAmazonUrl] = useState("");
   const [autofilling, setAutofilling] = useState(false);
   const [showTelegramPanel, setShowTelegramPanel] = useState(false);
-  const [telegramDealData, setTelegramDealData] = useState<any>(null);
+  const [telegramDealData, setTelegramDealData] = useState<TelegramPanelData | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  function empty() {
-    return { title: "", short_description: "", description: "", image_url: "", images: [] as string[], current_price: "", previous_price: "",
-      shipping_info: "", affiliate_url: "", store_id: "", category_id: "", subcategory_id: "", brand: "", status: "active", expires_at: "", scheduled_for: "",
-      external_id: "", show_keepa_chart: false };
-  }
-
   const load = () => {
-    dealsService.getAdminAll(statusFilter).then(setDeals).catch((err) => toast.error(err.message));
+    dealsService.getAdminAll(statusFilter)
+      .then(setDeals)
+      .catch((err: unknown) => toast.error(errorMessage(err)));
   };
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [statusFilter]);
+  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [statusFilter]);
 
   useEffect(() => {
-    Promise.all([
-      storesService.getAll(),
-      categoriesService.getAll(),
-    ]).then(([s, c]) => {
-      setStores(s || []);
-      setCats((c || []).filter((x: any) => !x.parent_id));
-      setSubcats((c || []).filter((x: any) => x.parent_id));
-    });
+    Promise.all([storesService.getAll(), categoriesService.getAll()])
+      .then(([s, c]) => {
+        setStores(s);
+        setCats(c.filter((x) => !x.parent_id));
+        setSubcats(c.filter((x) => !!x.parent_id));
+      })
+      .catch((err: unknown) => toast.error(errorMessage(err)));
   }, []);
 
-  // Auto-abrir edición si llega ?edit=<id> (desde el botón de edición rápida en el detalle del chollo)
   const { edit: editId } = Route.useSearch();
   useEffect(() => {
     if (!editId || deals.length === 0 || showForm) return;
@@ -72,20 +140,10 @@ function AdminDeals() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deals, editId]);
 
-  const startNew = () => { setEditing(null); setForm(empty()); setShowForm(true); };
-  const startEdit = (d: any) => {
+  const startNew = () => { setEditing(null); setForm(emptyForm()); setShowForm(true); };
+  const startEdit = (d: DealDetailData) => {
     setEditing(d);
-    setForm({
-      ...d,
-      current_price: String(d.current_price),
-      previous_price: d.previous_price ? String(d.previous_price) : "",
-      expires_at: d.expires_at ? d.expires_at.slice(0, 16) : "",
-      scheduled_for: d.scheduled_for ? d.scheduled_for.slice(0, 16) : "",
-      images: d.images ?? [],
-      subcategory_id: d.subcategory_id ?? "",
-      external_id: d.external_id ?? "",
-      show_keepa_chart: d.show_keepa_chart ?? false,
-    });
+    setForm(dealToForm(d));
     setShowForm(true);
   };
 
@@ -98,104 +156,114 @@ function AdminDeals() {
     }
     setAutofilling(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
-      const response = await fetch(`${apiUrl}/products/preview-from-url`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
-      });
+      const d: AmazonPreviewResponse = await productsApi.previewFromUrl(url);
+      const amazonStore = stores.find((s) => s.name.toLowerCase().includes("amazon"));
 
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.detail || "Error en la API del NAS");
-      }
-
-      const d = await response.json();
-      const amazonStore = stores.find(s => s.name.toLowerCase().includes("amazon"));
-      
-      const updatedForm = (f: any) => ({
+      setForm((f) => ({
         ...f,
-        title: d.title ?? f.title,
+        title: d.title || f.title,
         short_description: d.short_description || f.short_description,
         description: d.long_description || f.description,
-        image_url: d.image_url ?? f.image_url,
-        images: d.images && d.images.length > 0 ? d.images : (d.image_url ? [d.image_url] : f.images),
-        brand: d.brand ?? f.brand,
-        current_price: d.current_price != null ? String(d.current_price) : f.current_price,
-        previous_price: d.original_price != null ? String(d.original_price) : f.previous_price,
+        image_url: d.image_url || f.image_url,
+        images: d.images.length > 0 ? d.images : (d.image_url ? [d.image_url] : f.images),
+        brand: d.brand || f.brand,
+        current_price: d.current_price ? String(d.current_price) : f.current_price,
+        previous_price: d.original_price ? String(d.original_price) : f.previous_price,
         affiliate_url: url,
-        store_id: amazonStore?.id || f.store_id,
+        store_id: amazonStore?.id ?? f.store_id,
         category_id: d.category_id ?? f.category_id,
         subcategory_id: d.subcategory_id ?? f.subcategory_id,
         expires_at: d.expires_at ? d.expires_at.slice(0, 16) : f.expires_at,
-        telegram_text: d.telegram_text ?? f.telegram_text,
+        telegram_text: d.telegram_text || f.telegram_text,
         external_id: d.asin || f.external_id,
         show_keepa_chart: !!d.asin || f.show_keepa_chart,
-      });
-      setForm(updatedForm);
+      }));
 
       if (!showForm) { setEditing(null); setShowForm(true); }
       toast.success("Datos importados desde tu NAS");
 
-      // Abrir panel Telegram automáticamente con los datos importados
-      const allImages = d.images && d.images.length > 0 ? d.images : (d.image_url ? [d.image_url] : []);
-      openTelegramPanel({
+      const allImages = d.images.length > 0 ? d.images : (d.image_url ? [d.image_url] : []);
+      openTelegramPanelWith({
         title: d.title || "",
-        current_price: d.current_price != null ? String(d.current_price) : "",
-        previous_price: d.original_price != null ? String(d.original_price) : "",
-        short_description: d.short_description || "",
-        telegram_text: d.telegram_text || "",
+        current_price: d.current_price || 0,
+        previous_price: d.original_price || null,
+        discount_percentage: d.discount_percentage || null,
+        description: d.telegram_text || d.short_description || null,
         affiliate_url: url,
-        expires_at: d.expires_at ? d.expires_at.slice(0, 16) : "",
+        expires_at: d.expires_at,
         images: allImages,
         image_url: allImages[0] ?? null,
       });
-    } catch (e: any) {
-      toast.error("Error desde el NAS: " + e.message);
+    } catch (e: unknown) {
+      toast.error("Error desde el NAS: " + errorMessage(e));
     } finally {
       setAutofilling(false);
     }
   };
 
-  /** Abre el panel completo con los datos del formulario actual */
-  const openTelegramPanel = (source?: any) => {
-    const data = source ?? form;
-    const allImages = (data.images ?? []).filter(Boolean);
-    if (data.image_url && !allImages.includes(data.image_url)) allImages.unshift(data.image_url);
-    setTelegramDealData({
-      title: data.title || "",
-      current_price: parseFloat(data.current_price) || 0,
-      previous_price: data.previous_price ? parseFloat(data.previous_price) : null,
-      discount_percentage: data.previous_price && data.current_price
-        ? Math.round((1 - parseFloat(data.current_price) / parseFloat(data.previous_price)) * 100)
-        : null,
-      description: data.telegram_text || data.short_description || null,
-      affiliate_url: data.affiliate_url || "",
-      expires_at: data.expires_at ? new Date(data.expires_at).toISOString() : null,
-      images: allImages,
-      image_url: allImages[0] ?? null,
-    });
+  /** Abre el panel Telegram con datos ya normalizados. */
+  const openTelegramPanelWith = (data: TelegramPanelData) => {
+    setTelegramDealData(data);
     setShowTelegramPanel(true);
   };
 
-  const save = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-    // imagen principal: primera del array si existe, si no la del campo image_url
+  /** Abre el panel a partir del formulario actual. */
+  const openTelegramPanelFromForm = () => {
+    const allImages = form.images.filter(Boolean);
+    if (form.image_url && !allImages.includes(form.image_url)) allImages.unshift(form.image_url);
+    const current = parseFloat(form.current_price) || 0;
+    const previous = form.previous_price ? parseFloat(form.previous_price) : null;
+    openTelegramPanelWith({
+      title: form.title,
+      current_price: current,
+      previous_price: previous,
+      discount_percentage: previous && current
+        ? Math.round((1 - current / previous) * 100)
+        : null,
+      description: form.telegram_text || form.short_description || null,
+      affiliate_url: form.affiliate_url,
+      expires_at: form.expires_at ? new Date(form.expires_at).toISOString() : null,
+      images: allImages,
+      image_url: allImages[0] ?? null,
+    });
+  };
+
+  /** Abre el panel a partir de un deal ya guardado. */
+  const openTelegramPanelFromDeal = (d: DealDetailData) => {
+    const allImages = (d.images ?? []).filter(Boolean);
+    if (d.image_url && !allImages.includes(d.image_url)) allImages.unshift(d.image_url);
+    openTelegramPanelWith({
+      title: d.title,
+      current_price: d.current_price,
+      previous_price: d.previous_price,
+      discount_percentage: d.discount_percentage,
+      description: d.short_description || null,
+      affiliate_url: d.affiliate_url ?? "",
+      expires_at: d.expires_at,
+      images: allImages,
+      image_url: allImages[0] ?? null,
+    });
+  };
+
+  const buildPayload = (): DealCreatePayload => {
     const allImages = form.images.filter(Boolean);
     if (form.image_url && !allImages.includes(form.image_url)) allImages.unshift(form.image_url);
     const mainImage = allImages[0] ?? null;
+    const current = +form.current_price;
+    const previous = form.previous_price ? +form.previous_price : null;
 
-    const payload: any = {
+    const payload: DealCreatePayload = {
       title: form.title.slice(0, 200),
       slug: editing?.slug ?? slugify(form.title) + "-" + Date.now().toString(36),
       short_description: form.short_description?.slice(0, 300) || null,
       description: form.description || null,
       image_url: mainImage,
       images: allImages,
-      current_price: +form.current_price,
-      previous_price: form.previous_price ? +form.previous_price : null,
-      discount_percentage: form.previous_price && form.current_price ? Math.round((1 - +form.current_price / +form.previous_price) * 100) : null,
+      current_price: current,
+      previous_price: previous,
+      discount_percentage: previous && current
+        ? Math.round((1 - current / previous) * 100)
+        : null,
       shipping_info: form.shipping_info || null,
       affiliate_url: form.affiliate_url,
       store_id: form.store_id || null,
@@ -204,26 +272,35 @@ function AdminDeals() {
       brand: form.brand || null,
       status: form.status,
       expires_at: form.expires_at ? new Date(form.expires_at).toISOString() : null,
-      scheduled_for: form.status === "scheduled" && form.scheduled_for ? new Date(form.scheduled_for).toISOString() : null,
-      published_at: form.status === "active" && !editing ? new Date().toISOString() : undefined,
+      scheduled_for: form.status === "scheduled" && form.scheduled_for
+        ? new Date(form.scheduled_for).toISOString()
+        : null,
       external_id: form.external_id || null,
       show_keepa_chart: form.show_keepa_chart,
     };
-    if (payload.published_at === undefined) delete payload.published_at;
-    let savedDeal: any = null;
+    if (form.status === "active" && !editing) {
+      payload.published_at = new Date().toISOString();
+    }
+    return payload;
+  };
+
+  const save = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    const payload = buildPayload();
     try {
       if (editing) {
-        savedDeal = await dealsService.update(editing.id, payload);
+        const update: DealUpdatePayload = { ...payload };
+        await dealsService.update(editing.id, update);
         toast.success("Chollo actualizado");
       } else {
-        savedDeal = await dealsService.create({ ...payload, source: "manual" });
+        await dealsService.create({ ...payload, source: "manual" });
         toast.success("Chollo creado");
       }
-      
       setShowForm(false);
       load();
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (e: unknown) {
+      toast.error(errorMessage(e));
     }
   };
 
@@ -232,13 +309,13 @@ function AdminDeals() {
     try {
       await dealsService.delete(id);
       load();
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (e: unknown) {
+      toast.error(errorMessage(e));
     }
   };
 
   const addImageUrl = () => {
-    const url = (form.image_url || "").trim();
+    const url = form.image_url.trim();
     if (!url) return;
     if (form.images.includes(url)) { setForm({ ...form, image_url: "" }); return; }
     setForm({ ...form, images: [...form.images, url], image_url: "" });
@@ -259,14 +336,14 @@ function AdminDeals() {
       const { data: { publicUrl } } = supabase.storage.from("deal-images").getPublicUrl(path);
       newUrls.push(publicUrl);
     }
-    setForm((f: any) => ({ ...f, images: [...f.images, ...newUrls] }));
+    setForm((f) => ({ ...f, images: [...f.images, ...newUrls] }));
     setUploading(false);
     if (fileRef.current) fileRef.current.value = "";
     if (newUrls.length) toast.success(`${newUrls.length} imagen(es) subida(s)`);
   };
 
   const removeImage = (i: number) => {
-    setForm({ ...form, images: form.images.filter((_: any, idx: number) => idx !== i) });
+    setForm({ ...form, images: form.images.filter((_, idx) => idx !== i) });
   };
 
   const moveImage = (i: number, dir: -1 | 1) => {
@@ -282,7 +359,6 @@ function AdminDeals() {
 
   return (
     <div>
-      {/* Panel lateral de Telegram */}
       {showTelegramPanel && telegramDealData && (
         <TelegramPanel
           dealData={telegramDealData}
@@ -359,7 +435,7 @@ function AdminDeals() {
             </div>
             {form.images.length > 0 && (
               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
-                {form.images.map((url: string, i: number) => (
+                {form.images.map((url, i) => (
                   <div key={i} className="relative group bg-surface-900 border border-surface-700 aspect-square overflow-hidden">
                     <img src={url} alt="" className="w-full h-full object-cover" />
                     {i === 0 && <span className="absolute top-1 left-1 bg-cyan-glow text-surface-900 font-mono text-[9px] font-bold px-1">PRINCIPAL</span>}
@@ -394,7 +470,7 @@ function AdminDeals() {
               <option value="">{form.category_id ? (filteredSubcats.length ? "— Subcategoría —" : "Sin subcategorías") : "Elige categoría primero"}</option>
               {filteredSubcats.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
-            <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className={inputCls}>
+            <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as DealStatus })} className={inputCls}>
               <option value="active">Activo</option>
               <option value="expired">Caducado</option>
               <option value="scheduled">Programado</option>
@@ -437,10 +513,9 @@ function AdminDeals() {
           {form.status === "expired" && (
             <p className="font-mono text-[10px] text-alert-red">⛔ CADUCADO · Aparecerá en gris con aviso de oferta finalizada.</p>
           )}
-          {/* PUBLICAR EN TELEGRAM */}
           <button
             type="button"
-            onClick={() => openTelegramPanel()}
+            onClick={openTelegramPanelFromForm}
             className="w-full border border-cyan-glow/50 text-cyan-glow font-mono text-xs py-2 flex items-center justify-center gap-2 hover:bg-cyan-glow/10"
           >
             <Send className="size-3.5" /> 🚀 Publicar en Telegram
@@ -469,7 +544,7 @@ function AdminDeals() {
                 <td className="p-2">
                   {(d.image_url || (d.images && d.images[0])) ? (
                     <img
-                      src={d.images?.[0] ?? d.image_url}
+                      src={d.images?.[0] ?? d.image_url ?? ""}
                       alt=""
                       className="w-10 h-10 object-contain bg-white rounded-sm shrink-0"
                     />
@@ -482,19 +557,21 @@ function AdminDeals() {
                 <td className="p-3 text-right font-mono text-cyan-glow">{formatPrice(d.current_price)}</td>
                 <td className="p-3"><span className={`font-mono text-[10px] uppercase px-2 py-1 ${stCls}`}>{d.status}</span></td>
                 <td className="p-3 text-muted-foreground font-mono text-xs">
-                  {d.status === "scheduled" && d.scheduled_for ? <>📅 {new Date(d.scheduled_for).toLocaleString("es-ES")}</>
-                    : d.expires_at ? <>⏱ {new Date(d.expires_at).toLocaleString("es-ES")}</>
-                    : formatRelativeTime(d.created_at)}
+                  {d.status === "scheduled" && d.scheduled_for
+                    ? <>📅 {new Date(d.scheduled_for).toLocaleString("es-ES")}</>
+                    : d.expires_at
+                      ? <>⏱ {new Date(d.expires_at).toLocaleString("es-ES")}</>
+                      : formatRelativeTime(d.created_at ?? d.published_at ?? "")}
                 </td>
                 <td className="p-3 flex gap-1">
                   <button type="button" onClick={() => startEdit(d)} className="p-1.5 hover:text-cyan-glow" title="Editar"><Edit3 className="size-4" /></button>
-                  <button type="button" onClick={() => openTelegramPanel(d)} className="p-1.5 hover:text-cyan-glow" title="Publicar en Telegram"><Send className="size-4" /></button>
+                  <button type="button" onClick={() => openTelegramPanelFromDeal(d)} className="p-1.5 hover:text-cyan-glow" title="Publicar en Telegram"><Send className="size-4" /></button>
                   <button type="button" onClick={() => remove(d.id)} className="p-1.5 hover:text-alert-red" title="Eliminar"><Trash2 className="size-4" /></button>
                 </td>
               </tr>
               );
             })}
-            {deals.length === 0 && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground font-mono text-xs">SIN_RESULTADOS</td></tr>}
+            {deals.length === 0 && <tr><td colSpan={7} className="p-6 text-center text-muted-foreground font-mono text-xs">SIN_RESULTADOS</td></tr>}
           </tbody>
         </table>
       </div>
