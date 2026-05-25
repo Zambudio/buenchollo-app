@@ -26,6 +26,20 @@ from dotenv import load_dotenv
 env_path = Path(__file__).parent / ".env"
 load_dotenv(dotenv_path=env_path, override=True)
 
+# ── Registro completo del grafo de modelos SQLAlchemy ────────────────────────
+# Los relationship("Category"|"Store"|...) se resuelven por nombre en la
+# primera configuración del mapper. Si un test unitario importa solo Deal,
+# falla porque Category/Store nunca se registraron. Forzamos la importación
+# aquí para que tanto integración como unitarios arranquen con el grafo
+# completo.
+import app.modules.users.domain.models  # noqa: F401, E402
+import app.modules.categories.domain.models  # noqa: F401, E402
+import app.modules.stores.domain.models  # noqa: F401, E402
+import app.modules.deals.domain.models  # noqa: F401, E402
+import app.modules.alerts.domain.models  # noqa: F401, E402
+import app.modules.notifications.domain.models  # noqa: F401, E402
+import app.modules.comments.domain.models  # noqa: F401, E402
+
 # ── Fixture de cliente compartido ────────────────────────────────────────────
 import pytest
 from fastapi.testclient import TestClient
