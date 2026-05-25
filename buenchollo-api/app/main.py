@@ -76,7 +76,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     origin = request.headers.get("origin", "*")
     return JSONResponse(
         status_code=500,
-        content={"detail": str(exc)},
+        content={"detail": "Error interno del servidor"},
         headers={"Access-Control-Allow-Origin": origin, "Access-Control-Allow-Credentials": "true"},
     )
 

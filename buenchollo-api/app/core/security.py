@@ -38,7 +38,7 @@ async def get_current_user(
         logger.warning("JWT inválido o expirado: %s", str(e))
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Credenciales inválidas: {str(e)}",
+            detail="Credenciales inválidas",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -68,9 +68,9 @@ async def require_admin(
         return current_user
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error("Error al verificar rol admin para user_id=%s: %s", user_id, str(e))
+    except Exception:
+        logger.exception("Error al verificar rol admin para user_id=%s", user_id)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error al verificar privilegios de administrador: {str(e)}"
+            detail="Error al verificar privilegios de administrador",
         )
