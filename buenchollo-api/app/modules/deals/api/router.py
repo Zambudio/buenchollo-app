@@ -19,12 +19,13 @@ def get_deal_repository(db: AsyncSession = Depends(get_db)) -> DealRepository:
     return DealRepository(db)
 
 
-def get_deal_service(repo: DealRepository = Depends(get_deal_repository)) -> DealService:
-    return DealService(repo)
-
-
-def get_alert_matcher(db: AsyncSession = Depends(get_db)) -> AlertMatcher:
-    return AlertMatcher(AlertRepository(db), NotificationRepository(db))
+def get_deal_service(db: AsyncSession = Depends(get_db)) -> DealService:
+    """Construye DealService con su repo y AlertMatcher inyectado. Toda la
+    orquestación (incluida la notificación de alertas) queda en la capa de
+    aplicación; el router se limita a hablar HTTP."""
+    repo = DealRepository(db)
+    matcher = AlertMatcher(AlertRepository(db), NotificationRepository(db))
+    return DealService(repo, matcher)
 
 
 # ── Endpoints públicos ────────────────────────────────────────────────────────
@@ -147,14 +148,9 @@ async def get_all_admin_deals(
 async def create_deal(
     deal_in: DealCreate,
     service: DealService = Depends(get_deal_service),
-    matcher: AlertMatcher = Depends(get_alert_matcher),
-    current_user=Depends(require_admin)
+    current_user=Depends(require_admin),
 ):
-    deal_data = deal_in.model_dump(exclude_none=True)
-    deal = await service.create_deal(deal_data, str(current_user.id))
-    if deal.status == "active":
-        await matcher.notify_matching_alerts(deal)
-    return deal
+    return await service.create_deal(deal_in.model_dump(exclude_none=True), str(current_user.id))
 
 
 @router.put("/admin/{deal_id}", response_model=DealDetailResponse)
@@ -162,14 +158,11 @@ async def update_deal(
     deal_id: str,
     deal_in: DealUpdate,
     service: DealService = Depends(get_deal_service),
-    matcher: AlertMatcher = Depends(get_alert_matcher),
-    _auth=Depends(require_admin)
+    _auth=Depends(require_admin),
 ):
     updated = await service.update_deal(deal_id, deal_in.model_dump(exclude_unset=True))
     if not updated:
         raise HTTPException(status_code=404, detail="Deal not found")
-    # notify_matching_alerts ya comprueba internamente que status == "active"
-    await matcher.notify_matching_alerts(updated)
     return updated
 
 
