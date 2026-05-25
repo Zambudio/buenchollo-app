@@ -11,10 +11,13 @@ class CommentRepository:
         self.session = session
 
     async def list_by_deal(self, deal_id: str) -> list[DealComment]:
+        """Devuelve comentarios ordenados por score (votos_up - votos_down) DESC, y por
+        fecha de creación DESC como desempate. El frontend separa raíces e hijos."""
+        score = (DealComment.votes_up - DealComment.votes_down).label("score")
         result = await self.session.execute(
             select(DealComment)
             .where(DealComment.deal_id == deal_id)
-            .order_by(DealComment.created_at.asc())
+            .order_by(score.desc(), DealComment.created_at.desc())
         )
         return list(result.scalars().all())
 

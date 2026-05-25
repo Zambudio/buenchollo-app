@@ -18,20 +18,18 @@ export function Comments({ dealId, onCountChange }: Props) {
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
 
-  const load = async () => {
-    setLoading(true);
+  const refresh = async () => {
     try {
       const list = await commentsApi.list(dealId, !!user);
       setComments(list);
     } catch {
       toast.error("No se pudieron cargar los comentarios");
-    } finally {
-      setLoading(false);
     }
   };
 
   useEffect(() => {
-    load();
+    setLoading(true);
+    refresh().finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dealId, user?.id]);
 
@@ -47,7 +45,7 @@ export function Comments({ dealId, onCountChange }: Props) {
     }
     try {
       await commentsApi.create(dealId, trimmed.slice(0, 1000), parentId);
-      await load();
+      await refresh();
       onCountChange?.();
       return true;
     } catch {
@@ -61,11 +59,27 @@ export function Comments({ dealId, onCountChange }: Props) {
       toast.error("Inicia sesión para votar");
       return;
     }
+    // Optimista: actualiza contadores y my_vote en local antes de la red.
+    setComments((prev) => prev.map((c) => {
+      if (c.id !== commentId) return c;
+      const oldVote = c.my_vote ?? 0;
+      const newVote = oldVote === value ? 0 : value;
+      const deltaUp = (newVote === 1 ? 1 : 0) - (oldVote === 1 ? 1 : 0);
+      const deltaDown = (newVote === -1 ? 1 : 0) - (oldVote === -1 ? 1 : 0);
+      return {
+        ...c,
+        my_vote: newVote,
+        votes_up: c.votes_up + deltaUp,
+        votes_down: c.votes_down + deltaDown,
+      };
+    }));
     try {
       await commentsApi.vote(commentId, value);
-      await load();
+      // Refresco silencioso para reconciliar orden por score con el servidor.
+      await refresh();
     } catch {
       toast.error("No se pudo registrar el voto");
+      await refresh(); // rollback de la actualización optimista
     }
   };
 
@@ -74,7 +88,7 @@ export function Comments({ dealId, onCountChange }: Props) {
     if (!confirm("¿Eliminar este comentario?")) return;
     try {
       await commentsApi.remove(commentId);
-      await load();
+      await refresh();
       onCountChange?.();
     } catch {
       toast.error("Error al eliminar");
