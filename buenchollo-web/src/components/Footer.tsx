@@ -29,6 +29,12 @@ export function Footer() {
           </ul>
         </div>
         <div>
+          <h4 className="font-mono text-xs uppercase text-cyan-glow mb-3">Info</h4>
+          <ul className="space-y-2 text-muted-foreground">
+            <li><Link to="/contacto" className="hover:text-foreground">Contacto</Link></li>
+          </ul>
+        </div>
+        <div>
           <h4 className="font-mono text-xs uppercase text-cyan-glow mb-3">Aviso</h4>
           <p className="text-muted-foreground text-xs leading-relaxed">
             BuencholloTech contiene enlaces de afiliado. Si compras a través de ellos, recibimos una pequeña comisión sin coste para ti.

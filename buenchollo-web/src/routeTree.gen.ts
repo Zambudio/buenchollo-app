@@ -16,6 +16,7 @@ import { Route as NotificacionesRouteImport } from './routes/notificaciones'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as FavoritosRouteImport } from './routes/favoritos'
 import { Route as ExplorarRouteImport } from './routes/explorar'
+import { Route as ContactoRouteImport } from './routes/contacto'
 import { Route as CategoriasRouteImport } from './routes/categorias'
 import { Route as AlertasRouteImport } from './routes/alertas'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -62,6 +63,11 @@ const FavoritosRoute = FavoritosRouteImport.update({
 const ExplorarRoute = ExplorarRouteImport.update({
   id: '/explorar',
   path: '/explorar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactoRoute = ContactoRouteImport.update({
+  id: '/contacto',
+  path: '/contacto',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CategoriasRoute = CategoriasRouteImport.update({
@@ -130,6 +136,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/alertas': typeof AlertasRoute
   '/categorias': typeof CategoriasRoute
+  '/contacto': typeof ContactoRoute
   '/explorar': typeof ExplorarRoute
   '/favoritos': typeof FavoritosRoute
   '/login': typeof LoginRoute
@@ -150,6 +157,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/alertas': typeof AlertasRoute
   '/categorias': typeof CategoriasRoute
+  '/contacto': typeof ContactoRoute
   '/explorar': typeof ExplorarRoute
   '/favoritos': typeof FavoritosRoute
   '/login': typeof LoginRoute
@@ -172,6 +180,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/alertas': typeof AlertasRoute
   '/categorias': typeof CategoriasRoute
+  '/contacto': typeof ContactoRoute
   '/explorar': typeof ExplorarRoute
   '/favoritos': typeof FavoritosRoute
   '/login': typeof LoginRoute
@@ -195,6 +204,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/alertas'
     | '/categorias'
+    | '/contacto'
     | '/explorar'
     | '/favoritos'
     | '/login'
@@ -215,6 +225,7 @@ export interface FileRouteTypes {
     | '/'
     | '/alertas'
     | '/categorias'
+    | '/contacto'
     | '/explorar'
     | '/favoritos'
     | '/login'
@@ -236,6 +247,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/alertas'
     | '/categorias'
+    | '/contacto'
     | '/explorar'
     | '/favoritos'
     | '/login'
@@ -258,6 +270,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   AlertasRoute: typeof AlertasRoute
   CategoriasRoute: typeof CategoriasRoute
+  ContactoRoute: typeof ContactoRoute
   ExplorarRoute: typeof ExplorarRoute
   FavoritosRoute: typeof FavoritosRoute
   LoginRoute: typeof LoginRoute
@@ -319,6 +332,13 @@ declare module '@tanstack/react-router' {
       path: '/explorar'
       fullPath: '/explorar'
       preLoaderRoute: typeof ExplorarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contacto': {
+      id: '/contacto'
+      path: '/contacto'
+      fullPath: '/contacto'
+      preLoaderRoute: typeof ContactoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/categorias': {
@@ -431,6 +451,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   AlertasRoute: AlertasRoute,
   CategoriasRoute: CategoriasRoute,
+  ContactoRoute: ContactoRoute,
   ExplorarRoute: ExplorarRoute,
   FavoritosRoute: FavoritosRoute,
   LoginRoute: LoginRoute,
