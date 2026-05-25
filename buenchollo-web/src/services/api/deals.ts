@@ -25,6 +25,35 @@ export interface DealDetailData extends DealCardData {
   show_keepa_chart?: boolean;
 }
 
+/** Payload aceptado por POST /deals/admin. Coincide con el schema DealCreate del backend. */
+export interface DealCreatePayload {
+  title: string;
+  slug?: string | null;
+  short_description?: string | null;
+  description?: string | null;
+  image_url?: string | null;
+  images?: string[];
+  current_price: number;
+  previous_price?: number | null;
+  discount_percentage?: number | null;
+  shipping_info?: string | null;
+  affiliate_url: string;
+  store_id?: string | null;
+  category_id?: string | null;
+  subcategory_id?: string | null;
+  brand?: string | null;
+  status?: string;
+  expires_at?: string | null;
+  scheduled_for?: string | null;
+  published_at?: string | null;
+  source?: string;
+  external_id?: string | null;
+  show_keepa_chart?: boolean;
+}
+
+/** Payload aceptado por PUT /deals/admin/{id}. Todos los campos opcionales (parcial). */
+export type DealUpdatePayload = Partial<DealCreatePayload>;
+
 export const dealsService = {
   /** Obtiene los chollos más recientes */
   getLatest: (limit = 8): Promise<DealCardData[]> => 
@@ -62,11 +91,11 @@ export const dealsService = {
   },
 
   /** Crea un nuevo chollo */
-  create: (data: any): Promise<DealDetailData> => 
+  create: (data: DealCreatePayload): Promise<DealDetailData> =>
     apiClient.post<DealDetailData>(`/deals/admin`, data),
 
   /** Actualiza un chollo existente */
-  update: (id: string, data: any): Promise<DealDetailData> => 
+  update: (id: string, data: DealUpdatePayload): Promise<DealDetailData> =>
     apiClient.put<DealDetailData>(`/deals/admin/${id}`, data),
 
   /** Elimina un chollo */

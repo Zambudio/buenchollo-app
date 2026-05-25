@@ -1,14 +1,39 @@
 import { supabase } from "@/integrations/supabase/client";
 
-// Obtenemos la URL de la API desde las variables de entorno
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
+interface ApiErrorDetail {
+  loc: (string | number)[];
+  msg: string;
+}
+
+function isValidationError(detail: unknown): detail is ApiErrorDetail[] {
+  return Array.isArray(detail) && detail.every(
+    (d) => d !== null && typeof d === "object" && "loc" in d && "msg" in d,
+  );
+}
+
+async function extractErrorMessage(response: Response): Promise<string> {
+  const fallback = `API Error: ${response.status} ${response.statusText}`;
+  try {
+    const data = (await response.json()) as { detail?: unknown };
+    const detail = data?.detail;
+    if (typeof detail === "string") return detail;
+    if (isValidationError(detail)) {
+      return detail.map((d) => `${d.loc.join(".")}: ${d.msg}`).join(", ");
+    }
+    if (detail != null) return JSON.stringify(detail);
+    return fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 async function fetchWithAuth<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_URL}${endpoint}`;
-  
-  // Obtenemos la sesión actual de Supabase para adjuntar el JWT
+
   const { data: { session } } = await supabase.auth.getSession();
-  
+
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...(options.headers as Record<string, string>),
@@ -18,60 +43,35 @@ async function fetchWithAuth<T>(endpoint: string, options: RequestInit = {}): Pr
     headers["Authorization"] = `Bearer ${session.access_token}`;
   }
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
+  const response = await fetch(url, { ...options, headers });
 
   if (!response.ok) {
-    let errorMessage = `API Error: ${response.status} ${response.statusText}`;
-    try {
-      const errorData = await response.json();
-      if (errorData && errorData.detail) {
-        if (typeof errorData.detail === "string") {
-          errorMessage = errorData.detail;
-        } else if (Array.isArray(errorData.detail)) {
-          errorMessage = errorData.detail.map((err: any) => `${err.loc.join(".")}: ${err.msg}`).join(", ");
-        } else {
-          errorMessage = JSON.stringify(errorData.detail);
-        }
-      }
-    } catch (e) {
-      // Ignore if not JSON
-    }
-    throw new Error(errorMessage);
+    throw new Error(await extractErrorMessage(response));
   }
 
-  // Handle empty responses
   const text = await response.text();
-  return text ? JSON.parse(text) : (null as any);
+  if (!text) return undefined as T;
+  return JSON.parse(text) as T;
 }
 
 export const apiClient = {
-  get: async <T>(endpoint: string, options?: RequestInit): Promise<T> => {
-    return fetchWithAuth<T>(endpoint, options);
-  },
+  get: <T>(endpoint: string, options?: RequestInit): Promise<T> =>
+    fetchWithAuth<T>(endpoint, options),
 
-  post: async <T>(endpoint: string, data: any, options?: RequestInit): Promise<T> => {
-    return fetchWithAuth<T>(endpoint, {
+  post: <T, B = unknown>(endpoint: string, data: B, options?: RequestInit): Promise<T> =>
+    fetchWithAuth<T>(endpoint, {
       ...options,
       method: "POST",
       body: JSON.stringify(data),
-    });
-  },
+    }),
 
-  put: async <T>(endpoint: string, data: any, options?: RequestInit): Promise<T> => {
-    return fetchWithAuth<T>(endpoint, {
+  put: <T, B = unknown>(endpoint: string, data: B, options?: RequestInit): Promise<T> =>
+    fetchWithAuth<T>(endpoint, {
       ...options,
       method: "PUT",
       body: JSON.stringify(data),
-    });
-  },
+    }),
 
-  delete: async <T>(endpoint: string, options?: RequestInit): Promise<T> => {
-    return fetchWithAuth<T>(endpoint, {
-      ...options,
-      method: "DELETE",
-    });
-  },
+  delete: <T = void>(endpoint: string, options?: RequestInit): Promise<T> =>
+    fetchWithAuth<T>(endpoint, { ...options, method: "DELETE" }),
 };
