@@ -9,8 +9,9 @@ import {
 import { categoriesService, type Category } from "@/services/api/categories";
 import { storesService, type Store } from "@/services/api/stores";
 import { productsApi, type AmazonPreviewResponse } from "@/services/api/products";
-import { formatPrice, formatRelativeTime, slugify } from "@/lib/format";
+import { formatPrice, formatRelativeTime, slugify, calculateDiscount, toDatetimeLocal } from "@/lib/format";
 import { errorMessage } from "@/lib/errors";
+import { DEAL_STATUS_OPTIONS } from "@/lib/constants";
 import { Plus, Trash2, Edit3, Upload, X, GripVertical, Wand2, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -23,14 +24,6 @@ export const Route = createFileRoute("/admin/chollos")({
   }),
   component: AdminDeals,
 });
-
-const STATUS_OPTIONS = [
-  { value: "all", label: "Todos" },
-  { value: "active", label: "Activos" },
-  { value: "scheduled", label: "Programados" },
-  { value: "expired", label: "Caducados" },
-  { value: "draft", label: "Borradores" },
-];
 
 type DealStatus = "active" | "expired" | "scheduled" | "draft";
 
@@ -88,8 +81,8 @@ function dealToForm(d: DealDetailData): DealForm {
     subcategory_id: d.subcategory_id ?? "",
     brand: d.brand ?? "",
     status: (d.status as DealStatus) || "active",
-    expires_at: d.expires_at ? d.expires_at.slice(0, 16) : "",
-    scheduled_for: d.scheduled_for ? d.scheduled_for.slice(0, 16) : "",
+    expires_at: toDatetimeLocal(d.expires_at),
+    scheduled_for: toDatetimeLocal(d.scheduled_for),
     external_id: d.external_id ?? "",
     show_keepa_chart: d.show_keepa_chart ?? false,
   };
@@ -170,7 +163,7 @@ function AdminDeals() {
         store_id: amazonStore?.id ?? f.store_id,
         category_id: d.category_id ?? f.category_id,
         subcategory_id: d.subcategory_id ?? f.subcategory_id,
-        expires_at: d.expires_at ? d.expires_at.slice(0, 16) : f.expires_at,
+        expires_at: d.expires_at ? toDatetimeLocal(d.expires_at) : f.expires_at,
         telegram_text: d.telegram_text || f.telegram_text,
         external_id: d.asin || f.external_id,
         show_keepa_chart: !!d.asin || f.show_keepa_chart,
@@ -214,9 +207,7 @@ function AdminDeals() {
       title: form.title,
       current_price: current,
       previous_price: previous,
-      discount_percentage: previous && current
-        ? Math.round((1 - current / previous) * 100)
-        : null,
+      discount_percentage: calculateDiscount(current, previous),
       description: form.telegram_text || form.short_description || null,
       affiliate_url: form.affiliate_url,
       expires_at: form.expires_at ? new Date(form.expires_at).toISOString() : null,
@@ -258,9 +249,7 @@ function AdminDeals() {
       images: allImages,
       current_price: current,
       previous_price: previous,
-      discount_percentage: previous && current
-        ? Math.round((1 - current / previous) * 100)
-        : null,
+      discount_percentage: calculateDiscount(current, previous),
       shipping_info: form.shipping_info || null,
       affiliate_url: form.affiliate_url,
       store_id: form.store_id || null,
@@ -366,7 +355,7 @@ function AdminDeals() {
         <h2 className="font-mono text-sm uppercase text-cyan-glow">Gestión de chollos</h2>
         <div className="flex items-center gap-2">
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="bg-surface-900 border border-surface-700 px-3 py-2 font-mono text-xs uppercase outline-none focus:border-cyan-glow">
-            {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            {DEAL_STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
           <button onClick={startNew} className="bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-4 py-2 flex items-center gap-2 hover:bg-foreground">
             <Plus className="size-4" /> NUEVO

@@ -7,7 +7,7 @@ import { DealCard, type DealCardData } from "@/components/DealCard";
 import { Comments } from "@/components/Comments";
 import { ShareBox } from "@/components/ShareBox";
 import { useAuth } from "@/hooks/useAuth";
-import { formatPrice, formatRelativeTime } from "@/lib/format";
+import { formatPrice, formatRelativeTime, calculateDiscount } from "@/lib/format";
 import { errorMessage } from "@/lib/errors";
 import { Heart, ExternalLink, ThumbsUp, ThumbsDown, MessageSquare, AlertCircle, ChevronLeft, ChevronRight, Maximize2, X, Pencil } from "lucide-react";
 import { toast } from "sonner";
@@ -172,7 +172,7 @@ function DealDetail() {
     return <Layout><div className="max-w-7xl mx-auto p-8 text-center"><h1 className="text-2xl font-bold mb-2">Este chollo no está disponible</h1><Link to="/explorar" className="text-cyan-glow font-mono text-xs">[ EXPLORAR CHOLLOS ]</Link></div></Layout>;
   }
 
-  const discount = deal.discount_percentage ?? (deal.previous_price ? Math.round((1 - deal.current_price / deal.previous_price) * 100) : null);
+  const discount = deal.discount_percentage ?? calculateDiscount(deal.current_price, deal.previous_price);
 
   const fmtDateTime = (s: string) => new Date(s).toLocaleString("es-ES", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 

@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Heart, Flame } from "lucide-react";
-import { formatPrice, formatRelativeTime } from "@/lib/format";
+import { formatPrice, formatRelativeTime, calculateDiscount, temperatureColor } from "@/lib/format";
 import { useAuth } from "@/hooks/useAuth";
 import { favoritesApi } from "@/services/api/deals";
 import { useEffect, useState } from "react";
@@ -61,8 +61,8 @@ export function DealCard({ deal, isFavorite: initialFav = false }: { deal: DealC
     }
   };
 
-  const tempColor = deal.temperature >= 200 ? "text-alert-red" : deal.temperature >= 100 ? "text-cyan-glow" : "text-muted-foreground";
-  const discount = deal.discount_percentage ?? (deal.previous_price ? Math.round((1 - deal.current_price / deal.previous_price) * 100) : null);
+  const tempColor = temperatureColor(deal.temperature);
+  const discount = deal.discount_percentage ?? calculateDiscount(deal.current_price, deal.previous_price);
   const isExpired = deal.status === "expired";
 
   return (

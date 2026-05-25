@@ -35,3 +35,32 @@ export function slugify(text: string): string {
     .replace(/\s+/g, "-")
     .slice(0, 80);
 }
+
+/** Porcentaje de descuento entero entre dos precios. `null` si no hay precio
+ *  anterior o el c\u00e1lculo no aplica (precio anterior <= actual, valores nulos). */
+export function calculateDiscount(
+  current: number | null | undefined,
+  previous: number | null | undefined,
+): number | null {
+  if (!previous || !current || previous <= current) return null;
+  return Math.round((1 - current / previous) * 100);
+}
+
+/** Convierte un ISO string (o equivalente) al formato que acepta
+ *  <input type="datetime-local"> (YYYY-MM-DDTHH:mm, sin zona). */
+export function toDatetimeLocal(value: string | null | undefined): string {
+  if (!value) return "";
+  return value.slice(0, 16);
+}
+
+import {
+  TEMPERATURE_HOT_THRESHOLD,
+  TEMPERATURE_WARM_THRESHOLD,
+} from "@/lib/constants";
+
+/** Clase Tailwind de color para la "temperatura" de un chollo. */
+export function temperatureColor(temperature: number): string {
+  if (temperature >= TEMPERATURE_HOT_THRESHOLD) return "text-alert-red";
+  if (temperature >= TEMPERATURE_WARM_THRESHOLD) return "text-cyan-glow";
+  return "text-muted-foreground";
+}
