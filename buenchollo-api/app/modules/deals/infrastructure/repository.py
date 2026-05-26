@@ -9,26 +9,32 @@ class DealRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
+    @staticmethod
+    def _base_deal_query():
+        """Select(Deal) con las relaciones que casi todo endpoint necesita precargadas
+        (category, subcategory, store). Centraliza el selectinload para evitar
+        repetirlo en cada query."""
+        return select(Deal).options(
+            selectinload(Deal.category),
+            selectinload(Deal.subcategory),
+            selectinload(Deal.store),
+        )
+
     async def get_by_id(self, deal_id: str) -> Deal | None:
         result = await self.session.execute(
-            select(Deal)
-            .options(selectinload(Deal.category), selectinload(Deal.subcategory), selectinload(Deal.store))
-            .where(Deal.id == deal_id)
+            self._base_deal_query().where(Deal.id == deal_id)
         )
         return result.scalars().first()
 
     async def get_by_slug(self, slug: str) -> Deal | None:
         result = await self.session.execute(
-            select(Deal)
-            .options(selectinload(Deal.category), selectinload(Deal.subcategory), selectinload(Deal.store))
-            .where(Deal.slug == slug)
+            self._base_deal_query().where(Deal.slug == slug)
         )
         return result.scalars().first()
-        
+
     async def get_latest_active(self, limit: int = 10) -> list[Deal]:
         result = await self.session.execute(
-            select(Deal)
-            .options(selectinload(Deal.category), selectinload(Deal.subcategory), selectinload(Deal.store))
+            self._base_deal_query()
             .where(Deal.status == "active")
             .order_by(Deal.published_at.desc())
             .limit(limit)
@@ -37,8 +43,7 @@ class DealRepository:
 
     async def get_popular_active(self, limit: int = 10) -> list[Deal]:
         result = await self.session.execute(
-            select(Deal)
-            .options(selectinload(Deal.category), selectinload(Deal.subcategory), selectinload(Deal.store))
+            self._base_deal_query()
             .where(Deal.status == "active")
             .order_by(Deal.temperature.desc())
             .limit(limit)
@@ -53,11 +58,7 @@ class DealRepository:
         limit: int = 20,
         offset: int = 0,
     ) -> list[Deal]:
-        query = (
-            select(Deal)
-            .options(selectinload(Deal.category), selectinload(Deal.subcategory), selectinload(Deal.store))
-            .where(Deal.status == "active")
-        )
+        query = self._base_deal_query().where(Deal.status == "active")
         if category_id:
             query = query.where(Deal.category_id == category_id)
         if store_id:
@@ -67,9 +68,9 @@ class DealRepository:
         query = query.order_by(Deal.published_at.desc()).offset(offset).limit(limit)
         result = await self.session.execute(query)
         return list(result.scalars().all())
-        
+
     async def get_all_admin(self, status: str | None = None, limit: int = 200) -> list[Deal]:
-        query = select(Deal).options(selectinload(Deal.category), selectinload(Deal.subcategory), selectinload(Deal.store))
+        query = self._base_deal_query()
         if status and status != "all":
             query = query.where(Deal.status == status)
         query = query.order_by(Deal.created_at.desc()).limit(limit)
@@ -156,8 +157,7 @@ class DealRepository:
 
     async def get_favorites(self, user_id: str) -> list[Deal]:
         result = await self.session.execute(
-            select(Deal)
-            .options(selectinload(Deal.category), selectinload(Deal.subcategory), selectinload(Deal.store))
+            self._base_deal_query()
             .join(Favorite, Favorite.deal_id == Deal.id)
             .where(Favorite.user_id == user_id)
             .order_by(Favorite.created_at.desc())

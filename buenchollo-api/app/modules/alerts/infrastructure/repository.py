@@ -3,6 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from app.modules.alerts.domain.models import Alert
+from app.modules.alerts.application.matching import matches_alert
 from app.modules.deals.domain.models import Deal
 
 
@@ -46,44 +47,15 @@ class AlertRepository:
     # ── Matching ──────────────────────────────────────────────────────────────
 
     async def get_matching_for_deal(self, deal: Deal) -> list[Alert]:
-        """Devuelve todas las alertas activas con notify_in_app=True que coinciden con el deal."""
+        """Devuelve las alertas activas con notify_in_app=True que coinciden con el deal.
+
+        El repositorio recupera todos los candidatos; el matching es una decisión
+        de negocio y delega en `matching.matches_alert` (capa application)."""
         result = await self.db.execute(
             select(Alert).where(Alert.is_active.is_(True), Alert.notify_in_app.is_(True))
         )
-        alerts = list(result.scalars().all())
-        return [a for a in alerts if self._matches(a, deal)]
-
-    def _matches(self, alert: Alert, deal: Deal) -> bool:
-        title = (deal.title or "").lower()
-        description = (deal.description or "").lower()
-        deal_brand = (deal.brand or "").lower()
-
-        if alert.keyword:
-            kw = alert.keyword.lower()
-            if kw not in title and kw not in description and kw not in deal_brand:
-                return False
-
-        if alert.category_id and alert.category_id not in (
-            deal.category_id, getattr(deal, "subcategory_id", None)
-        ):
-            return False
-
-        if alert.store_id and alert.store_id != deal.store_id:
-            return False
-
-        if alert.brand:
-            if alert.brand.lower() not in deal_brand:
-                return False
-
-        if alert.max_price is not None:
-            if float(deal.current_price) > float(alert.max_price):
-                return False
-
-        if alert.min_discount is not None:
-            if (deal.discount_percentage or 0) < alert.min_discount:
-                return False
-
-        return True
+        candidates = list(result.scalars().all())
+        return [a for a in candidates if matches_alert(a, deal)]
 
     async def mark_triggered(self, alert: Alert) -> None:
         alert.last_triggered_at = datetime.now(timezone.utc)
