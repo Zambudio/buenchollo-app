@@ -7,6 +7,8 @@ import { categoriesService, type Category } from "@/services/api/categories";
 import { storesService, type Store } from "@/services/api/stores";
 import { toast } from "sonner";
 import { BellRing, ChevronDown, ChevronUp, Flame, Plus, Search, Store as StoreIcon, Tag } from "lucide-react";
+import { alertFormSchema } from "@/lib/validation/alerts";
+import { errorMessage } from "@/lib/errors";
 
 const KEYWORD_SUGGESTIONS = [
   "consola ps5",
@@ -84,32 +86,37 @@ function NewAlertPage() {
     e.preventDefault();
     if (!user) return;
 
-    const kw = keyword.trim();
-    const cleanBrand = brand.trim();
-    const hasCriteria = kw || selectedCat || selectedStore || cleanBrand || maxPrice || minDiscount;
-
-    if (!hasCriteria) {
-      toast.error("Escribe un producto o elige una sugerencia");
+    const parsed = alertFormSchema.safeParse({
+      keyword,
+      category_id: selectedCat,
+      store_id: selectedStore,
+      brand,
+      max_price: maxPrice,
+      min_discount: minDiscount,
+    });
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0].message);
       return;
     }
+    const data = parsed.data;
 
     setSubmitting(true);
     try {
-      const name = kw || selectedCatName || selectedStoreName || cleanBrand || "Ofertas super calientes";
+      const name = data.keyword || selectedCatName || selectedStoreName || data.brand || "Ofertas super calientes";
       await alertsApi.create({
         name,
-        keyword: kw || null,
-        category_id: selectedCat || null,
-        store_id: selectedStore || null,
-        brand: cleanBrand || null,
+        keyword: data.keyword,
+        category_id: data.category_id,
+        store_id: data.store_id,
+        brand: data.brand,
         min_price: null,
-        max_price: maxPrice ? Number(maxPrice) : null,
-        min_discount: minDiscount ? Number(minDiscount) : null,
+        max_price: data.max_price,
+        min_discount: data.min_discount,
       });
       toast.success("Alerta creada. Te avisaremos en la campana cuando haya coincidencias.");
       nav({ to: "/alertas" });
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "No se pudo crear la alerta");
+    } catch (error: unknown) {
+      toast.error(errorMessage(error, "No se pudo crear la alerta"));
     } finally {
       setSubmitting(false);
     }

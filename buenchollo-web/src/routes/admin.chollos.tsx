@@ -12,6 +12,7 @@ import { productsApi, type AmazonPreviewResponse } from "@/services/api/products
 import { formatPrice, formatRelativeTime, slugify, calculateDiscount, toDatetimeLocal } from "@/lib/format";
 import { errorMessage } from "@/lib/errors";
 import { DEAL_STATUS_OPTIONS } from "@/lib/constants";
+import { dealFormSchema } from "@/lib/validation/deals";
 import { Plus, Trash2, Edit3, Upload, X, GripVertical, Wand2, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -273,6 +274,20 @@ function AdminDeals() {
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+
+    const parsed = dealFormSchema.safeParse({
+      title: form.title,
+      affiliate_url: form.affiliate_url,
+      current_price: form.current_price,
+      previous_price: form.previous_price,
+      short_description: form.short_description,
+      description: form.description,
+    });
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0].message);
+      return;
+    }
+
     const payload = buildPayload();
     try {
       if (editing) {
