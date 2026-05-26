@@ -153,6 +153,21 @@ class DealRepository:
         )
         return result.scalar() is not None
 
+    async def increment_click_count(self, deal_id: str) -> int | None:
+        """Incrementa atómicamente click_count y devuelve el nuevo valor.
+        Devuelve None si el deal no existe."""
+        row = (
+            await self.session.execute(
+                text(
+                    "UPDATE deals SET click_count = COALESCE(click_count, 0) + 1 "
+                    "WHERE id = CAST(:id AS uuid) RETURNING click_count"
+                ),
+                {"id": deal_id},
+            )
+        ).first()
+        await self.session.flush()
+        return row[0] if row else None
+
     # --- Favoritos ---
 
     async def get_favorites(self, user_id: str) -> list[Deal]:

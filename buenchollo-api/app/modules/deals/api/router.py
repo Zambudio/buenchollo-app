@@ -121,6 +121,19 @@ async def get_my_vote(
     return {"my_vote": my_vote or 0}
 
 
+@router.post("/{deal_id}/click")
+async def track_click(
+    deal_id: str,
+    repo: DealRepository = Depends(get_deal_repository),
+) -> dict:
+    """Incrementa el contador de clicks del chollo. Endpoint público (lo dispara
+    cualquier visitante al pulsar el enlace de afiliado)."""
+    new_count = await repo.increment_click_count(deal_id)
+    if new_count is None:
+        raise HTTPException(status_code=404, detail="Deal not found")
+    return {"click_count": new_count}
+
+
 @router.get("/{slug}", response_model=DealDetailResponse)
 async def get_deal_by_slug(
     slug: str,

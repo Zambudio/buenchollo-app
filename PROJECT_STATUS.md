@@ -8,7 +8,7 @@
 
 ## 1. Estado general
 
-**Valoración arquitectónica: 8.7 / 10** (subió desde 7.8 tras el refactor 2026-05-26)
+**Valoración arquitectónica: 9.3 / 10** (subió desde 8.7 tras el cleanup final 2026-05-26)
 
 El proyecto tiene una base sólida y está en producción funcionando. Las decisiones técnicas
 (Clean Architecture, DIP con Protocols, async/await, PgBouncer) son correctas y defendibles
@@ -91,44 +91,52 @@ SOLID / DRY / KISS / YAGNI y plan por fases. Resumen:
   queda el "tamaño de fichero", de bajo valor frente al riesgo de refactor
   antes de la entrega.
 
-**Métricas finales del refactor**
+**Métricas finales del refactor (tras cleanup 2026-05-26)**
 - TypeScript: `tsc --noEmit` 0 errores.
-- pytest: 47/49 tests verdes (los 2 fallos restantes son `test_amazon_client.py`,
-  preexistentes y sin relación con el refactor).
-- ADR-002: ya no hay llamadas directas a Supabase DB salvo Storage (excepción
-  aprobada) y un único `update(click_count)` en `chollo.$slug.tsx` pendiente
-  de migrar (no crítico, documentado en § 4).
+- pytest: **49/49 verde** (incluyendo `test_amazon_client.py` reescrito para
+  el cliente HTTP actual: 7 tests).
+- ADR-002: **100% cumplido**. Cero `supabase.from()` / `supabase.rpc()` en
+  todo el frontend. Sólo `supabase.auth.*` y `supabase.storage.*` (las dos
+  excepciones aprobadas).
+
+**Endpoints backend añadidos en el cleanup**
+- `POST /deals/{deal_id}/click` — incrementa `click_count` atómicamente.
+- `GET /users/me/profile` — perfil del usuario autenticado.
+- `PUT /users/me/profile` — actualiza display_name + bio.
+- `GET /users/me/stats` — encapsula el RPC `get_user_stats`.
+- `GET /admin/stats` — 6 counts agregados en una sola query SQL.
 
 ---
 
 ## 4. Deuda técnica — Auditoría Mayo 2026 (revisada 2026-05-26)
 
-### 🔴 Alta prioridad
+### 🟢 ADR-002 — **CUMPLIDO AL 100%**
 
-#### ADR-002 — rutas restantes con llamadas directas a Supabase
+Tras el cleanup final del 2026-05-26 **no queda ninguna llamada directa a
+Supabase DB desde el frontend**. Únicas referencias `supabase.*` restantes:
 
-Tras el refactor del 2026-05-26 la mayoría se han resuelto. Estado actualizado:
+- `supabase.auth.*` — login, registro, sesión, refresh token.
+- `supabase.storage.*` — subida de imágenes de chollos (excepción aprobada).
+
+Histórico completo:
 
 | Archivo | Tablas / operaciones | Estado |
 |---|---|---|
-| `explorar.tsx` | `favorites` (read) | ⬜ Pendiente |
+| `explorar.tsx` | `favorites` (read) | ✅ Migrado a `favoritesApi.getFavorites()` |
 | `index.tsx` | `favorites` (read) | ✅ Migrado a `favoritesApi.getFavorites()` |
-| `chollo.$slug.tsx` | `deals` (click_count +1) | ⬜ Pendiente (1 llamada residual: `update click_count`) |
+| `chollo.$slug.tsx` | `deals` click_count + comment_count | ✅ `dealsService.trackClick()` + refetch con `getBySlug()` |
 | `alertas.tsx` | `alerts` CRUD completo | ✅ El módulo `alerts` en FastAPI ya existe |
 | `alertas.nueva.tsx` | `categories`, `stores`, `alerts` | ✅ Usa `alertsApi`, `categoriesService`, `storesService` |
 | `notificaciones.tsx` | `notifications` (read + mark read) | ✅ Módulo `notifications` en FastAPI |
-| `perfil.tsx` | `profiles` (read) | ⬜ Pendiente migrar a `authApi.me()` (ya existe) |
-| `admin.index.tsx` | Stats varias | ⬜ Pendiente `GET /admin/stats` |
+| `perfil.tsx` | `profiles` read/update + RPC stats | ✅ `authApi.getMyProfile/updateMyProfile/getMyStats` |
+| `admin.index.tsx` | 6 counts agregados | ✅ Endpoint `GET /admin/stats` + `adminApi.getStats()` |
 | `admin.usuarios.tsx` | `profiles` con roles | ✅ Endpoint `GET /admin/users` + `adminUsersApi` |
 | `DealCard.tsx` | `favorites` toggle | ✅ Migrado a `favoritesApi.toggle()` |
 | `Comments.tsx` | `deal_comments`, `comment_votes`, `profiles` | ✅ Nuevo módulo `comments` + `commentsApi` |
 | `useAuth.tsx` | `user_roles` | ✅ Migrado a `authApi.me()` |
+| `Header.tsx` | `notifications` unread count | ✅ Migrado a `notificationsApi.unreadCount()` |
 
-**Pendiente real**: 4 rutas (`explorar`, `chollo.$slug` click_count, `perfil`, `admin.index`).
-Las 3 primeras son sustituciones triviales (los servicios ya existen); la última
-requiere crear `GET /admin/stats` en backend.
-
-**Excepción aprobada (no tocar):** `login.tsx`, `registro.tsx` — usan Supabase Auth directamente, correcto por diseño.
+**Excepción aprobada:** `login.tsx`, `registro.tsx` — usan Supabase Auth directamente, correcto por diseño.
 
 ---
 

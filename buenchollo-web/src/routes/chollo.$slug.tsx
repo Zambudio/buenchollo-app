@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { dealsService, favoritesApi, type DealDetailData } from "@/services/api/deals";
-import { supabase } from "@/integrations/supabase/client";
 import { Layout } from "@/components/Layout";
 import { DealCard, type DealCardData } from "@/components/DealCard";
 import { Comments } from "@/components/Comments";
@@ -158,7 +157,7 @@ function DealDetail() {
 
   const trackClick = async () => {
     if (!deal) return;
-    await supabase.from("deals").update({ click_count: (deal.click_count ?? 0) + 1 }).eq("id", deal.id);
+    try { await dealsService.trackClick(deal.id); } catch { /* no crítico */ }
   };
 
   if (loading) return <Layout><div className="max-w-7xl mx-auto p-8 font-mono text-sm">CARGANDO...</div></Layout>;
@@ -442,8 +441,10 @@ function DealDetail() {
         <ShareBox url={`/chollo/${deal.slug}`} title={deal.title} price={deal.current_price} />
 
         <Comments dealId={deal.id} onCountChange={async () => {
-          const { data } = await supabase.from("deals").select("comment_count").eq("id", deal.id).single();
-          if (data) setCommentCount(data.comment_count ?? 0);
+          try {
+            const fresh = await dealsService.getBySlug(deal.slug);
+            setCommentCount(fresh.comment_count ?? 0);
+          } catch { /* no crítico */ }
         }} />
 
         {related.length > 0 && (

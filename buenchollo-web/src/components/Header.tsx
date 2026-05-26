@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Search, Bell, Heart, User as UserIcon, LogOut, Shield, Menu, X, LayoutGrid, BellPlus } from "lucide-react";
 import { Logo } from "./Logo";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { notificationsApi } from "@/services/api/notifications";
 import { CategoriesDrawer } from "./CategoriesDrawer";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -19,8 +19,9 @@ export function Header() {
 
   useEffect(() => {
     if (!user) { setUnread(0); return; }
-    supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("is_read", false)
-      .then(({ count }) => setUnread(count ?? 0));
+    notificationsApi.unreadCount()
+      .then(({ count }) => setUnread(count))
+      .catch(() => setUnread(0));
   }, [user]);
 
   const onSearch = (e: React.FormEvent<HTMLFormElement>) => {

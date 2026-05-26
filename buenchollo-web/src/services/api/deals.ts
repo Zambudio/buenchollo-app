@@ -116,6 +116,10 @@ export const dealsService = {
   /** Devuelve el voto actual del usuario para un chollo (-1, 0 o 1) */
   getMyVote: (dealId: string): Promise<number> =>
     apiClient.get<{ my_vote: number }>(`/deals/${dealId}/my-vote`).then(r => r.my_vote),
+
+  /** Incrementa el contador de clicks (público). Devuelve el nuevo total. */
+  trackClick: (dealId: string): Promise<number> =>
+    apiClient.post<{ click_count: number }>(`/deals/${dealId}/click`, {}).then(r => r.click_count),
 };
 
 export const favoritesApi = {

@@ -4,10 +4,9 @@ import { Layout } from "@/components/Layout";
 import { DealCard, type DealCardData } from "@/components/DealCard";
 import { useAuth } from "@/hooks/useAuth";
 import { z } from "zod";
-import { dealsService } from "@/services/api/deals";
+import { dealsService, favoritesApi } from "@/services/api/deals";
 import { categoriesService, type Category } from "@/services/api/categories";
 import { storesService, type Store } from "@/services/api/stores";
-import { supabase } from "@/integrations/supabase/client";
 
 const search = z.object({
   q: z.string().optional(),
@@ -95,9 +94,10 @@ function ExplorePage() {
   }, [params]);
 
   useEffect(() => {
-    if (!user) return;
-    supabase.from("favorites").select("deal_id").eq("user_id", user.id)
-      .then(({ data }) => setFavIds(new Set((data ?? []).map(f => f.deal_id))));
+    if (!user) { setFavIds(new Set()); return; }
+    favoritesApi.getFavorites()
+      .then((favs) => setFavIds(new Set(favs.map((d) => d.id))))
+      .catch(() => setFavIds(new Set()));
   }, [user]);
 
   const update = (patch: any) => nav({ search: { ...params, ...patch } as any });

@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Layout } from "@/components/Layout";
 import { useAuth } from "@/hooks/useAuth";
+import { authApi, type MyStats } from "@/services/api/auth";
+import { errorMessage } from "@/lib/errors";
 import { toast } from "sonner";
 import { MessageSquare, ArrowUp, ArrowDown, Heart, ThumbsUp, Inbox, Flame } from "lucide-react";
 
@@ -20,23 +21,12 @@ export const Route = createFileRoute("/perfil")({
   }),
 });
 
-interface Stats {
-  comments_made: number;
-  comments_received: number;
-  likes_given: number;
-  likes_received: number;
-  dislikes_received: number;
-  deal_votes_cast: number;
-  favorites_count: number;
-}
-
 function ProfilePage() {
   const { user, loading: authLoading, signOut } = useAuth();
   const nav = useNavigate();
-  const [profile, setProfile] = useState<any>(null);
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
-  const [stats, setStats] = useState<Stats | null>(null);
+  const [stats, setStats] = useState<MyStats | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) nav({ to: "/login" });
@@ -44,24 +34,28 @@ function ProfilePage() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle().then(({ data }) => {
-      setProfile(data);
-      setName(data?.display_name ?? "");
-      setBio(data?.bio ?? "");
-    });
-    supabase.rpc("get_user_stats", { _user_id: user.id }).then(({ data }) => {
-      if (data && data.length > 0) setStats(data[0] as Stats);
-    });
+    authApi.getMyProfile()
+      .then((p) => {
+        setName(p.display_name ?? "");
+        setBio(p.bio ?? "");
+      })
+      .catch(() => { /* perfil opcional */ });
+    authApi.getMyStats()
+      .then(setStats)
+      .catch(() => { /* stats no críticas */ });
   }, [user]);
 
   const save = async () => {
     if (!user) return;
-    const { error } = await supabase
-      .from("profiles")
-      .update({ display_name: name.slice(0, 50), bio: bio.slice(0, 300) })
-      .eq("user_id", user.id);
-    if (error) toast.error("Error al guardar");
-    else toast.success("Perfil actualizado");
+    try {
+      await authApi.updateMyProfile({
+        display_name: name.slice(0, 50),
+        bio: bio.slice(0, 300),
+      });
+      toast.success("Perfil actualizado");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "Error al guardar"));
+    }
   };
 
   const statItems = stats
