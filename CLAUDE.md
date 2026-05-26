@@ -136,10 +136,13 @@ El dominio no depende de FastAPI, SQLAlchemy, ni ningún framework externo.
 
 ---
 
-## Estado actual (Mayo 2026)
+## Estado actual (2026-05-26)
 
-- Fases 1-4 del plan de refactorización: **completadas**
-- Fase 5: tests unitarios **pendientes**
-- Panel de admin (CRUD chollos): **funcionando en producción**
+- Fases 1-7 del plan de refactorización: **completadas**
+- Refactor de buenas prácticas para TFM: **completado** — ver `PROJECT_STATUS.md` § 3.bis
+- Tests unitarios: 21 verdes (DealService, AlertMatcher, matches_alert) + integración
+- TypeScript: `tsc --noEmit` 0 errores
+- Panel de admin (CRUD chollos + usuarios): **funcionando en producción**
 - Telegram: aún usa Supabase Functions — pendiente migrar a `POST /telegram/notify`
 - Alembic: pendiente configurar migraciones desde el backend
+- Deuda ADR-002 restante: 4 rutas (ver `PROJECT_STATUS.md` § 4)

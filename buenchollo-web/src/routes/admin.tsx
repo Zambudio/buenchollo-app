@@ -30,7 +30,7 @@ function AdminLayout() {
             <Link to="/admin" activeOptions={{ exact: true }} activeProps={{ className: "bg-surface-700 text-cyan-glow" }} className="flex items-center gap-2 px-3 py-2 font-mono text-xs uppercase hover:bg-surface-700">
               <BarChart3 className="size-4" /> Resumen
             </Link>
-            <Link to="/admin/chollos" activeProps={{ className: "bg-surface-700 text-cyan-glow" }} className="flex items-center gap-2 px-3 py-2 font-mono text-xs uppercase hover:bg-surface-700">
+            <Link to="/admin/chollos" search={{ edit: undefined }} activeProps={{ className: "bg-surface-700 text-cyan-glow" }} className="flex items-center gap-2 px-3 py-2 font-mono text-xs uppercase hover:bg-surface-700">
               <Package className="size-4" /> Chollos
             </Link>
             <Link to="/admin/categorias" activeProps={{ className: "bg-surface-700 text-cyan-glow" }} className="flex items-center gap-2 px-3 py-2 font-mono text-xs uppercase hover:bg-surface-700">

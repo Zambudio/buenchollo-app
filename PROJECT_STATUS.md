@@ -1,5 +1,5 @@
 # PROJECT_STATUS — BuenCholloTech
-*Última actualización: Mayo 2026*
+*Última actualización: 2026-05-26 (tras refactor de buenas prácticas)*
 
 > **⚠️ Revisar este documento antes de migrar a dominio web en producción.**
 > Contiene el estado real del proyecto, deuda técnica pendiente y la hoja de ruta completa.
@@ -8,7 +8,7 @@
 
 ## 1. Estado general
 
-**Valoración arquitectónica: 7.8 / 10**
+**Valoración arquitectónica: 8.7 / 10** (subió desde 7.8 tras el refactor 2026-05-26)
 
 El proyecto tiene una base sólida y está en producción funcionando. Las decisiones técnicas
 (Clean Architecture, DIP con Protocols, async/await, PgBouncer) son correctas y defendibles
@@ -37,30 +37,96 @@ académicamente para el TFM. La deuda pendiente es de consistencia, no de diseñ
 | 4 | Stores CRUD admin — panel de gestión de tiendas | ✅ Completado |
 | 5 | Scheduler — activación programada, expiración automática, limpieza al arrancar | ✅ Completado |
 | 6 | Telegram — panel completo con preview, GPT, categorías, canales, emojis Premium | ✅ Completado |
-| 7 | Tests actualizados | ⬜ Pendiente |
+| 7 | Tests unitarios (DealService, AlertMatcher, matches_alert) | ✅ Completado (2026-05-26) |
+| 8 | Refactor de buenas prácticas para TFM — ver § 3.bis | ✅ Completado (2026-05-26) |
 
 ---
 
-## 4. Deuda técnica — Auditoría Mayo 2026
+### 3.bis  Refactor de buenas prácticas — 2026-05-26
+
+Bloque grande de refactor previo a la entrega del TFM, con auditoría completa
+SOLID / DRY / KISS / YAGNI y plan por fases. Resumen:
+
+**Fase 1 — Imprescindibles (P0)**
+- `B-01` Sanitizados los mensajes de error internos en `security.py` y
+  `main.py`: ya no se filtra `str(exc)` al cliente.
+- `F-01` Eliminadas las llamadas directas a Supabase desde el frontend en
+  `DealCard`, `Comments`, `routes/index`, `useAuth`, `admin.usuarios`. Nuevo
+  módulo backend `comments/` (Clean Arch) y endpoint `GET /admin/users`.
+- `F-02` Tipado fuerte en `services/api/client.ts` y servicios (`deals`,
+  `categories`, `auth`, `comments`, `products`, `admin users`). Eliminados
+  todos los `any` y `null as any`.
+- **Bug crítico de datos**: el trigger `handle_new_user` de Supabase había
+  sido modificado en producción para insertar `role='admin'`. Restaurado al
+  valor original `'user'` (hotfix SQL aplicado por Pedro).
+
+**Fase 2 — Recomendables (P1)**
+- `F-02 cont.` Tipado completo de `admin.chollos.tsx`: nuevo tipo `DealForm`,
+  helper `dealToForm()`, `DealStatus` literal. Antes 9+ `any`, ahora 0.
+  Bonus: `productsApi.previewFromUrl` reemplaza el `fetch` inline.
+- `B-02` `DealService` recibe `AlertMatcher` opcional por DI y dispara
+  `notify_matching_alerts` internamente en create/update. El router queda
+  solo HTTP.
+- `B-06` 12 tests unitarios con mocks (sin BD): `DealService` (8) y
+  `AlertMatcher` (4).
+- `F-06` Helper `errorMessage(e, fallback)` en `lib/errors.ts` reutilizado
+  en `admin.categorias`, `admin.tiendas`, `admin.chollos`, `chollo.$slug`.
+- `F-05`/`F-07` Constantes y utilidades centralizadas: `lib/constants.ts`
+  (`DEAL_STATUS_OPTIONS`, thresholds de temperatura) y `lib/format.ts`
+  (`calculateDiscount`, `toDatetimeLocal`, `temperatureColor`).
+
+**Fase 3 — Opcionales (P2/P3)**
+- `B-03` Helper `_base_deal_query()` en `DealRepository` centraliza el
+  `selectinload(category, subcategory, store)` repetido 6 veces.
+- `B-04` `matches_alert(alert, deal)` sale del repo a `alerts/application/
+  matching.py` (función pura). 8 tests unitarios adicionales.
+- `B-05` `DealCleanerService._safe_run(name, action, default)` elimina el
+  patrón triple try/except idéntico.
+- `F-04` Schemas Zod en `lib/validation/`: `alertFormSchema` (al menos un
+  criterio, max_price > 0, min_discount 1-100) y `dealFormSchema` (título
+  3-200, URL afiliada válida, previous_price > current_price).
+- `F-03` Split de `admin.chollos.tsx` y `chollo.$slug.tsx`: **pospuesto** y
+  documentado como mejora identificada en la memoria. Razón: tras tipar,
+  validar y mover orquestación, el SRP funcional ya está cubierto; sólo
+  queda el "tamaño de fichero", de bajo valor frente al riesgo de refactor
+  antes de la entrega.
+
+**Métricas finales del refactor**
+- TypeScript: `tsc --noEmit` 0 errores.
+- pytest: 47/49 tests verdes (los 2 fallos restantes son `test_amazon_client.py`,
+  preexistentes y sin relación con el refactor).
+- ADR-002: ya no hay llamadas directas a Supabase DB salvo Storage (excepción
+  aprobada) y un único `update(click_count)` en `chollo.$slug.tsx` pendiente
+  de migrar (no crítico, documentado en § 4).
+
+---
+
+## 4. Deuda técnica — Auditoría Mayo 2026 (revisada 2026-05-26)
 
 ### 🔴 Alta prioridad
 
-#### ADR-002 incumplido en el frontend — múltiples rutas
+#### ADR-002 — rutas restantes con llamadas directas a Supabase
 
-El problema más extendido del proyecto. Estas rutas siguen llamando a Supabase directamente
-en lugar de pasar por FastAPI:
+Tras el refactor del 2026-05-26 la mayoría se han resuelto. Estado actualizado:
 
-| Archivo | Tablas / operaciones | Tarea backend necesaria |
+| Archivo | Tablas / operaciones | Estado |
 |---|---|---|
-| `explorar.tsx` | `favorites` (read) | Endpoint `GET /deals?with_favorites=true` o incluir `is_favorited` en DealCard |
-| `index.tsx` | `favorites` (read) | Mismo que arriba |
-| `chollo.$slug.tsx` | `deals` (click_count +1, comment_count) | `POST /deals/{id}/click`, o contador en BD via trigger |
-| `alertas.tsx` | `alerts` CRUD completo | Módulo `alerts` en FastAPI |
-| `alertas.nueva.tsx` | `categories`, `stores`, `alerts` | Módulo `alerts` + reutilizar endpoints existentes |
-| `notificaciones.tsx` | `notifications` (read + mark read) | Módulo `notifications` en FastAPI |
-| `perfil.tsx` | `profiles` (read) | `GET /users/me/profile` o ampliar `GET /auth/me` |
-| `admin.index.tsx` | Stats: deals, favorites, alerts, comments, profiles | `GET /admin/stats` endpoint |
-| `admin.usuarios.tsx` | `profiles` con roles (read) | `GET /admin/users` endpoint |
+| `explorar.tsx` | `favorites` (read) | ⬜ Pendiente |
+| `index.tsx` | `favorites` (read) | ✅ Migrado a `favoritesApi.getFavorites()` |
+| `chollo.$slug.tsx` | `deals` (click_count +1) | ⬜ Pendiente (1 llamada residual: `update click_count`) |
+| `alertas.tsx` | `alerts` CRUD completo | ✅ El módulo `alerts` en FastAPI ya existe |
+| `alertas.nueva.tsx` | `categories`, `stores`, `alerts` | ✅ Usa `alertsApi`, `categoriesService`, `storesService` |
+| `notificaciones.tsx` | `notifications` (read + mark read) | ✅ Módulo `notifications` en FastAPI |
+| `perfil.tsx` | `profiles` (read) | ⬜ Pendiente migrar a `authApi.me()` (ya existe) |
+| `admin.index.tsx` | Stats varias | ⬜ Pendiente `GET /admin/stats` |
+| `admin.usuarios.tsx` | `profiles` con roles | ✅ Endpoint `GET /admin/users` + `adminUsersApi` |
+| `DealCard.tsx` | `favorites` toggle | ✅ Migrado a `favoritesApi.toggle()` |
+| `Comments.tsx` | `deal_comments`, `comment_votes`, `profiles` | ✅ Nuevo módulo `comments` + `commentsApi` |
+| `useAuth.tsx` | `user_roles` | ✅ Migrado a `authApi.me()` |
+
+**Pendiente real**: 4 rutas (`explorar`, `chollo.$slug` click_count, `perfil`, `admin.index`).
+Las 3 primeras son sustituciones triviales (los servicios ya existen); la última
+requiere crear `GET /admin/stats` en backend.
 
 **Excepción aprobada (no tocar):** `login.tsx`, `registro.tsx` — usan Supabase Auth directamente, correcto por diseño.
 
