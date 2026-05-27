@@ -108,6 +108,28 @@ SOLID / DRY / KISS / YAGNI y plan por fases. Resumen:
 
 ---
 
+### 3.ter  Hardening de seguridad — 2026-05-27
+
+Supabase reportó la vulnerabilidad `rls_disabled_in_public` (crítica): las 12
+tablas de `public` tenían RLS desactivado, así que con el `anon key` (público
+en el bundle del frontend) cualquiera podía leer/borrar la BD entera.
+
+Fix aplicado: `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` en las 12 tablas,
+versionado en la migración
+[`20260527090000_enable_rls_all_tables.sql`](buenchollo-web/supabase/migrations/20260527090000_enable_rls_all_tables.sql).
+
+Por qué no rompe nada:
+- El backend usa la `service_role key` que **bypassa RLS por diseño**.
+- ADR-002 garantiza que el frontend nunca llama a Supabase DB directamente
+  (sólo Auth y Storage, que tienen su propio sistema de policies).
+- Las políticas previas (definidas en migraciones anteriores) siguen
+  vigentes; al activar RLS pasan a aplicarse.
+
+Probado tras el fix: home, login, favoritos, comentarios, votos, panel admin
+(usuarios + resumen + chollos), perfil y notificaciones — todo OK.
+
+---
+
 ## 4. Deuda técnica — Auditoría Mayo 2026 (revisada 2026-05-26)
 
 ### 🟢 ADR-002 — **CUMPLIDO AL 100%**
