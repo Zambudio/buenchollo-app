@@ -16,7 +16,7 @@
 
 | Fase | Bloque | Tareas | Estado |
 |---|---|---:|:---:|
-| **F1** | Documentación arquitectónica (5 ADRs + diagrama) | 6 | 🟡 5/6 |
+| **F1** | Documentación arquitectónica (5 ADRs + diagrama) | 6 | ✅ 6/6 |
 | **F2** | Backend: fundamentos (migraciones, Alembic, excepciones, UserService) | 5 | ⬜ |
 | **F3** | Producción ready (request_id, logging, rate limit, audit log, health) | 5 | ⬜ |
 | **F4** | API: versionado `/v1` | 2 | ⬜ |
@@ -62,11 +62,15 @@
   para añadir módulos nuevos.
 
 ### 1.6 README arquitectónico + diagrama del sistema
-- [ ] Sección "Arquitectura" en `README.md` raíz con:
-  - Diagrama Mermaid: Browser → FastAPI → Postgres/Supabase + adaptadores externos.
-  - Resumen de los 7 ADRs.
-  - Estructura de carpetas por módulo (backend) y por features (frontend, post F5).
-  - Links a documentación viva.
+- [x] `README.md` raíz reescrito (2026-05-27):
+  - Diagrama Mermaid renderizable en GitHub (Browser → FastAPI →
+    Postgres/Supabase + Amazon/OpenAI/Telegram).
+  - Tabla de los 7 ADRs con estado.
+  - "Filosofía arquitectónica" en 6 reglas inviolables.
+  - Estructura de carpetas por módulo (backend) y referencia a la
+    reorganización por features prevista en F5.
+  - Links a toda la documentación viva: PROJECT_STATUS, PLAN_ARQUITECTURA,
+    LAUNCH_CHECKLIST, ADRs.
 
 ---
 
