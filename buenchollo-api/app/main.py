@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.core.config import get_settings
+from app.core.exceptions import DomainError
 from app.core.logging import configure_logging
 from app.modules.products.api.router import router as products_router
 from app.modules.categories.api.router import router as categories_router
@@ -68,9 +69,28 @@ app.add_middleware(
 )
 
 
+@app.exception_handler(DomainError)
+async def domain_exception_handler(request: Request, exc: DomainError):
+    """Traduce excepciones de dominio a HTTP usando `exc.http_status`.
+
+    Mantiene el mensaje del dominio como `detail`. Los logs se quedan en
+    INFO (no es un error inesperado, es lógica de negocio). Si crece a
+    volumen, considerar nivel WARNING para 4xx y ERROR para 5xx.
+    """
+    logger.info("DomainError %s: %s", type(exc).__name__, exc)
+    return JSONResponse(
+        status_code=exc.http_status,
+        content={"detail": str(exc)},
+    )
+
+
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
-    """Devuelve 500 con CORS headers para que el browser pueda leer el error."""
+    """Captura cualquier excepción no manejada y devuelve 500 genérico.
+
+    Las HTTPException de FastAPI se manejan por su propia ruta; las
+    DomainError tienen handler dedicado arriba.
+    """
     if isinstance(exc, HTTPException):
         raise exc  # dejar que FastAPI lo maneje normalmente
     logger.exception("Error no manejado: %s", exc)

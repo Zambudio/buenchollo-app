@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
+from app.modules.categories.domain.exceptions import CategoryNotFound
 from app.modules.categories.infrastructure.repository import CategoryRepository
 from app.modules.categories.api.schemas import CategoryResponse, CategoryCreate
 from app.modules.categories.domain.models import Category
@@ -29,7 +30,7 @@ async def get_category_by_slug(
     """Retrieve a category by its slug."""
     category = await repo.get_by_slug(slug)
     if not category:
-        raise HTTPException(status_code=404, detail="Category not found")
+        raise CategoryNotFound()
     return category
 
 @router.get("/admin/all", response_model=list[CategoryResponse])
@@ -60,5 +61,5 @@ async def delete_category(
     """Admin: Delete a category."""
     category = await repo.get_by_id(category_id)
     if not category:
-        raise HTTPException(status_code=404, detail="Category not found")
+        raise CategoryNotFound()
     await repo.delete(category)

@@ -1,9 +1,15 @@
 import logging
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import get_current_user
+from app.modules.comments.domain.exceptions import (
+    CommentNotFound,
+    InvalidParentComment,
+    InvalidVote,
+    NotCommentOwner,
+)
 from app.modules.comments.infrastructure.repository import CommentRepository
 from app.modules.comments.api.schemas import (
     CommentCreate,
@@ -79,7 +85,7 @@ async def create_comment(
     if payload.parent_id:
         parent = await repo.get_by_id(payload.parent_id)
         if not parent or str(parent.deal_id) != deal_id:
-            raise HTTPException(status_code=400, detail="Comentario padre inválido")
+            raise InvalidParentComment()
 
     comment = await repo.create(
         deal_id=deal_id,
@@ -99,9 +105,9 @@ async def delete_comment(
 ):
     comment = await repo.get_by_id(comment_id)
     if not comment:
-        raise HTTPException(status_code=404, detail="Comentario no encontrado")
+        raise CommentNotFound()
     if str(comment.user_id) != str(current_user.id):
-        raise HTTPException(status_code=403, detail="No puedes borrar este comentario")
+        raise NotCommentOwner()
     await repo.delete(comment)
 
 
@@ -113,10 +119,10 @@ async def vote_comment(
     current_user=Depends(get_current_user),
 ) -> dict:
     if payload.vote not in (1, -1):
-        raise HTTPException(status_code=400, detail="Voto inválido")
+        raise InvalidVote()
     comment = await repo.get_by_id(comment_id)
     if not comment:
-        raise HTTPException(status_code=404, detail="Comentario no encontrado")
+        raise CommentNotFound()
 
     user_id = str(current_user.id)
     current = await repo.get_user_vote(comment_id, user_id)

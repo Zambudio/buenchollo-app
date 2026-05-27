@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.security import require_admin
+from app.modules.stores.domain.exceptions import StoreNotFound
 from app.modules.stores.domain.models import Store
 from app.modules.stores.infrastructure.repository import StoreRepository
 from app.modules.stores.api.schemas import StoreResponse, StoreCreate, StoreUpdate
@@ -51,7 +52,7 @@ async def update_store(
 ):
     store = await repo.get_by_id(store_id)
     if not store:
-        raise HTTPException(status_code=404, detail="Store not found")
+        raise StoreNotFound()
     for field, value in store_in.model_dump(exclude_unset=True).items():
         setattr(store, field, value)
     return await repo.update(store)
@@ -65,5 +66,5 @@ async def delete_store(
 ):
     store = await repo.get_by_id(store_id)
     if not store:
-        raise HTTPException(status_code=404, detail="Store not found")
+        raise StoreNotFound()
     await repo.delete(store)

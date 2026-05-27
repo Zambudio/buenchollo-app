@@ -17,7 +17,7 @@
 | Fase | Bloque | Tareas | Estado |
 |---|---|---:|:---:|
 | **F1** | Documentación arquitectónica (5 ADRs + diagrama) | 6 | ✅ 6/6 |
-| **F2** | Backend: fundamentos (migraciones, Alembic, excepciones, UserService) | 5 | 🟡 2/5 |
+| **F2** | Backend: fundamentos (migraciones, Alembic, excepciones, UserService) | 5 | 🟡 3/5 |
 | **F3** | Producción ready (request_id, logging, rate limit, audit log, health) | 5 | ⬜ |
 | **F4** | API: versionado `/v1` | 2 | ⬜ |
 | **F5** | Frontend: features-based + TanStack Query + tipado total | 6 | ⬜ |
@@ -105,12 +105,24 @@
   ejecutar `alembic stamp head` para registrar la baseline como aplicada.
 
 ### 2.3 Excepciones de dominio + handler global (ARQ-03)
-- [ ] Crear `core/exceptions.py` con `DomainError`, `NotFoundError`, `ForbiddenError`, `ValidationError`.
-- [ ] Cada módulo añade sus excepciones específicas en `<modulo>/domain/exceptions.py` (heredan de las anteriores).
-- [ ] Refactor de servicios y repos: `raise DealNotFound("...")` en vez de devolver `None` o lanzar `HTTPException` desde application.
-- [ ] `main.py`: `@app.exception_handler(DomainError)` que mapea cada subtipo a su status HTTP.
-- [ ] Routers: ya no necesitan `raise HTTPException(404, ...)`; sólo dejan burbujear.
-- [ ] Test: añadir 2-3 unitarios que comprueben que las excepciones se lanzan correctamente.
+- [x] `app/core/exceptions.py` con jerarquía `DomainError` (raíz) →
+  `NotFoundError` (404), `ForbiddenError` (403), `ConflictError` (409),
+  `ValidationError` (400), `ServiceUnavailableError` (503).
+- [x] Excepciones específicas en `<modulo>/domain/exceptions.py` para
+  `deals` (DealNotFound), `comments` (CommentNotFound, NotCommentOwner,
+  InvalidParentComment, InvalidVote), `alerts` (AlertNotFound),
+  `categories` (CategoryNotFound), `stores` (StoreNotFound), `users`
+  (ProfileNotFound). `products` reaprovecha sus excepciones existentes
+  haciéndolas heredar de la jerarquía nueva.
+- [x] `@app.exception_handler(DomainError)` en `main.py` mapea cada
+  subtipo a su `http_status` con formato `{"detail": "..."}`.
+- [x] Routers de `deals`, `comments`, `alerts`, `categories`, `stores`,
+  `users` y `products` sustituyen `raise HTTPException(...)` por las
+  excepciones de dominio correspondientes.
+- [x] 4 tests nuevos en `test_domain_exceptions.py` cubriendo herencia,
+  mensajes y traducción HTTP. 53/53 pytest verde.
+- **Nota**: `security.py` mantiene `HTTPException` (401/403/500) por ser
+  middleware HTTP puro; no aporta abstraerlas a dominio.
 
 ### 2.4 Extraer `UserService` en `users/application/` (ARQ-02)
 - [ ] Crear `users/application/user_service.py` con `get_my_profile`, `update_my_profile`, `get_my_stats`, `list_admin_users`.

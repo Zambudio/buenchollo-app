@@ -1,9 +1,10 @@
 import logging
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.modules.deals.infrastructure.repository import DealRepository
 from app.modules.deals.application.deal_service import DealService
+from app.modules.deals.domain.exceptions import DealNotFound
 from app.modules.deals.api.schemas import DealCardResponse, DealDetailResponse, DealCreate, DealUpdate, VoteRequest, VoteResponse
 from app.core.security import require_admin, get_current_user
 from app.modules.alerts.infrastructure.repository import AlertRepository
@@ -89,7 +90,7 @@ async def toggle_favorite(
     user_id = str(current_user.id)
     deal = await repo.get_by_id(deal_id)
     if not deal:
-        raise HTTPException(status_code=404, detail="Deal not found")
+        raise DealNotFound(deal_id)
     if await repo.is_favorite(deal_id, user_id):
         await repo.remove_favorite(deal_id, user_id)
         return {"is_favorited": False}
@@ -106,7 +107,7 @@ async def vote_on_deal(
 ):
     deal = await service.repo.get_by_id(deal_id)
     if not deal:
-        raise HTTPException(status_code=404, detail="Deal not found")
+        raise DealNotFound(deal_id)
     result = await service.process_vote(deal_id, str(current_user.id), vote_in.vote)
     return VoteResponse(**result)
 
@@ -130,7 +131,7 @@ async def track_click(
     cualquier visitante al pulsar el enlace de afiliado)."""
     new_count = await repo.increment_click_count(deal_id)
     if new_count is None:
-        raise HTTPException(status_code=404, detail="Deal not found")
+        raise DealNotFound(deal_id)
     return {"click_count": new_count}
 
 
@@ -141,7 +142,7 @@ async def get_deal_by_slug(
 ):
     deal = await repo.get_by_slug(slug)
     if not deal:
-        raise HTTPException(status_code=404, detail="Deal not found")
+        raise DealNotFound(slug)
     return deal
 
 
@@ -175,7 +176,7 @@ async def update_deal(
 ):
     updated = await service.update_deal(deal_id, deal_in.model_dump(exclude_unset=True))
     if not updated:
-        raise HTTPException(status_code=404, detail="Deal not found")
+        raise DealNotFound(deal_id)
     return updated
 
 
@@ -187,4 +188,4 @@ async def delete_deal(
 ):
     deleted = await service.delete_deal(deal_id)
     if not deleted:
-        raise HTTPException(status_code=404, detail="Deal not found")
+        raise DealNotFound(deal_id)

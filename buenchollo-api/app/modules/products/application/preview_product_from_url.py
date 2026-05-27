@@ -2,14 +2,15 @@
 
 from typing import Any, Protocol
 
+from app.core.exceptions import NotFoundError, ServiceUnavailableError
 from app.modules.products.domain.entities import ProductPreview
 
 
-class ProductNotFoundError(Exception):
+class ProductNotFoundError(NotFoundError):
     """Raised when the product cannot be resolved from the provided URL."""
 
 
-class ProductProviderUnavailableError(Exception):
+class ProductProviderUnavailableError(ServiceUnavailableError):
     """Raised when the external product provider is not configured or unavailable."""
 
 

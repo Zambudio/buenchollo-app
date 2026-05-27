@@ -1,13 +1,11 @@
 """HTTP routes for product preview operations."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 
 from app.core.config import Settings, get_settings
 from app.modules.products.api.schemas import ProductPreviewFromUrlRequest, ProductPreviewResponse
 from app.modules.products.application.preview_product_from_url import (
     PreviewProductFromUrlUseCase,
-    ProductNotFoundError,
-    ProductProviderUnavailableError,
 )
 from app.modules.products.infrastructure.amazon_client import AmazonProductClient
 from app.modules.products.infrastructure.openai_client import OpenAIAssistant
@@ -45,13 +43,12 @@ def preview_from_url(
     payload: ProductPreviewFromUrlRequest,
     use_case: PreviewProductFromUrlUseCase = Depends(get_preview_use_case),
 ) -> ProductPreviewResponse:
-    """Generate a normalized product preview from an Amazon URL or ASIN."""
-    try:
-        product = use_case.execute(payload.url)
-    except ProductNotFoundError as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
-    except ProductProviderUnavailableError as exc:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+    """Generate a normalized product preview from an Amazon URL or ASIN.
 
+    Excepciones del caso de uso (`ProductNotFoundError`,
+    `ProductProviderUnavailableError`) heredan de `DomainError` y son
+    traducidas a HTTP por el handler global en `main.py`.
+    """
+    product = use_case.execute(payload.url)
     return ProductPreviewResponse.model_validate(product)
 

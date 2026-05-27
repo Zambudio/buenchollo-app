@@ -1,12 +1,13 @@
 """Endpoints de autenticación y perfil de usuario."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import get_current_user, require_admin
+from app.modules.users.domain.exceptions import ProfileNotFound
 from app.modules.users.infrastructure.repository import ProfileRepository
 
 router = APIRouter(tags=["auth"])
@@ -85,7 +86,7 @@ async def update_my_profile(
         bio=payload.bio.strip()[:300],
     )
     if not updated:
-        raise HTTPException(status_code=404, detail="Perfil no encontrado")
+        raise ProfileNotFound()
     return {
         "user_id": str(updated.user_id),
         "display_name": updated.display_name,

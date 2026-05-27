@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.modules.alerts.api.schemas import AlertCreate, AlertUpdate, AlertOut
+from app.modules.alerts.domain.exceptions import AlertNotFound
 from app.modules.alerts.infrastructure.repository import AlertRepository
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
@@ -38,7 +39,7 @@ async def update_alert(
 ):
     alert = await repo.get_by_id(alert_id, str(current_user.id))
     if not alert:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alerta no encontrada")
+        raise AlertNotFound()
     return await repo.update(alert, body.model_dump(exclude_unset=True))
 
 
@@ -50,5 +51,5 @@ async def delete_alert(
 ):
     alert = await repo.get_by_id(alert_id, str(current_user.id))
     if not alert:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alerta no encontrada")
+        raise AlertNotFound()
     await repo.delete(alert)
