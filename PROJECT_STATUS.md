@@ -116,7 +116,7 @@ en el bundle del frontend) cualquiera podía leer/borrar la BD entera.
 
 Fix aplicado: `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` en las 12 tablas,
 versionado en la migración
-[`20260527090000_enable_rls_all_tables.sql`](buenchollo-web/supabase/migrations/20260527090000_enable_rls_all_tables.sql).
+[`20260527090000_enable_rls_all_tables.sql`](buenchollo-api/supabase/migrations/20260527090000_enable_rls_all_tables.sql).
 
 Por qué no rompe nada:
 - El backend usa la `service_role key` que **bypassa RLS por diseño**.

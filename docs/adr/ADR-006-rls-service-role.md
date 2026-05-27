@@ -43,8 +43,8 @@ Esto sucedió a pesar de que:
 ### Plano 1 — Activar RLS en todas las tablas de `public`
 
 Migración versionada
-[`20260527090000_enable_rls_all_tables.sql`](../../buenchollo-web/supabase/migrations/20260527090000_enable_rls_all_tables.sql)
-(pendiente de mover al backend en F2.1) que ejecuta
+[`20260527090000_enable_rls_all_tables.sql`](../../buenchollo-api/supabase/migrations/20260527090000_enable_rls_all_tables.sql)
+que ejecuta
 `ALTER TABLE public.X ENABLE ROW LEVEL SECURITY` en las 12 tablas:
 `alerts, categories, comment_votes, deal_comments, deal_votes, deals,
 favorites, import_logs, notifications, profiles, stores, user_roles`.

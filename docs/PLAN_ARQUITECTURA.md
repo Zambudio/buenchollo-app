@@ -17,7 +17,7 @@
 | Fase | Bloque | Tareas | Estado |
 |---|---|---:|:---:|
 | **F1** | Documentación arquitectónica (5 ADRs + diagrama) | 6 | ✅ 6/6 |
-| **F2** | Backend: fundamentos (migraciones, Alembic, excepciones, UserService) | 5 | ⬜ |
+| **F2** | Backend: fundamentos (migraciones, Alembic, excepciones, UserService) | 5 | 🟡 1/5 |
 | **F3** | Producción ready (request_id, logging, rate limit, audit log, health) | 5 | ⬜ |
 | **F4** | API: versionado `/v1` | 2 | ⬜ |
 | **F5** | Frontend: features-based + TanStack Query + tipado total | 6 | ⬜ |
@@ -80,10 +80,14 @@
 > middleware, versionado y demás capas. Cambios mecánicos, bajo riesgo.
 
 ### 2.1 Mover migraciones SQL al backend
-- [ ] `git mv buenchollo-web/supabase/migrations/ buenchollo-api/supabase/migrations/`.
-- [ ] Actualizar `PROJECT_STATUS.md` y `CLAUDE.md` con la nueva ubicación.
-- [ ] Verificar que `supabase/config.toml` (si existe) sigue funcionando.
-- **Razón**: el backend es dueño del esquema, no la web.
+- [x] Movido `buenchollo-web/supabase/` → `buenchollo-api/supabase/` (2026-05-27).
+  Decisión: mover el directorio completo (`migrations/`, `functions/`,
+  `config.toml`) para mantener la simetría con `supabase init`. Las
+  Edge Functions (`amazon-autofill`, `notify-telegram`) son legado en
+  proceso de migración al backend Python (CLAUDE.md ya lo indica).
+- [x] Actualizadas referencias en `PROJECT_STATUS.md`, `docs/adr/ADR-004`,
+  `docs/adr/ADR-006`.
+- [x] Comprobado: no había scripts ni configs apuntando a la ruta vieja.
 
 ### 2.2 Configurar Alembic en backend
 - [ ] `alembic init alembic/` ya está parcialmente; revisar `alembic.ini`.

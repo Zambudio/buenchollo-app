@@ -80,10 +80,10 @@ Convenciones de modelado:
 
 Migraciones:
 
-- Hasta 2026-05-27 las migraciones SQL vivían en `buenchollo-web/supabase/migrations/`
-  por inercia del template Supabase. **F2.1** del plan las moverá a
-  `buenchollo-api/supabase/migrations/` y **F2.2** introducirá Alembic con
-  baseline sobre el esquema actual para versionado yendo adelante.
+- Las migraciones SQL viven en `buenchollo-api/supabase/migrations/`
+  (movidas desde `buenchollo-web/supabase/` en F2.1 del plan, 2026-05-27).
+  **F2.2** introducirá Alembic con baseline sobre el esquema actual para
+  versionado nativo SQLAlchemy yendo adelante.
 
 ---
 
