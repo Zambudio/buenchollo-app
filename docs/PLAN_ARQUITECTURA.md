@@ -16,7 +16,7 @@
 
 | Fase | Bloque | Tareas | Estado |
 |---|---|---:|:---:|
-| **F1** | Documentación arquitectónica (5 ADRs + diagrama) | 6 | 🟡 3/6 |
+| **F1** | Documentación arquitectónica (5 ADRs + diagrama) | 6 | 🟡 4/6 |
 | **F2** | Backend: fundamentos (migraciones, Alembic, excepciones, UserService) | 5 | ⬜ |
 | **F3** | Producción ready (request_id, logging, rate limit, audit log, health) | 5 | ⬜ |
 | **F4** | API: versionado `/v1` | 2 | ⬜ |
@@ -50,9 +50,10 @@
   trade-off de duplicación y plan de evolución (generador OpenAPI→TS opcional).
 
 ### 1.4 ADR-006 — Hardening de RLS y service_role
-- [ ] Crear `docs/adr/ADR-006-rls-service-role.md`.
-- Documentar el incidente del 2026-05-27 y el fix aplicado.
-- Cómo se gestiona el `anon key` (público) vs `service_role` (server-only).
+- [x] Creado `docs/adr/ADR-006-rls-service-role.md` (2026-05-27).
+- Documenta el incidente, el fix por migración versionada, la separación
+  estricta `anon` (público, RLS aplica) / `service_role` (server-only,
+  bypassa RLS), y procedimientos de auditoría y reaplicación.
 
 ### 1.5 ADR-007 — Inyección de dependencias con `Depends` de FastAPI
 - [ ] Crear `docs/adr/ADR-007-di-fastapi-depends.md`.
