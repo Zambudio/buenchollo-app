@@ -16,7 +16,7 @@
 
 | Fase | Bloque | Tareas | Estado |
 |---|---|---:|:---:|
-| **F1** | Documentación arquitectónica (5 ADRs + diagrama) | 6 | 🟡 4/6 |
+| **F1** | Documentación arquitectónica (5 ADRs + diagrama) | 6 | 🟡 5/6 |
 | **F2** | Backend: fundamentos (migraciones, Alembic, excepciones, UserService) | 5 | ⬜ |
 | **F3** | Producción ready (request_id, logging, rate limit, audit log, health) | 5 | ⬜ |
 | **F4** | API: versionado `/v1` | 2 | ⬜ |
@@ -56,9 +56,10 @@
   bypassa RLS), y procedimientos de auditoría y reaplicación.
 
 ### 1.5 ADR-007 — Inyección de dependencias con `Depends` de FastAPI
-- [ ] Crear `docs/adr/ADR-007-di-fastapi-depends.md`.
-- Composition root distribuido en factories `get_X`.
-- `app.dependency_overrides` para testing.
+- [x] Creado `docs/adr/ADR-007-di-fastapi-depends.md` (2026-05-27).
+- Composition root distribuido en factories `get_X`, scopes resueltos
+  automáticamente, `app.dependency_overrides` para tests, convención
+  para añadir módulos nuevos.
 
 ### 1.6 README arquitectónico + diagrama del sistema
 - [ ] Sección "Arquitectura" en `README.md` raíz con:
