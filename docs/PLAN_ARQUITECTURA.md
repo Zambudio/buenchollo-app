@@ -17,7 +17,7 @@
 | Fase | Bloque | Tareas | Estado |
 |---|---|---:|:---:|
 | **F1** | Documentación arquitectónica (5 ADRs + diagrama) | 6 | ✅ 6/6 |
-| **F2** | Backend: fundamentos (migraciones, Alembic, excepciones, UserService) | 5 | 🟡 3/5 |
+| **F2** | Backend: fundamentos (migraciones, Alembic, excepciones, UserService) | 5 | 🟡 4/5 |
 | **F3** | Producción ready (request_id, logging, rate limit, audit log, health) | 5 | ⬜ |
 | **F4** | API: versionado `/v1` | 2 | ⬜ |
 | **F5** | Frontend: features-based + TanStack Query + tipado total | 6 | ⬜ |
@@ -125,10 +125,19 @@
   middleware HTTP puro; no aporta abstraerlas a dominio.
 
 ### 2.4 Extraer `UserService` en `users/application/` (ARQ-02)
-- [ ] Crear `users/application/user_service.py` con `get_my_profile`, `update_my_profile`, `get_my_stats`, `list_admin_users`.
-- [ ] El router pasa a delegar en el service.
-- [ ] Repo (`ProfileRepository`) sigue igual; service lo usa por DI.
-- [ ] Tests unitarios mínimos del service con mock del repo.
+- [x] `users/application/user_service.py` con `get_me_overview`,
+  `get_my_profile`, `update_my_profile`, `get_my_stats`, `list_admin_users`,
+  `get_admin_stats` (2026-05-27).
+- [x] El router queda fino: HTTP + DI + delegación. 165 → 80 líneas, sin
+  SQL ni `text()` inline.
+- [x] Helper `get_user_service(db)` como composition root (patrón ADR-007).
+- [x] Repo enriquecido con `get_user_roles`, `get_username`,
+  `list_admin_users` y `get_admin_stats` para encapsular el SQL que
+  vivía en el router.
+- [x] DTO `CurrentUser(id, email)` desacopla el service del modelo `User`
+  de Supabase.
+- [x] 7 tests unitarios nuevos en `test_user_service.py` con mocks. 60/60
+  pytest verde.
 
 ### 2.5 Capa `application/` mínima en `categories`, `stores`, `notifications`
 - [ ] Sólo si la lógica lo merece (CRUD trivial puede quedarse). Evaluar caso a caso.
