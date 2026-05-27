@@ -16,7 +16,7 @@
 
 | Fase | Bloque | Tareas | Estado |
 |---|---|---:|:---:|
-| **F1** | Documentación arquitectónica (5 ADRs + diagrama) | 6 | 🟡 2/6 |
+| **F1** | Documentación arquitectónica (5 ADRs + diagrama) | 6 | 🟡 3/6 |
 | **F2** | Backend: fundamentos (migraciones, Alembic, excepciones, UserService) | 5 | ⬜ |
 | **F3** | Producción ready (request_id, logging, rate limit, audit log, health) | 5 | ⬜ |
 | **F4** | API: versionado `/v1` | 2 | ⬜ |
@@ -45,9 +45,9 @@
   de migración a Alembic (F2.2).
 
 ### 1.3 ADR-005 — Validación en doble frontera (Zod + Pydantic)
-- [ ] Crear `docs/adr/ADR-005-validacion-doble-frontera.md`.
-- Explicar defensa en profundidad y UX inmediata.
-- Asumir duplicación controlada como trade-off aceptable.
+- [x] Creado `docs/adr/ADR-005-validacion-doble-frontera.md` (2026-05-27).
+- Documenta defensa en profundidad, mensajes en cliente vs servidor,
+  trade-off de duplicación y plan de evolución (generador OpenAPI→TS opcional).
 
 ### 1.4 ADR-006 — Hardening de RLS y service_role
 - [ ] Crear `docs/adr/ADR-006-rls-service-role.md`.
