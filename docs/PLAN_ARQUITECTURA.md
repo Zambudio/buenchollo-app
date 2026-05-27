@@ -16,7 +16,7 @@
 
 | Fase | Bloque | Tareas | Estado |
 |---|---|---:|:---:|
-| **F1** | Documentación arquitectónica (5 ADRs + diagrama) | 6 | ⬜ |
+| **F1** | Documentación arquitectónica (5 ADRs + diagrama) | 6 | 🟡 1/6 |
 | **F2** | Backend: fundamentos (migraciones, Alembic, excepciones, UserService) | 5 | ⬜ |
 | **F3** | Producción ready (request_id, logging, rate limit, audit log, health) | 5 | ⬜ |
 | **F4** | API: versionado `/v1` | 2 | ⬜ |
@@ -34,9 +34,9 @@
 > aporta cimiento documental defendible. Cada ADR es ~1 página.
 
 ### 1.1 ADR-003 — Autenticación con Supabase Auth + JWT en backend
-- [ ] Crear `docs/adr/ADR-003-autenticacion-supabase-jwt.md`.
-- Contexto, decisión, consecuencias, alternativas descartadas, estado.
-- Mencionar dependencia de Supabase como IdP y cómo se migraría a otro.
+- [x] Creado `docs/adr/ADR-003-autenticacion-supabase-jwt.md` (2026-05-27).
+- Contexto, decisión, consecuencias, alternativas descartadas, evolución.
+- Documenta dependencia de Supabase como IdP y el plan de migración a otro.
 
 ### 1.2 ADR-004 — Persistencia con SQLAlchemy async + PgBouncer
 - [ ] Crear `docs/adr/ADR-004-persistencia-sqlalchemy-pgbouncer.md`.
