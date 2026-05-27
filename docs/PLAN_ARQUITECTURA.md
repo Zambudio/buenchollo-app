@@ -16,7 +16,7 @@
 
 | Fase | Bloque | Tareas | Estado |
 |---|---|---:|:---:|
-| **F1** | Documentación arquitectónica (5 ADRs + diagrama) | 6 | 🟡 1/6 |
+| **F1** | Documentación arquitectónica (5 ADRs + diagrama) | 6 | 🟡 2/6 |
 | **F2** | Backend: fundamentos (migraciones, Alembic, excepciones, UserService) | 5 | ⬜ |
 | **F3** | Producción ready (request_id, logging, rate limit, audit log, health) | 5 | ⬜ |
 | **F4** | API: versionado `/v1` | 2 | ⬜ |
@@ -39,9 +39,10 @@
 - Documenta dependencia de Supabase como IdP y el plan de migración a otro.
 
 ### 1.2 ADR-004 — Persistencia con SQLAlchemy async + PgBouncer
-- [ ] Crear `docs/adr/ADR-004-persistencia-sqlalchemy-pgbouncer.md`.
-- Justificar `statement_cache_size=0`, `Uuid(as_uuid=False)`, async + asyncpg.
-- Por qué Postgres via Supabase y no Postgres self-hosted.
+- [x] Creado `docs/adr/ADR-004-persistencia-sqlalchemy-pgbouncer.md` (2026-05-27).
+- Justifica `statement_cache_size=0`, `Uuid(as_uuid=False)`, async + asyncpg.
+- Documenta convenciones de modelado, repos como única vía a la BD y plan
+  de migración a Alembic (F2.2).
 
 ### 1.3 ADR-005 — Validación en doble frontera (Zod + Pydantic)
 - [ ] Crear `docs/adr/ADR-005-validacion-doble-frontera.md`.
