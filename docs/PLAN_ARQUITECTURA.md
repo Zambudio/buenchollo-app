@@ -17,7 +17,7 @@
 | Fase | Bloque | Tareas | Estado |
 |---|---|---:|:---:|
 | **F1** | Documentación arquitectónica (5 ADRs + diagrama) | 6 | ✅ 6/6 |
-| **F2** | Backend: fundamentos (migraciones, Alembic, excepciones, UserService) | 5 | 🟡 1/5 |
+| **F2** | Backend: fundamentos (migraciones, Alembic, excepciones, UserService) | 5 | 🟡 2/5 |
 | **F3** | Producción ready (request_id, logging, rate limit, audit log, health) | 5 | ⬜ |
 | **F4** | API: versionado `/v1` | 2 | ⬜ |
 | **F5** | Frontend: features-based + TanStack Query + tipado total | 6 | ⬜ |
@@ -90,10 +90,19 @@
 - [x] Comprobado: no había scripts ni configs apuntando a la ruta vieja.
 
 ### 2.2 Configurar Alembic en backend
-- [ ] `alembic init alembic/` ya está parcialmente; revisar `alembic.ini`.
-- [ ] Hacer baseline con `alembic stamp head` sobre el esquema actual.
-- [ ] Documentar en `buenchollo-api/README.md` cómo crear/aplicar migraciones.
-- **Razón**: queremos versionar el esquema desde Python yendo adelante.
+- [x] `alembic/env.py` reescrito (2026-05-27): `include_object` filtra
+  schemas externos (`auth.*`, `storage.*`) y tablas legacy no modeladas
+  (`user_roles`, `import_logs`); `compare_type` y `compare_server_default`
+  activados para autogenerate más preciso.
+- [x] `app/core/base.py` ampliado con todos los modelos (alerts,
+  notifications, comments, dealvote, favorite, commentvote).
+- [x] Migración baseline `alembic/versions/20260527120000_baseline.py`
+  vacía a propósito para marcar el punto donde SQL legacy y Alembic se
+  encuentran. Listo para `alembic stamp head` en producción.
+- [x] `buenchollo-api/MIGRATIONS.md` documenta setup inicial, flujo
+  diario, reglas y troubleshooting.
+- **Acción pendiente del operador** (una sola vez, en NAS y en local):
+  ejecutar `alembic stamp head` para registrar la baseline como aplicada.
 
 ### 2.3 Excepciones de dominio + handler global (ARQ-03)
 - [ ] Crear `core/exceptions.py` con `DomainError`, `NotFoundError`, `ForbiddenError`, `ValidationError`.

@@ -1,4 +1,13 @@
+"""Alembic environment.
+
+Configura el motor SQLAlchemy async desde `app.core.config`, registra todos
+los modelos mediante `app.core.base` y aplica un filtro de objetos que evita
+que Alembic genere drops de tablas externas (auth.users, storage.*) o de
+tablas legacy gestionadas con SQL puro (user_roles, import_logs).
+"""
 import asyncio
+import os
+import sys
 from logging.config import fileConfig
 
 from sqlalchemy import pool
@@ -6,57 +15,63 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
-import sys
-import os
 
-# Agrega la ruta raíz al path para poder importar módulos de la app
+# Permite importar `app.*` desde alembic
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from app.core.config import get_settings
-from app.core.base import Base
+from app.core.config import get_settings  # noqa: E402
+from app.core.base import Base  # noqa: E402 — registra todos los modelos
 
-# this is the Alembic Config object, which provides
-# access to the values within the .ini file in use.
 config = context.config
 
-# Interpret the config file for Python logging.
-# This line sets up loggers basically.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
 target_metadata = Base.metadata
 
-# Sobrescribir la URL de sqlalchemy.url desde .env / config
+# Sobrescribir sqlalchemy.url desde .env / config en lugar del placeholder del .ini
 settings = get_settings()
 if settings.database_url:
     config.set_main_option("sqlalchemy.url", settings.database_url)
 
-# other values from the config, defined by the needs of env.py,
-# can be acquired:
-# my_important_option = config.get_main_option("my_important_option")
-# ... etc.
 
+# ── Filtros ─────────────────────────────────────────────────────────────────
+# Tablas del schema `public` que NO están modeladas como SQLAlchemy ORM.
+# Alembic las ignorará: sin esta lista, un --autogenerate generaría drops.
+_LEGACY_TABLES_NOT_MODELED = {"user_roles", "import_logs"}
+
+
+def include_object(obj, name, type_, reflected, compare_to):
+    """Devuelve True si Alembic debe considerar este objeto.
+
+    - Ignora cualquier tabla en schemas distintos a `public` (auth, storage,
+      supabase_migrations, etc.).
+    - Ignora las tablas legacy no modeladas (gestionadas con SQL en
+      buenchollo-api/supabase/migrations/).
+    """
+    if type_ == "table":
+        schema = getattr(obj, "schema", None)
+        if schema and schema != "public":
+            return False
+        if name in _LEGACY_TABLES_NOT_MODELED:
+            return False
+    return True
+
+
+# ── Modos online / offline ──────────────────────────────────────────────────
 
 def run_migrations_offline() -> None:
-    """Run migrations in 'offline' mode.
-
-    This configures the context with just a URL
-    and not an Engine, though an Engine is acceptable
-    here as well.  By skipping the Engine creation
-    we don't even need a DBAPI to be available.
-
-    Calls to context.execute() here emit the given string to the
-    script output.
-
-    """
+    """Run migrations in 'offline' mode (genera SQL sin conectar)."""
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        include_object=include_object,
+        include_schemas=False,
+        compare_type=True,
+        compare_server_default=True,
     )
 
     with context.begin_transaction():
@@ -64,18 +79,20 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        include_object=include_object,
+        include_schemas=False,
+        compare_type=True,
+        compare_server_default=True,
+    )
 
     with context.begin_transaction():
         context.run_migrations()
 
 
 async def run_async_migrations() -> None:
-    """In this scenario we need to create an Engine
-    and associate a connection with the context.
-
-    """
-
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
@@ -89,8 +106,6 @@ async def run_async_migrations() -> None:
 
 
 def run_migrations_online() -> None:
-    """Run migrations in 'online' mode."""
-
     asyncio.run(run_async_migrations())
 
 
