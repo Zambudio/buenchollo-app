@@ -32,7 +32,15 @@ target_metadata = Base.metadata
 # Sobrescribir sqlalchemy.url desde .env / config en lugar del placeholder del .ini
 settings = get_settings()
 if settings.database_url:
-    config.set_main_option("sqlalchemy.url", settings.database_url)
+    # Alembic almacena la url vía ConfigParser, que interpreta '%' como
+    # sintaxis de interpolación (%(var)s). Si DATABASE_URL trae caracteres
+    # URL-encoded en la contraseña (p.ej. %40 = '@', %E2%82%AC = '€'), hay
+    # que escapar el '%' duplicándolo. No afecta al runtime de la app, que
+    # pasa el URL directamente a asyncpg sin ConfigParser.
+    config.set_main_option(
+        "sqlalchemy.url",
+        settings.database_url.replace("%", "%%"),
+    )
 
 
 # ── Filtros ─────────────────────────────────────────────────────────────────
