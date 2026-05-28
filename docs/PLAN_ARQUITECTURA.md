@@ -18,7 +18,7 @@
 |---|---|---:|:---:|
 | **F1** | Documentación arquitectónica (5 ADRs + diagrama) | 6 | ✅ 6/6 |
 | **F2** | Backend: fundamentos (migraciones, Alembic, excepciones, UserService) | 5 | ✅ 5/5 |
-| **F3** | Producción ready (request_id, logging, rate limit, audit log, health) | 5 | ⬜ |
+| **F3** | Producción ready (request_id, logging, rate limit, audit log, health) | 5 | 🟡 1/5 |
 | **F4** | API: versionado `/v1` | 2 | ⬜ |
 | **F5** | Frontend: features-based + TanStack Query + tipado total | 6 | ⬜ |
 | **F6** | CI/CD y calidad continua | 3 | ⬜ |
@@ -168,10 +168,21 @@ cross-repo, se extrae el service en ese momento siguiendo el patrón de
 > debuggearlo y no caigamos en ataques triviales.
 
 ### 3.1 Middleware `request_id` + structured logging (ARQ-06)
-- [ ] `core/middleware/request_id.py` que genera `uuid4` por request, lo añade como header `X-Request-Id` y lo inyecta en un `contextvars.ContextVar`.
-- [ ] `core/logging.py` configura un `Formatter` JSON que incluye el `request_id` del contextvar.
-- [ ] Registrar el middleware en `main.py`.
-- [ ] Probar con `curl` que la respuesta incluye `X-Request-Id` y que el log lo muestra.
+- [x] `core/request_id.py` con `ContextVar`, `RequestIdMiddleware`,
+  helper `get_request_id()` y constante `REQUEST_ID_HEADER`. Genera UUID4
+  hex si no viene en la petición; respeta `X-Request-Id` entrante para
+  trazabilidad end-to-end con proxy/LB. (2026-05-28)
+- [x] `core/logging.py` reescrito con `_RequestIdFilter` que añade
+  `record.request_id` automático y dos formatters intercambiables:
+  `_JsonFormatter` (producción, una línea JSON con ts/level/logger/msg/
+  request_id + campos extra) y formato texto legible para desarrollo.
+- [x] `Settings.log_format` (`json`|`text`, default `json`) configurable
+  por env.
+- [x] `main.py` registra `RequestIdMiddleware` antes que CORS y expone
+  `X-Request-Id` como header CORS. Handlers globales de error añaden
+  manualmente el header a las respuestas 4xx/5xx via
+  `_with_request_id_header()`.
+- [x] 5 tests nuevos en `test_request_id.py`. 65/65 pytest verde.
 
 ### 3.2 Rate limiting con slowapi (ARQ-07)
 - [ ] `pip install slowapi`, añadir a `requirements.txt`.

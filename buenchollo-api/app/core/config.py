@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     app_name: str = "BuenChollo API"
     app_env: str = "local"
     log_level: str = "INFO"
+    # "json" (structured, una línea por log — recomendado para producción/Docker)
+    # o "text" (formato legible — recomendado para desarrollo local).
+    log_format: str = "json"
 
     # Orígenes CORS permitidos, separados por comas en la variable de entorno.
     # Ejemplo: CORS_ORIGINS=https://buenchollotech.com,https://www.buenchollotech.com

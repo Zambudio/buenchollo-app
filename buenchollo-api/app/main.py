@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse
 from app.core.config import get_settings
 from app.core.exceptions import DomainError
 from app.core.logging import configure_logging
+from app.core.request_id import REQUEST_ID_HEADER, RequestIdMiddleware, get_request_id
 from app.modules.products.api.router import router as products_router
 from app.modules.categories.api.router import router as categories_router
 from app.modules.deals.api.router import router as deals_router
@@ -22,7 +23,7 @@ from app.modules.notifications.api.router import router as notifications_router
 from app.modules.comments.api.router import router as comments_router
 
 settings = get_settings()
-configure_logging(settings.log_level)
+configure_logging(settings.log_level, fmt=settings.log_format)
 logger = logging.getLogger(__name__)
 
 
@@ -58,7 +59,12 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
 
-# ── CORS ─────────────────────────────────────────────────────────────────────
+# ── Middlewares ──────────────────────────────────────────────────────────────
+# El de RequestId va PRIMERO (en orden de registro) para que cubra al de CORS
+# y a las rutas: cualquier log generado dentro del ciclo de petición llevará
+# el request_id automáticamente.
+app.add_middleware(RequestIdMiddleware)
+
 _allow_all = "*" in settings.cors_origins
 app.add_middleware(
     CORSMiddleware,
@@ -66,7 +72,22 @@ app.add_middleware(
     allow_credentials=not _allow_all,  # credentials=True es incompatible con allow_origins=["*"]
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=[REQUEST_ID_HEADER],  # para que el browser pueda leerlo
 )
+
+
+def _with_request_id_header(headers: dict[str, str] | None = None) -> dict[str, str]:
+    """Devuelve los `headers` con `X-Request-Id` añadido si hay request en curso.
+
+    Las respuestas que se construyen aquí (handlers de error) no pasan por
+    `RequestIdMiddleware.dispatch` después, así que añadimos el header a mano
+    para que el cliente lo siga viendo en respuestas 4xx/5xx.
+    """
+    result = dict(headers or {})
+    rid = get_request_id()
+    if rid:
+        result[REQUEST_ID_HEADER] = rid
+    return result
 
 
 @app.exception_handler(DomainError)
@@ -81,6 +102,7 @@ async def domain_exception_handler(request: Request, exc: DomainError):
     return JSONResponse(
         status_code=exc.http_status,
         content={"detail": str(exc)},
+        headers=_with_request_id_header(),
     )
 
 
@@ -98,7 +120,10 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     return JSONResponse(
         status_code=500,
         content={"detail": "Error interno del servidor"},
-        headers={"Access-Control-Allow-Origin": origin, "Access-Control-Allow-Credentials": "true"},
+        headers=_with_request_id_header({
+            "Access-Control-Allow-Origin": origin,
+            "Access-Control-Allow-Credentials": "true",
+        }),
     )
 
 
