@@ -35,3 +35,8 @@ tzdata==2026.2
 # Rate limiting (slowapi). Storage en memoria por defecto — suficiente para el
 # monolito; cambiar a Redis si se escala a múltiples instancias.
 slowapi==0.1.9
+
+# Error tracking (Sentry SaaS o cualquier endpoint compatible con su protocolo,
+# p.ej. GlitchTip). Desactivado por defecto: si SENTRY_DSN está vacío, init_sentry
+# no inicializa nada y el SDK queda inerte.
+sentry-sdk[fastapi]==2.20.0

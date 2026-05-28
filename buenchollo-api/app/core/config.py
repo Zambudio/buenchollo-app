@@ -22,6 +22,20 @@ class Settings(BaseSettings):
     # cuando se quieran bombardear endpoints en tests sin disparar 429.
     rate_limit_enabled: bool = True
 
+    # Sentry (error tracking). Si SENTRY_DSN está vacío, el SDK no se
+    # inicializa y todo funciona normal: útil en local y en tests.
+    sentry_dsn: str = ""
+    # Etiqueta del entorno enviada con cada evento. Si no se define
+    # explícitamente, hereda app_env (local/staging/production).
+    sentry_environment: str = ""
+    # Sample rate de "transactions" (performance monitoring). 0.0 = sólo
+    # errores, sin traces. Subir si se quiere medir latencias. Cobra
+    # cuota en el plan free de Sentry, así que dejamos 0 por defecto.
+    sentry_traces_sample_rate: float = 0.0
+    # Versión de la app para tagging — útil para correlacionar bugs con
+    # despliegues concretos. Vacío => no se manda.
+    sentry_release: str = ""
+
     # Orígenes CORS permitidos, separados por comas en la variable de entorno.
     # Ejemplo: CORS_ORIGINS=https://buenchollotech.com,https://www.buenchollotech.com
     # En local se puede dejar vacío o usar "*" para permitir cualquier origen.

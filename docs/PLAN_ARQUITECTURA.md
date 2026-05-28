@@ -18,7 +18,7 @@
 |---|---|---:|:---:|
 | **F1** | Documentación arquitectónica (5 ADRs + diagrama) | 6 | ✅ 6/6 |
 | **F2** | Backend: fundamentos (migraciones, Alembic, excepciones, UserService) | 5 | ✅ 5/5 |
-| **F3** | Producción ready (request_id, logging, rate limit, audit log, health) | 5 | 🟡 4/5 |
+| **F3** | Producción ready (request_id, logging, rate limit, audit log, health) | 5 | ✅ 5/5 |
 | **F4** | API: versionado `/v1` | 2 | ⬜ |
 | **F5** | Frontend: features-based + TanStack Query + tipado total | 6 | ⬜ |
 | **F6** | CI/CD y calidad continua | 3 | ⬜ |
@@ -257,10 +257,34 @@ cross-repo, se extrae el service en ese momento siguiendo el patrón de
   `curl /health/ready | jq .checks` enseña exactamente qué falla y con
   qué latencia.
 
-### 3.5 Errores no manejados → Sentry-style (opcional pero recomendable)
-- [ ] Evaluar si añadir Sentry / GlitchTip free tier ahora o esperar.
-- [ ] Si sí: integrar `sentry-sdk[fastapi]` mínima.
-- [ ] Si no: documentar como decisión "logs estructurados son suficientes hasta X usuarios".
+### 3.5 Errores no manejados → Sentry (integrado)
+- [x] `sentry-sdk[fastapi]==2.20.0` añadido a `requirements.txt`. (2026-05-28)
+- [x] `core/sentry.py` con `init_sentry(settings)`:
+  * **Activación por env**: sin `SENTRY_DSN` no se inicializa nada; ideal
+    para local y tests.
+  * **`LoggingIntegration`** (level=INFO breadcrumbs, event_level=ERROR):
+    cualquier `logger.error/exception` genera evento Sentry sin código
+    extra en cada endpoint.
+  * **Detección automática** de FastAPI, Starlette y SQLAlchemy via el
+    auto-enable del SDK.
+  * **Hook `before_send`** que añade el `request_id` del contextvar de
+    F3.1 como tag de primer nivel — cruzable con logs JSON del NAS.
+  * **`send_default_pii=False`**: no se envían cookies, headers ni datos
+    del usuario por defecto. PII explícito sólo si se decide.
+  * **Captura de excepciones de init**: si Sentry falla al arrancar, se
+    loguea pero la app sigue arrancando (mejor sin tracking que sin app).
+- [x] `main.py` llama a `init_sentry(settings)` justo tras
+  `configure_logging` para capturar errores de arranque.
+- [x] `Settings` añade `sentry_dsn`, `sentry_environment` (hereda app_env),
+  `sentry_traces_sample_rate` (default 0.0), `sentry_release`.
+- [x] `.env.example` documenta cómo obtener el DSN y cada parámetro.
+- [x] 7 tests nuevos en `test_sentry.py`: sin DSN no inicializa, con DSN
+  propaga config, hereda app_env si sentry_environment vacío, captura
+  excepciones de init, before_send añade request_id, sin request_id no
+  rompe, preserva tags existentes. 87/87 pytest verde.
+- **Compatibilidad con GlitchTip**: el mismo SDK funciona con cualquier
+  endpoint que implemente el protocolo Sentry. Si en el futuro se quiere
+  self-hostear en el NAS, basta cambiar el DSN.
 
 ---
 

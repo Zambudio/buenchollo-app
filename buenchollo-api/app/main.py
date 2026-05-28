@@ -17,6 +17,7 @@ from app.core.health import router as health_router
 from app.core.logging import configure_logging
 from app.core.rate_limit import limiter, rate_limit_exceeded_handler
 from app.core.request_id import REQUEST_ID_HEADER, RequestIdMiddleware, get_request_id
+from app.core.sentry import init_sentry
 from app.modules.products.api.router import router as products_router
 from app.modules.categories.api.router import router as categories_router
 from app.modules.deals.api.router import router as deals_router
@@ -29,6 +30,9 @@ from app.modules.comments.api.router import router as comments_router
 
 settings = get_settings()
 configure_logging(settings.log_level, fmt=settings.log_format)
+# Sentry debe inicializarse cuanto antes para capturar errores de arranque.
+# Si SENTRY_DSN está vacío, no se inicializa y la app funciona normal.
+init_sentry(settings)
 logger = logging.getLogger(__name__)
 
 
