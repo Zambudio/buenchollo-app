@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { formatRelativeTime } from "@/lib/format";
+import { errorMessage } from "@/lib/errors";
 import { commentsApi, type CommentItem } from "@/services/api/comments";
 import { ArrowUp, ArrowDown, MessageSquare, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -48,8 +49,8 @@ export function Comments({ dealId, onCountChange }: Props) {
       await refresh();
       onCountChange?.();
       return true;
-    } catch {
-      toast.error("Error al comentar");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "Error al comentar"));
       return false;
     }
   };
@@ -77,8 +78,8 @@ export function Comments({ dealId, onCountChange }: Props) {
       await commentsApi.vote(commentId, value);
       // Refresco silencioso para reconciliar orden por score con el servidor.
       await refresh();
-    } catch {
-      toast.error("No se pudo registrar el voto");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "No se pudo registrar el voto"));
       await refresh(); // rollback de la actualización optimista
     }
   };
@@ -90,8 +91,8 @@ export function Comments({ dealId, onCountChange }: Props) {
       await commentsApi.remove(commentId);
       await refresh();
       onCountChange?.();
-    } catch {
-      toast.error("Error al eliminar");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "Error al eliminar"));
     }
   };
 
