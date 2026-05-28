@@ -1,18 +1,21 @@
 """add admin_audit_log table
 
-Primera migración Alembic real del proyecto tras la baseline
-`20260527120000_baseline`. Crea la tabla `public.admin_audit_log` para
-registrar acciones admin críticas con correlación al request_id.
+Primera migración Alembic real del proyecto tras la baseline `20260527120000`.
+Crea la tabla `public.admin_audit_log` para registrar acciones admin
+críticas con correlación al request_id.
 
-Revision ID: 20260528120000_add_admin_audit_log
-Revises: 20260527120000_baseline
+Revision ID: 20260528120000
+Revises: 20260527120000
 Create Date: 2026-05-28
+
+NOTA: los identificadores de Alembic se mantienen como timestamps puros
+(14 chars) para encajar en `VARCHAR(32)` de la tabla `alembic_version`.
 """
 import sqlalchemy as sa
 from alembic import op
 
-revision = "20260528120000_add_admin_audit_log"
-down_revision = "20260527120000_baseline"
+revision = "20260528120000"
+down_revision = "20260527120000"
 branch_labels = None
 depends_on = None
 

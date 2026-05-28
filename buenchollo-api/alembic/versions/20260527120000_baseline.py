@@ -10,15 +10,19 @@ Para registrarla como aplicada sin ejecutar SQL: `alembic stamp head`.
 A partir de aquí, todas las nuevas migraciones se generan con Alembic:
     `alembic revision --autogenerate -m "descripción"`
 
-Revision ID: 20260527120000_baseline
+Revision ID: 20260527120000
 Revises:
 Create Date: 2026-05-27
+
+NOTA: el `revision` queda como timestamp puro (14 chars) para encajar en
+`VARCHAR(32)` que es el ancho por defecto de la tabla `alembic_version`.
+El sufijo descriptivo va sólo en el nombre del fichero.
 """
 from alembic import op  # noqa: F401
 import sqlalchemy as sa  # noqa: F401
 
 
-revision = "20260527120000_baseline"
+revision = "20260527120000"
 down_revision = None
 branch_labels = None
 depends_on = None
