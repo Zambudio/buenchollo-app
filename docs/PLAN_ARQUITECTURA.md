@@ -17,7 +17,7 @@
 | Fase | Bloque | Tareas | Estado |
 |---|---|---:|:---:|
 | **F1** | Documentación arquitectónica (5 ADRs + diagrama) | 6 | ✅ 6/6 |
-| **F2** | Backend: fundamentos (migraciones, Alembic, excepciones, UserService) | 5 | 🟡 4/5 |
+| **F2** | Backend: fundamentos (migraciones, Alembic, excepciones, UserService) | 5 | ✅ 5/5 |
 | **F3** | Producción ready (request_id, logging, rate limit, audit log, health) | 5 | ⬜ |
 | **F4** | API: versionado `/v1` | 2 | ⬜ |
 | **F5** | Frontend: features-based + TanStack Query + tipado total | 6 | ⬜ |
@@ -140,9 +140,25 @@
   pytest verde.
 
 ### 2.5 Capa `application/` mínima en `categories`, `stores`, `notifications`
-- [ ] Sólo si la lógica lo merece (CRUD trivial puede quedarse). Evaluar caso a caso.
-- [ ] Para `notifications`: añadir `NotificationService.mark_as_read_for_user`, `unread_count` (si añade valor frente al repo).
-- [ ] Para `categories` y `stores`: si sólo es CRUD, dejar como están y **documentarlo** como decisión consciente.
+**Decisión (2026-05-28): NO extraer servicios.** Tras evaluar caso a caso:
+
+- **`categories`** y **`stores`** son CRUD admin trivial sin reglas de
+  negocio. Un `XService` que sólo delegue al repo sería boilerplate puro.
+- **`notifications`** tampoco aporta: los 3 endpoints son consultas
+  directas; la única lógica (crear notificaciones cuando un deal coincide
+  con una alerta) ya vive en `alerts/application/alert_matcher.py`.
+
+Aplicamos KISS/YAGNI: cuando aparezca la primera regla cross-field o
+cross-repo, se extrae el service en ese momento siguiendo el patrón de
+`users/application/user_service.py`.
+
+- [x] Documentada la decisión en docstring al inicio de los 3 routers
+  (`categories/api/router.py`, `stores/api/router.py`,
+  `notifications/api/router.py`) con criterios concretos para cuando sí
+  haya que crear el service.
+- [x] Reafirma la regla de la arquitectura: capa `application/` cuando
+  hay valor (`UserService`, `DealService`, `AlertMatcher`,
+  `PreviewProductFromUrlUseCase`), no por simetría visual.
 
 ---
 

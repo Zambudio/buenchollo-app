@@ -1,3 +1,14 @@
+"""Endpoints del módulo stores.
+
+NOTA arquitectónica (F2.5, 2026-05-27):
+Stores es CRUD admin trivial sin reglas de negocio: list, list-admin,
+create, update, delete. Como en `categories`, no tiene capa `application/`
+a propósito — crear un `StoreService` que sólo delegue al repo sería
+boilerplate puro (YAGNI). Cuando aparezca la primera regla que justifique
+un caso de uso (p. ej. validar template de URL de afiliado o detectar
+duplicados por dominio), extraer el service en ese momento siguiendo el
+patrón de `users/application/user_service.py`.
+"""
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db

@@ -1,3 +1,17 @@
+"""Endpoints del módulo notifications.
+
+NOTA arquitectónica (F2.5, 2026-05-27):
+Notifications no tiene capa `application/` a propósito. Los 3 endpoints
+(listar, contar no leídas, marcar todas como leídas) son consultas
+directas al repositorio sin reglas de negocio. La creación de
+notificaciones la hace `AlertMatcher` en el módulo `alerts/application/`
+cuando un deal coincide con una alerta — ese es el único lugar donde
+existe lógica.
+
+Si en el futuro se añaden funcionalidades como prioridades, push,
+agregación por tipo o políticas anti-spam, extraer `NotificationService`
+siguiendo el patrón de `users/application/user_service.py`.
+"""
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db

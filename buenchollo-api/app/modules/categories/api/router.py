@@ -1,3 +1,16 @@
+"""Endpoints del módulo categories.
+
+NOTA arquitectónica (F2.5, 2026-05-27):
+Este módulo no tiene capa `application/` a propósito. Categories es un
+CRUD admin trivial sin reglas de negocio: list, get-by-slug, create, delete.
+Crear un `CategoryService` que sólo delegue al repo sería boilerplate puro
+(YAGNI). Cuando aparezca la primera regla (p. ej. "no se puede borrar una
+categoría con deals activos") se extraerá el service en ese momento.
+
+Si añades reglas que toquen varios repos o validaciones cross-field, sí
+crea `categories/application/category_service.py` siguiendo el patrón de
+`users/application/user_service.py`.
+"""
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
