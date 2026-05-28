@@ -18,7 +18,7 @@
 |---|---|---:|:---:|
 | **F1** | Documentación arquitectónica (5 ADRs + diagrama) | 6 | ✅ 6/6 |
 | **F2** | Backend: fundamentos (migraciones, Alembic, excepciones, UserService) | 5 | ✅ 5/5 |
-| **F3** | Producción ready (request_id, logging, rate limit, audit log, health) | 5 | 🟡 3/5 ✅ |
+| **F3** | Producción ready (request_id, logging, rate limit, audit log, health) | 5 | 🟡 4/5 |
 | **F4** | API: versionado `/v1` | 2 | ⬜ |
 | **F5** | Frontend: features-based + TanStack Query + tipado total | 6 | ⬜ |
 | **F6** | CI/CD y calidad continua | 3 | ⬜ |
@@ -238,9 +238,24 @@ cross-repo, se extrae el service en ese momento siguiendo el patrón de
   ```
 
 ### 3.4 Health check enriquecido
-- [ ] Ampliar `/health` para reportar también `db: ok|error` y `supabase_auth: ok|error`.
-- [ ] Endpoint `/health/ready` (k8s-style) que falle si la BD está caída.
-- [ ] **Razón**: cuando despliegues con un load balancer o k8s, el orchestrator necesita saber si la app está realmente lista.
+- [x] Nuevo módulo `core/health.py` con dos endpoints separados
+  (decisión consciente: nunca mezclar liveness con readiness):
+  * **`/health`** (liveness): 200 si el proceso atiende peticiones, no
+    toca BD ni servicios externos. Es lo que mira el orquestador para
+    reiniciar contenedores rotos.
+  * **`/health/ready`** (readiness, nuevo): probe `SELECT 1` a la BD +
+    verificación de que las credenciales de Supabase están configuradas.
+    Devuelve `{"status": "ready"|"not_ready", "checks": {...}}` con
+    latencia del probe BD en ms. Status 200 si todo OK, 503 si algo falla.
+- [x] `main.py` registra el router de health y deja el endpoint inline
+  retirado.
+- [x] 4 tests nuevos en `test_health.py` cubriendo liveness no toca BD,
+  readiness OK, readiness con BD caída → 503, readiness sin credenciales
+  Supabase → 503. 80/80 pytest verde.
+- **Razón**: para el orquestador (Container Manager del NAS hoy, k8s
+  mañana) y para diagnóstico humano. Cuando algo no funciona,
+  `curl /health/ready | jq .checks` enseña exactamente qué falla y con
+  qué latencia.
 
 ### 3.5 Errores no manejados → Sentry-style (opcional pero recomendable)
 - [ ] Evaluar si añadir Sentry / GlitchTip free tier ahora o esperar.

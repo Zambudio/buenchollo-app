@@ -13,6 +13,7 @@ from slowapi.middleware import SlowAPIMiddleware
 
 from app.core.config import get_settings
 from app.core.exceptions import DomainError
+from app.core.health import router as health_router
 from app.core.logging import configure_logging
 from app.core.rate_limit import limiter, rate_limit_exceeded_handler
 from app.core.request_id import REQUEST_ID_HEADER, RequestIdMiddleware, get_request_id
@@ -147,9 +148,4 @@ app.include_router(telegram_router)
 app.include_router(alerts_router)
 app.include_router(notifications_router)
 app.include_router(comments_router)
-
-
-@app.get("/health", tags=["health"])
-def health() -> dict[str, str]:
-    """Return a small status payload for uptime checks."""
-    return {"status": "ok", "app": settings.app_name, "environment": settings.app_env}
+app.include_router(health_router)
