@@ -11,6 +11,7 @@ patrón de `users/application/user_service.py`.
 """
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.audit import audit_log
 from app.core.database import get_db
 from app.core.security import require_admin
 from app.modules.stores.domain.exceptions import StoreNotFound
@@ -47,35 +48,65 @@ async def list_all_stores(
 @router.post("/admin", response_model=StoreResponse, status_code=201)
 async def create_store(
     store_in: StoreCreate,
+    db: AsyncSession = Depends(get_db),
     repo: StoreRepository = Depends(get_store_repository),
-    _auth=Depends(require_admin),
+    current_user=Depends(require_admin),
 ):
     store = Store(**store_in.model_dump())
-    return await repo.create(store)
+    created = await repo.create(store)
+    await audit_log(
+        db,
+        user_id=str(current_user.id),
+        action="store.create",
+        target_type="store",
+        target_id=str(created.id),
+        payload={"name": created.name, "slug": created.slug, "domain": created.domain},
+    )
+    return created
 
 
 @router.put("/admin/{store_id}", response_model=StoreResponse)
 async def update_store(
     store_id: str,
     store_in: StoreUpdate,
+    db: AsyncSession = Depends(get_db),
     repo: StoreRepository = Depends(get_store_repository),
-    _auth=Depends(require_admin),
+    current_user=Depends(require_admin),
 ):
     store = await repo.get_by_id(store_id)
     if not store:
         raise StoreNotFound()
-    for field, value in store_in.model_dump(exclude_unset=True).items():
+    diff = store_in.model_dump(exclude_unset=True)
+    for field, value in diff.items():
         setattr(store, field, value)
-    return await repo.update(store)
+    updated = await repo.update(store)
+    await audit_log(
+        db,
+        user_id=str(current_user.id),
+        action="store.update",
+        target_type="store",
+        target_id=store_id,
+        payload={"changed_fields": list(diff.keys())},
+    )
+    return updated
 
 
 @router.delete("/admin/{store_id}", status_code=204)
 async def delete_store(
     store_id: str,
+    db: AsyncSession = Depends(get_db),
     repo: StoreRepository = Depends(get_store_repository),
-    _auth=Depends(require_admin),
+    current_user=Depends(require_admin),
 ):
     store = await repo.get_by_id(store_id)
     if not store:
         raise StoreNotFound()
     await repo.delete(store)
+    await audit_log(
+        db,
+        user_id=str(current_user.id),
+        action="store.delete",
+        target_type="store",
+        target_id=store_id,
+        payload={"name": store.name, "slug": store.slug},
+    )

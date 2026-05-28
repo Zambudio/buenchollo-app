@@ -5,8 +5,9 @@ usuario y agregados del panel admin. La capa `application/UserService`
 consume estos métodos sin construir SQL.
 """
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, text
+from sqlalchemy import desc, select, text
 
+from app.core.audit.models import AuditLog
 from app.modules.users.domain.models import Profile
 
 
@@ -135,3 +136,36 @@ class ProfileRepository:
             )
         ).mappings().first()
         return dict(row) if row else dict(self._ZERO_ADMIN_STATS)
+
+    async def list_audit_log(
+        self,
+        *,
+        limit: int = 100,
+        offset: int = 0,
+        action: str | None = None,
+        target_type: str | None = None,
+        user_id: str | None = None,
+    ) -> list[dict]:
+        """Lista paginada del audit log, con filtros opcionales."""
+        query = select(AuditLog).order_by(desc(AuditLog.created_at))
+        if action:
+            query = query.where(AuditLog.action == action)
+        if target_type:
+            query = query.where(AuditLog.target_type == target_type)
+        if user_id:
+            query = query.where(AuditLog.user_id == user_id)
+        query = query.offset(offset).limit(limit)
+        result = await self.session.execute(query)
+        return [
+            {
+                "id": str(row.id),
+                "user_id": str(row.user_id) if row.user_id else None,
+                "action": row.action,
+                "target_type": row.target_type,
+                "target_id": row.target_id,
+                "payload": row.payload,
+                "request_id": row.request_id,
+                "created_at": row.created_at.isoformat() if row.created_at else None,
+            }
+            for row in result.scalars().all()
+        ]

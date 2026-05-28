@@ -1,6 +1,7 @@
 import logging
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.audit import audit_log
 from app.core.database import get_db
 from app.core.rate_limit import limiter
 from app.modules.deals.infrastructure.repository import DealRepository
@@ -166,31 +167,60 @@ async def get_all_admin_deals(
 @router.post("/admin", response_model=DealDetailResponse)
 async def create_deal(
     deal_in: DealCreate,
+    db: AsyncSession = Depends(get_db),
     service: DealService = Depends(get_deal_service),
     current_user=Depends(require_admin),
 ):
-    return await service.create_deal(deal_in.model_dump(exclude_none=True), str(current_user.id))
+    payload = deal_in.model_dump(exclude_none=True)
+    created = await service.create_deal(payload, str(current_user.id))
+    await audit_log(
+        db,
+        user_id=str(current_user.id),
+        action="deal.create",
+        target_type="deal",
+        target_id=str(created.id),
+        payload={"title": created.title, "status": created.status, "store_id": payload.get("store_id")},
+    )
+    return created
 
 
 @router.put("/admin/{deal_id}", response_model=DealDetailResponse)
 async def update_deal(
     deal_id: str,
     deal_in: DealUpdate,
+    db: AsyncSession = Depends(get_db),
     service: DealService = Depends(get_deal_service),
-    _auth=Depends(require_admin),
+    current_user=Depends(require_admin),
 ):
-    updated = await service.update_deal(deal_id, deal_in.model_dump(exclude_unset=True))
+    diff = deal_in.model_dump(exclude_unset=True)
+    updated = await service.update_deal(deal_id, diff)
     if not updated:
         raise DealNotFound(deal_id)
+    await audit_log(
+        db,
+        user_id=str(current_user.id),
+        action="deal.update",
+        target_type="deal",
+        target_id=deal_id,
+        payload={"changed_fields": list(diff.keys())},
+    )
     return updated
 
 
 @router.delete("/admin/{deal_id}", status_code=204)
 async def delete_deal(
     deal_id: str,
+    db: AsyncSession = Depends(get_db),
     service: DealService = Depends(get_deal_service),
-    _auth=Depends(require_admin)
+    current_user=Depends(require_admin),
 ):
     deleted = await service.delete_deal(deal_id)
     if not deleted:
         raise DealNotFound(deal_id)
+    await audit_log(
+        db,
+        user_id=str(current_user.id),
+        action="deal.delete",
+        target_type="deal",
+        target_id=deal_id,
+    )

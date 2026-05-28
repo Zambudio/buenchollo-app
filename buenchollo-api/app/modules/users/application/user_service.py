@@ -105,3 +105,17 @@ class UserService:
 
     async def get_admin_stats(self) -> dict:
         return await self.repo.get_admin_stats()
+
+    async def list_audit_log(
+        self,
+        *,
+        limit: int = 100,
+        offset: int = 0,
+        action: str | None = None,
+        target_type: str | None = None,
+        user_id: str | None = None,
+    ) -> list[dict]:
+        return await self.repo.list_audit_log(
+            limit=limit, offset=offset, action=action,
+            target_type=target_type, user_id=user_id,
+        )

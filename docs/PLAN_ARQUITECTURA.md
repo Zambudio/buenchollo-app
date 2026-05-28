@@ -18,7 +18,7 @@
 |---|---|---:|:---:|
 | **F1** | Documentación arquitectónica (5 ADRs + diagrama) | 6 | ✅ 6/6 |
 | **F2** | Backend: fundamentos (migraciones, Alembic, excepciones, UserService) | 5 | ✅ 5/5 |
-| **F3** | Producción ready (request_id, logging, rate limit, audit log, health) | 5 | 🟡 2/5 |
+| **F3** | Producción ready (request_id, logging, rate limit, audit log, health) | 5 | 🟡 3/5 |
 | **F4** | API: versionado `/v1` | 2 | ⬜ |
 | **F5** | Frontend: features-based + TanStack Query + tipado total | 6 | ⬜ |
 | **F6** | CI/CD y calidad continua | 3 | ⬜ |
@@ -207,12 +207,35 @@ cross-repo, se extrae el service en ese momento siguiendo el patrón de
 - [x] 3 tests nuevos en `test_rate_limit.py`. 68/68 pytest verde.
 
 ### 3.3 Audit log en acciones admin críticas
-- [ ] Nueva tabla `admin_audit_log` (id, user_id, action, target_type, target_id, payload, created_at).
-- [ ] Migración Alembic.
-- [ ] Helper `audit_log(...)` en `core/audit.py`.
-- [ ] Llamar desde: crear/editar/borrar deal, crear/borrar categoría/tienda, promote/demote admin.
-- [ ] Endpoint `GET /admin/audit` (paginado) sólo para admins.
-- [ ] **Razón**: trazabilidad de acciones sensibles. Si mañana hay un deal borrado por error, sabremos quién y cuándo.
+- [x] Modelo `AuditLog` en `core/audit/models.py`: tabla
+  `admin_audit_log` (id, user_id FK profiles, action, target_type,
+  target_id, payload JSON, request_id, created_at). Índices por user_id,
+  action, target_id, created_at. (2026-05-28)
+- [x] **Primera migración real con Alembic**:
+  `alembic/versions/20260528120000_add_admin_audit_log.py`. RLS activada.
+- [x] Helper `audit_log(session, *, user_id, action, target_type,
+  target_id, payload)` en `core/audit/service.py`:
+  * Best-effort: cualquier fallo NO propaga al endpoint.
+  * Usa `session.begin_nested()` (SAVEPOINT) para contener errores y
+    evitar que un fallo envenene la sesión principal con
+    `PendingRollbackError`.
+  * Inyecta `request_id` automáticamente del contextvar de F3.1 para
+    correlacionar con los logs.
+  * `_sanitize_payload` reemplaza valores no JSON-serializables por
+    `repr()` antes de guardar.
+- [x] Llamado desde: `deal.create/update/delete`,
+  `category.create/delete`, `store.create/update/delete`,
+  `telegram.notify`.
+- [x] Endpoint `GET /admin/audit` paginado y filtrable (action,
+  target_type, user_id) en `users/api/router.py`. UserService + repo
+  enriquecidos con `list_audit_log`.
+- [x] 6 tests nuevos en `test_audit_log.py`. 76/76 pytest verde.
+- **Acción operador**: en NAS, una sola vez antes de reiniciar el
+  contenedor con este commit:
+  ```bash
+  docker exec -it buenchollo-api alembic stamp 20260527120000_baseline
+  docker exec -it buenchollo-api alembic upgrade head
+  ```
 
 ### 3.4 Health check enriquecido
 - [ ] Ampliar `/health` para reportar también `db: ok|error` y `supabase_auth: ok|error`.

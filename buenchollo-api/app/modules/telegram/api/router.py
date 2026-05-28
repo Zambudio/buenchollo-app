@@ -1,6 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.audit import audit_log
 from app.core.config import Settings, get_settings
+from app.core.database import get_db
 from app.core.rate_limit import limiter
 from app.core.security import require_admin
 from app.modules.telegram.application.post_generator import TelegramPostGenerator
@@ -113,8 +116,9 @@ async def generate_post(
 async def notify_deal(
     request: Request,
     payload: TelegramNotifyRequest,
+    db: AsyncSession = Depends(get_db),
     settings: Settings = Depends(get_settings),
-    _auth=Depends(require_admin),
+    current_user=Depends(require_admin),
 ) -> dict:
     """
     Publica en Telegram.
@@ -167,4 +171,12 @@ async def notify_deal(
     if not ok:
         raise HTTPException(status_code=500, detail="Error al enviar a Telegram. Revisa los logs del servidor.")
 
+    await audit_log(
+        db,
+        user_id=str(current_user.id),
+        action="telegram.notify",
+        target_type="channel",
+        target_id=channel_id,
+        payload={"title": payload.title, "has_text": bool(payload.text)},
+    )
     return {"ok": True}

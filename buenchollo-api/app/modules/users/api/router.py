@@ -4,7 +4,7 @@ El router se limita a hablar HTTP: recibe la petición, resuelve auth,
 delega al `UserService` y devuelve la respuesta. Toda la lógica vive en
 la capa de aplicación.
 """
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -82,3 +82,20 @@ async def admin_list_users(
 ) -> list[dict]:
     """Lista todos los perfiles con sus roles."""
     return await service.list_admin_users()
+
+
+@router.get("/admin/audit")
+async def admin_list_audit_log(
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    action: str | None = Query(None, description="Filtro exacto por action (deal.create, etc.)"),
+    target_type: str | None = Query(None, description="Filtro por tipo de entidad"),
+    user_id: str | None = Query(None, description="Filtro por id de admin"),
+    service: UserService = Depends(get_user_service),
+    _auth=Depends(require_admin),
+) -> list[dict]:
+    """Audit log de acciones admin críticas. Paginado y filtrable."""
+    return await service.list_audit_log(
+        limit=limit, offset=offset, action=action,
+        target_type=target_type, user_id=user_id,
+    )

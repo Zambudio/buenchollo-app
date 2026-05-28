@@ -13,6 +13,7 @@ crea `categories/application/category_service.py` siguiendo el patrón de
 """
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.audit import audit_log
 from app.core.database import get_db
 from app.modules.categories.domain.exceptions import CategoryNotFound
 from app.modules.categories.infrastructure.repository import CategoryRepository
@@ -57,22 +58,40 @@ async def get_all_admin_categories(
 @router.post("/admin", response_model=CategoryResponse)
 async def create_category(
     category_in: CategoryCreate,
+    db: AsyncSession = Depends(get_db),
     repo: CategoryRepository = Depends(get_category_repository),
-    current_user = Depends(require_admin)
+    current_user = Depends(require_admin),
 ) -> CategoryResponse:
     """Admin: Create a new category."""
     new_category = Category(**category_in.model_dump())
     created = await repo.create(new_category)
+    await audit_log(
+        db,
+        user_id=str(current_user.id),
+        action="category.create",
+        target_type="category",
+        target_id=str(created.id),
+        payload={"name": created.name, "slug": created.slug, "parent_id": created.parent_id},
+    )
     return created
 
 @router.delete("/admin/{category_id}", status_code=204)
 async def delete_category(
     category_id: str,
+    db: AsyncSession = Depends(get_db),
     repo: CategoryRepository = Depends(get_category_repository),
-    current_user = Depends(require_admin)
+    current_user = Depends(require_admin),
 ):
     """Admin: Delete a category."""
     category = await repo.get_by_id(category_id)
     if not category:
         raise CategoryNotFound()
     await repo.delete(category)
+    await audit_log(
+        db,
+        user_id=str(current_user.id),
+        action="category.delete",
+        target_type="category",
+        target_id=category_id,
+        payload={"name": category.name, "slug": category.slug},
+    )
