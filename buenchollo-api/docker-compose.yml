@@ -9,4 +9,10 @@ services:
     restart: always
     volumes:
       - .:/app
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    # 1) `alembic upgrade head` aplica cualquier migración pendiente al arrancar.
+    #    Idempotente: si la BD ya está al día, no hace nada.
+    # 2) Si alembic falla (BD caída, migración rota), el contenedor NO arranca.
+    #    Esto es intencional: mejor no arrancar que correr con esquema obsoleto.
+    # 3) Si NO quieres este comportamiento (p. ej. en local sin permisos),
+    #    cambia a:  command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"

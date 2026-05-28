@@ -16,26 +16,44 @@ presente en producción), todo lo posterior se genera y se aplica con Alembic.
 
 ## Setup inicial (una sola vez)
 
-Necesario sólo si Alembic todavía no se ha "stampado" en tu BD.
+Si tu BD ya está vivía (caso normal en BuenChollo), hay dos vías para
+sincronizar Alembic con su estado actual.
+
+### Vía A — Tienes acceso shell a la BD/contenedor
 
 ```bash
 cd buenchollo-api
 source .venv/bin/activate    # o el equivalente en tu sistema
 
-# Verifica que ves la BD
-alembic current
-# Debería decir "alembic_version: " (sin contenido) si nunca se ha aplicado.
-
 # Marca la baseline como aplicada SIN ejecutar SQL
 alembic stamp head
-# Debería decir "Running stamp_revision  -> 20260527120000_baseline".
-
-alembic current
-# Ahora dice "20260527120000_baseline (head)".
 ```
 
-A partir de aquí Alembic sabe que la BD está al día y cualquier nueva
-migración generada se aplicará incrementalmente.
+### Vía B — Sólo tienes acceso al SQL Editor (caso BuenChollo en NAS)
+
+Ejecuta este SQL contra la BD:
+
+```sql
+CREATE TABLE IF NOT EXISTS public.alembic_version (
+    version_num VARCHAR(32) NOT NULL,
+    CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num)
+);
+
+TRUNCATE public.alembic_version;
+INSERT INTO public.alembic_version (version_num) VALUES ('<rev_actual>');
+```
+
+Sustituye `<rev_actual>` por el último `revision` del fichero más reciente
+en `alembic/versions/`. Tras esto el contenedor (que ejecuta
+`alembic upgrade head` al arrancar — ver `docker-compose.yml`) ya no
+intentará aplicar nada porque la versión está al día.
+
+## Despliegue automático de migraciones
+
+`docker-compose.yml` ejecuta `alembic upgrade head` justo antes de uvicorn,
+así cualquier migración nueva se aplica al reiniciar el contenedor.
+**Si la migración falla, el contenedor no arranca**: intencional para no
+correr con esquema obsoleto.
 
 ---
 
