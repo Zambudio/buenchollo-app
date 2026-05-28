@@ -18,7 +18,7 @@
 |---|---|---:|:---:|
 | **F1** | Documentación arquitectónica (5 ADRs + diagrama) | 6 | ✅ 6/6 |
 | **F2** | Backend: fundamentos (migraciones, Alembic, excepciones, UserService) | 5 | ✅ 5/5 |
-| **F3** | Producción ready (request_id, logging, rate limit, audit log, health) | 5 | 🟡 1/5 |
+| **F3** | Producción ready (request_id, logging, rate limit, audit log, health) | 5 | 🟡 2/5 |
 | **F4** | API: versionado `/v1` | 2 | ⬜ |
 | **F5** | Frontend: features-based + TanStack Query + tipado total | 6 | ⬜ |
 | **F6** | CI/CD y calidad continua | 3 | ⬜ |
@@ -185,16 +185,26 @@ cross-repo, se extrae el service en ese momento siguiendo el patrón de
 - [x] 5 tests nuevos en `test_request_id.py`. 65/65 pytest verde.
 
 ### 3.2 Rate limiting con slowapi (ARQ-07)
-- [ ] `pip install slowapi`, añadir a `requirements.txt`.
-- [ ] Configurar limiter por IP en `main.py`.
-- [ ] Aplicar límites donde tiene sentido:
-  - `POST /products/preview-from-url`: 10/min (caro, hace HTTP a Amazon + OpenAI).
-  - `POST /deals/{id}/click`: 60/min (anti-spam de contador).
-  - `POST /deals/{id}/vote`: 30/min.
-  - `POST /deals/{id}/comments`: 10/min.
-  - `POST /telegram/notify`: 5/min (publicación admin, evita doble envío).
-- [ ] Excepciones rate limit → 429 con mensaje claro.
-- [ ] Probar con un bucle de curl que llega al límite.
+- [x] `slowapi==0.1.9` añadido a `requirements.txt`. (2026-05-28)
+- [x] `core/rate_limit.py` con `Limiter` configurado:
+  - Key function por IP respetando `X-Forwarded-For` (proxy/Nginx delante).
+  - Storage en memoria (basta para el monolito; switch a Redis si hay
+    múltiples instancias).
+  - `Settings.rate_limit_enabled` para desactivar globalmente.
+  - `headers_enabled=False` para evitar exigir `response: Response` en
+    cada endpoint.
+  - Handler `rate_limit_exceeded_handler` con `{"detail": "..."}` en
+    español + `Retry-After` calculado a partir del rule de slowapi +
+    `X-Request-Id` propagado.
+- [x] `main.py` registra el limiter (`app.state.limiter`),
+  `SlowAPIMiddleware` y el exception handler para `RateLimitExceeded`.
+- [x] Límites aplicados:
+  - `POST /products/preview-from-url`: **10/min** (caro: HTTP a Amazon + OpenAI).
+  - `POST /deals/{id}/click`: **60/min** (anti-spam de contador, público).
+  - `POST /deals/{id}/vote`: **30/min**.
+  - `POST /deals/{id}/comments`: **10/min**.
+  - `POST /telegram/notify`: **5/min** (publicación admin).
+- [x] 3 tests nuevos en `test_rate_limit.py`. 68/68 pytest verde.
 
 ### 3.3 Audit log en acciones admin críticas
 - [ ] Nueva tabla `admin_audit_log` (id, user_id, action, target_type, target_id, payload, created_at).

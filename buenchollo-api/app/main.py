@@ -8,9 +8,13 @@ from fastapi.exceptions import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+
 from app.core.config import get_settings
 from app.core.exceptions import DomainError
 from app.core.logging import configure_logging
+from app.core.rate_limit import limiter, rate_limit_exceeded_handler
 from app.core.request_id import REQUEST_ID_HEADER, RequestIdMiddleware, get_request_id
 from app.modules.products.api.router import router as products_router
 from app.modules.categories.api.router import router as categories_router
@@ -59,12 +63,16 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
 
-# ── Middlewares ──────────────────────────────────────────────────────────────
-# El de RequestId va PRIMERO (en orden de registro) para que cubra al de CORS
-# y a las rutas: cualquier log generado dentro del ciclo de petición llevará
-# el request_id automáticamente.
-app.add_middleware(RequestIdMiddleware)
+# Registro del limiter en el state de la app — slowapi lo resuelve por aquí.
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
+# ── Middlewares ──────────────────────────────────────────────────────────────
+# Orden de registro = orden inverso de ejecución en Starlette. Queremos:
+#   1) RequestId  (etiqueta toda la cadena)
+#   2) RateLimit  (filtra antes de tocar la lógica)
+#   3) CORS       (envuelve la respuesta final)
+# Así que registramos en orden inverso: CORS, RateLimit, RequestId.
 _allow_all = "*" in settings.cors_origins
 app.add_middleware(
     CORSMiddleware,
@@ -74,6 +82,8 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=[REQUEST_ID_HEADER],  # para que el browser pueda leerlo
 )
+app.add_middleware(SlowAPIMiddleware)
+app.add_middleware(RequestIdMiddleware)
 
 
 def _with_request_id_header(headers: dict[str, str] | None = None) -> dict[str, str]:

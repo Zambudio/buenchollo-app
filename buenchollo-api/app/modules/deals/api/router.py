@@ -1,7 +1,8 @@
 import logging
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
+from app.core.rate_limit import limiter
 from app.modules.deals.infrastructure.repository import DealRepository
 from app.modules.deals.application.deal_service import DealService
 from app.modules.deals.domain.exceptions import DealNotFound
@@ -99,7 +100,9 @@ async def toggle_favorite(
 
 
 @router.post("/{deal_id}/vote", response_model=VoteResponse)
+@limiter.limit("30/minute")  # anti-spam de votos
 async def vote_on_deal(
+    request: Request,
     deal_id: str,
     vote_in: VoteRequest,
     service: DealService = Depends(get_deal_service),
@@ -123,7 +126,9 @@ async def get_my_vote(
 
 
 @router.post("/{deal_id}/click")
+@limiter.limit("60/minute")  # anti-spam de contadores; endpoint público sin auth
 async def track_click(
+    request: Request,
     deal_id: str,
     repo: DealRepository = Depends(get_deal_repository),
 ) -> dict:

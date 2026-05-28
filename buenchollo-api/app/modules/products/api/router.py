@@ -1,8 +1,9 @@
 """HTTP routes for product preview operations."""
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
 from app.core.config import Settings, get_settings
+from app.core.rate_limit import limiter
 from app.modules.products.api.schemas import ProductPreviewFromUrlRequest, ProductPreviewResponse
 from app.modules.products.application.preview_product_from_url import (
     PreviewProductFromUrlUseCase,
@@ -39,7 +40,9 @@ def get_preview_use_case(
 
 
 @router.post("/preview-from-url", response_model=ProductPreviewResponse)
+@limiter.limit("10/minute")  # caro: hace HTTP a Amazon Creators + OpenAI
 def preview_from_url(
+    request: Request,
     payload: ProductPreviewFromUrlRequest,
     use_case: PreviewProductFromUrlUseCase = Depends(get_preview_use_case),
 ) -> ProductPreviewResponse:

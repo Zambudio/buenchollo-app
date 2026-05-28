@@ -31,3 +31,7 @@ requests==2.34.2
 apscheduler==3.11.2
 tzlocal==5.3.1
 tzdata==2026.2
+
+# Rate limiting (slowapi). Storage en memoria por defecto — suficiente para el
+# monolito; cambiar a Redis si se escala a múltiples instancias.
+slowapi==0.1.9

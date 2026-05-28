@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.core.config import Settings, get_settings
+from app.core.rate_limit import limiter
 from app.core.security import require_admin
 from app.modules.telegram.application.post_generator import TelegramPostGenerator
 from app.modules.telegram.infrastructure.category_repository import JsonCategoryRepository
@@ -108,7 +109,9 @@ async def generate_post(
 # ── Publicación ────────────────────────────────────────────────────────────────
 
 @router.post("/notify")
+@limiter.limit("5/minute")  # publicación admin: evita doble envío accidental
 async def notify_deal(
+    request: Request,
     payload: TelegramNotifyRequest,
     settings: Settings = Depends(get_settings),
     _auth=Depends(require_admin),

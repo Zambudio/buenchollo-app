@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     # o "text" (formato legible — recomendado para desarrollo local).
     log_format: str = "json"
 
+    # Rate limiting (slowapi). Desactivable con RATE_LIMIT_ENABLED=false
+    # cuando se quieran bombardear endpoints en tests sin disparar 429.
+    rate_limit_enabled: bool = True
+
     # Orígenes CORS permitidos, separados por comas en la variable de entorno.
     # Ejemplo: CORS_ORIGINS=https://buenchollotech.com,https://www.buenchollotech.com
     # En local se puede dejar vacío o usar "*" para permitir cualquier origen.
