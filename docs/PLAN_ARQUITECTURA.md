@@ -18,7 +18,7 @@
 |---|---|---:|:---:|
 | **F1** | Documentación arquitectónica (5 ADRs + diagrama) | 6 | ✅ 6/6 |
 | **F2** | Backend: fundamentos (migraciones, Alembic, excepciones, UserService) | 5 | ✅ 5/5 |
-| **F3** | Producción ready (request_id, logging, rate limit, audit log, health) | 5 | 🟡 3/5 |
+| **F3** | Producción ready (request_id, logging, rate limit, audit log, health) | 5 | 🟡 3/5 ✅ |
 | **F4** | API: versionado `/v1` | 2 | ⬜ |
 | **F5** | Frontend: features-based + TanStack Query + tipado total | 6 | ⬜ |
 | **F6** | CI/CD y calidad continua | 3 | ⬜ |
