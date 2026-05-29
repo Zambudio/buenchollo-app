@@ -284,7 +284,7 @@ function AdminDeals() {
       description: form.description,
     });
     if (!parsed.success) {
-      toast.error(parsed.error.issues[0].message);
+      toast.error(parsed.error.issues[0]?.message ?? "Datos inválidos");
       return;
     }
 
@@ -351,7 +351,11 @@ function AdminDeals() {
     const j = i + dir;
     if (j < 0 || j >= form.images.length) return;
     const arr = [...form.images];
-    [arr[i], arr[j]] = [arr[j], arr[i]];
+    const a = arr[i];
+    const b = arr[j];
+    if (a === undefined || b === undefined) return;  // guards para noUncheckedIndexedAccess
+    arr[i] = b;
+    arr[j] = a;
     setForm({ ...form, images: arr });
   };
 

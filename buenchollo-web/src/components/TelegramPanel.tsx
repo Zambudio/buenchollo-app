@@ -61,9 +61,11 @@ export function TelegramPanel({ dealData, onClose }: TelegramPanelProps) {
       .then(([chs, cats]) => {
         setChannels(chs);
         // Por defecto: primer canal (Admin si existe)
-        if (chs.length > 0) setChannelId(chs[0].id);
+        const firstCh = chs[0];
+        if (firstCh) setChannelId(firstCh.id);
         setCategories(cats);
-        if (cats.length > 0) setSelectedCat(cats[0]);
+        const firstCat = cats[0];
+        if (firstCat) setSelectedCat(firstCat);
       })
       .catch(() => toast.error("No se pudieron cargar canales/categorías"));
 

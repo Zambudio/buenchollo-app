@@ -70,7 +70,7 @@ function HomePage() {
     const el = sentinelRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
-      (entries) => { if (entries[0].isIntersecting) loadLive(); },
+      (entries) => { if (entries[0]?.isIntersecting) loadLive(); },
       { rootMargin: "300px" },
     );
     observer.observe(el);

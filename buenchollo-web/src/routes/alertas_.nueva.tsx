@@ -95,7 +95,7 @@ function NewAlertPage() {
       min_discount: minDiscount,
     });
     if (!parsed.success) {
-      toast.error(parsed.error.issues[0].message);
+      toast.error(parsed.error.issues[0]?.message ?? "Datos inválidos");
       return;
     }
     const data = parsed.data;
