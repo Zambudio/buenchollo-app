@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
-import { Layout } from "@/components/Layout";
+import { Layout } from "@/components/layout/Layout";
 import { useAuth } from "@/hooks/useAuth";
 import { alertsApi, type Alert } from "@/services/api/alerts";
 import { Plus, Trash2, Power, Tag, Store, Euro, Percent, Search } from "lucide-react";

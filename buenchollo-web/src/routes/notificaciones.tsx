@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { Layout } from "@/components/Layout";
+import { Layout } from "@/components/layout/Layout";
 import { useAuth } from "@/hooks/useAuth";
 import { formatRelativeTime } from "@/lib/format";
 import { useMarkNotificationsRead, useNotificationsList } from "@/hooks/queries/useNotifications";

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/hooks/useAuth";
-import { Logo } from "@/components/Logo";
+import { Logo } from "@/components/layout/Logo";
 import { toast } from "sonner";
 import { z } from "zod";
 

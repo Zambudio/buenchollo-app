@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Layout } from "@/components/Layout";
+import { Layout } from "@/components/layout/Layout";
 import { useAuth } from "@/hooks/useAuth";
 import { alertsApi } from "@/services/api/alerts";
 import { categoriesService, type Category } from "@/services/api/categories";

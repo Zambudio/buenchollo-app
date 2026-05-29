@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { dealsService, favoritesApi, type DealDetailData } from "@/services/api/deals";
-import { Layout } from "@/components/Layout";
+import { Layout } from "@/components/layout/Layout";
 import { DealCard, type DealCardData } from "@/components/DealCard";
 import { Comments } from "@/components/Comments";
 import { ShareBox } from "@/components/ShareBox";

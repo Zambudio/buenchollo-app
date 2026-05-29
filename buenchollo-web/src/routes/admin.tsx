@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { Layout } from "@/components/Layout";
+import { Layout } from "@/components/layout/Layout";
 import { useAuth } from "@/hooks/useAuth";
 import { Package, FolderTree, Users, BarChart3, ShoppingBag } from "lucide-react";
 

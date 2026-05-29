@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Layout } from "@/components/Layout";
+import { Layout } from "@/components/layout/Layout";
 import { DealCard, type DealCardData } from "@/components/DealCard";
 import { useAuth } from "@/hooks/useAuth";
 import { ArrowRight, Send, Zap } from "lucide-react";

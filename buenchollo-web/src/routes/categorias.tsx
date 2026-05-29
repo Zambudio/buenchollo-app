@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { categoriesService, type Category } from "@/services/api/categories";
-import { Layout } from "@/components/Layout";
+import { Layout } from "@/components/layout/Layout";
 
 const SITE = "https://buenchollotech.lovable.app";
 
