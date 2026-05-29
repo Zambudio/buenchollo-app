@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { useAdminStats } from "@/hooks/queries/useAdminStats";
+import { useAdminStats } from "@/features/admin/hooks/useAdminStats";
 import { errorMessage } from "@/lib/errors";
 import { toast } from "sonner";
 

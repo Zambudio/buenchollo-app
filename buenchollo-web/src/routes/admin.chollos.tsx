@@ -22,7 +22,7 @@ import { dealFormSchema } from "@/lib/validation/deals";
 import { Plus, Trash2, Edit3, Upload, X, GripVertical, Wand2, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { TelegramPanel } from "@/components/TelegramPanel";
+import { TelegramPanel } from "@/features/telegram/components/TelegramPanel";
 import type { TelegramGenerateRequest } from "@/services/api/telegram";
 
 export const Route = createFileRoute("/admin/chollos")({

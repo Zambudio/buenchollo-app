@@ -3,7 +3,10 @@ import { useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { useAuth } from "@/hooks/useAuth";
 import { formatRelativeTime } from "@/lib/format";
-import { useMarkNotificationsRead, useNotificationsList } from "@/hooks/queries/useNotifications";
+import {
+  useMarkNotificationsRead,
+  useNotificationsList,
+} from "@/features/notifications/hooks/useNotifications";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/notificaciones")({

@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
-import { DealCard, type DealCardData } from "@/components/DealCard";
+import { DealCard, type DealCardData } from "@/features/deals/components/DealCard";
 import { categoriesService, type Category } from "@/services/api/categories";
 import { dealsService } from "@/services/api/deals";
 

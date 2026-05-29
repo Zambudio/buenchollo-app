@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { useAuth } from "@/hooks/useAuth";
-import { useUnreadNotifications } from "@/hooks/queries/useNotifications";
+import { useUnreadNotifications } from "@/features/notifications/hooks/useNotifications";
 import { CategoriesDrawer } from "./CategoriesDrawer";
 import {
   DropdownMenu,

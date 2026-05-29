@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { favoritesApi } from "@/services/api/deals";
 import { Layout } from "@/components/layout/Layout";
-import { DealCard, type DealCardData } from "@/components/DealCard";
+import { DealCard, type DealCardData } from "@/features/deals/components/DealCard";
 import { useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/favoritos")({

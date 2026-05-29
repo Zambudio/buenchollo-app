@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import type { DealCardData } from "@/components/DealCard";
+import type { DealCardData } from "@/features/deals/components/DealCard";
 
 export interface VoteResponse {
   temperature: number;
