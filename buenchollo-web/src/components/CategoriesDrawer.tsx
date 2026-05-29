@@ -1,18 +1,44 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
-  X, Sparkles, TrendingUp, Clock, Percent, Send,
-  Smartphone, Laptop, Headphones, Tv, Gamepad2, Cpu, Home as HomeIcon,
-  Watch, HardDrive, Keyboard, Camera, Router, Zap,
+  X,
+  Sparkles,
+  TrendingUp,
+  Clock,
+  Percent,
+  Send,
+  Smartphone,
+  Laptop,
+  Headphones,
+  Tv,
+  Gamepad2,
+  Cpu,
+  Home as HomeIcon,
+  Watch,
+  HardDrive,
+  Keyboard,
+  Camera,
+  Router,
+  Zap,
   type LucideIcon,
 } from "lucide-react";
 import { categoriesService, type Category } from "@/services/api/categories";
 import { storesService, type Store } from "@/services/api/stores";
 
 const ICONS: Record<string, LucideIcon> = {
-  smartphone: Smartphone, laptop: Laptop, headphones: Headphones, tv: Tv,
-  gamepad: Gamepad2, cpu: Cpu, home: HomeIcon, watch: Watch,
-  storage: HardDrive, keyboard: Keyboard, camera: Camera, router: Router, energy: Zap,
+  smartphone: Smartphone,
+  laptop: Laptop,
+  headphones: Headphones,
+  tv: Tv,
+  gamepad: Gamepad2,
+  cpu: Cpu,
+  home: HomeIcon,
+  watch: Watch,
+  storage: HardDrive,
+  keyboard: Keyboard,
+  camera: Camera,
+  router: Router,
+  energy: Zap,
 };
 
 const TELEGRAM_URL = "https://t.me/buenchollotech";
@@ -38,7 +64,8 @@ export function CategoriesDrawer({ open, onClose }: Props) {
       .catch(console.error);
   }, [open, loaded]);
 
-  const itemCls = "flex items-center gap-3 px-3 py-2.5 text-sm text-foreground rounded hover:bg-surface-700 hover:text-cyan-glow transition-colors";
+  const itemCls =
+    "flex items-center gap-3 px-3 py-2.5 text-sm text-foreground rounded hover:bg-surface-700 hover:text-cyan-glow transition-colors";
 
   return (
     <>
@@ -57,29 +84,51 @@ export function CategoriesDrawer({ open, onClose }: Props) {
       >
         {/* Cabecera */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-surface-600 bg-surface-900 shrink-0">
-          <span className="font-mono text-xs font-bold text-cyan-glow uppercase tracking-widest">&gt; MENÚ</span>
-          <button type="button" onClick={onClose} aria-label="Cerrar menú"
-            className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-surface-700 rounded transition-colors">
+          <span className="font-mono text-xs font-bold text-cyan-glow uppercase tracking-widest">
+            &gt; MENÚ
+          </span>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Cerrar menú"
+            className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-surface-700 rounded transition-colors"
+          >
             <X className="size-4" />
           </button>
         </div>
 
         {/* Contenido scrollable */}
         <div className="flex-1 overflow-y-auto py-2">
-
           {/* TENDENCIAS */}
           <div className="px-3 pt-3 pb-1">
-            <p className="px-3 font-mono text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-1">Tendencias</p>
+            <p className="px-3 font-mono text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-1">
+              Tendencias
+            </p>
             <nav className="flex flex-col">
-              <Link to="/explorar" search={{ sort: "popular" }} onClick={onClose} className={itemCls}>
+              <Link
+                to="/explorar"
+                search={{ sort: "popular" }}
+                onClick={onClose}
+                className={itemCls}
+              >
                 <TrendingUp className="size-4 text-cyan-glow shrink-0" />
                 <span>Más populares</span>
               </Link>
-              <Link to="/explorar" search={{ sort: "recent" }} onClick={onClose} className={itemCls}>
+              <Link
+                to="/explorar"
+                search={{ sort: "recent" }}
+                onClick={onClose}
+                className={itemCls}
+              >
                 <Clock className="size-4 text-cyan-glow shrink-0" />
                 <span>Nuevos chollos</span>
               </Link>
-              <Link to="/explorar" search={{ sort: "discount" }} onClick={onClose} className={itemCls}>
+              <Link
+                to="/explorar"
+                search={{ sort: "discount" }}
+                onClick={onClose}
+                className={itemCls}
+              >
                 <Percent className="size-4 text-cyan-glow shrink-0" />
                 <span>Mayor descuento</span>
               </Link>
@@ -90,19 +139,30 @@ export function CategoriesDrawer({ open, onClose }: Props) {
 
           {/* CATEGORÍAS */}
           <div className="px-3 pb-1">
-            <p className="px-3 font-mono text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-1">Categorías</p>
+            <p className="px-3 font-mono text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-1">
+              Categorías
+            </p>
             <nav className="flex flex-col">
-              {categories.map(c => {
+              {categories.map((c) => {
                 const Icon = (c.icon ? ICONS[c.icon] : null) ?? Sparkles;
                 return (
-                  <Link key={c.id} to="/categoria/$slug" params={{ slug: c.slug }} onClick={onClose} className={itemCls}>
+                  <Link
+                    key={c.id}
+                    to="/categoria/$slug"
+                    params={{ slug: c.slug }}
+                    onClick={onClose}
+                    className={itemCls}
+                  >
                     <Icon className="size-4 text-cyan-glow shrink-0" />
                     <span>{c.name}</span>
                   </Link>
                 );
               })}
-              <Link to="/categorias" onClick={onClose}
-                className="px-3 py-2 text-xs text-muted-foreground hover:text-cyan-glow transition-colors mt-1">
+              <Link
+                to="/categorias"
+                onClick={onClose}
+                className="px-3 py-2 text-xs text-muted-foreground hover:text-cyan-glow transition-colors mt-1"
+              >
                 Ver todas las categorías →
               </Link>
             </nav>
@@ -114,9 +174,11 @@ export function CategoriesDrawer({ open, onClose }: Props) {
 
               {/* TIENDAS */}
               <div className="px-3 pb-1">
-                <p className="px-3 font-mono text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">Tiendas</p>
+                <p className="px-3 font-mono text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">
+                  Tiendas
+                </p>
                 <div className="flex flex-wrap gap-2 px-3">
-                  {stores.map(s => (
+                  {stores.map((s) => (
                     <Link
                       key={s.id}
                       to="/explorar"
@@ -136,7 +198,13 @@ export function CategoriesDrawer({ open, onClose }: Props) {
 
           {/* TELEGRAM */}
           <div className="px-3 pb-3">
-            <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer" onClick={onClose} className={itemCls}>
+            <a
+              href={TELEGRAM_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={onClose}
+              className={itemCls}
+            >
               <Send className="size-4 text-cyan-glow shrink-0" />
               <span>Canal de Telegram</span>
             </a>

@@ -61,25 +61,32 @@ export type DealUpdatePayload = Partial<DealCreatePayload>;
 
 export const dealsService = {
   /** Obtiene los chollos más recientes */
-  getLatest: (limit = 8): Promise<DealCardData[]> => 
+  getLatest: (limit = 8): Promise<DealCardData[]> =>
     apiClient.get<DealCardData[]>(`/deals/latest?limit=${limit}`),
 
   /** Obtiene los chollos más populares/calientes */
-  getPopular: (limit = 4): Promise<DealCardData[]> => 
+  getPopular: (limit = 4): Promise<DealCardData[]> =>
     apiClient.get<DealCardData[]>(`/deals/popular?limit=${limit}`),
 
   /** Obtiene un chollo por su slug */
-  getBySlug: (slug: string): Promise<DealDetailData> => 
+  getBySlug: (slug: string): Promise<DealDetailData> =>
     apiClient.get<DealDetailData>(`/deals/${slug}`),
 
   /** Busca chollos con paginación opcional */
-  search: (params?: { category_id?: string; store_id?: string; search?: string; limit?: number; offset?: number }): Promise<DealCardData[]> => {
+  search: (params?: {
+    category_id?: string;
+    store_id?: string;
+    search?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<DealCardData[]> => {
     const queryParams = new URLSearchParams();
     if (params?.category_id) queryParams.append("category_id", params.category_id);
     if (params?.store_id) queryParams.append("store_id", params.store_id);
     if (params?.search) queryParams.append("search", params.search);
     if (params?.limit != null) queryParams.append("limit", params.limit.toString());
-    if (params?.offset != null && params.offset > 0) queryParams.append("offset", params.offset.toString());
+    if (params?.offset != null && params.offset > 0)
+      queryParams.append("offset", params.offset.toString());
     const qs = queryParams.toString();
     const url = qs ? `/deals?${qs}` : "/deals";
     return apiClient.get<DealCardData[]>(url);
@@ -104,8 +111,7 @@ export const dealsService = {
     apiClient.put<DealDetailData>(`/deals/admin/${id}`, data),
 
   /** Elimina un chollo */
-  delete: (id: string): Promise<void> =>
-    apiClient.delete(`/deals/admin/${id}`),
+  delete: (id: string): Promise<void> => apiClient.delete(`/deals/admin/${id}`),
 
   // --- VOTOS ---
 
@@ -115,17 +121,18 @@ export const dealsService = {
 
   /** Devuelve el voto actual del usuario para un chollo (-1, 0 o 1) */
   getMyVote: (dealId: string): Promise<number> =>
-    apiClient.get<{ my_vote: number }>(`/deals/${dealId}/my-vote`).then(r => r.my_vote),
+    apiClient.get<{ my_vote: number }>(`/deals/${dealId}/my-vote`).then((r) => r.my_vote),
 
   /** Incrementa el contador de clicks (público). Devuelve el nuevo total. */
   trackClick: (dealId: string): Promise<number> =>
-    apiClient.post<{ click_count: number }>(`/deals/${dealId}/click`, {}).then(r => r.click_count),
+    apiClient
+      .post<{ click_count: number }>(`/deals/${dealId}/click`, {})
+      .then((r) => r.click_count),
 };
 
 export const favoritesApi = {
   /** Lista de chollos favoritos del usuario autenticado */
-  getFavorites: (): Promise<DealCardData[]> =>
-    apiClient.get<DealCardData[]>("/deals/favorites"),
+  getFavorites: (): Promise<DealCardData[]> => apiClient.get<DealCardData[]>("/deals/favorites"),
 
   /** Toggle: añade o elimina el favorito. Devuelve el estado resultante. */
   toggle: (dealId: string): Promise<{ is_favorited: boolean }> =>
@@ -133,5 +140,7 @@ export const favoritesApi = {
 
   /** Comprueba si un chollo está en favoritos del usuario */
   check: (dealId: string): Promise<boolean> =>
-    apiClient.get<{ is_favorited: boolean }>(`/deals/${dealId}/favorite`).then(r => r.is_favorited),
+    apiClient
+      .get<{ is_favorited: boolean }>(`/deals/${dealId}/favorite`)
+      .then((r) => r.is_favorited),
 };

@@ -50,17 +50,14 @@ export interface AlertUpdate {
 }
 
 export const alertsApi = {
-  list: (): Promise<Alert[]> =>
-    apiClient.get<Alert[]>("/alerts"),
+  list: (): Promise<Alert[]> => apiClient.get<Alert[]>("/alerts"),
 
-  create: (data: AlertCreate): Promise<Alert> =>
-    apiClient.post<Alert>("/alerts", data),
+  create: (data: AlertCreate): Promise<Alert> => apiClient.post<Alert>("/alerts", data),
 
   update: (id: string, data: AlertUpdate): Promise<Alert> =>
     apiClient.put<Alert>(`/alerts/${id}`, data),
 
-  delete: (id: string): Promise<void> =>
-    apiClient.delete(`/alerts/${id}`),
+  delete: (id: string): Promise<void> => apiClient.delete(`/alerts/${id}`),
 
   toggle: (id: string, isActive: boolean): Promise<Alert> =>
     apiClient.put<Alert>(`/alerts/${id}`, { is_active: isActive }),

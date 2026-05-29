@@ -34,7 +34,9 @@ export const Route = createFileRoute("/sitemap.xml")({
               priority: "0.7",
             });
           }
-        } catch {}
+        } catch {
+          // sitemap es best-effort: si una fuente falla seguimos con las demás
+        }
 
         try {
           const { data: deals } = await supabaseAdmin
@@ -46,14 +48,17 @@ export const Route = createFileRoute("/sitemap.xml")({
           for (const d of deals ?? []) {
             entries.push({
               path: `/chollo/${d.slug}`,
-              lastmod: (d.updated_at ?? d.published_at)
-                ? new Date(d.updated_at ?? d.published_at).toISOString()
-                : undefined,
+              lastmod:
+                (d.updated_at ?? d.published_at)
+                  ? new Date(d.updated_at ?? d.published_at).toISOString()
+                  : undefined,
               changefreq: "daily",
               priority: "0.8",
             });
           }
-        } catch {}
+        } catch {
+          // sitemap es best-effort: si una fuente falla seguimos con las demás
+        }
 
         const urls = entries.map((e) =>
           [

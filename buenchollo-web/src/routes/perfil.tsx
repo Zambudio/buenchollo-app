@@ -15,7 +15,8 @@ export const Route = createFileRoute("/perfil")({
       { name: "description", content: "Ajustes de tu cuenta de BuencholloTech." },
       { property: "og:title", content: "Mi perfil · BuencholloTech" },
       { property: "og:description", content: "Ajustes de tu cuenta de BuencholloTech." },
-      { property: "og:url", content: "https://buenchollotech.lovable.app/perfil" }, { name: "robots", content: "noindex, nofollow" },
+      { property: "og:url", content: "https://buenchollotech.lovable.app/perfil" },
+      { name: "robots", content: "noindex, nofollow" },
     ],
     links: [{ rel: "canonical", href: "https://buenchollotech.lovable.app/perfil" }],
   }),
@@ -30,19 +31,25 @@ function ProfilePage() {
 
   useEffect(() => {
     if (!authLoading && !user) nav({ to: "/login" });
-  }, [authLoading, user]);
+  }, [authLoading, user, nav]);
 
   useEffect(() => {
     if (!user) return;
-    authApi.getMyProfile()
+    authApi
+      .getMyProfile()
       .then((p) => {
         setName(p.display_name ?? "");
         setBio(p.bio ?? "");
       })
-      .catch(() => { /* perfil opcional */ });
-    authApi.getMyStats()
+      .catch(() => {
+        /* perfil opcional */
+      });
+    authApi
+      .getMyStats()
       .then(setStats)
-      .catch(() => { /* stats no críticas */ });
+      .catch(() => {
+        /* stats no críticas */
+      });
   }, [user]);
 
   const save = async () => {
@@ -78,16 +85,27 @@ function ProfilePage() {
 
         {/* Estadísticas */}
         <div className="mb-6">
-          <h2 className="font-mono text-xs uppercase text-cyan-glow mb-3 border-b border-surface-700 pb-2">Estadísticas</h2>
+          <h2 className="font-mono text-xs uppercase text-cyan-glow mb-3 border-b border-surface-700 pb-2">
+            Estadísticas
+          </h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {statItems.map((s) => (
-              <div key={s.label} className="bg-surface-800 border border-surface-700 p-3 flex flex-col gap-1">
+              <div
+                key={s.label}
+                className="bg-surface-800 border border-surface-700 p-3 flex flex-col gap-1"
+              >
                 <s.icon className="size-4 text-cyan-glow" />
                 <div className="font-mono text-2xl font-bold tabular-nums">{s.value}</div>
-                <div className="font-mono text-[10px] uppercase text-muted-foreground leading-tight">{s.label}</div>
+                <div className="font-mono text-[10px] uppercase text-muted-foreground leading-tight">
+                  {s.label}
+                </div>
               </div>
             ))}
-            {!stats && <div className="font-mono text-xs text-muted-foreground col-span-full">Cargando estadísticas...</div>}
+            {!stats && (
+              <div className="font-mono text-xs text-muted-foreground col-span-full">
+                Cargando estadísticas...
+              </div>
+            )}
           </div>
         </div>
 
@@ -97,7 +115,9 @@ function ProfilePage() {
             <p className="font-mono text-sm text-muted-foreground">{user?.email}</p>
           </div>
           <div>
-            <label className="block text-xs font-mono uppercase text-cyan-glow mb-1">Nombre visible</label>
+            <label className="block text-xs font-mono uppercase text-cyan-glow mb-1">
+              Nombre visible
+            </label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -114,10 +134,16 @@ function ProfilePage() {
             />
           </div>
           <div className="flex gap-3">
-            <button onClick={save} className="bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-5 py-3 hover:bg-foreground">
+            <button
+              onClick={save}
+              className="bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-5 py-3 hover:bg-foreground"
+            >
               [ GUARDAR ]
             </button>
-            <button onClick={signOut} className="border border-surface-700 hover:border-alert-red hover:text-alert-red font-mono text-xs font-bold px-5 py-3">
+            <button
+              onClick={signOut}
+              className="border border-surface-700 hover:border-alert-red hover:text-alert-red font-mono text-xs font-bold px-5 py-3"
+            >
               [ CERRAR SESIÓN ]
             </button>
           </div>

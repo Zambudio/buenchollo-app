@@ -40,6 +40,7 @@ export const storesService = {
   // --- ADMIN ---
   getAdminAll: (): Promise<Store[]> => apiClient.get<Store[]>("/stores/admin/all"),
   create: (data: StoreCreate): Promise<Store> => apiClient.post<Store>("/stores/admin", data),
-  update: (id: string, data: StoreUpdate): Promise<Store> => apiClient.put<Store>(`/stores/admin/${id}`, data),
+  update: (id: string, data: StoreUpdate): Promise<Store> =>
+    apiClient.put<Store>(`/stores/admin/${id}`, data),
   delete: (id: string): Promise<void> => apiClient.delete(`/stores/admin/${id}`),
 };

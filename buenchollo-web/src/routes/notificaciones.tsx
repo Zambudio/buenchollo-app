@@ -11,9 +11,15 @@ export const Route = createFileRoute("/notificaciones")({
   head: () => ({
     meta: [
       { title: "Notificaciones · BuencholloTech" },
-      { name: "description", content: "Bandeja de notificaciones de tus alertas en BuencholloTech." },
+      {
+        name: "description",
+        content: "Bandeja de notificaciones de tus alertas en BuencholloTech.",
+      },
       { property: "og:title", content: "Notificaciones · BuencholloTech" },
-      { property: "og:description", content: "Bandeja de notificaciones de tus alertas en BuencholloTech." },
+      {
+        property: "og:description",
+        content: "Bandeja de notificaciones de tus alertas en BuencholloTech.",
+      },
       { property: "og:url", content: "https://buenchollotech.lovable.app/notificaciones" },
       { name: "robots", content: "noindex, nofollow" },
     ],
@@ -27,11 +33,14 @@ function NotificationsPage() {
   const [items, setItems] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { if (!authLoading && !user) nav({ to: "/login" }); }, [authLoading, user]);
+  useEffect(() => {
+    if (!authLoading && !user) nav({ to: "/login" });
+  }, [authLoading, user, nav]);
 
   useEffect(() => {
     if (!user) return;
-    notificationsApi.list()
+    notificationsApi
+      .list()
       .then(setItems)
       .then(() => notificationsApi.markRead())
       .then(() => window.dispatchEvent(new Event("notifications:changed")))
@@ -45,10 +54,13 @@ function NotificationsPage() {
         <div className="font-mono text-cyan-glow text-xs mb-2">&gt; NOTIFICACIONES</div>
         <h1 className="text-3xl font-bold tracking-tighter mb-6">Tus notificaciones</h1>
         {loading ? (
-          <div className="font-mono text-xs text-muted-foreground py-12 text-center">CARGANDO...</div>
+          <div className="font-mono text-xs text-muted-foreground py-12 text-center">
+            CARGANDO...
+          </div>
         ) : items.length === 0 ? (
           <div className="bg-surface-800 border border-surface-700 p-12 text-center text-muted-foreground font-mono text-sm">
-            Sin notificaciones por ahora. Crea alertas para recibir avisos cuando aparezcan chollos que te interesen.
+            Sin notificaciones por ahora. Crea alertas para recibir avisos cuando aparezcan chollos
+            que te interesen.
           </div>
         ) : (
           <div className="space-y-2">
@@ -57,7 +69,10 @@ function NotificationsPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     {n.link_url ? (
-                      <Link to={n.link_url} className="font-bold text-base hover:text-cyan-glow transition-colors">
+                      <Link
+                        to={n.link_url}
+                        className="font-bold text-base hover:text-cyan-glow transition-colors"
+                      >
                         {n.title}
                       </Link>
                     ) : (

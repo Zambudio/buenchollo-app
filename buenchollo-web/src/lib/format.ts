@@ -53,10 +53,7 @@ export function toDatetimeLocal(value: string | null | undefined): string {
   return value.slice(0, 16);
 }
 
-import {
-  TEMPERATURE_HOT_THRESHOLD,
-  TEMPERATURE_WARM_THRESHOLD,
-} from "@/lib/constants";
+import { TEMPERATURE_HOT_THRESHOLD, TEMPERATURE_WARM_THRESHOLD } from "@/lib/constants";
 
 /** Clase Tailwind de color para la "temperatura" de un chollo. */
 export function temperatureColor(temperature: number): string {

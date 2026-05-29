@@ -13,8 +13,9 @@ interface ApiErrorDetail {
 }
 
 function isValidationError(detail: unknown): detail is ApiErrorDetail[] {
-  return Array.isArray(detail) && detail.every(
-    (d) => d !== null && typeof d === "object" && "loc" in d && "msg" in d,
+  return (
+    Array.isArray(detail) &&
+    detail.every((d) => d !== null && typeof d === "object" && "loc" in d && "msg" in d)
   );
 }
 
@@ -37,7 +38,9 @@ async function extractErrorMessage(response: Response): Promise<string> {
 async function fetchWithAuth<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_URL}${endpoint}`;
 
-  const { data: { session } } = await supabase.auth.getSession();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",

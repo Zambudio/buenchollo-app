@@ -35,8 +35,7 @@ export const commentsApi = {
   create: (dealId: string, content: string, parentId: string | null): Promise<CommentItem> =>
     apiClient.post<CommentItem>(`/deals/${dealId}/comments`, { content, parent_id: parentId }),
 
-  remove: (commentId: string): Promise<void> =>
-    apiClient.delete(`/deals/comments/${commentId}`),
+  remove: (commentId: string): Promise<void> => apiClient.delete(`/deals/comments/${commentId}`),
 
   /** Vota un comentario. Repetir el mismo voto lo retira. */
   vote: (commentId: string, value: 1 | -1): Promise<{ my_vote: number }> =>

@@ -13,7 +13,8 @@ export const Route = createFileRoute("/favoritos")({
       { name: "description", content: "Tus chollos guardados en BuencholloTech." },
       { property: "og:title", content: "Favoritos · BuencholloTech" },
       { property: "og:description", content: "Tus chollos guardados en BuencholloTech." },
-      { property: "og:url", content: "https://buenchollotech.lovable.app/favoritos" }, { name: "robots", content: "noindex, nofollow" },
+      { property: "og:url", content: "https://buenchollotech.lovable.app/favoritos" },
+      { name: "robots", content: "noindex, nofollow" },
     ],
     links: [{ rel: "canonical", href: "https://buenchollotech.lovable.app/favoritos" }],
   }),
@@ -26,7 +27,7 @@ function FavoritesPage() {
 
   useEffect(() => {
     if (!authLoading && !user) nav({ to: "/login" });
-  }, [authLoading, user]);
+  }, [authLoading, user, nav]);
 
   useEffect(() => {
     if (!user) return;
@@ -37,12 +38,22 @@ function FavoritesPage() {
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="font-mono text-cyan-glow text-xs mb-2">&gt; MIS_FAVORITOS</div>
-        <h1 className="text-3xl sm:text-4xl font-bold tracking-tighter mb-8">Tus chollos guardados</h1>
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-tighter mb-8">
+          Tus chollos guardados
+        </h1>
         {deals.length === 0 ? (
-          <p className="text-muted-foreground font-mono">Aún no has guardado ningún chollo. <Link to="/explorar" className="text-cyan-glow">Explora ahora</Link>.</p>
+          <p className="text-muted-foreground font-mono">
+            Aún no has guardado ningún chollo.{" "}
+            <Link to="/explorar" className="text-cyan-glow">
+              Explora ahora
+            </Link>
+            .
+          </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {deals.map(d => <DealCard key={d.id} deal={d} isFavorite />)}
+            {deals.map((d) => (
+              <DealCard key={d.id} deal={d} isFavorite />
+            ))}
           </div>
         )}
       </div>

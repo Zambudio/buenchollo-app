@@ -61,19 +61,21 @@ export function Comments({ dealId, onCountChange }: Props) {
       return;
     }
     // Optimista: actualiza contadores y my_vote en local antes de la red.
-    setComments((prev) => prev.map((c) => {
-      if (c.id !== commentId) return c;
-      const oldVote = c.my_vote ?? 0;
-      const newVote = oldVote === value ? 0 : value;
-      const deltaUp = (newVote === 1 ? 1 : 0) - (oldVote === 1 ? 1 : 0);
-      const deltaDown = (newVote === -1 ? 1 : 0) - (oldVote === -1 ? 1 : 0);
-      return {
-        ...c,
-        my_vote: newVote,
-        votes_up: c.votes_up + deltaUp,
-        votes_down: c.votes_down + deltaDown,
-      };
-    }));
+    setComments((prev) =>
+      prev.map((c) => {
+        if (c.id !== commentId) return c;
+        const oldVote = c.my_vote ?? 0;
+        const newVote = oldVote === value ? 0 : value;
+        const deltaUp = (newVote === 1 ? 1 : 0) - (oldVote === 1 ? 1 : 0);
+        const deltaDown = (newVote === -1 ? 1 : 0) - (oldVote === -1 ? 1 : 0);
+        return {
+          ...c,
+          my_vote: newVote,
+          votes_up: c.votes_up + deltaUp,
+          votes_down: c.votes_down + deltaDown,
+        };
+      }),
+    );
     try {
       await commentsApi.vote(commentId, value);
       // Refresco silencioso para reconciliar orden por score con el servidor.
@@ -105,7 +107,10 @@ export function Comments({ dealId, onCountChange }: Props) {
     const score = (c.votes_up ?? 0) - (c.votes_down ?? 0);
     const kids = childrenOf(c.id);
     return (
-      <div key={c.id} className={depth > 0 ? "ml-4 sm:ml-8 border-l-2 border-surface-700 pl-3 sm:pl-4 mt-3" : ""}>
+      <div
+        key={c.id}
+        className={depth > 0 ? "ml-4 sm:ml-8 border-l-2 border-surface-700 pl-3 sm:pl-4 mt-3" : ""}
+      >
         <div className="bg-surface-800 border border-surface-700 p-3 sm:p-4">
           <div className="flex items-center gap-2 mb-2 font-mono text-xs">
             {prof?.avatar_url ? (
@@ -118,7 +123,11 @@ export function Comments({ dealId, onCountChange }: Props) {
             <span className="text-cyan-glow">@{prof?.display_name ?? "usuario"}</span>
             <span className="text-muted-foreground">{formatRelativeTime(c.created_at)}</span>
             {user?.id === c.user_id && (
-              <button onClick={() => remove(c.id, c.user_id)} className="ml-auto text-muted-foreground hover:text-alert-red" title="Eliminar">
+              <button
+                onClick={() => remove(c.id, c.user_id)}
+                className="ml-auto text-muted-foreground hover:text-alert-red"
+                title="Eliminar"
+              >
                 <Trash2 className="size-3.5" />
               </button>
             )}
@@ -139,7 +148,9 @@ export function Comments({ dealId, onCountChange }: Props) {
             >
               <ArrowDown className="size-3.5" /> {c.votes_down}
             </button>
-            <span className={`px-2 py-1 ${score > 0 ? "text-cyan-glow" : score < 0 ? "text-alert-red" : "text-muted-foreground"}`}>
+            <span
+              className={`px-2 py-1 ${score > 0 ? "text-cyan-glow" : score < 0 ? "text-alert-red" : "text-muted-foreground"}`}
+            >
               {score > 0 ? "+" : ""}
               {score}
             </span>
@@ -169,7 +180,11 @@ export function Comments({ dealId, onCountChange }: Props) {
               <textarea
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value.slice(0, 1000))}
-                placeholder={user ? `Responder a @${prof?.display_name ?? "usuario"}...` : "Inicia sesión para responder"}
+                placeholder={
+                  user
+                    ? `Responder a @${prof?.display_name ?? "usuario"}...`
+                    : "Inicia sesión para responder"
+                }
                 disabled={!user}
                 rows={2}
                 className="w-full bg-surface-900 border border-surface-700 px-3 py-2 text-sm outline-none focus:border-cyan-glow disabled:opacity-50"
@@ -215,7 +230,9 @@ export function Comments({ dealId, onCountChange }: Props) {
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value.slice(0, 1000))}
-          placeholder={user ? "Comparte tu opinión sobre este chollo..." : "Inicia sesión para comentar"}
+          placeholder={
+            user ? "Comparte tu opinión sobre este chollo..." : "Inicia sesión para comentar"
+          }
           disabled={!user}
           rows={3}
           className="w-full bg-surface-800 border border-surface-700 px-3 py-2 text-sm outline-none focus:border-cyan-glow disabled:opacity-50"
@@ -233,7 +250,9 @@ export function Comments({ dealId, onCountChange }: Props) {
       </form>
 
       <div className="space-y-3">
-        {loading && <p className="text-muted-foreground text-sm font-mono">Cargando comentarios...</p>}
+        {loading && (
+          <p className="text-muted-foreground text-sm font-mono">Cargando comentarios...</p>
+        )}
         {!loading && roots.length === 0 && (
           <p className="text-muted-foreground text-sm font-mono">Sé el primero en comentar.</p>
         )}

@@ -8,18 +8,33 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/tiendas")({ component: AdminStores });
 
-const inputCls = "bg-surface-900 border border-surface-700 px-3 py-2 font-mono text-sm outline-none focus:border-cyan-glow w-full";
+const inputCls =
+  "bg-surface-900 border border-surface-700 px-3 py-2 font-mono text-sm outline-none focus:border-cyan-glow w-full";
 
 function AdminStores() {
   const [stores, setStores] = useState<Store[]>([]);
-  const [form, setForm] = useState<StoreCreate>({ name: "", slug: "", domain: "", logo_url: "", affiliate_id: "", affiliate_url_template: "", is_active: true });
+  const [form, setForm] = useState<StoreCreate>({
+    name: "",
+    slug: "",
+    domain: "",
+    logo_url: "",
+    affiliate_id: "",
+    affiliate_url_template: "",
+    is_active: true,
+  });
   const [editing, setEditing] = useState<Store | null>(null);
 
-  const load = () => storesService.getAdminAll().then(setStores).catch((e: unknown) => toast.error(errorMessage(e)));
-  useEffect(() => { load(); }, []);
+  const load = () =>
+    storesService
+      .getAdminAll()
+      .then(setStores)
+      .catch((e: unknown) => toast.error(errorMessage(e)));
+  useEffect(() => {
+    load();
+  }, []);
 
   const handleNameChange = (name: string) => {
-    setForm(f => ({ ...f, name, slug: slugify(name) + "-" + Date.now().toString(36).slice(-4) }));
+    setForm((f) => ({ ...f, name, slug: slugify(name) + "-" + Date.now().toString(36).slice(-4) }));
   };
 
   const add = async (e: React.FormEvent) => {
@@ -28,9 +43,19 @@ function AdminStores() {
     try {
       await storesService.create({ ...form, name: form.name.trim() });
       toast.success("Tienda creada");
-      setForm({ name: "", slug: "", domain: "", logo_url: "", affiliate_id: "", affiliate_url_template: "", is_active: true });
+      setForm({
+        name: "",
+        slug: "",
+        domain: "",
+        logo_url: "",
+        affiliate_id: "",
+        affiliate_url_template: "",
+        is_active: true,
+      });
       load();
-    } catch (e: unknown) { toast.error(errorMessage(e)); }
+    } catch (e: unknown) {
+      toast.error(errorMessage(e));
+    }
   };
 
   const save = async () => {
@@ -48,7 +73,9 @@ function AdminStores() {
       toast.success("Guardado");
       setEditing(null);
       load();
-    } catch (e: unknown) { toast.error(errorMessage(e)); }
+    } catch (e: unknown) {
+      toast.error(errorMessage(e));
+    }
   };
 
   const remove = async (id: string) => {
@@ -56,7 +83,9 @@ function AdminStores() {
     try {
       await storesService.delete(id);
       load();
-    } catch (e: unknown) { toast.error(errorMessage(e)); }
+    } catch (e: unknown) {
+      toast.error(errorMessage(e));
+    }
   };
 
   return (
@@ -68,71 +97,184 @@ function AdminStores() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="font-mono text-xs text-muted-foreground mb-1 block">NOMBRE *</label>
-            <input placeholder="Amazon" value={form.name} onChange={e => handleNameChange(e.target.value)} className={inputCls} />
+            <input
+              placeholder="Amazon"
+              value={form.name}
+              onChange={(e) => handleNameChange(e.target.value)}
+              className={inputCls}
+            />
           </div>
           <div>
             <label className="font-mono text-xs text-muted-foreground mb-1 block">SLUG *</label>
-            <input placeholder="amazon" value={form.slug} onChange={e => setForm(f => ({ ...f, slug: e.target.value }))} className={inputCls} />
+            <input
+              placeholder="amazon"
+              value={form.slug}
+              onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
+              className={inputCls}
+            />
           </div>
           <div>
             <label className="font-mono text-xs text-muted-foreground mb-1 block">DOMINIO</label>
-            <input placeholder="amazon.es" value={form.domain ?? ""} onChange={e => setForm(f => ({ ...f, domain: e.target.value || null }))} className={inputCls} />
+            <input
+              placeholder="amazon.es"
+              value={form.domain ?? ""}
+              onChange={(e) => setForm((f) => ({ ...f, domain: e.target.value || null }))}
+              className={inputCls}
+            />
           </div>
           <div>
             <label className="font-mono text-xs text-muted-foreground mb-1 block">LOGO URL</label>
-            <input placeholder="https://..." value={form.logo_url ?? ""} onChange={e => setForm(f => ({ ...f, logo_url: e.target.value || null }))} className={inputCls} />
+            <input
+              placeholder="https://..."
+              value={form.logo_url ?? ""}
+              onChange={(e) => setForm((f) => ({ ...f, logo_url: e.target.value || null }))}
+              className={inputCls}
+            />
           </div>
           <div>
-            <label className="font-mono text-xs text-muted-foreground mb-1 block">AFFILIATE ID</label>
-            <input placeholder="buenchollo0b-21" value={form.affiliate_id ?? ""} onChange={e => setForm(f => ({ ...f, affiliate_id: e.target.value || null }))} className={inputCls} />
+            <label className="font-mono text-xs text-muted-foreground mb-1 block">
+              AFFILIATE ID
+            </label>
+            <input
+              placeholder="buenchollo0b-21"
+              value={form.affiliate_id ?? ""}
+              onChange={(e) => setForm((f) => ({ ...f, affiliate_id: e.target.value || null }))}
+              className={inputCls}
+            />
           </div>
           <div>
-            <label className="font-mono text-xs text-muted-foreground mb-1 block">URL TEMPLATE</label>
-            <input placeholder="https://amzn.to/{{asin}}" value={form.affiliate_url_template ?? ""} onChange={e => setForm(f => ({ ...f, affiliate_url_template: e.target.value || null }))} className={inputCls} />
+            <label className="font-mono text-xs text-muted-foreground mb-1 block">
+              URL TEMPLATE
+            </label>
+            <input
+              placeholder="https://amzn.to/{{asin}}"
+              value={form.affiliate_url_template ?? ""}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, affiliate_url_template: e.target.value || null }))
+              }
+              className={inputCls}
+            />
           </div>
         </div>
-        <button type="submit" className="bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-4 py-2 flex items-center gap-2">
+        <button
+          type="submit"
+          className="bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-4 py-2 flex items-center gap-2"
+        >
           <Plus className="size-4" /> AÑADIR TIENDA
         </button>
       </form>
 
       {/* Lista */}
       <div className="space-y-2">
-        {stores.map(s => (
+        {stores.map((s) => (
           <div key={s.id} className="bg-surface-800 border border-surface-700 p-3">
             {editing?.id === s.id ? (
               <div className="space-y-2">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <input value={editing.name} onChange={e => setEditing(ed => ed && ({ ...ed, name: e.target.value }))} className={inputCls} placeholder="Nombre" />
-                  <input value={editing.slug} onChange={e => setEditing(ed => ed && ({ ...ed, slug: e.target.value }))} className={inputCls} placeholder="Slug" />
-                  <input value={editing.domain ?? ""} onChange={e => setEditing(ed => ed && ({ ...ed, domain: e.target.value || null }))} className={inputCls} placeholder="Dominio" />
-                  <input value={editing.logo_url ?? ""} onChange={e => setEditing(ed => ed && ({ ...ed, logo_url: e.target.value || null }))} className={inputCls} placeholder="Logo URL" />
-                  <input value={editing.affiliate_id ?? ""} onChange={e => setEditing(ed => ed && ({ ...ed, affiliate_id: e.target.value || null }))} className={inputCls} placeholder="Affiliate ID" />
-                  <input value={editing.affiliate_url_template ?? ""} onChange={e => setEditing(ed => ed && ({ ...ed, affiliate_url_template: e.target.value || null }))} className={inputCls} placeholder="URL Template" />
+                  <input
+                    value={editing.name}
+                    onChange={(e) => setEditing((ed) => ed && { ...ed, name: e.target.value })}
+                    className={inputCls}
+                    placeholder="Nombre"
+                  />
+                  <input
+                    value={editing.slug}
+                    onChange={(e) => setEditing((ed) => ed && { ...ed, slug: e.target.value })}
+                    className={inputCls}
+                    placeholder="Slug"
+                  />
+                  <input
+                    value={editing.domain ?? ""}
+                    onChange={(e) =>
+                      setEditing((ed) => ed && { ...ed, domain: e.target.value || null })
+                    }
+                    className={inputCls}
+                    placeholder="Dominio"
+                  />
+                  <input
+                    value={editing.logo_url ?? ""}
+                    onChange={(e) =>
+                      setEditing((ed) => ed && { ...ed, logo_url: e.target.value || null })
+                    }
+                    className={inputCls}
+                    placeholder="Logo URL"
+                  />
+                  <input
+                    value={editing.affiliate_id ?? ""}
+                    onChange={(e) =>
+                      setEditing((ed) => ed && { ...ed, affiliate_id: e.target.value || null })
+                    }
+                    className={inputCls}
+                    placeholder="Affiliate ID"
+                  />
+                  <input
+                    value={editing.affiliate_url_template ?? ""}
+                    onChange={(e) =>
+                      setEditing(
+                        (ed) => ed && { ...ed, affiliate_url_template: e.target.value || null },
+                      )
+                    }
+                    className={inputCls}
+                    placeholder="URL Template"
+                  />
                 </div>
                 <div className="flex items-center gap-2">
                   <label className="font-mono text-xs flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={editing.is_active} onChange={e => setEditing(ed => ed && ({ ...ed, is_active: e.target.checked }))} />
+                    <input
+                      type="checkbox"
+                      checked={editing.is_active}
+                      onChange={(e) =>
+                        setEditing((ed) => ed && { ...ed, is_active: e.target.checked })
+                      }
+                    />
                     ACTIVA
                   </label>
-                  <button type="button" onClick={save} className="ml-auto p-1 hover:text-cyan-glow"><Check className="size-4" /></button>
-                  <button type="button" onClick={() => setEditing(null)} className="p-1 hover:text-muted-foreground"><X className="size-4" /></button>
+                  <button type="button" onClick={save} className="ml-auto p-1 hover:text-cyan-glow">
+                    <Check className="size-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditing(null)}
+                    className="p-1 hover:text-muted-foreground"
+                  >
+                    <X className="size-4" />
+                  </button>
                 </div>
               </div>
             ) : (
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-3 min-w-0">
-                  {s.logo_url && <img src={s.logo_url} alt={s.name} className="size-6 object-contain shrink-0" />}
+                  {s.logo_url && (
+                    <img src={s.logo_url} alt={s.name} className="size-6 object-contain shrink-0" />
+                  )}
                   <div className="min-w-0">
                     <span className="font-bold">{s.name}</span>
                     <span className="font-mono text-xs text-muted-foreground ml-2">/{s.slug}</span>
-                    {s.domain && <span className="font-mono text-xs text-muted-foreground ml-2">· {s.domain}</span>}
-                    {!s.is_active && <span className="ml-2 font-mono text-xs text-alert-red">INACTIVA</span>}
+                    {s.domain && (
+                      <span className="font-mono text-xs text-muted-foreground ml-2">
+                        · {s.domain}
+                      </span>
+                    )}
+                    {!s.is_active && (
+                      <span className="ml-2 font-mono text-xs text-alert-red">INACTIVA</span>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <button type="button" onClick={() => setEditing(s)} className="p-1 hover:text-cyan-glow"><Pencil className="size-4" /></button>
-                  <button type="button" onClick={() => remove(s.id)} className="p-1 hover:text-alert-red"><Trash2 className="size-4" /></button>
+                  <button
+                    type="button"
+                    onClick={() => setEditing(s)}
+                    className="p-1 hover:text-cyan-glow"
+                  >
+                    <Pencil className="size-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => remove(s.id)}
+                    className="p-1 hover:text-alert-red"
+                  >
+                    <Trash2 className="size-4" />
+                  </button>
                 </div>
               </div>
             )}

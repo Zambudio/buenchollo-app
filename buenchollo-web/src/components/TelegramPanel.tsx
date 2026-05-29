@@ -5,14 +5,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-  Plus,
-  Send,
-  X,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Plus, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   telegramApi,
@@ -129,8 +122,14 @@ export function TelegramPanel({ dealData, onClose }: TelegramPanelProps) {
 
   // ── Publicar ───────────────────────────────────────────────────────────────
   const handlePublish = async () => {
-    if (!text.trim()) { toast.error("El mensaje está vacío"); return; }
-    if (!channelId) { toast.error("Selecciona un canal"); return; }
+    if (!text.trim()) {
+      toast.error("El mensaje está vacío");
+      return;
+    }
+    if (!channelId) {
+      toast.error("Selecciona un canal");
+      return;
+    }
 
     setPublishing(true);
     try {
@@ -157,10 +156,7 @@ export function TelegramPanel({ dealData, onClose }: TelegramPanelProps) {
     // Overlay
     <div className="fixed inset-0 z-50 flex justify-end">
       {/* Fondo semitransparente clickeable para cerrar */}
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
       {/* Panel lateral */}
       <div className="relative z-10 w-full max-w-lg bg-surface-800 border-l border-surface-700 flex flex-col h-full overflow-y-auto">
@@ -181,9 +177,7 @@ export function TelegramPanel({ dealData, onClose }: TelegramPanelProps) {
           {/* ── Mensaje ─────────────────────────────────────────────────── */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <span className="font-mono text-[10px] uppercase text-muted-foreground">
-                Mensaje
-              </span>
+              <span className="font-mono text-[10px] uppercase text-muted-foreground">Mensaje</span>
               <button
                 type="button"
                 onClick={handleGenerate}
@@ -217,11 +211,7 @@ export function TelegramPanel({ dealData, onClose }: TelegramPanelProps) {
                 Imagen ({imageIdx + 1} / {images.length})
               </span>
               <div className="relative border border-surface-700 bg-surface-900 aspect-video overflow-hidden">
-                <img
-                  src={images[imageIdx]}
-                  alt=""
-                  className="w-full h-full object-contain"
-                />
+                <img src={images[imageIdx]} alt="" className="w-full h-full object-contain" />
                 {images.length > 1 && (
                   <>
                     <button
@@ -234,9 +224,7 @@ export function TelegramPanel({ dealData, onClose }: TelegramPanelProps) {
                     </button>
                     <button
                       type="button"
-                      onClick={() =>
-                        setImageIdx((i) => Math.min(images.length - 1, i + 1))
-                      }
+                      onClick={() => setImageIdx((i) => Math.min(images.length - 1, i + 1))}
                       disabled={imageIdx === images.length - 1}
                       className="absolute right-1 top-1/2 -translate-y-1/2 bg-surface-900/80 p-1 hover:text-cyan-glow disabled:opacity-30"
                     >
@@ -254,16 +242,10 @@ export function TelegramPanel({ dealData, onClose }: TelegramPanelProps) {
                       type="button"
                       onClick={() => setImageIdx(i)}
                       className={`shrink-0 w-12 h-12 border-2 overflow-hidden ${
-                        i === imageIdx
-                          ? "border-cyan-glow"
-                          : "border-surface-700"
+                        i === imageIdx ? "border-cyan-glow" : "border-surface-700"
                       }`}
                     >
-                      <img
-                        src={url}
-                        alt=""
-                        className="w-full h-full object-cover"
-                      />
+                      <img src={url} alt="" className="w-full h-full object-cover" />
                     </button>
                   ))}
                 </div>
@@ -281,9 +263,7 @@ export function TelegramPanel({ dealData, onClose }: TelegramPanelProps) {
               onChange={(e) => setChannelId(e.target.value)}
               className={inputCls}
             >
-              {channels.length === 0 && (
-                <option value="">Sin canales configurados</option>
-              )}
+              {channels.length === 0 && <option value="">Sin canales configurados</option>}
               {channels.map((ch) => (
                 <option key={ch.id} value={ch.id}>
                   {ch.name}
@@ -381,11 +361,7 @@ export function TelegramPanel({ dealData, onClose }: TelegramPanelProps) {
             disabled={publishing || !text.trim() || !channelId}
             className="w-full bg-cyan-glow text-surface-900 font-mono text-sm font-bold py-3 flex items-center justify-center gap-2 hover:bg-foreground disabled:opacity-50"
           >
-            {publishing ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Send className="size-4" />
-            )}
+            {publishing ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
             {publishing ? "PUBLICANDO..." : "🚀 PUBLICAR AHORA"}
           </button>
         </div>

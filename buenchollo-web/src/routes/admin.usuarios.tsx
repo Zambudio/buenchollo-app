@@ -11,7 +11,8 @@ function AdminUsers() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    adminUsersApi.list()
+    adminUsersApi
+      .list()
       .then(setUsers)
       .catch(() => toast.error("No se pudieron cargar los usuarios"))
       .finally(() => setLoading(false));
@@ -31,15 +32,25 @@ function AdminUsers() {
           </thead>
           <tbody>
             {loading && (
-              <tr><td colSpan={3} className="p-3 font-mono text-xs text-muted-foreground">Cargando...</td></tr>
+              <tr>
+                <td colSpan={3} className="p-3 font-mono text-xs text-muted-foreground">
+                  Cargando...
+                </td>
+              </tr>
             )}
             {!loading && users.length === 0 && (
-              <tr><td colSpan={3} className="p-3 font-mono text-xs text-muted-foreground">Sin usuarios.</td></tr>
+              <tr>
+                <td colSpan={3} className="p-3 font-mono text-xs text-muted-foreground">
+                  Sin usuarios.
+                </td>
+              </tr>
             )}
-            {users.map(u => (
+            {users.map((u) => (
               <tr key={u.user_id} className="border-b border-surface-700/50">
                 <td className="p-3">{u.display_name ?? u.username ?? "—"}</td>
-                <td className="p-3 font-mono text-xs">{u.roles.length > 0 ? u.roles.join(", ") : "user"}</td>
+                <td className="p-3 font-mono text-xs">
+                  {u.roles.length > 0 ? u.roles.join(", ") : "user"}
+                </td>
                 <td className="p-3 text-muted-foreground font-mono text-xs">
                   {u.created_at ? formatRelativeTime(u.created_at) : "—"}
                 </td>

@@ -10,9 +10,12 @@ function AdminHome() {
   const [stats, setStats] = useState<AdminStats | null>(null);
 
   useEffect(() => {
-    adminApi.getStats()
+    adminApi
+      .getStats()
       .then(setStats)
-      .catch((e: unknown) => toast.error(errorMessage(e, "No se pudieron cargar las estadísticas")));
+      .catch((e: unknown) =>
+        toast.error(errorMessage(e, "No se pudieron cargar las estadísticas")),
+      );
   }, []);
 
   return (
@@ -34,7 +37,9 @@ function StatCard({ label, value }: { label: string; value: number | undefined }
   return (
     <div className="bg-surface-800 border border-surface-700 p-5">
       <div className="font-mono text-xs uppercase text-muted-foreground mb-2">{label}</div>
-      <div className="font-mono text-3xl font-extrabold text-cyan-glow tabular-nums">{value ?? "—"}</div>
+      <div className="font-mono text-3xl font-extrabold text-cyan-glow tabular-nums">
+        {value ?? "—"}
+      </div>
     </div>
   );
 }

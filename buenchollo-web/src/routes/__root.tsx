@@ -33,18 +33,38 @@ export const Route = createRootRoute({
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "BuencholloTech — Las mejores ofertas de tecnología" },
-      { name: "description", content: "Portal de ofertas y chollos de tecnología y electrónica. Descuentos curados, alertas personalizadas y comunidad." },
+      {
+        name: "description",
+        content:
+          "Portal de ofertas y chollos de tecnología y electrónica. Descuentos curados, alertas personalizadas y comunidad.",
+      },
       { name: "author", content: "BuencholloTech" },
       { property: "og:title", content: "BuencholloTech — Las mejores ofertas de tecnología" },
-      { property: "og:description", content: "Portal de ofertas y chollos de tecnología y electrónica. Descuentos curados, alertas personalizadas y comunidad." },
+      {
+        property: "og:description",
+        content:
+          "Portal de ofertas y chollos de tecnología y electrónica. Descuentos curados, alertas personalizadas y comunidad.",
+      },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "BuencholloTech" },
       { property: "og:locale", content: "es_ES" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "BuencholloTech — Las mejores ofertas de tecnología" },
-      { name: "twitter:description", content: "Portal de ofertas y chollos de tecnología y electrónica. Descuentos curados, alertas personalizadas y comunidad." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/2d10f0b6-2af5-434a-8618-dbc51e27c961/id-preview-5636a208--6598b564-42fc-4036-9f9c-29d936b259e5.lovable.app-1776711372677.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/2d10f0b6-2af5-434a-8618-dbc51e27c961/id-preview-5636a208--6598b564-42fc-4036-9f9c-29d936b259e5.lovable.app-1776711372677.png" },
+      {
+        name: "twitter:description",
+        content:
+          "Portal de ofertas y chollos de tecnología y electrónica. Descuentos curados, alertas personalizadas y comunidad.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/2d10f0b6-2af5-434a-8618-dbc51e27c961/id-preview-5636a208--6598b564-42fc-4036-9f9c-29d936b259e5.lovable.app-1776711372677.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/2d10f0b6-2af5-434a-8618-dbc51e27c961/id-preview-5636a208--6598b564-42fc-4036-9f9c-29d936b259e5.lovable.app-1776711372677.png",
+      },
     ],
     scripts: [
       {
@@ -84,7 +104,10 @@ export const Route = createRootRoute({
       { rel: "apple-touch-icon", href: "/favicon.png?v=2" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap",
+      },
     ],
   }),
   shellComponent: RootShell,
@@ -95,7 +118,9 @@ export const Route = createRootRoute({
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className="dark">
-      <head><HeadContent /></head>
+      <head>
+        <HeadContent />
+      </head>
       <body>
         {children}
         <Scripts />

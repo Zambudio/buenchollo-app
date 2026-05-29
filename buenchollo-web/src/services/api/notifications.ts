@@ -14,12 +14,10 @@ export interface Notification {
 }
 
 export const notificationsApi = {
-  list: (): Promise<Notification[]> =>
-    apiClient.get<Notification[]>("/notifications"),
+  list: (): Promise<Notification[]> => apiClient.get<Notification[]>("/notifications"),
 
   unreadCount: (): Promise<{ count: number }> =>
     apiClient.get<{ count: number }>("/notifications/unread-count"),
 
-  markRead: (): Promise<void> =>
-    apiClient.post<void>("/notifications/mark-read", {}),
+  markRead: (): Promise<void> => apiClient.post<void>("/notifications/mark-read", {}),
 };

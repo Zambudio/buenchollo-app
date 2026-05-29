@@ -15,9 +15,20 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "BuencholloTech — Chollos y ofertas de tecnología en España" },
-      { name: "description", content: "Chollos curados de tecnología: móviles, portátiles, audio, TV, gaming y más. Alertas personalizadas y comunidad. Las mejores ofertas en un solo lugar." },
-      { property: "og:title", content: "BuencholloTech — Chollos y ofertas de tecnología en España" },
-      { property: "og:description", content: "Chollos curados de tecnología: móviles, portátiles, audio, TV, gaming y más. Alertas personalizadas y comunidad." },
+      {
+        name: "description",
+        content:
+          "Chollos curados de tecnología: móviles, portátiles, audio, TV, gaming y más. Alertas personalizadas y comunidad. Las mejores ofertas en un solo lugar.",
+      },
+      {
+        property: "og:title",
+        content: "BuencholloTech — Chollos y ofertas de tecnología en España",
+      },
+      {
+        property: "og:description",
+        content:
+          "Chollos curados de tecnología: móviles, portátiles, audio, TV, gaming y más. Alertas personalizadas y comunidad.",
+      },
       { property: "og:url", content: `${SITE}/` },
       { property: "og:type", content: "website" },
     ],
@@ -70,7 +81,9 @@ function HomePage() {
     const el = sentinelRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
-      (entries) => { if (entries[0]?.isIntersecting) loadLive(); },
+      (entries) => {
+        if (entries[0]?.isIntersecting) loadLive();
+      },
       { rootMargin: "300px" },
     );
     observer.observe(el);
@@ -79,8 +92,12 @@ function HomePage() {
 
   // Favoritos del usuario
   useEffect(() => {
-    if (!user) { setFavIds(new Set()); return; }
-    favoritesApi.getFavorites()
+    if (!user) {
+      setFavIds(new Set());
+      return;
+    }
+    favoritesApi
+      .getFavorites()
       .then((deals) => setFavIds(new Set(deals.map((d) => d.id))))
       .catch(() => setFavIds(new Set()));
   }, [user]);
@@ -91,17 +108,24 @@ function HomePage() {
       <section className="border-b border-surface-700 bg-surface-900 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-glow/5 blur-[120px] pointer-events-none" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-20 relative">
-          <div className="font-mono text-cyan-glow text-xs mb-4 animate-pulse">&gt; CONEXIÓN ESTABLECIDA · MONITOREANDO NODOS</div>
+          <div className="font-mono text-cyan-glow text-xs mb-4 animate-pulse">
+            &gt; CONEXIÓN ESTABLECIDA · MONITOREANDO NODOS
+          </div>
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold text-foreground tracking-tighter leading-[1.05] mb-6">
-            INTERCEPTANDO<br />
+            INTERCEPTANDO
+            <br />
             <span className="text-cyan-glow text-glow">CAÍDAS DE PRECIO</span>
           </h1>
           <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mb-8">
-            Las mejores ofertas de tecnología, monitorizadas en tiempo real. Sin spam, sin ruido — solo chollos que merecen tu atención.
+            Las mejores ofertas de tecnología, monitorizadas en tiempo real. Sin spam, sin ruido —
+            solo chollos que merecen tu atención.
           </p>
           <div className="flex flex-wrap gap-3">
             {!user && (
-              <Link to="/registro" className="inline-flex items-center gap-2 border border-surface-700 bg-surface-800 text-foreground font-mono text-xs font-bold px-5 py-3 hover:border-cyan-glow hover:text-cyan-glow transition-colors">
+              <Link
+                to="/registro"
+                className="inline-flex items-center gap-2 border border-surface-700 bg-surface-800 text-foreground font-mono text-xs font-bold px-5 py-3 hover:border-cyan-glow hover:text-cyan-glow transition-colors"
+              >
                 [ CREAR CUENTA ]
               </Link>
             )}
@@ -121,7 +145,9 @@ function HomePage() {
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <Zap className="size-3.5 text-cyan-glow" />
-                  <span className="font-mono text-[10px] sm:text-xs text-cyan-glow uppercase tracking-wider">Canal oficial · Notificaciones al instante</span>
+                  <span className="font-mono text-[10px] sm:text-xs text-cyan-glow uppercase tracking-wider">
+                    Canal oficial · Notificaciones al instante
+                  </span>
                 </div>
                 <h2 className="text-foreground font-bold text-base sm:text-lg tracking-tight leading-snug">
                   También publicamos los chollos en <span className="text-cyan-glow">Telegram</span>
@@ -137,8 +163,7 @@ function HomePage() {
               rel="noopener noreferrer"
               className="relative z-10 inline-flex items-center gap-2 bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-5 py-3 hover:bg-foreground transition-colors whitespace-nowrap w-full sm:w-auto justify-center"
             >
-              <Send className="size-4" />
-              [ UNIRME AL CANAL ]
+              <Send className="size-4" />[ UNIRME AL CANAL ]
             </a>
           </div>
         </div>
@@ -149,12 +174,22 @@ function HomePage() {
         <div className="flex items-center justify-between border-b border-surface-700 pb-3 mb-6">
           <div className="flex items-center gap-3">
             <div className="size-2 bg-alert-red rounded-full animate-pulse" />
-            <h2 className="text-foreground font-bold text-lg tracking-tight font-mono">MÁS_POPULARES</h2>
+            <h2 className="text-foreground font-bold text-lg tracking-tight font-mono">
+              MÁS_POPULARES
+            </h2>
           </div>
-          <Link to="/explorar" search={{ sort: "popular" }} className="font-mono text-xs text-cyan-glow hover:text-foreground">[ VER MÁS ]</Link>
+          <Link
+            to="/explorar"
+            search={{ sort: "popular" }}
+            className="font-mono text-xs text-cyan-glow hover:text-foreground"
+          >
+            [ VER MÁS ]
+          </Link>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {popular.map((d) => <DealCard key={d.id} deal={d} isFavorite={favIds.has(d.id)} />)}
+          {popular.map((d) => (
+            <DealCard key={d.id} deal={d} isFavorite={favIds.has(d.id)} />
+          ))}
         </div>
       </section>
 
@@ -163,7 +198,9 @@ function HomePage() {
         <div className="flex items-center justify-between border-b border-surface-700 pb-3 mb-6">
           <div className="flex items-center gap-3">
             <div className="size-2 bg-cyan-glow rounded-full animate-pulse" />
-            <h2 className="text-foreground font-bold text-lg tracking-tight font-mono">TRANSMISIÓN_EN_VIVO</h2>
+            <h2 className="text-foreground font-bold text-lg tracking-tight font-mono">
+              TRANSMISIÓN_EN_VIVO
+            </h2>
           </div>
           <Link
             to="/explorar"
@@ -174,7 +211,9 @@ function HomePage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {latest.map((d) => <DealCard key={d.id} deal={d} isFavorite={favIds.has(d.id)} />)}
+          {latest.map((d) => (
+            <DealCard key={d.id} deal={d} isFavorite={favIds.has(d.id)} />
+          ))}
         </div>
 
         {/* Sentinel — dispara la carga del siguiente lote */}

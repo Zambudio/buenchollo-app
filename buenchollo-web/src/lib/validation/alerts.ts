@@ -58,8 +58,12 @@ export const alertFormSchema = z
   .refine(
     (data) =>
       Boolean(
-        data.keyword || data.category_id || data.store_id ||
-          data.brand || data.max_price != null || data.min_discount != null,
+        data.keyword ||
+        data.category_id ||
+        data.store_id ||
+        data.brand ||
+        data.max_price != null ||
+        data.min_discount != null,
       ),
     { message: "Escribe un producto o elige al menos un criterio" },
   );

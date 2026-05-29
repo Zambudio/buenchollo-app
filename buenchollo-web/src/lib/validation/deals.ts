@@ -48,12 +48,9 @@ export const dealFormSchema = z
     short_description: optionalTrimmedString,
     description: optionalTrimmedString,
   })
-  .refine(
-    (data) => data.previous_price == null || data.previous_price > data.current_price,
-    {
-      path: ["previous_price"],
-      message: "El precio anterior debe ser mayor que el actual",
-    },
-  );
+  .refine((data) => data.previous_price == null || data.previous_price > data.current_price, {
+    path: ["previous_price"],
+    message: "El precio anterior debe ser mayor que el actual",
+  });
 
 export type DealFormInput = z.input<typeof dealFormSchema>;

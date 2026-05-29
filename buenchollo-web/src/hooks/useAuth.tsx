@@ -34,11 +34,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     // 1) Listener primero
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sess) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, sess) => {
       setSession(sess);
       setUser(sess?.user ?? null);
       // diferimos para evitar carreras con el cliente HTTP
-      setTimeout(() => { void refreshAdmin(sess); }, 0);
+      setTimeout(() => {
+        void refreshAdmin(sess);
+      }, 0);
     });
 
     // 2) Sesión existente
@@ -51,7 +55,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signOut = async () => { await supabase.auth.signOut(); };
+  const signOut = async () => {
+    await supabase.auth.signOut();
+  };
 
   return (
     <AuthContext.Provider value={{ user, session, isAdmin, loading, signOut }}>

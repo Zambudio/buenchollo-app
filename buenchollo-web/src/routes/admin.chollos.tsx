@@ -9,7 +9,13 @@ import {
 import { categoriesService, type Category } from "@/services/api/categories";
 import { storesService, type Store } from "@/services/api/stores";
 import { productsApi, type AmazonPreviewResponse } from "@/services/api/products";
-import { formatPrice, formatRelativeTime, slugify, calculateDiscount, toDatetimeLocal } from "@/lib/format";
+import {
+  formatPrice,
+  formatRelativeTime,
+  slugify,
+  calculateDiscount,
+  toDatetimeLocal,
+} from "@/lib/format";
 import { errorMessage } from "@/lib/errors";
 import { DEAL_STATUS_OPTIONS } from "@/lib/constants";
 import { dealFormSchema } from "@/lib/validation/deals";
@@ -45,7 +51,7 @@ interface DealForm {
   subcategory_id: string;
   brand: string;
   status: DealStatus;
-  expires_at: string;   // datetime-local sin zona
+  expires_at: string; // datetime-local sin zona
   scheduled_for: string; // datetime-local sin zona
   external_id: string;
   show_keepa_chart: boolean;
@@ -59,10 +65,24 @@ type TelegramPanelData = TelegramGenerateRequest & {
 
 function emptyForm(): DealForm {
   return {
-    title: "", short_description: "", description: "", image_url: "", images: [],
-    current_price: "", previous_price: "", shipping_info: "", affiliate_url: "",
-    store_id: "", category_id: "", subcategory_id: "", brand: "", status: "active",
-    expires_at: "", scheduled_for: "", external_id: "", show_keepa_chart: false,
+    title: "",
+    short_description: "",
+    description: "",
+    image_url: "",
+    images: [],
+    current_price: "",
+    previous_price: "",
+    shipping_info: "",
+    affiliate_url: "",
+    store_id: "",
+    category_id: "",
+    subcategory_id: "",
+    brand: "",
+    status: "active",
+    expires_at: "",
+    scheduled_for: "",
+    external_id: "",
+    show_keepa_chart: false,
   };
 }
 
@@ -107,11 +127,14 @@ function AdminDeals() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const load = () => {
-    dealsService.getAdminAll(statusFilter)
+    dealsService
+      .getAdminAll(statusFilter)
       .then(setDeals)
       .catch((err: unknown) => toast.error(errorMessage(err)));
   };
-  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [statusFilter]);
+  useEffect(() => {
+    load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, [statusFilter]);
 
   useEffect(() => {
     Promise.all([storesService.getAll(), categoriesService.getAll()])
@@ -128,10 +151,14 @@ function AdminDeals() {
     if (!editId || deals.length === 0 || showForm) return;
     const target = deals.find((d) => d.id === editId);
     if (target) startEdit(target);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deals, editId]);
 
-  const startNew = () => { setEditing(null); setForm(emptyForm()); setShowForm(true); };
+  const startNew = () => {
+    setEditing(null);
+    setForm(emptyForm());
+    setShowForm(true);
+  };
   const startEdit = (d: DealDetailData) => {
     setEditing(d);
     setForm(dealToForm(d));
@@ -140,7 +167,10 @@ function AdminDeals() {
 
   const autofillFromAmazon = async () => {
     const url = amazonUrl.trim();
-    if (!url) { toast.error("Introduce una URL"); return; }
+    if (!url) {
+      toast.error("Introduce una URL");
+      return;
+    }
     if (!/amazon\./i.test(url) && !/amzn\./i.test(url)) {
       toast.error("La URL no parece de Amazon");
       return;
@@ -156,7 +186,7 @@ function AdminDeals() {
         short_description: d.short_description || f.short_description,
         description: d.long_description || f.description,
         image_url: d.image_url || f.image_url,
-        images: d.images.length > 0 ? d.images : (d.image_url ? [d.image_url] : f.images),
+        images: d.images.length > 0 ? d.images : d.image_url ? [d.image_url] : f.images,
         brand: d.brand || f.brand,
         current_price: d.current_price ? String(d.current_price) : f.current_price,
         previous_price: d.original_price ? String(d.original_price) : f.previous_price,
@@ -170,10 +200,13 @@ function AdminDeals() {
         show_keepa_chart: !!d.asin || f.show_keepa_chart,
       }));
 
-      if (!showForm) { setEditing(null); setShowForm(true); }
+      if (!showForm) {
+        setEditing(null);
+        setShowForm(true);
+      }
       toast.success("Datos importados desde tu NAS");
 
-      const allImages = d.images.length > 0 ? d.images : (d.image_url ? [d.image_url] : []);
+      const allImages = d.images.length > 0 ? d.images : d.image_url ? [d.image_url] : [];
       openTelegramPanelWith({
         title: d.title || "",
         current_price: d.current_price || 0,
@@ -259,9 +292,10 @@ function AdminDeals() {
       brand: form.brand || null,
       status: form.status,
       expires_at: form.expires_at ? new Date(form.expires_at).toISOString() : null,
-      scheduled_for: form.status === "scheduled" && form.scheduled_for
-        ? new Date(form.scheduled_for).toISOString()
-        : null,
+      scheduled_for:
+        form.status === "scheduled" && form.scheduled_for
+          ? new Date(form.scheduled_for).toISOString()
+          : null,
       external_id: form.external_id || null,
       show_keepa_chart: form.show_keepa_chart,
     };
@@ -318,7 +352,10 @@ function AdminDeals() {
   const addImageUrl = () => {
     const url = form.image_url.trim();
     if (!url) return;
-    if (form.images.includes(url)) { setForm({ ...form, image_url: "" }); return; }
+    if (form.images.includes(url)) {
+      setForm({ ...form, image_url: "" });
+      return;
+    }
     setForm({ ...form, images: [...form.images, url], image_url: "" });
   };
 
@@ -328,13 +365,24 @@ function AdminDeals() {
     const newUrls: string[] = [];
     const { supabase } = await import("@/integrations/supabase/client");
     for (const file of Array.from(files)) {
-      if (!file.type.startsWith("image/")) { toast.error(`${file.name}: no es imagen`); continue; }
-      if (file.size > 5 * 1024 * 1024) { toast.error(`${file.name}: máx 5MB`); continue; }
+      if (!file.type.startsWith("image/")) {
+        toast.error(`${file.name}: no es imagen`);
+        continue;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name}: máx 5MB`);
+        continue;
+      }
       const ext = file.name.split(".").pop();
       const path = `${user!.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
       const { error } = await supabase.storage.from("deal-images").upload(path, file);
-      if (error) { toast.error(error.message); continue; }
-      const { data: { publicUrl } } = supabase.storage.from("deal-images").getPublicUrl(path);
+      if (error) {
+        toast.error(error.message);
+        continue;
+      }
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("deal-images").getPublicUrl(path);
       newUrls.push(publicUrl);
     }
     setForm((f) => ({ ...f, images: [...f.images, ...newUrls] }));
@@ -353,30 +401,39 @@ function AdminDeals() {
     const arr = [...form.images];
     const a = arr[i];
     const b = arr[j];
-    if (a === undefined || b === undefined) return;  // guards para noUncheckedIndexedAccess
+    if (a === undefined || b === undefined) return; // guards para noUncheckedIndexedAccess
     arr[i] = b;
     arr[j] = a;
     setForm({ ...form, images: arr });
   };
 
   const filteredSubcats = subcats.filter((s) => s.parent_id === form.category_id);
-  const inputCls = "w-full bg-surface-900 border border-surface-700 px-3 py-2 font-mono text-sm outline-none focus:border-cyan-glow";
+  const inputCls =
+    "w-full bg-surface-900 border border-surface-700 px-3 py-2 font-mono text-sm outline-none focus:border-cyan-glow";
 
   return (
     <div>
       {showTelegramPanel && telegramDealData && (
-        <TelegramPanel
-          dealData={telegramDealData}
-          onClose={() => setShowTelegramPanel(false)}
-        />
+        <TelegramPanel dealData={telegramDealData} onClose={() => setShowTelegramPanel(false)} />
       )}
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <h2 className="font-mono text-sm uppercase text-cyan-glow">Gestión de chollos</h2>
         <div className="flex items-center gap-2">
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="bg-surface-900 border border-surface-700 px-3 py-2 font-mono text-xs uppercase outline-none focus:border-cyan-glow">
-            {DEAL_STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="bg-surface-900 border border-surface-700 px-3 py-2 font-mono text-xs uppercase outline-none focus:border-cyan-glow"
+          >
+            {DEAL_STATUS_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
           </select>
-          <button onClick={startNew} className="bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-4 py-2 flex items-center gap-2 hover:bg-foreground">
+          <button
+            onClick={startNew}
+            className="bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-4 py-2 flex items-center gap-2 hover:bg-foreground"
+          >
             <Plus className="size-4" /> NUEVO
           </button>
         </div>
@@ -389,7 +446,8 @@ function AdminDeals() {
           <h3 className="font-mono text-xs uppercase text-cyan-glow">Autocompletar desde Amazon</h3>
         </div>
         <p className="font-mono text-[10px] text-muted-foreground mb-3">
-          Pega tu URL de afiliado de Amazon y rellenaremos título, imagen, marca y precios automáticamente.
+          Pega tu URL de afiliado de Amazon y rellenaremos título, imagen, marca y precios
+          automáticamente.
         </p>
         <div className="flex flex-col sm:flex-row gap-2">
           <input
@@ -405,49 +463,134 @@ function AdminDeals() {
             disabled={autofilling}
             className="bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-4 py-2 flex items-center justify-center gap-2 hover:bg-foreground disabled:opacity-50"
           >
-            {autofilling ? <Loader2 className="size-4 animate-spin" /> : <Wand2 className="size-4" />}
+            {autofilling ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Wand2 className="size-4" />
+            )}
             {autofilling ? "PROCESANDO..." : "[ AUTOCOMPLETAR ]"}
           </button>
         </div>
       </div>
 
       {showForm && (
-        <form onSubmit={save} className="bg-surface-800 border border-surface-700 p-5 mb-6 space-y-3">
-          <h3 className="font-mono text-xs uppercase text-cyan-glow">{editing ? "Editar chollo" : "Nuevo chollo"}</h3>
-          <input placeholder="Título *" required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className={inputCls} />
-          <input placeholder="Descripción corta" value={form.short_description} onChange={(e) => setForm({ ...form, short_description: e.target.value })} className={inputCls} />
-          <textarea placeholder="Descripción larga" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} className={inputCls} />
+        <form
+          onSubmit={save}
+          className="bg-surface-800 border border-surface-700 p-5 mb-6 space-y-3"
+        >
+          <h3 className="font-mono text-xs uppercase text-cyan-glow">
+            {editing ? "Editar chollo" : "Nuevo chollo"}
+          </h3>
+          <input
+            placeholder="Título *"
+            required
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+            className={inputCls}
+          />
+          <input
+            placeholder="Descripción corta"
+            value={form.short_description}
+            onChange={(e) => setForm({ ...form, short_description: e.target.value })}
+            className={inputCls}
+          />
+          <textarea
+            placeholder="Descripción larga"
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+            rows={3}
+            className={inputCls}
+          />
 
           {/* IMÁGENES */}
           <div className="border border-surface-700 p-3 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-xs uppercase text-cyan-glow">Imágenes ({form.images.length})</span>
-              <span className="font-mono text-[10px] text-muted-foreground">La primera es la principal</span>
+              <span className="font-mono text-xs uppercase text-cyan-glow">
+                Imágenes ({form.images.length})
+              </span>
+              <span className="font-mono text-[10px] text-muted-foreground">
+                La primera es la principal
+              </span>
             </div>
             <div className="flex gap-2">
-              <input placeholder="Añadir por URL..." value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })}
-                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addImageUrl(); } }}
-                className={inputCls + " flex-1"} />
-              <button type="button" onClick={addImageUrl} className="border border-surface-700 px-3 font-mono text-xs hover:border-cyan-glow">[ AÑADIR URL ]</button>
+              <input
+                placeholder="Añadir por URL..."
+                value={form.image_url}
+                onChange={(e) => setForm({ ...form, image_url: e.target.value })}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addImageUrl();
+                  }
+                }}
+                className={inputCls + " flex-1"}
+              />
+              <button
+                type="button"
+                onClick={addImageUrl}
+                className="border border-surface-700 px-3 font-mono text-xs hover:border-cyan-glow"
+              >
+                [ AÑADIR URL ]
+              </button>
             </div>
             <div className="flex items-center gap-2">
-              <input ref={fileRef} type="file" accept="image/*" multiple onChange={(e) => handleFiles(e.target.files)} className="hidden" />
-              <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}
-                className="border border-surface-700 px-3 py-2 font-mono text-xs hover:border-cyan-glow flex items-center gap-2 disabled:opacity-50">
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => handleFiles(e.target.files)}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+                className="border border-surface-700 px-3 py-2 font-mono text-xs hover:border-cyan-glow flex items-center gap-2 disabled:opacity-50"
+              >
                 <Upload className="size-3" /> {uploading ? "SUBIENDO..." : "[ SUBIR ARCHIVOS ]"}
               </button>
-              <span className="font-mono text-[10px] text-muted-foreground">JPG/PNG/WEBP · máx 5MB</span>
+              <span className="font-mono text-[10px] text-muted-foreground">
+                JPG/PNG/WEBP · máx 5MB
+              </span>
             </div>
             {form.images.length > 0 && (
               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
                 {form.images.map((url, i) => (
-                  <div key={i} className="relative group bg-surface-900 border border-surface-700 aspect-square overflow-hidden">
+                  <div
+                    key={i}
+                    className="relative group bg-surface-900 border border-surface-700 aspect-square overflow-hidden"
+                  >
                     <img src={url} alt="" className="w-full h-full object-cover" />
-                    {i === 0 && <span className="absolute top-1 left-1 bg-cyan-glow text-surface-900 font-mono text-[9px] font-bold px-1">PRINCIPAL</span>}
+                    {i === 0 && (
+                      <span className="absolute top-1 left-1 bg-cyan-glow text-surface-900 font-mono text-[9px] font-bold px-1">
+                        PRINCIPAL
+                      </span>
+                    )}
                     <div className="absolute inset-0 bg-surface-900/80 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-1">
-                      <button type="button" onClick={() => moveImage(i, -1)} disabled={i === 0} className="p-1 hover:text-cyan-glow disabled:opacity-30"><GripVertical className="size-3 rotate-90" /></button>
-                      <button type="button" onClick={() => moveImage(i, 1)} disabled={i === form.images.length - 1} className="p-1 hover:text-cyan-glow disabled:opacity-30"><GripVertical className="size-3 -rotate-90" /></button>
-                      <button type="button" onClick={() => removeImage(i)} className="p-1 hover:text-alert-red"><X className="size-3" /></button>
+                      <button
+                        type="button"
+                        onClick={() => moveImage(i, -1)}
+                        disabled={i === 0}
+                        className="p-1 hover:text-cyan-glow disabled:opacity-30"
+                      >
+                        <GripVertical className="size-3 rotate-90" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveImage(i, 1)}
+                        disabled={i === form.images.length - 1}
+                        className="p-1 hover:text-cyan-glow disabled:opacity-30"
+                      >
+                        <GripVertical className="size-3 -rotate-90" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeImage(i)}
+                        className="p-1 hover:text-alert-red"
+                      >
+                        <X className="size-3" />
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -456,26 +599,94 @@ function AdminDeals() {
           </div>
 
           <div className="grid sm:grid-cols-3 gap-3">
-            <input type="number" step="0.01" placeholder="Precio actual *" required value={form.current_price} onChange={(e) => setForm({ ...form, current_price: e.target.value })} className={inputCls} />
-            <input type="number" step="0.01" placeholder="Precio anterior" value={form.previous_price} onChange={(e) => setForm({ ...form, previous_price: e.target.value })} className={inputCls} />
-            <input placeholder="Marca" value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} className={inputCls} />
+            <input
+              type="number"
+              step="0.01"
+              placeholder="Precio actual *"
+              required
+              value={form.current_price}
+              onChange={(e) => setForm({ ...form, current_price: e.target.value })}
+              className={inputCls}
+            />
+            <input
+              type="number"
+              step="0.01"
+              placeholder="Precio anterior"
+              value={form.previous_price}
+              onChange={(e) => setForm({ ...form, previous_price: e.target.value })}
+              className={inputCls}
+            />
+            <input
+              placeholder="Marca"
+              value={form.brand}
+              onChange={(e) => setForm({ ...form, brand: e.target.value })}
+              className={inputCls}
+            />
           </div>
-          <input placeholder="Envío (texto)" value={form.shipping_info} onChange={(e) => setForm({ ...form, shipping_info: e.target.value })} className={inputCls} />
-          <input placeholder="Enlace afiliado *" required value={form.affiliate_url} onChange={(e) => setForm({ ...form, affiliate_url: e.target.value })} className={inputCls} />
+          <input
+            placeholder="Envío (texto)"
+            value={form.shipping_info}
+            onChange={(e) => setForm({ ...form, shipping_info: e.target.value })}
+            className={inputCls}
+          />
+          <input
+            placeholder="Enlace afiliado *"
+            required
+            value={form.affiliate_url}
+            onChange={(e) => setForm({ ...form, affiliate_url: e.target.value })}
+            className={inputCls}
+          />
           <div className="grid sm:grid-cols-4 gap-3">
-            <select value={form.store_id} onChange={(e) => setForm({ ...form, store_id: e.target.value })} className={inputCls}>
+            <select
+              value={form.store_id}
+              onChange={(e) => setForm({ ...form, store_id: e.target.value })}
+              className={inputCls}
+            >
               <option value="">— Tienda —</option>
-              {stores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              {stores.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
             </select>
-            <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value, subcategory_id: "" })} className={inputCls}>
+            <select
+              value={form.category_id}
+              onChange={(e) =>
+                setForm({ ...form, category_id: e.target.value, subcategory_id: "" })
+              }
+              className={inputCls}
+            >
               <option value="">— Categoría —</option>
-              {cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {cats.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
             </select>
-            <select value={form.subcategory_id} onChange={(e) => setForm({ ...form, subcategory_id: e.target.value })} className={inputCls} disabled={!form.category_id || filteredSubcats.length === 0}>
-              <option value="">{form.category_id ? (filteredSubcats.length ? "— Subcategoría —" : "Sin subcategorías") : "Elige categoría primero"}</option>
-              {filteredSubcats.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            <select
+              value={form.subcategory_id}
+              onChange={(e) => setForm({ ...form, subcategory_id: e.target.value })}
+              className={inputCls}
+              disabled={!form.category_id || filteredSubcats.length === 0}
+            >
+              <option value="">
+                {form.category_id
+                  ? filteredSubcats.length
+                    ? "— Subcategoría —"
+                    : "Sin subcategorías"
+                  : "Elige categoría primero"}
+              </option>
+              {filteredSubcats.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
             </select>
-            <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as DealStatus })} className={inputCls}>
+            <select
+              value={form.status}
+              onChange={(e) => setForm({ ...form, status: e.target.value as DealStatus })}
+              className={inputCls}
+            >
               <option value="active">Activo</option>
               <option value="expired">Caducado</option>
               <option value="scheduled">Programado</option>
@@ -502,21 +713,40 @@ function AdminDeals() {
 
           <div className="grid sm:grid-cols-2 gap-3">
             <label className="block">
-              <span className="font-mono text-[10px] uppercase text-muted-foreground block mb-1">Caduca el (opcional)</span>
-              <input type="datetime-local" value={form.expires_at} onChange={(e) => setForm({ ...form, expires_at: e.target.value })} className={inputCls} />
+              <span className="font-mono text-[10px] uppercase text-muted-foreground block mb-1">
+                Caduca el (opcional)
+              </span>
+              <input
+                type="datetime-local"
+                value={form.expires_at}
+                onChange={(e) => setForm({ ...form, expires_at: e.target.value })}
+                className={inputCls}
+              />
             </label>
             {form.status === "scheduled" && (
               <label className="block">
-                <span className="font-mono text-[10px] uppercase text-cyan-glow block mb-1">Publicar el *</span>
-                <input type="datetime-local" required value={form.scheduled_for} onChange={(e) => setForm({ ...form, scheduled_for: e.target.value })} className={inputCls} />
+                <span className="font-mono text-[10px] uppercase text-cyan-glow block mb-1">
+                  Publicar el *
+                </span>
+                <input
+                  type="datetime-local"
+                  required
+                  value={form.scheduled_for}
+                  onChange={(e) => setForm({ ...form, scheduled_for: e.target.value })}
+                  className={inputCls}
+                />
               </label>
             )}
           </div>
           {form.status === "draft" && (
-            <p className="font-mono text-[10px] text-muted-foreground">📝 BORRADOR · No se publicará. Puedes previsualizarlo en su URL siendo admin.</p>
+            <p className="font-mono text-[10px] text-muted-foreground">
+              📝 BORRADOR · No se publicará. Puedes previsualizarlo en su URL siendo admin.
+            </p>
           )}
           {form.status === "expired" && (
-            <p className="font-mono text-[10px] text-alert-red">⛔ CADUCADO · Aparecerá en gris con aviso de oferta finalizada.</p>
+            <p className="font-mono text-[10px] text-alert-red">
+              ⛔ CADUCADO · Aparecerá en gris con aviso de oferta finalizada.
+            </p>
           )}
           <button
             type="button"
@@ -527,8 +757,19 @@ function AdminDeals() {
           </button>
 
           <div className="flex gap-2">
-            <button type="submit" className="bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-4 py-2">[ GUARDAR ]</button>
-            <button type="button" onClick={() => setShowForm(false)} className="border border-surface-700 font-mono text-xs px-4 py-2">[ CANCELAR ]</button>
+            <button
+              type="submit"
+              className="bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-4 py-2"
+            >
+              [ GUARDAR ]
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowForm(false)}
+              className="border border-surface-700 font-mono text-xs px-4 py-2"
+            >
+              [ CANCELAR ]
+            </button>
           </div>
         </form>
       )}
@@ -536,47 +777,106 @@ function AdminDeals() {
       <div className="bg-surface-800 border border-surface-700 overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="border-b border-surface-700 font-mono text-xs uppercase text-muted-foreground">
-            <tr><th className="p-3 w-14"><span className="sr-only">Imagen</span></th><th className="text-left p-3">Título</th><th className="text-left p-3">Tienda</th><th className="text-right p-3">Precio</th><th className="text-left p-3">Estado</th><th className="text-left p-3">Fecha</th><th className="p-3">Acciones</th></tr>
+            <tr>
+              <th className="p-3 w-14">
+                <span className="sr-only">Imagen</span>
+              </th>
+              <th className="text-left p-3">Título</th>
+              <th className="text-left p-3">Tienda</th>
+              <th className="text-right p-3">Precio</th>
+              <th className="text-left p-3">Estado</th>
+              <th className="text-left p-3">Fecha</th>
+              <th className="p-3">Acciones</th>
+            </tr>
           </thead>
           <tbody>
-            {deals.map(d => {
-              const stCls = d.status === "active" ? "bg-cyan-glow/15 text-cyan-glow"
-                : d.status === "scheduled" ? "bg-amber-500/15 text-amber-400"
-                : d.status === "expired" ? "bg-alert-red/15 text-alert-red"
-                : "bg-surface-700 text-muted-foreground";
+            {deals.map((d) => {
+              const stCls =
+                d.status === "active"
+                  ? "bg-cyan-glow/15 text-cyan-glow"
+                  : d.status === "scheduled"
+                    ? "bg-amber-500/15 text-amber-400"
+                    : d.status === "expired"
+                      ? "bg-alert-red/15 text-alert-red"
+                      : "bg-surface-700 text-muted-foreground";
               return (
-              <tr key={d.id} className="border-b border-surface-700/50 hover:bg-surface-700/30">
-                <td className="p-2">
-                  {(d.image_url || (d.images && d.images[0])) ? (
-                    <img
-                      src={d.images?.[0] ?? d.image_url ?? ""}
-                      alt=""
-                      className="w-10 h-10 object-contain bg-white rounded-sm shrink-0"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 bg-surface-700 rounded-sm" />
-                  )}
-                </td>
-                <td className="p-3"><Link to="/chollo/$slug" params={{ slug: d.slug }} className="hover:text-cyan-glow">{d.title}</Link></td>
-                <td className="p-3 text-muted-foreground font-mono text-xs">{d.store?.name ?? "—"}</td>
-                <td className="p-3 text-right font-mono text-cyan-glow">{formatPrice(d.current_price)}</td>
-                <td className="p-3"><span className={`font-mono text-[10px] uppercase px-2 py-1 ${stCls}`}>{d.status}</span></td>
-                <td className="p-3 text-muted-foreground font-mono text-xs">
-                  {d.status === "scheduled" && d.scheduled_for
-                    ? <>📅 {new Date(d.scheduled_for).toLocaleString("es-ES")}</>
-                    : d.expires_at
-                      ? <>⏱ {new Date(d.expires_at).toLocaleString("es-ES")}</>
-                      : formatRelativeTime(d.created_at ?? d.published_at ?? "")}
-                </td>
-                <td className="p-3 flex gap-1">
-                  <button type="button" onClick={() => startEdit(d)} className="p-1.5 hover:text-cyan-glow" title="Editar"><Edit3 className="size-4" /></button>
-                  <button type="button" onClick={() => openTelegramPanelFromDeal(d)} className="p-1.5 hover:text-cyan-glow" title="Publicar en Telegram"><Send className="size-4" /></button>
-                  <button type="button" onClick={() => remove(d.id)} className="p-1.5 hover:text-alert-red" title="Eliminar"><Trash2 className="size-4" /></button>
-                </td>
-              </tr>
+                <tr key={d.id} className="border-b border-surface-700/50 hover:bg-surface-700/30">
+                  <td className="p-2">
+                    {d.image_url || (d.images && d.images[0]) ? (
+                      <img
+                        src={d.images?.[0] ?? d.image_url ?? ""}
+                        alt=""
+                        className="w-10 h-10 object-contain bg-white rounded-sm shrink-0"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 bg-surface-700 rounded-sm" />
+                    )}
+                  </td>
+                  <td className="p-3">
+                    <Link
+                      to="/chollo/$slug"
+                      params={{ slug: d.slug }}
+                      className="hover:text-cyan-glow"
+                    >
+                      {d.title}
+                    </Link>
+                  </td>
+                  <td className="p-3 text-muted-foreground font-mono text-xs">
+                    {d.store?.name ?? "—"}
+                  </td>
+                  <td className="p-3 text-right font-mono text-cyan-glow">
+                    {formatPrice(d.current_price)}
+                  </td>
+                  <td className="p-3">
+                    <span className={`font-mono text-[10px] uppercase px-2 py-1 ${stCls}`}>
+                      {d.status}
+                    </span>
+                  </td>
+                  <td className="p-3 text-muted-foreground font-mono text-xs">
+                    {d.status === "scheduled" && d.scheduled_for ? (
+                      <>📅 {new Date(d.scheduled_for).toLocaleString("es-ES")}</>
+                    ) : d.expires_at ? (
+                      <>⏱ {new Date(d.expires_at).toLocaleString("es-ES")}</>
+                    ) : (
+                      formatRelativeTime(d.created_at ?? d.published_at ?? "")
+                    )}
+                  </td>
+                  <td className="p-3 flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => startEdit(d)}
+                      className="p-1.5 hover:text-cyan-glow"
+                      title="Editar"
+                    >
+                      <Edit3 className="size-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openTelegramPanelFromDeal(d)}
+                      className="p-1.5 hover:text-cyan-glow"
+                      title="Publicar en Telegram"
+                    >
+                      <Send className="size-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => remove(d.id)}
+                      className="p-1.5 hover:text-alert-red"
+                      title="Eliminar"
+                    >
+                      <Trash2 className="size-4" />
+                    </button>
+                  </td>
+                </tr>
               );
             })}
-            {deals.length === 0 && <tr><td colSpan={7} className="p-6 text-center text-muted-foreground font-mono text-xs">SIN_RESULTADOS</td></tr>}
+            {deals.length === 0 && (
+              <tr>
+                <td colSpan={7} className="p-6 text-center text-muted-foreground font-mono text-xs">
+                  SIN_RESULTADOS
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
