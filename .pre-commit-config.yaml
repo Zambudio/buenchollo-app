@@ -1,0 +1,22 @@
+# Pre-commit hooks. Instalación:
+#   pip install pre-commit
+#   pre-commit install
+#
+# Filosofía: rápido (< 5s) y sólo sobre ficheros staged. La validación
+# pesada (tsc, pytest) se queda en CI. Esto es el cinturón de seguridad
+# local que evita commits con formato/lint roto y secretos accidentales.
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: \.md$
+      - id: end-of-file-fixer
+        exclude: \.gen\.ts$
+      - id: check-yaml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ["--maxkb=500"]
+      - id: detect-private-key
