@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Search,
   Bell,
@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { useAuth } from "@/hooks/useAuth";
-import { notificationsApi } from "@/services/api/notifications";
+import { useUnreadNotifications } from "@/hooks/queries/useNotifications";
 import { CategoriesDrawer } from "./CategoriesDrawer";
 import {
   DropdownMenu,
@@ -27,21 +27,10 @@ import {
 export function Header() {
   const { user, isAdmin, signOut } = useAuth();
   const [q, setQ] = useState("");
-  const [unread, setUnread] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const nav = useNavigate();
-
-  useEffect(() => {
-    if (!user) {
-      setUnread(0);
-      return;
-    }
-    notificationsApi
-      .unreadCount()
-      .then(({ count }) => setUnread(count))
-      .catch(() => setUnread(0));
-  }, [user]);
+  const { data: unread = 0 } = useUnreadNotifications();
 
   const onSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -168,7 +157,7 @@ export function Header() {
               type="button"
               className="md:hidden p-2"
               aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
-              aria-expanded={mobileOpen ? "true" : "false"}
+              aria-expanded={mobileOpen}
               onClick={() => setMobileOpen((v) => !v)}
             >
               {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}

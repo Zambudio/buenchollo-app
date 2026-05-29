@@ -1,9 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { useAuth } from "@/hooks/useAuth";
 import { formatRelativeTime } from "@/lib/format";
-import { notificationsApi, type Notification } from "@/services/api/notifications";
+import { useMarkNotificationsRead, useNotificationsList } from "@/hooks/queries/useNotifications";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/notificaciones")({
@@ -30,30 +30,30 @@ export const Route = createFileRoute("/notificaciones")({
 function NotificationsPage() {
   const { user, loading: authLoading } = useAuth();
   const nav = useNavigate();
-  const [items, setItems] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: items = [], isLoading, isError } = useNotificationsList();
+  const markRead = useMarkNotificationsRead();
 
   useEffect(() => {
     if (!authLoading && !user) nav({ to: "/login" });
   }, [authLoading, user, nav]);
 
   useEffect(() => {
-    if (!user) return;
-    notificationsApi
-      .list()
-      .then(setItems)
-      .then(() => notificationsApi.markRead())
-      .then(() => window.dispatchEvent(new Event("notifications:changed")))
-      .catch(() => toast.error("No se pudieron cargar las notificaciones"))
-      .finally(() => setLoading(false));
-  }, [user]);
+    // Al entrar en la página: marcar como leídas (best-effort silencioso).
+    if (items.length > 0 && !markRead.isPending && !markRead.isSuccess) {
+      markRead.mutate();
+    }
+  }, [items.length, markRead]);
+
+  useEffect(() => {
+    if (isError) toast.error("No se pudieron cargar las notificaciones");
+  }, [isError]);
 
   return (
     <Layout>
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
         <div className="font-mono text-cyan-glow text-xs mb-2">&gt; NOTIFICACIONES</div>
         <h1 className="text-3xl font-bold tracking-tighter mb-6">Tus notificaciones</h1>
-        {loading ? (
+        {isLoading ? (
           <div className="font-mono text-xs text-muted-foreground py-12 text-center">
             CARGANDO...
           </div>
