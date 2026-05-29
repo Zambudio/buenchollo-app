@@ -3,7 +3,7 @@
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import APIRouter, FastAPI, Request
 from fastapi.exceptions import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -143,13 +143,20 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 
 
 # ── Routers ───────────────────────────────────────────────────────────────────
-app.include_router(auth_router)
-app.include_router(products_router)
-app.include_router(categories_router)
-app.include_router(deals_router)
-app.include_router(stores_router)
-app.include_router(telegram_router)
-app.include_router(alerts_router)
-app.include_router(notifications_router)
-app.include_router(comments_router)
-app.include_router(health_router)
+# Todos los routers de negocio cuelgan de /v1/. Esto permite introducir /v2/
+# en el futuro sin romper clientes existentes (cohabitación durante la
+# migración). Sólo el health check queda sin versionar — es infraestructura,
+# no contrato.
+v1 = APIRouter(prefix="/v1")
+v1.include_router(auth_router)
+v1.include_router(products_router)
+v1.include_router(categories_router)
+v1.include_router(deals_router)
+v1.include_router(stores_router)
+v1.include_router(telegram_router)
+v1.include_router(alerts_router)
+v1.include_router(notifications_router)
+v1.include_router(comments_router)
+
+app.include_router(v1)
+app.include_router(health_router)  # /health y /health/ready — sin /v1

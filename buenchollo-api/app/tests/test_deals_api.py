@@ -38,7 +38,7 @@ def test_create_update_delete_deal_flow(integration_client):
         "brand": "API Brand",
         "shipping_info": "Envio gratis",
     }
-    response = integration_client.post("/deals/admin", json=payload)
+    response = integration_client.post("/v1/deals/admin", json=payload)
     assert response.status_code == 200, response.text
     deal = response.json()
     assert deal["title"] == "API Test Deal - Antigravity"
@@ -46,7 +46,7 @@ def test_create_update_delete_deal_flow(integration_client):
 
     # 2. Actualizar
     update_response = integration_client.put(
-        f"/deals/admin/{deal_id}",
+        f"/v1/deals/admin/{deal_id}",
         json={"title": "API Test Deal - Updated", "current_price": 39.99},
     )
     assert update_response.status_code == 200, update_response.text
@@ -55,5 +55,5 @@ def test_create_update_delete_deal_flow(integration_client):
     assert updated["current_price"] == 39.99
 
     # 3. Borrar
-    delete_response = integration_client.delete(f"/deals/admin/{deal_id}")
+    delete_response = integration_client.delete(f"/v1/deals/admin/{deal_id}")
     assert delete_response.status_code == 204, delete_response.text

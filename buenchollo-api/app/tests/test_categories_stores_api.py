@@ -23,13 +23,13 @@ def override_admin():
 # ── Categorías ────────────────────────────────────────────────────────────────
 
 def test_list_categories_returns_200(integration_client):
-    response = integration_client.get("/categories")
+    response = integration_client.get("/v1/categories")
     assert response.status_code == 200
     assert isinstance(response.json(), list)
 
 
 def test_list_categories_items_have_required_fields(integration_client):
-    response = integration_client.get("/categories")
+    response = integration_client.get("/v1/categories")
     categories = response.json()
     if categories:
         cat = categories[0]
@@ -39,12 +39,12 @@ def test_list_categories_items_have_required_fields(integration_client):
 
 
 def test_get_category_by_invalid_slug_returns_404(integration_client):
-    response = integration_client.get("/categories/slug-que-no-existe-jamas")
+    response = integration_client.get("/v1/categories/slug-que-no-existe-jamas")
     assert response.status_code == 404
 
 
 def test_admin_list_all_categories_returns_200(integration_client):
-    response = integration_client.get("/categories/admin/all")
+    response = integration_client.get("/v1/categories/admin/all")
     assert response.status_code == 200
     assert isinstance(response.json(), list)
 
@@ -57,30 +57,30 @@ def test_admin_create_and_delete_category(integration_client):
         "description": "Categoría de prueba",
         "is_active": True,
     }
-    create_response = integration_client.post("/categories/admin", json=payload)
+    create_response = integration_client.post("/v1/categories/admin", json=payload)
     assert create_response.status_code == 200, create_response.text
     created = create_response.json()
     assert created["name"] == payload["name"]
 
-    delete_response = integration_client.delete(f"/categories/admin/{created['id']}")
+    delete_response = integration_client.delete(f"/v1/categories/admin/{created['id']}")
     assert delete_response.status_code == 204, delete_response.text
 
 
 def test_admin_delete_nonexistent_category_returns_404(integration_client):
-    response = integration_client.delete("/categories/admin/00000000-0000-0000-0000-000000000000")
+    response = integration_client.delete("/v1/categories/admin/00000000-0000-0000-0000-000000000000")
     assert response.status_code == 404
 
 
 # ── Tiendas ───────────────────────────────────────────────────────────────────
 
 def test_list_stores_returns_200(integration_client):
-    response = integration_client.get("/stores")
+    response = integration_client.get("/v1/stores")
     assert response.status_code == 200
     assert isinstance(response.json(), list)
 
 
 def test_list_stores_items_have_required_fields(integration_client):
-    response = integration_client.get("/stores")
+    response = integration_client.get("/v1/stores")
     stores = response.json()
     if stores:
         store = stores[0]

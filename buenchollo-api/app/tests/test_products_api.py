@@ -45,7 +45,7 @@ def test_health(integration_client) -> None:
 
 
 def test_preview_from_url_requires_url(integration_client) -> None:
-    response = integration_client.post("/products/preview-from-url", json={})
+    response = integration_client.post("/v1/products/preview-from-url", json={})
     assert response.status_code == 422
 
 
@@ -53,7 +53,7 @@ def test_preview_from_url_returns_normalized_response(integration_client) -> Non
     app.dependency_overrides[get_preview_use_case] = override_use_case
 
     response = integration_client.post(
-        "/products/preview-from-url",
+        "/v1/products/preview-from-url",
         json={"url": "https://www.amazon.es/dp/B08TEST123"},
     )
 

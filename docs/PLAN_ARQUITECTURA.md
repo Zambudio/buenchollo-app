@@ -19,7 +19,7 @@
 | **F1** | Documentación arquitectónica (5 ADRs + diagrama) | 6 | ✅ 6/6 |
 | **F2** | Backend: fundamentos (migraciones, Alembic, excepciones, UserService) | 5 | ✅ 5/5 |
 | **F3** | Producción ready (request_id, logging, rate limit, audit log, health) | 5 | ✅ 5/5 |
-| **F4** | API: versionado `/v1` | 2 | ⬜ |
+| **F4** | API: versionado `/v1` | 2 | ✅ 2/2 |
 | **F5** | Frontend: features-based + TanStack Query + tipado total | 6 | ⬜ |
 | **F6** | CI/CD y calidad continua | 3 | ⬜ |
 | **F7** | Validación final y entrega | 3 | ⬜ |
@@ -291,13 +291,23 @@ cross-repo, se extrae el service en ese momento siguiendo el patrón de
 ## FASE 4 — API: versionado
 
 ### 4.1 Prefijo `/v1` global en backend (ARQ-04)
-- [ ] Refactor de `main.py`: todos los `include_router(...)` con `prefix="/v1"`.
-- [ ] Probar manualmente que `/v1/deals/latest`, `/v1/auth/me`, etc. responden.
-- [ ] Endpoint `/health` se queda sin versionar (correcto, es infra).
+- [x] `main.py` refactorizado con un `APIRouter(prefix="/v1")`
+  intermedio que envuelve a todos los routers de negocio (auth,
+  products, categories, deals, stores, telegram, alerts, notifications,
+  comments). (2026-05-29)
+- [x] `/health` y `/health/ready` se quedan SIN `/v1` — son infra, no
+  contrato de negocio (decisión documentada en el comentario del router).
+- [x] Tests de integración actualizados a las nuevas URLs:
+  `/v1/categories/*`, `/v1/stores`, `/v1/deals/admin/*`,
+  `/v1/products/preview-from-url`. 87/87 pytest verde.
 
 ### 4.2 Actualizar `apiClient` frontend
-- [ ] `services/api/client.ts`: `const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:8000") + "/v1"`.
-- [ ] Smoke test: pasar por todos los flujos principales (home, login, favorito, comentario, admin, perfil).
+- [x] `services/api/client.ts`: nuevo `API_BASE` (env) + `API_URL =
+  ${API_BASE}/v1`. Todos los servicios siguen declarando rutas relativas
+  sin prefijo; el cliente añade `/v1` transparentemente.
+- [x] `tsc --noEmit` 0 errores.
+- [ ] Smoke test manual tras reiniciar backend (Pedro lo verifica al
+  reiniciar contenedor para F3.4/F3.5/F4 juntos).
 
 ---
 

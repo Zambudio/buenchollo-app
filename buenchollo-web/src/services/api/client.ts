@@ -1,6 +1,11 @@
 import { supabase } from "@/integrations/supabase/client";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+// Toda la API de negocio cuelga de /v1/. Los servicios de este directorio
+// declaran rutas sin prefijo (ej. "/deals/latest") y el cliente añade /v1
+// aquí. El único endpoint que NO va versionado es /health (infraestructura),
+// pero el frontend no lo llama.
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API_URL = `${API_BASE}/v1`;
 
 interface ApiErrorDetail {
   loc: (string | number)[];
