@@ -1,22 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { adminApi, type AdminStats } from "@/services/api/auth";
+import { useEffect } from "react";
+import { useAdminStats } from "@/hooks/queries/useAdminStats";
 import { errorMessage } from "@/lib/errors";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/")({ component: AdminHome });
 
 function AdminHome() {
-  const [stats, setStats] = useState<AdminStats | null>(null);
+  const { data: stats, error } = useAdminStats();
 
   useEffect(() => {
-    adminApi
-      .getStats()
-      .then(setStats)
-      .catch((e: unknown) =>
-        toast.error(errorMessage(e, "No se pudieron cargar las estadísticas")),
-      );
-  }, []);
+    if (error) toast.error(errorMessage(error, "No se pudieron cargar las estadísticas"));
+  }, [error]);
 
   return (
     <div>
