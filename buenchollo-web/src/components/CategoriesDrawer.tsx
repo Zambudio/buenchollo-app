@@ -4,11 +4,12 @@ import {
   X, Sparkles, TrendingUp, Clock, Percent, Send,
   Smartphone, Laptop, Headphones, Tv, Gamepad2, Cpu, Home as HomeIcon,
   Watch, HardDrive, Keyboard, Camera, Router, Zap,
+  type LucideIcon,
 } from "lucide-react";
 import { categoriesService, type Category } from "@/services/api/categories";
 import { storesService, type Store } from "@/services/api/stores";
 
-const ICONS: Record<string, any> = {
+const ICONS: Record<string, LucideIcon> = {
   smartphone: Smartphone, laptop: Laptop, headphones: Headphones, tv: Tv,
   gamepad: Gamepad2, cpu: Cpu, home: HomeIcon, watch: Watch,
   storage: HardDrive, keyboard: Keyboard, camera: Camera, router: Router, energy: Zap,
@@ -70,15 +71,15 @@ export function CategoriesDrawer({ open, onClose }: Props) {
           <div className="px-3 pt-3 pb-1">
             <p className="px-3 font-mono text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-1">Tendencias</p>
             <nav className="flex flex-col">
-              <Link to="/explorar" search={{ sort: "popular" } as any} onClick={onClose} className={itemCls}>
+              <Link to="/explorar" search={{ sort: "popular" }} onClick={onClose} className={itemCls}>
                 <TrendingUp className="size-4 text-cyan-glow shrink-0" />
                 <span>Más populares</span>
               </Link>
-              <Link to="/explorar" search={{ sort: "recent" } as any} onClick={onClose} className={itemCls}>
+              <Link to="/explorar" search={{ sort: "recent" }} onClick={onClose} className={itemCls}>
                 <Clock className="size-4 text-cyan-glow shrink-0" />
                 <span>Nuevos chollos</span>
               </Link>
-              <Link to="/explorar" search={{ sort: "discount" } as any} onClick={onClose} className={itemCls}>
+              <Link to="/explorar" search={{ sort: "discount" }} onClick={onClose} className={itemCls}>
                 <Percent className="size-4 text-cyan-glow shrink-0" />
                 <span>Mayor descuento</span>
               </Link>
@@ -119,7 +120,7 @@ export function CategoriesDrawer({ open, onClose }: Props) {
                     <Link
                       key={s.id}
                       to="/explorar"
-                      search={{ store: s.id } as any}
+                      search={{ store: s.id }}
                       onClick={onClose}
                       className="text-sm text-foreground px-3 py-1.5 border border-surface-600 bg-surface-900 hover:border-cyan-glow hover:text-cyan-glow transition-colors rounded"
                     >

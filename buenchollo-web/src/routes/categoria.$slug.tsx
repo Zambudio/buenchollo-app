@@ -18,7 +18,7 @@ export const Route = createFileRoute("/categoria/$slug")({
     }
   },
   head: ({ params, loaderData }) => {
-    const c: any = loaderData?.cat;
+    const c = loaderData?.cat as (Category & { description?: string }) | null | undefined;
     const name = c?.name ?? params.slug;
     const url = `${SITE}/categoria/${params.slug}`;
     const desc = c?.description ?? `Chollos y ofertas de ${name} curados a diario en BuencholloTech.`;

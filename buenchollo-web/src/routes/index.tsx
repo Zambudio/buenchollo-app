@@ -151,7 +151,7 @@ function HomePage() {
             <div className="size-2 bg-alert-red rounded-full animate-pulse" />
             <h2 className="text-foreground font-bold text-lg tracking-tight font-mono">MÁS_POPULARES</h2>
           </div>
-          <Link to="/explorar" search={{ sort: "popular" } as any} className="font-mono text-xs text-cyan-glow hover:text-foreground">[ VER MÁS ]</Link>
+          <Link to="/explorar" search={{ sort: "popular" }} className="font-mono text-xs text-cyan-glow hover:text-foreground">[ VER MÁS ]</Link>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {popular.map((d) => <DealCard key={d.id} deal={d} isFavorite={favIds.has(d.id)} />)}

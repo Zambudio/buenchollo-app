@@ -19,6 +19,10 @@ const search = z.object({
   sort: z.enum(["recent", "popular", "discount", "price_asc"]).optional(),
 });
 
+/** Shape de los search params de /explorar. Compartido para que otros
+ *  componentes (Header, CategoriesDrawer) puedan tipar sus enlaces. */
+export type ExplorarSearch = z.infer<typeof search>;
+
 const SITE = "https://buenchollotech.lovable.app";
 
 export const Route = createFileRoute("/explorar")({
@@ -100,7 +104,8 @@ function ExplorePage() {
       .catch(() => setFavIds(new Set()));
   }, [user]);
 
-  const update = (patch: any) => nav({ search: { ...params, ...patch } as any });
+  const update = (patch: Partial<ExplorarSearch>) =>
+    nav({ search: { ...params, ...patch } });
 
   // Sanitiza enteros >= 0 (acepta vacío => undefined). Limita opcionalmente con max.
   const parseNonNeg = (v: string, max?: number): number | undefined => {
@@ -168,7 +173,7 @@ function ExplorePage() {
                 onChange={(e) => update({ disc: parseNonNeg(e.target.value, 99) })}
                 className="w-full bg-surface-900 border border-surface-700 px-2 py-2 text-sm font-mono" />
             </div>
-            <button onClick={() => nav({ search: {} as any })} className="w-full font-mono text-xs border border-surface-700 py-2 hover:border-alert-red hover:text-alert-red transition-colors">
+            <button onClick={() => nav({ search: {} })} className="w-full font-mono text-xs border border-surface-700 py-2 hover:border-alert-red hover:text-alert-red transition-colors">
               [ LIMPIAR FILTROS ]
             </button>
           </aside>
@@ -177,7 +182,7 @@ function ExplorePage() {
           <div>
             <div className="flex items-center justify-between mb-4">
               <span className="font-mono text-xs text-muted-foreground">{loading ? "CARGANDO..." : `${deals.length} RESULTADOS`}</span>
-              <select value={params.sort ?? "recent"} onChange={(e) => update({ sort: e.target.value })}
+              <select value={params.sort ?? "recent"} onChange={(e) => update({ sort: e.target.value as ExplorarSearch["sort"] })}
                 className="bg-surface-900 border border-surface-700 px-2 py-2 text-sm font-mono">
                 <option value="recent">Más recientes</option>
                 <option value="popular">Más populares</option>

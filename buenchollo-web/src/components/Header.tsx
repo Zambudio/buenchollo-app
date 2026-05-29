@@ -26,7 +26,7 @@ export function Header() {
 
   const onSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    nav({ to: "/explorar", search: { q: q.trim() || undefined } as any });
+    nav({ to: "/explorar", search: { q: q.trim() || undefined } });
   };
 
   return (

@@ -25,7 +25,7 @@ export const Route = createFileRoute("/chollo/$slug")({
     }
   },
   head: ({ params, loaderData }) => {
-    const m: any = loaderData?.meta;
+    const m = loaderData?.meta as DealDetailData | null | undefined;
     const url = `${SITE}/chollo/${params.slug}`;
     if (!m) {
       return {
@@ -136,7 +136,7 @@ function DealDetail() {
     try {
       const result = await dealsService.vote(deal.id, v as 1 | -1);
       setMyVote(result.my_vote);
-      setDeal((d: any) => ({ ...d, temperature: result.temperature, votes_up: result.votes_up, votes_down: result.votes_down }));
+      setDeal((d) => d ? { ...d, temperature: result.temperature, votes_up: result.votes_up, votes_down: result.votes_down } : d);
     } catch (e: unknown) {
       toast.error(errorMessage(e, "Error al votar"));
     } finally {
@@ -182,7 +182,7 @@ function DealDetail() {
           <Link to="/" className="hover:text-cyan-glow">INICIO</Link> /{" "}
           <Link to="/explorar" className="hover:text-cyan-glow">EXPLORAR</Link>
           {deal.category && <> / <Link to="/categoria/$slug" params={{ slug: deal.category.slug }} className="hover:text-cyan-glow">{deal.category.name.toUpperCase()}</Link></>}
-          {deal.subcategory && <> / <Link to="/explorar" search={{ cat: deal.category?.slug, sub: deal.subcategory.slug } as any} className="hover:text-cyan-glow">{deal.subcategory.name.toUpperCase()}</Link></>}
+          {deal.subcategory && <> / <Link to="/explorar" search={{ cat: deal.category?.slug, sub: deal.subcategory.slug }} className="hover:text-cyan-glow">{deal.subcategory.name.toUpperCase()}</Link></>}
         </nav>
 
         {/* Avisos de estado */}
@@ -205,7 +205,7 @@ function DealDetail() {
         )}
         {isScheduled && isAdmin && (
           <div className="mb-4 bg-amber-500/10 border border-amber-500/40 text-amber-400 px-4 py-3 font-mono text-xs uppercase flex items-center gap-2">
-            <AlertCircle className="size-4" /> Programado · Se publicará automáticamente el {(deal as any).scheduled_for ? fmtDateTime((deal as any).scheduled_for) : "—"}.
+            <AlertCircle className="size-4" /> Programado · Se publicará automáticamente el {deal.scheduled_for ? fmtDateTime(deal.scheduled_for) : "—"}.
           </div>
         )}
 
@@ -277,11 +277,11 @@ function DealDetail() {
                   )}
 
                   {/* Gráfica Keepa — histórico de precios */}
-                  {(deal as any).show_keepa_chart && (deal as any).external_id && (
+                  {deal.show_keepa_chart && deal.external_id && (
                     <div className="mt-3 border border-surface-700 bg-surface-900 p-3">
                       <p className="font-mono text-[10px] uppercase text-muted-foreground mb-2">Histórico de precios</p>
                       <img
-                        src={`https://graph.keepa.com/pricehistory.png?asin=${(deal as any).external_id}&domain=es`}
+                        src={`https://graph.keepa.com/pricehistory.png?asin=${deal.external_id}&domain=es`}
                         alt="Histórico de precios en Amazon"
                         className="w-full"
                         loading="lazy"
@@ -451,7 +451,7 @@ function DealDetail() {
           <section className="mt-12">
             <h2 className="font-mono text-sm uppercase text-cyan-glow mb-4 border-b border-surface-700 pb-2">Chollos relacionados</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {related.map((d: any) => <DealCard key={d.id} deal={d} />)}
+              {related.map((d) => <DealCard key={d.id} deal={d} />)}
             </div>
           </section>
         )}
