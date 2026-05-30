@@ -32,6 +32,9 @@ export default defineConfig({
         "src/test/**",
         "**/*.config.*",
         "vitest.setup.ts",
+        // Config sin lógica testeable (INFRASTRUCTURE en términos del módulo
+        // de Calidad). Documentado en docs/QUALITY.md.
+        "src/lib/query-client.ts",
       ],
       thresholds: {
         "src/lib/**": {
