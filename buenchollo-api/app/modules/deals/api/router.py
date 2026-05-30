@@ -246,52 +246,82 @@ async def backfill_external_ids(
     current_user=Depends(require_admin),
 ):
     import asyncio
+    import traceback
     from sqlalchemy import select, update
     from app.modules.products.infrastructure.amazon_client import extract_asin_from_url
     from app.modules.deals.domain.models import Deal
 
-    result = await db.execute(
-        select(Deal.id, Deal.title, Deal.affiliate_url)
-        .where(Deal.external_id.is_(None))
-        .where(Deal.affiliate_url.is_not(None))
-    )
-    rows = result.all()
+    try:
+        result = await db.execute(
+            select(Deal.id, Deal.title, Deal.affiliate_url)
+            .where(Deal.external_id.is_(None))
+            .where(Deal.affiliate_url.is_not(None))
+        )
+        rows = result.all()
+    except Exception as e:  # noqa: BLE001
+        logger.exception("backfill: error al cargar deals")
+        return {
+            "processed": 0,
+            "updated": 0,
+            "failed": [{"id": "-", "title": "-", "reason": f"DB load: {type(e).__name__}: {e}"}],
+            "trace": traceback.format_exc(),
+        }
 
     updated = 0
     failed: list[dict] = []
     seen_asins: dict[str, str] = {}
 
     for row in rows:
+        deal_id = str(row.id)
+        deal_title = row.title
         try:
-            # extract_asin_from_url usa urllib síncrono → lo lanzamos en un
-            # thread para no bloquear el event loop. ~1s por URL acortada.
+            # extract_asin_from_url es síncrono (urllib). Lo lanzamos en un
+            # thread para no bloquear el event loop. ~1s por amzn.to acortado.
             asin = await asyncio.to_thread(extract_asin_from_url, row.affiliate_url)
         except Exception as e:  # noqa: BLE001
-            failed.append({"id": str(row.id), "title": row.title, "reason": f"error de red: {e}"})
+            logger.warning("backfill: error extrayendo ASIN de %s: %s", row.affiliate_url, e)
+            failed.append({"id": deal_id, "title": deal_title, "reason": f"extract error: {type(e).__name__}: {e}"})
             continue
         if not asin:
-            failed.append({"id": str(row.id), "title": row.title, "reason": "no se pudo extraer ASIN"})
+            failed.append({"id": deal_id, "title": deal_title, "reason": "no se pudo extraer ASIN del redirect"})
             continue
         if asin in seen_asins:
             failed.append({
-                "id": str(row.id),
-                "title": row.title,
+                "id": deal_id,
+                "title": deal_title,
                 "reason": f"colisión con deal {seen_asins[asin]} (mismo ASIN {asin})",
             })
             continue
-        seen_asins[asin] = str(row.id)
-        await db.execute(update(Deal).where(Deal.id == row.id).values(external_id=asin))
-        updated += 1
+        try:
+            await db.execute(update(Deal).where(Deal.id == row.id).values(external_id=asin))
+            seen_asins[asin] = deal_id
+            updated += 1
+        except Exception as e:  # noqa: BLE001
+            logger.exception("backfill: error al UPDATE deal %s con asin %s", deal_id, asin)
+            failed.append({"id": deal_id, "title": deal_title, "reason": f"DB update: {type(e).__name__}: {e}"})
 
-    await db.commit()
+    try:
+        await db.commit()
+    except Exception as e:  # noqa: BLE001
+        logger.exception("backfill: error al commitear")
+        await db.rollback()
+        return {
+            "processed": len(rows),
+            "updated": 0,
+            "failed": failed + [{"id": "-", "title": "-", "reason": f"commit: {type(e).__name__}: {e}"}],
+        }
 
-    await audit_log(
-        db,
-        user_id=str(current_user.id),
-        action="deal.backfill_external_ids",
-        target_type="deal",
-        target_id=None,
-        payload={"processed": len(rows), "updated": updated, "failed_count": len(failed)},
-    )
+    # audit_log es best-effort: si falla, no pasa nada, el backfill ya está hecho.
+    try:
+        await audit_log(
+            db,
+            user_id=str(current_user.id),
+            action="deal.backfill_external_ids",
+            target_type="deal",
+            target_id=None,
+            payload={"processed": len(rows), "updated": updated, "failed_count": len(failed)},
+        )
+    except Exception:  # noqa: BLE001
+        logger.exception("backfill: audit_log falló, ignorado")
 
     return {"processed": len(rows), "updated": updated, "failed": failed}
