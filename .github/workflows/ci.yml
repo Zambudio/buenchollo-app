@@ -26,17 +26,17 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements-dev.txt
 
-      - name: Run pytest
-        # El conftest mockea supabase/amazon_paapi y carga .env si existe;
-        # los tests están aislados (no tocan BD real), pero exigimos las
-        # claves dummy mínimas para evitar ValidationError de pydantic.
+      - name: Run pytest (unit only)
+        # Excluimos tests marcados `integration` porque requieren un Postgres
+        # real (Supabase) que no levantamos en CI. Los tests de integración
+        # se ejecutan en local antes de cada release (ver docs/SMOKE_TEST.md).
         env:
           DATABASE_URL: postgresql+asyncpg://test:test@localhost:5432/test
           SUPABASE_URL: https://test.supabase.co
           SUPABASE_KEY: dummy-service-role-key
           SUPABASE_JWT_SECRET: dummy-jwt-secret
           CORS_ORIGINS: '["*"]'
-        run: pytest -q
+        run: pytest -q -m "not integration"
 
   frontend:
     name: Frontend (typecheck + lint)

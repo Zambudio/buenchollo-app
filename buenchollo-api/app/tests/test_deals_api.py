@@ -1,8 +1,14 @@
-"""Tests de integración para el CRUD de chollos (deals)."""
+"""Tests de integración para el CRUD de chollos (deals).
+
+Requieren PostgreSQL real. En CI se excluyen con -m "not integration";
+en local se ejecutan junto a los unitarios.
+"""
 import uuid
 import pytest
 from app.main import app
 from app.core.security import require_admin
+
+pytestmark = pytest.mark.integration
 
 
 class MockUser:

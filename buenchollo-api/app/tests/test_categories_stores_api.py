@@ -1,8 +1,14 @@
-"""Tests de integración para los endpoints de categorías y tiendas."""
+"""Tests de integración para los endpoints de categorías y tiendas.
+
+Requieren PostgreSQL real. En CI se excluyen con -m "not integration";
+en local se ejecutan junto a los unitarios.
+"""
 import uuid
 import pytest
 from app.main import app
 from app.core.security import require_admin
+
+pytestmark = pytest.mark.integration
 
 
 class MockUser:
