@@ -32,6 +32,20 @@ class DealRepository:
         )
         return result.scalars().first()
 
+    async def find_by_external_id(
+        self, external_id: str, *, exclude_id: str | None = None
+    ) -> Deal | None:
+        """Busca un deal por su `external_id` (ASIN en el caso de Amazon).
+
+        `exclude_id` permite ignorar el propio deal al validar duplicados
+        en un UPDATE (no auto-colisión).
+        """
+        stmt = select(Deal).where(Deal.external_id == external_id)
+        if exclude_id:
+            stmt = stmt.where(Deal.id != exclude_id)
+        result = await self.session.execute(stmt)
+        return result.scalars().first()
+
     async def get_latest_active(self, limit: int = 10) -> list[Deal]:
         result = await self.session.execute(
             self._base_deal_query()

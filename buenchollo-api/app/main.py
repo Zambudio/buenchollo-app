@@ -114,9 +114,15 @@ async def domain_exception_handler(request: Request, exc: DomainError):
     volumen, considerar nivel WARNING para 4xx y ERROR para 5xx.
     """
     logger.info("DomainError %s: %s", type(exc).__name__, exc)
+    content: dict = {"detail": str(exc)}
+    # Las excepciones de dominio pueden adjuntar un `payload` con datos
+    # estructurados para el cliente (p. ej. el deal existente en un
+    # conflicto de duplicado). Se fusiona en el body de la respuesta.
+    if extra := getattr(exc, "payload", None):
+        content |= extra
     return JSONResponse(
         status_code=exc.http_status,
-        content={"detail": str(exc)},
+        content=content,
         headers=_with_request_id_header(),
     )
 
