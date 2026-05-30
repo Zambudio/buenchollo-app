@@ -388,15 +388,16 @@ function AdminDeals() {
     }
   };
 
-  /** "Editar el existente": navega al admin con ?edit=<id>. El useEffect
-   *  que escucha `editId` carga ese deal en el formulario y descarta el
-   *  borrador actual. */
+  /** "Ir al chollo existente": navega a la página pública del chollo, que
+   *  ya muestra un botón EDITAR para admins desde donde acceder al form
+   *  con todos los datos cargados. Mejor UX que saltar directo al admin:
+   *  el admin ve primero cómo está publicado y decide si entrar a editar. */
   const goEditExisting = () => {
     if (!duplicateConflict) return;
-    const id = duplicateConflict.existing_deal.id;
+    const slug = duplicateConflict.existing_deal.slug;
     setDuplicateConflict(null);
     setShowForm(false);
-    nav({ to: "/admin/chollos", search: { edit: id } });
+    nav({ to: "/chollo/$slug", params: { slug } });
   };
 
   const remove = async (id: string) => {
@@ -968,7 +969,7 @@ function AdminDeals() {
               onClick={goEditExisting}
               className="px-4 py-2 font-mono text-xs uppercase border border-cyan-glow text-cyan-glow hover:bg-cyan-glow hover:text-surface-900 transition-colors"
             >
-              Editar el existente
+              Ir al chollo existente
             </button>
             <button
               type="button"
