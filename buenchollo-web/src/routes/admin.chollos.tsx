@@ -7,6 +7,7 @@ import {
   type DealCreatePayload,
   type DealUpdatePayload,
 } from "@/services/api/deals";
+import { apiClient } from "@/services/api/client";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -400,6 +401,36 @@ function AdminDeals() {
     nav({ to: "/chollo/$slug", params: { slug } });
   };
 
+  /** ONE-SHOT: recupera el ASIN de los chollos antiguos cuyo external_id es
+   *  NULL. Para amzn.to acortados, sigue el redirect y extrae el ASIN. */
+  const [backfilling, setBackfilling] = useState(false);
+  const runBackfillAsins = async () => {
+    if (
+      !confirm(
+        "¿Recuperar ASINs de los chollos antiguos? Puede tardar ~20s. Sólo deberías ejecutarlo una vez.",
+      )
+    )
+      return;
+    setBackfilling(true);
+    try {
+      const res = await apiClient.post<{
+        processed: number;
+        updated: number;
+        failed: { id: string; title: string; reason: string }[];
+      }>("/deals/admin/backfill-external-ids", {});
+      const msg = `Procesados ${res.processed}, actualizados ${res.updated}, fallidos ${res.failed.length}`;
+      if (res.failed.length === 0) toast.success(msg);
+      else toast.warning(msg + " — revisa consola para detalle");
+      // eslint-disable-next-line no-console
+      console.table(res.failed);
+      load();
+    } catch (e: unknown) {
+      toast.error(errorMessage(e));
+    } finally {
+      setBackfilling(false);
+    }
+  };
+
   const remove = async (id: string) => {
     if (!confirm("¿Eliminar este chollo?")) return;
     try {
@@ -491,6 +522,19 @@ function AdminDeals() {
               </option>
             ))}
           </select>
+          <button
+            onClick={runBackfillAsins}
+            disabled={backfilling}
+            className="border border-amber-500/50 text-amber-400 font-mono text-xs font-bold px-3 py-2 flex items-center gap-2 hover:border-amber-400 hover:bg-amber-400/10 disabled:opacity-50 disabled:cursor-wait"
+            title="One-shot: rellena external_id (ASIN) de chollos antiguos"
+          >
+            {backfilling ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Wand2 className="size-4" />
+            )}
+            BACKFILL ASIN
+          </button>
           <button
             onClick={startNew}
             className="bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-4 py-2 flex items-center gap-2 hover:bg-foreground"

@@ -224,3 +224,74 @@ async def delete_deal(
         target_type="deal",
         target_id=deal_id,
     )
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Endpoint ONE-SHOT — eliminar tras usar
+# ──────────────────────────────────────────────────────────────────────────────
+#
+# Backfill de external_id (ASIN) para chollos antiguos publicados antes de
+# que se guardara el ASIN al crearlos. La inmensa mayoría usan affiliate
+# links acortados (amzn.to/xxx) que no contienen el ASIN inline: hay que
+# seguir el redirect para extraerlo. `extract_asin_from_url` ya lo hace.
+#
+# Llamar UNA sola vez desde el botón del panel admin. Después borrar este
+# endpoint y el botón para no dejar superficie de ataque innecesaria.
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+@router.post("/admin/backfill-external-ids", include_in_schema=False)
+async def backfill_external_ids(
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_admin),
+):
+    import asyncio
+    from sqlalchemy import select, update
+    from app.modules.products.infrastructure.amazon_client import extract_asin_from_url
+    from app.modules.deals.domain.models import Deal
+
+    result = await db.execute(
+        select(Deal.id, Deal.title, Deal.affiliate_url)
+        .where(Deal.external_id.is_(None))
+        .where(Deal.affiliate_url.is_not(None))
+    )
+    rows = result.all()
+
+    updated = 0
+    failed: list[dict] = []
+    seen_asins: dict[str, str] = {}
+
+    for row in rows:
+        try:
+            # extract_asin_from_url usa urllib síncrono → lo lanzamos en un
+            # thread para no bloquear el event loop. ~1s por URL acortada.
+            asin = await asyncio.to_thread(extract_asin_from_url, row.affiliate_url)
+        except Exception as e:  # noqa: BLE001
+            failed.append({"id": str(row.id), "title": row.title, "reason": f"error de red: {e}"})
+            continue
+        if not asin:
+            failed.append({"id": str(row.id), "title": row.title, "reason": "no se pudo extraer ASIN"})
+            continue
+        if asin in seen_asins:
+            failed.append({
+                "id": str(row.id),
+                "title": row.title,
+                "reason": f"colisión con deal {seen_asins[asin]} (mismo ASIN {asin})",
+            })
+            continue
+        seen_asins[asin] = str(row.id)
+        await db.execute(update(Deal).where(Deal.id == row.id).values(external_id=asin))
+        updated += 1
+
+    await db.commit()
+
+    await audit_log(
+        db,
+        user_id=str(current_user.id),
+        action="deal.backfill_external_ids",
+        target_type="deal",
+        target_id=None,
+        payload={"processed": len(rows), "updated": updated, "failed_count": len(failed)},
+    )
+
+    return {"processed": len(rows), "updated": updated, "failed": failed}
