@@ -97,6 +97,16 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Ejecutar tests E2E
+        # VITE_SUPABASE_* dummy: el cliente Supabase tira al construirse si
+        # faltan estas env vars. Con dummies puede inicializarse, getSession
+        # devuelve null (no hay nada en localStorage) y los tests del guard
+        # de admin (/admin → /login) funcionan. NO se intenta autenticar
+        # contra Supabase real; cualquier fetch falla → tratado como sin
+        # sesión, que es justo lo que queremos en E2E sin credenciales.
+        env:
+          VITE_SUPABASE_URL: https://dummy.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: dummy-anon-key-for-tests
+          VITE_API_URL: http://localhost:9999
         run: npm run test:e2e
 
       - name: Subir reporte HTML de Playwright
