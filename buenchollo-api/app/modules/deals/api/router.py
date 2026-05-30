@@ -252,12 +252,19 @@ async def backfill_external_ids(
     from app.modules.deals.domain.models import Deal
 
     try:
+        # 1. Deals SIN external_id: candidatos a backfill.
         result = await db.execute(
             select(Deal.id, Deal.title, Deal.affiliate_url)
             .where(Deal.external_id.is_(None))
             .where(Deal.affiliate_url.is_not(None))
         )
         rows = result.all()
+        # 2. ASINs YA en la BD: para detectar colisiones antes de tocar la BD
+        # y evitar el IntegrityError contra el índice único parcial.
+        existing_result = await db.execute(
+            select(Deal.id, Deal.external_id).where(Deal.external_id.is_not(None))
+        )
+        seen_asins: dict[str, str] = {r.external_id: str(r.id) for r in existing_result.all()}
     except Exception as e:  # noqa: BLE001
         logger.exception("backfill: error al cargar deals")
         return {
@@ -269,7 +276,6 @@ async def backfill_external_ids(
 
     updated = 0
     failed: list[dict] = []
-    seen_asins: dict[str, str] = {}
 
     for row in rows:
         deal_id = str(row.id)
@@ -289,11 +295,16 @@ async def backfill_external_ids(
             failed.append({
                 "id": deal_id,
                 "title": deal_title,
-                "reason": f"colisión con deal {seen_asins[asin]} (mismo ASIN {asin})",
+                "reason": f"ASIN {asin} ya en uso por deal {seen_asins[asin]}",
             })
             continue
+        # SAVEPOINT por row: si el UPDATE falla por cualquier razón, sólo
+        # se descarta ese row sin envenenar el resto de la transacción.
         try:
-            await db.execute(update(Deal).where(Deal.id == row.id).values(external_id=asin))
+            async with db.begin_nested():
+                await db.execute(
+                    update(Deal).where(Deal.id == row.id).values(external_id=asin)
+                )
             seen_asins[asin] = deal_id
             updated += 1
         except Exception as e:  # noqa: BLE001
