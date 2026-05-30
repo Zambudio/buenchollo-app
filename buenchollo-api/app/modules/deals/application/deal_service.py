@@ -1,4 +1,5 @@
 import logging
+from app.modules.deals.domain.exceptions import DuplicateDealError
 from app.modules.deals.domain.models import Deal
 from app.modules.deals.domain.utils import auto_slug
 from app.modules.deals.infrastructure.repository import DealRepository
@@ -15,7 +16,29 @@ class DealService:
         self.repo = repo
         self.matcher = matcher
 
+    async def _check_external_id_unique(
+        self, external_id: str | None, *, exclude_id: str | None = None
+    ) -> None:
+        """Si `external_id` viene informado, comprueba que no exista en otro deal.
+
+        Lanza `DuplicateDealError` con los datos del existente para que el
+        frontend ofrezca al admin sobrescribir o saltar a editar.
+        """
+        if not external_id:
+            return
+        existing = await self.repo.find_by_external_id(
+            external_id, exclude_id=exclude_id
+        )
+        if existing is not None:
+            raise DuplicateDealError(
+                existing_id=existing.id,
+                existing_slug=existing.slug,
+                existing_title=existing.title,
+            )
+
     async def create_deal(self, deal_data: dict, user_id: str) -> Deal:
+        await self._check_external_id_unique(deal_data.get("external_id"))
+
         if not deal_data.get("slug"):
             deal_data["slug"] = auto_slug(deal_data["title"])
 
@@ -37,6 +60,12 @@ class DealService:
         deal = await self.repo.get_by_id(deal_id)
         if not deal:
             return None
+        # Sólo validamos si el campo external_id viene en el payload del PUT.
+        # Si no viene, conservamos el valor actual y no hay nada que comprobar.
+        if "external_id" in update_data:
+            await self._check_external_id_unique(
+                update_data["external_id"], exclude_id=deal_id
+            )
         for field, value in update_data.items():
             setattr(deal, field, value)
         await self.repo.update(deal)

@@ -42,6 +42,9 @@ def _build_service(*, has_profile: bool = True, with_matcher: bool = True):
     repo.get_by_id = AsyncMock(side_effect=lambda _id: _stub_deal())
     repo.update = AsyncMock()
     repo.delete = AsyncMock()
+    # Por defecto no hay duplicado de ASIN. Los tests que necesiten simular un
+    # choque sobreescriben este AsyncMock devolviendo un stub de deal.
+    repo.find_by_external_id = AsyncMock(return_value=None)
 
     matcher = None
     if with_matcher:
@@ -145,3 +148,75 @@ async def test_create_deal_funciona_sin_matcher_inyectado():
     deal = await service.create_deal({"title": "X", "current_price": 1.0}, "user-1")
 
     assert deal is not None  # no explota aunque matcher sea None
+
+
+# ── Deduplicación por external_id (ASIN) ─────────────────────────────────────
+
+from app.modules.deals.domain.exceptions import DuplicateDealError  # noqa: E402
+
+
+@pytest.mark.asyncio
+async def test_create_deal_falla_si_external_id_ya_existe():
+    service, repo, _ = _build_service()
+    repo.find_by_external_id = AsyncMock(
+        return_value=_stub_deal(id="otro-id", slug="producto-x", title="Producto X")
+    )
+
+    with pytest.raises(DuplicateDealError) as exc_info:
+        await service.create_deal(
+            {"title": "Nuevo", "current_price": 9.99, "external_id": "B0DABC1234"},
+            "user-1",
+        )
+
+    repo.create.assert_not_called()
+    assert exc_info.value.http_status == 409
+    payload = exc_info.value.payload
+    assert payload["code"] == "DUPLICATE_DEAL"
+    assert payload["existing_deal"] == {
+        "id": "otro-id",
+        "slug": "producto-x",
+        "title": "Producto X",
+    }
+
+
+@pytest.mark.asyncio
+async def test_create_deal_ok_con_external_id_unico():
+    service, repo, _ = _build_service()
+    # find_by_external_id devuelve None por defecto en _build_service.
+
+    await service.create_deal(
+        {"title": "Nuevo", "current_price": 9.99, "external_id": "B0DABC1234"},
+        "user-1",
+    )
+
+    repo.find_by_external_id.assert_awaited_once_with("B0DABC1234", exclude_id=None)
+    repo.create.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_update_deal_falla_si_external_id_choca_con_otro():
+    service, repo, _ = _build_service()
+    repo.get_by_id = AsyncMock(return_value=_stub_deal(id="propio-id"))
+    repo.find_by_external_id = AsyncMock(
+        return_value=_stub_deal(id="otro-id", slug="producto-x", title="Producto X")
+    )
+
+    with pytest.raises(DuplicateDealError):
+        await service.update_deal("propio-id", {"external_id": "B0NEW00000"})
+
+    repo.update.assert_not_called()
+    repo.find_by_external_id.assert_awaited_once_with(
+        "B0NEW00000", exclude_id="propio-id"
+    )
+
+
+@pytest.mark.asyncio
+async def test_update_deal_ok_si_external_id_no_viene_en_el_payload():
+    """Si el PUT no toca external_id, no se valida nada (evita query inútil)."""
+    service, repo, _ = _build_service()
+    repo.get_by_id = AsyncMock(return_value=_stub_deal(id="propio-id"))
+
+    await service.update_deal("propio-id", {"title": "Sólo cambio el título"})
+
+    repo.find_by_external_id.assert_not_called()
+    repo.update.assert_awaited_once()
