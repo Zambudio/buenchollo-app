@@ -132,6 +132,25 @@ Probado tras el fix: home, login, favoritos, comentarios, votos, panel admin
 
 ---
 
+### 3.quinquies  Módulo de Calidad QA — 2026-05-30
+
+Sprint dedicado al módulo de Calidad del software del TFM. El backend ya
+tenía cobertura razonable (87 pytest); el frontend no tenía una sola
+línea de test. Tras este sprint:
+
+- Vitest + Testing Library + jsdom configurados con coverage estratégico.
+- 72 tests Vitest verde (59 unit CORE + 13 integration user-centric).
+- Playwright + chromium con 8 E2E críticos.
+- Husky con pre-commit (lint + typecheck) y pre-push (test:run).
+- CI GitHub Actions ampliado: 4 jobs (backend, frontend con coverage,
+  e2e Playwright). Artifacts subidos en cada run / en fallo.
+- Documento [`docs/QUALITY.md`](docs/QUALITY.md) con pirámide, coverage
+  100/80/0, métricas accionables, deuda asumida y defensa ante tribunal.
+
+Suite total automatizada: **158 tests verde**.
+
+---
+
 ### 3.quater  Hardening arquitectónico F1–F7 — 2026-05-30 (release v1.0.0-tfm)
 
 Sprint final de hardening definido en [`docs/PLAN_ARQUITECTURA.md`](docs/PLAN_ARQUITECTURA.md).

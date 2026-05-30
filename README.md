@@ -258,6 +258,7 @@ npm run lint            # eslint con reglas estrictas
 | [`buenchollo-api/DEPLOY_NAS.md`](buenchollo-api/DEPLOY_NAS.md) | Despliegue en NAS Synology con Docker |
 | [`PROJECT_STATUS.md`](PROJECT_STATUS.md) | Estado vivo del proyecto, deuda técnica y métricas |
 | [`docs/PLAN_ARQUITECTURA.md`](docs/PLAN_ARQUITECTURA.md) | Plan vivo de hardening arquitectónico (F1–F7 completado) |
+| [`docs/QUALITY.md`](docs/QUALITY.md) | Estrategia de testing, coverage estratégico, métricas y defensa TFM |
 | [`docs/SMOKE_TEST.md`](docs/SMOKE_TEST.md) | Checklist manual exhaustivo pre-release |
 | [`docs/adr/`](docs/adr/) | Decisiones arquitectónicas (ADRs) firmadas y datadas |
 | [`docs/SUPABASE_SETUP.md`](docs/SUPABASE_SETUP.md) | Esquema de BD y configuración de Supabase |
