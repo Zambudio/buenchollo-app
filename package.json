@@ -1,0 +1,11 @@
+{
+  "name": "buenchollo-app",
+  "private": true,
+  "description": "Repo raíz para alojar Husky (quality gates) y scripts de orquestación.",
+  "scripts": {
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7"
+  }
+}

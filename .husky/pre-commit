@@ -1,0 +1,11 @@
+# Pre-commit gate: validaciones rápidas del frontend (lint + typecheck).
+# Tarda ~10s en máquina normal — aceptable para commits frecuentes.
+# Los tests unitarios se ejecutan en pre-push (más pesados pero menos
+# frecuentes).
+#
+# Bypass legítimo SOLO en emergencia: `git commit --no-verify`.
+# Documentado en docs/QUALITY.md.
+
+cd buenchollo-web || exit 1
+npm run lint || exit 1
+npm run typecheck || exit 1

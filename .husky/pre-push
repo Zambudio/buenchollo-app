@@ -1,0 +1,7 @@
+# Pre-push gate: ejecuta el suite de unit + integration de Vitest.
+# Tarda ~3s — coste mínimo antes de enviar a remote.
+# Los E2E de Playwright NO entran aquí (tardan ~30s y dependen del build);
+# se ejecutan en CI y manualmente con `npm run test:e2e`.
+
+cd buenchollo-web || exit 1
+npm run test:run || exit 1
