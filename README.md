@@ -1,4 +1,19 @@
-# 🍄 BuenCholloTech
+<p align="center">
+  <img src="buenchollo-web/src/assets/logo-bctech.png" alt="BuenCholloTech" height="140">
+</p>
+
+<h1 align="center">BuenCholloTech</h1>
+
+<p align="center">
+  <a href="https://github.com/Zambudio/buenchollo-app/actions/workflows/ci.yml">
+    <img alt="CI" src="https://github.com/Zambudio/buenchollo-app/actions/workflows/ci.yml/badge.svg?branch=main">
+  </a>
+  <a href="https://github.com/Zambudio/buenchollo-app/releases/tag/v1.0.0-tfm">
+    <img alt="release" src="https://img.shields.io/badge/release-v1.0.0--tfm-22d3ee">
+  </a>
+  <img alt="python" src="https://img.shields.io/badge/python-3.11-3776AB?logo=python&logoColor=white">
+  <img alt="typescript" src="https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white">
+</p>
 
 Plataforma para publicar, gestionar y automatizar chollos tecnológicos.
 Proyecto dual: producto personal en evolución continua + Trabajo Final del
@@ -85,21 +100,32 @@ buenchollo-app/
 │   │   │       ├── infrastructure/ # repositorios + adaptadores externos
 │   │   │       └── api/            # router FastAPI + schemas Pydantic
 │   │   └── tests/              # unitarios + integración
-│   ├── alembic/                # migraciones (F2 del plan)
-│   └── supabase/migrations/    # (a) histórico SQL — F2.1 moverá aquí
+│   ├── alembic/                # migraciones versionadas
+│   └── supabase/migrations/    # histórico SQL pre-Alembic
 │
 ├── buenchollo-web/             # Frontend React + TS
 │   └── src/
 │       ├── routes/             # TanStack Router file-based
-│       ├── components/         # UI compartida + ui/ shadcn
+│       ├── components/
+│       │   ├── layout/         # Header, Footer, Logo, CategoriesDrawer
+│       │   └── ui/             # shadcn primitives
+│       ├── features/           # 1 carpeta por dominio (deals, admin, notifications, telegram)
+│       │   └── <dominio>/
+│       │       ├── components/ # componentes específicos del dominio
+│       │       └── hooks/      # hooks con TanStack Query
 │       ├── services/api/       # apiClient + servicios por dominio
-│       ├── lib/                # format, errors, constants, validation
+│       ├── lib/                # query-client, format, errors, constants, validation
 │       ├── hooks/              # useAuth y similares
 │       └── integrations/       # supabase client + lovable
+│
+├── .github/
+│   ├── workflows/ci.yml        # pytest + tsc + eslint en cada push/PR
+│   └── dependabot.yml          # updates semanales agrupados
 │
 └── docs/                       # ADRs + planes + diagramas
     ├── adr/                    # 7 ADRs (arriba)
     ├── PLAN_ARQUITECTURA.md    # plan vivo de hardening
+    ├── SMOKE_TEST.md           # checklist manual pre-release
     ├── SUPABASE_SETUP.md       # esquema BD + configuración
     └── LAUNCH_CHECKLIST.md     # pre-flight para producción
 ```
@@ -198,18 +224,27 @@ Flujo resumido:
 
 ## Tests
 
+**Suite backend: 87 tests** (78 unitarios + 9 de integración).
+
 ```bash
 cd buenchollo-api
-python -m pytest                       # toda la suite
+python -m pytest                          # toda la suite (requiere Postgres real para los de integración)
+python -m pytest -m "not integration"     # sólo unitarios (lo que corre el CI)
 python -m pytest app/tests/test_deal_service.py -v   # un fichero concreto
 ```
 
-Cobertura actual: **49 tests** (20 unitarios con mocks + 29 integración).
-Los unitarios no requieren BD ni red — usan `AsyncMock` y `SimpleNamespace`.
+Los unitarios mockean Supabase, Amazon y la BD; los de integración usan
+una BD Postgres real (marcador `@pytest.mark.integration`). El workflow
+de GitHub Actions ejecuta únicamente los unitarios; los de integración
+se validan en local antes de cada release (ver
+[`docs/SMOKE_TEST.md`](docs/SMOKE_TEST.md)).
+
+**Frontend**:
 
 ```bash
 cd buenchollo-web
-npx tsc --noEmit                       # comprobación de tipos sin emitir
+npm run typecheck       # tsc --noEmit con strict mode
+npm run lint            # eslint con reglas estrictas
 ```
 
 ---
@@ -222,7 +257,8 @@ npx tsc --noEmit                       # comprobación de tipos sin emitir
 | [`buenchollo-web/README.md`](buenchollo-web/README.md) | Setup detallado del frontend, variables de entorno |
 | [`buenchollo-api/DEPLOY_NAS.md`](buenchollo-api/DEPLOY_NAS.md) | Despliegue en NAS Synology con Docker |
 | [`PROJECT_STATUS.md`](PROJECT_STATUS.md) | Estado vivo del proyecto, deuda técnica y métricas |
-| [`docs/PLAN_ARQUITECTURA.md`](docs/PLAN_ARQUITECTURA.md) | Plan vivo de hardening arquitectónico |
+| [`docs/PLAN_ARQUITECTURA.md`](docs/PLAN_ARQUITECTURA.md) | Plan vivo de hardening arquitectónico (F1–F7 completado) |
+| [`docs/SMOKE_TEST.md`](docs/SMOKE_TEST.md) | Checklist manual exhaustivo pre-release |
 | [`docs/adr/`](docs/adr/) | Decisiones arquitectónicas (ADRs) firmadas y datadas |
 | [`docs/SUPABASE_SETUP.md`](docs/SUPABASE_SETUP.md) | Esquema de BD y configuración de Supabase |
 | [`docs/LAUNCH_CHECKLIST.md`](docs/LAUNCH_CHECKLIST.md) | Checklist pre-despliegue de producción |
