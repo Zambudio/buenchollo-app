@@ -19,19 +19,38 @@ function isValidationError(detail: unknown): detail is ApiErrorDetail[] {
   );
 }
 
-async function extractErrorMessage(response: Response): Promise<string> {
+/** Error de la API con status HTTP y body parseado adjuntos.
+ *
+ *  Mantiene `.message` legible para el código que usa `errorMessage(e, fallback)`
+ *  pero permite a los callers introspeccionar `.status` y `.data` cuando
+ *  necesitan reaccionar a códigos concretos (p. ej. 409 con
+ *  `code: "DUPLICATE_DEAL"` que dispara el diálogo de chollo duplicado).
+ */
+export class ApiError extends Error {
+  status: number;
+  data: Record<string, unknown> | null;
+
+  constructor(status: number, message: string, data: Record<string, unknown> | null) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.data = data;
+  }
+}
+
+async function buildApiError(response: Response): Promise<ApiError> {
   const fallback = `API Error: ${response.status} ${response.statusText}`;
   try {
-    const data = (await response.json()) as { detail?: unknown };
-    const detail = data?.detail;
-    if (typeof detail === "string") return detail;
-    if (isValidationError(detail)) {
-      return detail.map((d) => `${d.loc.join(".")}: ${d.msg}`).join(", ");
-    }
-    if (detail != null) return JSON.stringify(detail);
-    return fallback;
+    const raw = (await response.json()) as Record<string, unknown> | null;
+    const detail = raw?.detail;
+    let message = fallback;
+    if (typeof detail === "string") message = detail;
+    else if (isValidationError(detail))
+      message = detail.map((d) => `${d.loc.join(".")}: ${d.msg}`).join(", ");
+    else if (detail != null) message = JSON.stringify(detail);
+    return new ApiError(response.status, message, raw);
   } catch {
-    return fallback;
+    return new ApiError(response.status, fallback, null);
   }
 }
 
@@ -54,7 +73,7 @@ async function fetchWithAuth<T>(endpoint: string, options: RequestInit = {}): Pr
   const response = await fetch(url, { ...options, headers });
 
   if (!response.ok) {
-    throw new Error(await extractErrorMessage(response));
+    throw await buildApiError(response);
   }
 
   const text = await response.text();

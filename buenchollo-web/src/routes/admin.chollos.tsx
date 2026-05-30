@@ -1,11 +1,20 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useRef } from "react";
 import {
   dealsService,
+  isDuplicateDealError,
   type DealDetailData,
   type DealCreatePayload,
   type DealUpdatePayload,
 } from "@/services/api/deals";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { categoriesService, type Category } from "@/services/api/categories";
 import { storesService, type Store } from "@/services/api/stores";
 import { productsApi, type AmazonPreviewResponse } from "@/services/api/products";
@@ -125,6 +134,15 @@ function AdminDeals() {
   const [showTelegramPanel, setShowTelegramPanel] = useState(false);
   const [telegramDealData, setTelegramDealData] = useState<TelegramPanelData | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const nav = useNavigate();
+
+  /** Diálogo de conflicto cuando el backend devuelve 409 DUPLICATE_DEAL.
+   *  Guardamos también el payload original para poder reintentar como
+   *  UPDATE sobre el deal existente si el admin elige "Sobrescribir". */
+  const [duplicateConflict, setDuplicateConflict] = useState<{
+    existing_deal: { id: string; slug: string; title: string };
+    pendingPayload: DealCreatePayload;
+  } | null>(null);
 
   const load = () => {
     dealsService
@@ -335,8 +353,50 @@ function AdminDeals() {
       setShowForm(false);
       load();
     } catch (e: unknown) {
+      // El backend devuelve 409 DUPLICATE_DEAL cuando otro chollo ya tiene
+      // este external_id (ASIN). Para CREATE abrimos el diálogo con las
+      // opciones de sobrescribir / ir a editar / cancelar.
+      // Para UPDATE mostramos un toast normal: el admin ya está editando un
+      // deal concreto y el conflicto es raro (sólo si cambia el ASIN).
+      if (!editing && isDuplicateDealError(e)) {
+        setDuplicateConflict({
+          existing_deal: e.data.existing_deal,
+          pendingPayload: payload,
+        });
+        return;
+      }
       toast.error(errorMessage(e));
     }
+  };
+
+  /** "Sobrescribir el existente": aplica los datos del form actual sobre el
+   *  deal que ya tiene ese ASIN. Conserva id, slug, comentarios, votos y
+   *  favoritos del registro original. */
+  const overwriteExisting = async () => {
+    if (!duplicateConflict) return;
+    try {
+      await dealsService.update(
+        duplicateConflict.existing_deal.id,
+        duplicateConflict.pendingPayload,
+      );
+      toast.success("Chollo sobrescrito");
+      setDuplicateConflict(null);
+      setShowForm(false);
+      load();
+    } catch (e: unknown) {
+      toast.error(errorMessage(e));
+    }
+  };
+
+  /** "Editar el existente": navega al admin con ?edit=<id>. El useEffect
+   *  que escucha `editId` carga ese deal en el formulario y descarta el
+   *  borrador actual. */
+  const goEditExisting = () => {
+    if (!duplicateConflict) return;
+    const id = duplicateConflict.existing_deal.id;
+    setDuplicateConflict(null);
+    setShowForm(false);
+    nav({ to: "/admin/chollos", search: { edit: id } });
   };
 
   const remove = async (id: string) => {
@@ -880,6 +940,46 @@ function AdminDeals() {
           </tbody>
         </table>
       </div>
+
+      <AlertDialog
+        open={!!duplicateConflict}
+        onOpenChange={(open) => {
+          if (!open) setDuplicateConflict(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Chollo duplicado</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ya existe el chollo «{duplicateConflict?.existing_deal.title}» con este ASIN. ¿Qué
+              quieres hacer?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={() => setDuplicateConflict(null)}
+              className="px-4 py-2 font-mono text-xs uppercase border border-surface-600 hover:border-foreground transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={goEditExisting}
+              className="px-4 py-2 font-mono text-xs uppercase border border-cyan-glow text-cyan-glow hover:bg-cyan-glow hover:text-surface-900 transition-colors"
+            >
+              Editar el existente
+            </button>
+            <button
+              type="button"
+              onClick={overwriteExisting}
+              className="px-4 py-2 font-mono text-xs uppercase bg-alert-red text-white hover:opacity-90 transition-opacity"
+            >
+              Sobrescribir el existente
+            </button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

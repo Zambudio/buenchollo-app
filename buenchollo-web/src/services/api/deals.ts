@@ -1,5 +1,26 @@
-import { apiClient } from "./client";
+import { apiClient, ApiError } from "./client";
 import type { DealCardData } from "@/features/deals/components/DealCard";
+
+/** Body que envía el backend cuando un POST/PUT de deal choca con un
+ *  external_id ya existente. Status HTTP 409, code === "DUPLICATE_DEAL". */
+export interface DuplicateDealErrorBody {
+  code: "DUPLICATE_DEAL";
+  detail: string;
+  existing_deal: { id: string; slug: string; title: string };
+}
+
+/** Type guard: detecta si un error capturado es el conflicto de duplicado
+ *  que el admin debe resolver con el diálogo de sobrescribir/editar. */
+export function isDuplicateDealError(err: unknown): err is ApiError & {
+  data: DuplicateDealErrorBody;
+} {
+  return (
+    err instanceof ApiError &&
+    err.status === 409 &&
+    err.data !== null &&
+    (err.data as { code?: unknown }).code === "DUPLICATE_DEAL"
+  );
+}
 
 export interface VoteResponse {
   temperature: number;
