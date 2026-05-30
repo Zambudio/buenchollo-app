@@ -34,6 +34,15 @@ dist/
 .nuxt/
 *.local
 
+# ─── Tests / Quality artifacts ──────────────────────────────────────────────
+buenchollo-web/coverage/
+buenchollo-web/playwright-report/
+buenchollo-web/test-results/
+buenchollo-web/.vinxi/
+buenchollo-web/.output/
+buenchollo-web/.tanstack/
+buenchollo-web/.wrangler/
+
 # ─── Logs ───────────────────────────────────────────────────────────────────
 *.log
 logs/
