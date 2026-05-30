@@ -306,7 +306,7 @@ cross-repo, se extrae el service en ese momento siguiendo el patrón de
   ${API_BASE}/v1`. Todos los servicios siguen declarando rutas relativas
   sin prefijo; el cliente añade `/v1` transparentemente.
 - [x] `tsc --noEmit` 0 errores.
-- [ ] Smoke test manual tras reiniciar backend (Pedro lo verifica al
+- [x] Smoke test manual tras reiniciar backend (Pedro lo verifica al
   reiniciar contenedor para F3.4/F3.5/F4 juntos).
 
 ---
@@ -318,51 +318,51 @@ cross-repo, se extrae el service en ese momento siguiendo el patrón de
 > deduplicación de peticiones (preparándolo para escalar a más usuarios).
 
 ### 5.1 Carpeta `components/layout/` y `features/` (ARQ-01)
-- [ ] `mkdir src/components/layout` y mover `Header.tsx`, `Footer.tsx`, `Layout.tsx`, `Logo.tsx`.
-- [ ] `mkdir src/features/` con subcarpetas por dominio: `deals/`, `comments/`, `alerts/`, `admin/`, `profile/`, `notifications/`.
-- [ ] Mover componentes:
+- [x] `mkdir src/components/layout` y mover `Header.tsx`, `Footer.tsx`, `Layout.tsx`, `Logo.tsx`.
+- [x] `mkdir src/features/` con subcarpetas por dominio: `deals/`, `comments/`, `alerts/`, `admin/`, `profile/`, `notifications/`.
+- [x] Mover componentes:
   - `DealCard.tsx` → `features/deals/`
   - `Comments.tsx` → `features/comments/`
   - `TelegramPanel.tsx` → `features/admin/`
   - `CategoriesDrawer.tsx` → `features/categories/` (o `components/layout/` si lo consideramos navegación).
   - `ShareBox.tsx` → `features/deals/` (es feature de deal).
-- [ ] Actualizar imports (TS reportará todos los rotos).
-- [ ] `tsc --noEmit` verde.
+- [x] Actualizar imports (TS reportará todos los rotos).
+- [x] `tsc --noEmit` verde.
 
 ### 5.2 Tipar lo que quede con `any`
-- [ ] Auditar con `grep -rn ": any" src/`.
-- [ ] Tipar `chollo.$slug.tsx` (queda algún `any` en `setDeal((d: any) => ...)`, etc.).
-- [ ] `useState<any[]>` que queden en rutas no críticas.
-- [ ] **Meta**: 0 `any` en `src/`.
+- [x] Auditar con `grep -rn ": any" src/`.
+- [x] Tipar `chollo.$slug.tsx` (queda algún `any` en `setDeal((d: any) => ...)`, etc.).
+- [x] `useState<any[]>` que queden en rutas no críticas.
+- [x] **Meta**: 0 `any` en `src/`.
 
 ### 5.3 Activar TypeScript strict mode (si no lo está)
-- [ ] Revisar `tsconfig.json`: `"strict": true`, `"noUncheckedIndexedAccess": true`, `"noImplicitOverride": true`.
-- [ ] Arreglar errores que aparezcan.
-- [ ] `tsc --noEmit` verde.
+- [x] Revisar `tsconfig.json`: `"strict": true`, `"noUncheckedIndexedAccess": true`, `"noImplicitOverride": true`.
+- [x] Arreglar errores que aparezcan.
+- [x] `tsc --noEmit` verde.
 
 ### 5.4 Añadir TanStack Query (caché y deduplicación)
-- [ ] `npm install @tanstack/react-query`.
-- [ ] Configurar `QueryClient` en `__root.tsx`.
-- [ ] Migrar fetches críticos a `useQuery`:
+- [x] `npm install @tanstack/react-query`.
+- [x] Configurar `QueryClient` en `__root.tsx`.
+- [x] Migrar fetches críticos a `useQuery`:
   - `useDeals()` (home, explorar)
   - `useDeal(slug)` (chollo detalle)
   - `useFavorites()` (badge, listado)
   - `useUnreadNotifications()` (header badge)
   - `useAdminStats()` (panel)
-- [ ] Mantener `apiClient` como capa subyacente.
-- [ ] **Razón**: deduplicación automática, caché por staleTime, refetch en focus. Esencial para escalar UX.
+- [x] Mantener `apiClient` como capa subyacente.
+- [x] **Razón**: deduplicación automática, caché por staleTime, refetch en focus. Esencial para escalar UX.
 
 ### 5.5 Hooks de dominio en cada `feature/`
-- [ ] `features/deals/hooks/useDealVote.ts`, `useFavorite.ts`.
-- [ ] `features/comments/hooks/useComments.ts`.
-- [ ] Etc.
-- [ ] **Razón**: encapsulación de la lógica de cada feature en su propia carpeta, accesible vía import explícito.
+- [x] `features/deals/hooks/useDealVote.ts`, `useFavorite.ts`.
+- [x] `features/comments/hooks/useComments.ts`.
+- [x] Etc.
+- [x] **Razón**: encapsulación de la lógica de cada feature en su propia carpeta, accesible vía import explícito.
 
 ### 5.6 ESLint con reglas estrictas
-- [ ] Revisar `eslint.config.js` (o equivalente).
-- [ ] Reglas que activar: `@typescript-eslint/no-explicit-any`, `@typescript-eslint/no-floating-promises`, `react-hooks/exhaustive-deps` (error, no warn).
-- [ ] Arreglar lo que reporte.
-- [ ] **Razón**: prevención de bugs típicos en runtime.
+- [x] Revisar `eslint.config.js` (o equivalente).
+- [x] Reglas que activar: `@typescript-eslint/no-explicit-any`, `@typescript-eslint/no-floating-promises`, `react-hooks/exhaustive-deps` (error, no warn).
+- [x] Arreglar lo que reporte.
+- [x] **Razón**: prevención de bugs típicos en runtime.
 
 ---
 
@@ -371,39 +371,39 @@ cross-repo, se extrae el service en ese momento siguiendo el patrón de
 > Que cada PR/push verifique automáticamente que no se rompe nada.
 
 ### 6.1 GitHub Actions con tsc + pytest
-- [ ] `.github/workflows/ci.yml`:
+- [x] `.github/workflows/ci.yml`:
   - Job `frontend`: `npm ci && npx tsc --noEmit && npm run lint`.
   - Job `backend`: `pip install -r requirements-dev.txt && pytest`.
-- [ ] Disparar en `pull_request` y `push` a `main`.
-- [ ] **Razón**: red de seguridad automática para no romper main por descuido.
+- [x] Disparar en `pull_request` y `push` a `main`.
+- [x] **Razón**: red de seguridad automática para no romper main por descuido.
 
 ### 6.2 Pre-commit hook básico
-- [ ] `pre-commit` (Python) con: ruff, black, eslint, prettier.
-- [ ] `pre-commit install`.
-- [ ] **Razón**: formato y lint uniformes sin pensar.
+- [x] `pre-commit` (Python) con: ruff, black, eslint, prettier.
+- [x] `pre-commit install`.
+- [x] **Razón**: formato y lint uniformes sin pensar.
 
 ### 6.3 Dependabot / renovate
-- [ ] Activar Dependabot básico para npm y pip.
-- [ ] Frecuencia semanal.
-- [ ] **Razón**: parches de seguridad llegan solos.
+- [x] Activar Dependabot básico para npm y pip.
+- [x] Frecuencia semanal.
+- [x] **Razón**: parches de seguridad llegan solos.
 
 ---
 
 ## FASE 7 — Validación final y entrega
 
 ### 7.1 Recorrido manual exhaustivo
-- [ ] Lista de pruebas (~15 flujos) en `docs/SMOKE_TEST.md`.
-- [ ] Ejecutar y firmar (commit).
+- [x] Lista de pruebas (~15 flujos) en `docs/SMOKE_TEST.md`.
+- [ ] Ejecutar y firmar (commit). ⏳ Pendiente — manual antes del go-live al dominio definitivo.
 
 ### 7.2 Actualizar PROJECT_STATUS.md
-- [ ] Nueva sección `§ 3.quater` con resumen de este plan completado.
-- [ ] Valoración arquitectónica actualizada.
-- [ ] Lista de pendientes futuros (post-TFM): featurefactor lo que no se hizo.
+- [x] Nueva sección `§ 3.quater` con resumen de este plan completado.
+- [x] Valoración arquitectónica actualizada.
+- [x] Lista de pendientes futuros (post-TFM): featurefactor lo que no se hizo.
 
 ### 7.3 Commit final tag `v1.0.0-tfm`
-- [ ] `git tag v1.0.0-tfm -m "Versión presentada como Trabajo Final de Máster"`.
-- [ ] `git push --tags`.
-- [ ] **Razón**: punto fijo del repo para volver si algo se rompe después.
+- [x] `git tag v1.0.0-tfm -m "Versión presentada como Trabajo Final de Máster"`.
+- [x] `git push --tags`.
+- [x] **Razón**: punto fijo del repo para volver si algo se rompe después.
 
 ---
 
