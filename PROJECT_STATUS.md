@@ -1,5 +1,5 @@
 # PROJECT_STATUS — BuenCholloTech
-*Última actualización: 2026-05-26 (tras refactor de buenas prácticas)*
+*Última actualización: 2026-05-30 (cierre del hardening arquitectónico — release v1.0.0-tfm)*
 
 > **⚠️ Revisar este documento antes de migrar a dominio web en producción.**
 > Contiene el estado real del proyecto, deuda técnica pendiente y la hoja de ruta completa.
@@ -8,11 +8,13 @@
 
 ## 1. Estado general
 
-**Valoración arquitectónica: 9.3 / 10** (subió desde 8.7 tras el cleanup final 2026-05-26)
+**Valoración arquitectónica: 9.7 / 10** (subió desde 9.3 tras el hardening F1–F7 del 2026-05-30)
 
-El proyecto tiene una base sólida y está en producción funcionando. Las decisiones técnicas
-(Clean Architecture, DIP con Protocols, async/await, PgBouncer) son correctas y defendibles
-académicamente para el TFM. La deuda pendiente es de consistencia, no de diseño fundamental.
+El proyecto está en producción funcionando, con CI verde en GitHub Actions, infraestructura
+de calidad senior (observabilidad, rate limiting, audit log, request_id, Sentry) y frontend
+con TypeScript strict + ESLint endurecido + TanStack Query + organización por features.
+Las decisiones técnicas (Clean Architecture, DIP con Protocols, async/await, PgBouncer,
+API versionada `/v1`, ADR-002) son correctas y defendibles académicamente para el TFM.
 
 ---
 
@@ -130,6 +132,78 @@ Probado tras el fix: home, login, favoritos, comentarios, votos, panel admin
 
 ---
 
+### 3.quater  Hardening arquitectónico F1–F7 — 2026-05-30 (release v1.0.0-tfm)
+
+Sprint final de hardening definido en [`docs/PLAN_ARQUITECTURA.md`](docs/PLAN_ARQUITECTURA.md).
+30 tareas en 7 fases. Todas verdes.
+
+**F1 — Documentación arquitectónica (6 ADRs + diagrama)**
+- ADR-001 a ADR-006 actualizados o creados (Clean Arch, ADR-002, versionado API,
+  observabilidad, seguridad, infraestructura).
+- Diagrama Mermaid de arquitectura en `README.md`.
+
+**F2 — Backend fundamentos**
+- Alembic configurado con migración inicial. Auto-`alembic upgrade head` al
+  arrancar el contenedor (sin SSH al NAS).
+- Excepciones de dominio propias en cada módulo (`DealNotFoundError`,
+  `CategoryNotFoundError`, etc.). Routers traducen a HTTPException.
+- `UserService` y capa `application/` añadida a `users/` y `categories/`.
+
+**F3 — Producción ready**
+- `request_id` middleware con ContextVar + logs JSON estructurados.
+- Rate limiting por IP con SlowAPI (X-Forwarded-For aware) en endpoints sensibles.
+- Admin audit log con SAVEPOINT (`session.begin_nested()`) para best-effort sin
+  envenenar la sesión SQLAlchemy. Tabla `admin_audit_log` con `request_id`.
+- Health check separado: `/health` (liveness) y `/health/ready` (readiness con
+  latencia BD).
+- Sentry SaaS con `LoggingIntegration` y `before_send` que adjunta `request_id`.
+
+**F4 — API versionada `/v1`**
+- Backend: `APIRouter(prefix="/v1")` envuelve auth, products, categories, deals,
+  stores, telegram, alerts, notifications, comments. `health_router` queda fuera
+  del prefijo.
+- Frontend: `apiClient` apunta a `${VITE_API_URL}/v1`.
+
+**F5 — Frontend pro-grade (6/6)**
+- `F5.1` Reorganización: `components/layout/` (chrome) y `features/{deals,admin,
+  notifications,telegram}/` (componentes + hooks por dominio).
+- `F5.2` Tipado completo eliminando los últimos `any` residuales.
+- `F5.3` TypeScript strict mode + `noUncheckedIndexedAccess` + `noImplicitOverride`.
+- `F5.4` TanStack Query 5.83 con `QueryClient` compartido. Hooks:
+  `useUnreadNotifications`, `useNotificationsList`, `useMarkNotificationsRead`,
+  `useAdminStats`. Migrados: Header badge, `/notificaciones`, `/admin/`.
+- `F5.5` Hooks de dominio en cada `features/<dominio>/hooks/`.
+- `F5.6` ESLint endurecido: `no-explicit-any` (error), `exhaustive-deps` (error),
+  `no-unused-vars` con patrón `^_`.
+
+**F6 — CI/CD (3/3)**
+- `F6.1` GitHub Actions: jobs `Backend (pytest)` y `Frontend (typecheck + lint)`
+  en cada push/PR. Verde en main.
+- `F6.2` `.pre-commit-config.yaml` con hooks de higiene (trailing whitespace,
+  EOL final, check-yaml, check-json, large files, detect-private-key).
+- `F6.3` Dependabot semanal con grupos: pip + npm + github-actions, agrupando
+  minor/patch para no ahogar PRs.
+
+**F7 — Cierre**
+- `F7.1` [`docs/SMOKE_TEST.md`](docs/SMOKE_TEST.md) con guion exhaustivo manual
+  pre-release (10 secciones, ~50 checks).
+- `F7.2` Esta sección.
+- `F7.3` Tag `v1.0.0-tfm`.
+
+**Decisión arquitectónica notable durante el sprint**
+- Tests separados por tipo: 78 unitarios (mockean Supabase/Amazon, corren en CI
+  en ~1s) + 9 de integración (marcador `@pytest.mark.integration`, requieren
+  Postgres real, se ejecutan en local antes del release). El workflow CI usa
+  `pytest -m "not integration"` para no exigir BD en GitHub.
+
+**Métricas finales del sprint**
+- pytest: **87 verde** (78 unit + 9 integración local).
+- TypeScript: `tsc --noEmit` 0 errores en `buenchollo-web` con `strict` activado.
+- ESLint: 0 errores (10 warnings inocuos de Fast Refresh en componentes UI).
+- CI en main: verde ✅ (commits `7bf012d` y siguientes).
+
+---
+
 ## 4. Deuda técnica — Auditoría Mayo 2026 (revisada 2026-05-26)
 
 ### 🟢 ADR-002 — **CUMPLIDO AL 100%**
@@ -211,20 +285,22 @@ Es el único test roto conocido.
 ### Obligatorio
 - [ ] **Variables de entorno de producción** revisadas: `CORS_ORIGINS` con el dominio real, `APP_ENV=production`, `LOG_LEVEL=WARNING`
 - [ ] **CORS configurado** con el dominio exacto (no `*`) antes del go-live
-- [ ] **Supabase RLS** revisado: confirmar que las tablas `deals`, `favorites`, `deal_votes`, `deal_comments` tienen políticas RLS activas
+- [x] **Supabase RLS** activado en las 12 tablas (ver § 3.ter)
 - [ ] **Dockerfile** probado con `docker build` limpio desde el repo (no desde imagen cacheada)
 - [ ] **`categories.json`** del backend sincronizado con el catálogo definitivo de Telegram
+- [ ] **Ejecutar `docs/SMOKE_TEST.md` completo** antes del go-live al dominio definitivo
 
-### Muy recomendable
-- [ ] Migrar `explorar.tsx` e `index.tsx` a `favoritesApi` (ADR-002 — impacta a todos los usuarios)
-- [ ] `GET /admin/stats` para `admin.index.tsx` (elimina 6 queries directas a Supabase)
-- [ ] Reparar `test_amazon_client.py` y ejecutar suite completa antes del despliegue
-- [ ] README de setup (backend + frontend) para onboarding
+### Muy recomendable (todos completados en hardening F1–F7)
+- [x] ~~Migrar `explorar.tsx` e `index.tsx` a `favoritesApi`~~ (cumplido en cleanup 2026-05-26)
+- [x] ~~`GET /admin/stats` para `admin.index.tsx`~~ (cumplido en cleanup 2026-05-26)
+- [x] ~~Reparar `test_amazon_client.py`~~ (7/7 verde en CI)
+- [x] ~~README de setup~~ (cubierto por README + ADRs en `docs/`)
 
 ### Opcional (mejora calidad)
 - [ ] `__init__.py` en todos los subdirectorios de módulos
-- [ ] Módulo `alerts` y `notifications` en FastAPI
-- [ ] Capa `application/` en `users/`
+- [x] ~~Módulo `alerts` y `notifications` en FastAPI~~ (existen y están versionados en `/v1`)
+- [x] ~~Capa `application/` en `users/`~~ (cumplido en F2)
+- [ ] Migrar tests de integración a CI con servicio Postgres (actualmente solo en local)
 
 ---
 
