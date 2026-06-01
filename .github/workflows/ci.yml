@@ -68,7 +68,7 @@ jobs:
 
       - name: Subir reporte de coverage
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: vitest-coverage
           path: buenchollo-web/coverage/
@@ -111,7 +111,7 @@ jobs:
 
       - name: Subir reporte HTML de Playwright
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report
           path: |
