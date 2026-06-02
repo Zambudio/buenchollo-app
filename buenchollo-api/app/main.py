@@ -80,6 +80,14 @@ app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 #   3) CORS       (envuelve la respuesta final)
 # Así que registramos en orden inverso: CORS, RateLimit, RequestId.
 _allow_all = "*" in settings.cors_origins
+# Bandera roja si producción arranca con CORS_ORIGINS=* (descuido típico).
+# No bloquea el arranque (un mantenedor podría haberlo decidido a sabiendas
+# tras un incidente) pero deja constancia en logs y en Sentry.
+if _allow_all and settings.app_env == "production":
+    logger.warning(
+        "SECURITY: CORS_ORIGINS contiene '*' en producción. "
+        "Configura la lista exacta de dominios en .env (ver SECURITY_AUDIT.md SEC-04)."
+    )
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"] if _allow_all else settings.cors_origins,
