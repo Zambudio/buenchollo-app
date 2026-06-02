@@ -137,14 +137,22 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     if isinstance(exc, HTTPException):
         raise exc  # dejar que FastAPI lo maneje normalmente
     logger.exception("Error no manejado: %s", exc)
-    origin = request.headers.get("origin", "*")
+    # CORS para respuestas de error: SOLO reflejamos el `Origin` si está
+    # explícitamente en la allowlist. NUNCA reflejar arbitrario + Allow-
+    # Credentials:true (origin reflection, OWASP A05). Si la app está en
+    # modo abierto (CORS_ORIGINS=*), repetimos "*" sin credenciales.
+    # Ver SECURITY_AUDIT.md SEC-02.
+    origin = request.headers.get("origin", "")
+    cors_headers: dict[str, str] = {}
+    if _allow_all:
+        cors_headers["Access-Control-Allow-Origin"] = "*"
+    elif origin in settings.cors_origins:
+        cors_headers["Access-Control-Allow-Origin"] = origin
+        cors_headers["Access-Control-Allow-Credentials"] = "true"
     return JSONResponse(
         status_code=500,
         content={"detail": "Error interno del servidor"},
-        headers=_with_request_id_header({
-            "Access-Control-Allow-Origin": origin,
-            "Access-Control-Allow-Credentials": "true",
-        }),
+        headers=_with_request_id_header(cors_headers),
     )
 
 
