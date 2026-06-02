@@ -30,7 +30,10 @@ async def get_current_user(
         user_response = supabase.auth.get_user(credentials.credentials)
         if not user_response or not user_response.user:
             raise ValueError("Supabase devolvió respuesta vacía para el token")
-        logger.debug("JWT validado OK — user_id=%s email=%s", user_response.user.id, user_response.user.email)
+        # Loguear sólo user_id (UUID, no es PII directa). El email queda
+        # fuera del log para no filtrar PII si alguien deja LOG_LEVEL=DEBUG
+        # en producción. Ver SECURITY_AUDIT.md SEC-09.
+        logger.debug("JWT validado OK — user_id=%s", user_response.user.id)
         return user_response.user
     except HTTPException:
         raise
