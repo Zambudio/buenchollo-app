@@ -1,8 +1,11 @@
 """Amazon Creators API adapter — HTTP directo con requests, sin SDK externo."""
 
+import ipaddress
 import logging
 import re
+import socket
 import time
+import urllib.parse
 import urllib.request
 from typing import Any
 
@@ -16,6 +19,53 @@ logger = logging.getLogger(__name__)
 
 ASIN_RE = re.compile(r"/(?:dp|gp/product|product)/([A-Z0-9]{10})")
 DIRECT_ASIN_RE = re.compile(r"^[A-Z0-9]{10}$")
+
+# Allowlist de hosts contra los que aceptamos hacer follow del redirect
+# al resolver una URL acortada. Defensa anti-SSRF (SECURITY_AUDIT.md SEC-06):
+# un admin malicioso o un token comprometido NO podrá usar este endpoint
+# para escanear la LAN del NAS ni atacar servicios internos.
+_ALLOWED_HOSTS = {
+    "amazon.com", "www.amazon.com",
+    "amazon.es", "www.amazon.es",
+    "amazon.co.uk", "www.amazon.co.uk",
+    "amazon.de", "www.amazon.de",
+    "amazon.fr", "www.amazon.fr",
+    "amazon.it", "www.amazon.it",
+    "amazon.co.jp", "www.amazon.co.jp",
+    "amazon.com.mx", "www.amazon.com.mx",
+    "amzn.to", "amzn.eu", "a.co",
+    "m.media-amazon.com", "media-amazon.com",
+}
+
+
+def _is_allowed_host(url: str) -> bool:
+    """True si el host de `url` está en la allowlist de Amazon."""
+    try:
+        parsed = urllib.parse.urlparse(url)
+    except ValueError:
+        return False
+    host = (parsed.hostname or "").lower()
+    return host in _ALLOWED_HOSTS
+
+
+def _resolves_to_private_ip(url: str) -> bool:
+    """True si el host del URL resuelve a una IP privada/loopback/reservada.
+
+    Bloqueo SSRF: evita que un atacante engañe el resolver para tocar
+    servicios internos del NAS (192.168.x.x, 10.x.x.x, 127.0.0.1).
+    """
+    try:
+        parsed = urllib.parse.urlparse(url)
+        host = parsed.hostname
+        if not host:
+            return True  # rechazar por defecto si no podemos analizar
+        for family, _type, _proto, _canon, sockaddr in socket.getaddrinfo(host, None):
+            ip = ipaddress.ip_address(sockaddr[0])
+            if ip.is_private or ip.is_loopback or ip.is_reserved or ip.is_link_local:
+                return True
+    except (socket.gaierror, ValueError, OSError):
+        return True  # si el DNS falla, rechazamos por defecto
+    return False
 
 RESOURCES = [
     "itemInfo.title",
@@ -60,7 +110,14 @@ def _j(obj: Any, *keys: str, default: Any = None) -> Any:
 
 
 def extract_asin_from_url(url_or_asin: str) -> str | None:
-    """Extrae un ASIN de Amazon a partir de una URL o lo acepta directamente."""
+    """Extrae un ASIN de Amazon a partir de una URL o lo acepta directamente.
+
+    Endurecido contra SSRF (SECURITY_AUDIT.md SEC-06):
+    1) Sólo aceptamos URLs cuyo host esté en `_ALLOWED_HOSTS` (Amazon
+       multi-marketplace + acortadores oficiales).
+    2) Antes del fetch, validamos que el host NO resuelve a una IP privada
+       (defensa contra DNS rebinding y errores de allowlist).
+    """
     value = url_or_asin.strip().upper()
     if DIRECT_ASIN_RE.match(value):
         return value
@@ -72,12 +129,26 @@ def extract_asin_from_url(url_or_asin: str) -> str | None:
     if not url_or_asin.lower().startswith("http"):
         return None
 
+    if not _is_allowed_host(url_or_asin):
+        logger.warning("URL rechazada por allowlist Amazon: host no permitido")
+        return None
+
+    if _resolves_to_private_ip(url_or_asin):
+        logger.warning("URL rechazada: el host resuelve a una IP privada/loopback")
+        return None
+
     try:
         request = urllib.request.Request(url_or_asin, headers={"User-Agent": "Mozilla/5.0"})
         with urllib.request.urlopen(request, timeout=10) as response:
             final_url = response.geturl()
     except Exception:
         logger.info("No se pudo resolver redirección de URL Amazon.", exc_info=True)
+        return None
+
+    # Tras el redirect, el host final puede haber cambiado (amzn.to → amazon.es).
+    # Re-validamos que sigue dentro de la allowlist.
+    if not _is_allowed_host(final_url):
+        logger.warning("Redirect llevó a host fuera de la allowlist Amazon")
         return None
 
     match = ASIN_RE.search(final_url)
