@@ -17,6 +17,7 @@ from app.core.health import router as health_router
 from app.core.logging import configure_logging
 from app.core.rate_limit import limiter, rate_limit_exceeded_handler
 from app.core.request_id import REQUEST_ID_HEADER, RequestIdMiddleware, get_request_id
+from app.core.security_headers import SecurityHeadersMiddleware
 from app.core.sentry import init_sentry
 from app.modules.products.api.router import router as products_router
 from app.modules.categories.api.router import router as categories_router
@@ -88,6 +89,13 @@ app.add_middleware(
     expose_headers=[REQUEST_ID_HEADER],  # para que el browser pueda leerlo
 )
 app.add_middleware(SlowAPIMiddleware)
+# Security headers: se registra DESPUÉS de CORS para que CORS pueda
+# sobrescribir el Access-Control-* sin colisionar con la CSP. HSTS sólo
+# en producción para no quemar el hostname en dev local con http://.
+app.add_middleware(
+    SecurityHeadersMiddleware,
+    enable_hsts=settings.app_env == "production",
+)
 app.add_middleware(RequestIdMiddleware)
 
 
