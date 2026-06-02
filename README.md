@@ -218,7 +218,7 @@ Flujo resumido:
 1. `git pull` en el NAS (o esperar a que SynologyDrive sincronice).
 2. `docker-compose build --no-cache && docker-compose up -d`.
 3. Verificar: `https://[tu-ddns]:8000/health`.
-4. Revisar checklist completa en [`docs/LAUNCH_CHECKLIST.md`](docs/LAUNCH_CHECKLIST.md).
+4. Revisar la guía completa de despliegue en [`docs/project/08-deployment.md`](docs/project/08-deployment.md).
 
 ---
 
@@ -251,21 +251,66 @@ npm run lint            # eslint con reglas estrictas
 
 ## Documentación técnica
 
+La documentación se organiza en **dos bloques** claramente separados:
+
+### 📘 Operativa del repositorio — [`docs/project/`](docs/project/00-index.md)
+
+Útil para instalar, ejecutar, mantener y evolucionar BuenCholloTech.
+
 | Documento | Contenido |
 |---|---|
-| [`buenchollo-api/README.md`](buenchollo-api/README.md) | Setup detallado del backend, API reference, variables de entorno |
-| [`buenchollo-web/README.md`](buenchollo-web/README.md) | Setup detallado del frontend, variables de entorno |
-| [`buenchollo-api/DEPLOY_NAS.md`](buenchollo-api/DEPLOY_NAS.md) | Despliegue en NAS Synology con Docker |
-| [`PROJECT_STATUS.md`](PROJECT_STATUS.md) | Estado vivo del proyecto, deuda técnica y métricas |
-| [`docs/PLAN_ARQUITECTURA.md`](docs/PLAN_ARQUITECTURA.md) | Plan vivo de hardening arquitectónico (F1–F7 completado) |
-| [`docs/QUALITY.md`](docs/QUALITY.md) | Estrategia de testing, coverage estratégico, métricas y defensa TFM |
-| [`docs/SECURITY.md`](docs/SECURITY.md) | Política de seguridad, controles, deuda asumida y respuesta a incidentes |
-| [`docs/SECURITY_AUDIT.md`](docs/SECURITY_AUDIT.md) | Auditoría OWASP Top 10 con hallazgos priorizados y plan de acción |
-| [`docs/SMOKE_TEST.md`](docs/SMOKE_TEST.md) | Checklist manual exhaustivo pre-release |
-| [`docs/adr/`](docs/adr/) | Decisiones arquitectónicas (ADRs) firmadas y datadas |
-| [`docs/SUPABASE_SETUP.md`](docs/SUPABASE_SETUP.md) | Esquema de BD y configuración de Supabase |
-| [`docs/LAUNCH_CHECKLIST.md`](docs/LAUNCH_CHECKLIST.md) | Checklist pre-despliegue de producción |
-| [`CLAUDE.md`](CLAUDE.md) | Instrucciones permanentes para asistentes de IA en este repo |
+| [`01-overview.md`](docs/project/01-overview.md) | Qué es, problema, módulos, roles, flujo |
+| [`02-installation-and-setup.md`](docs/project/02-installation-and-setup.md) | Clonado, backend, frontend, Supabase |
+| [`03-project-structure.md`](docs/project/03-project-structure.md) | Monorepo, Clean Architecture, features, UI System |
+| [`04-configuration.md`](docs/project/04-configuration.md) | Variables de entorno (backend, frontend, CI) |
+| [`05-development-workflow.md`](docs/project/05-development-workflow.md) | Husky, commits, uso de IA |
+| [`06-testing-and-quality.md`](docs/project/06-testing-and-quality.md) | Comandos, gates, coverage, métricas |
+| [`07-security.md`](docs/project/07-security.md) | Controles, política `--no-verify`, incidentes |
+| [`08-deployment.md`](docs/project/08-deployment.md) | NAS Synology + Docker, dominio definitivo |
+| [`09-troubleshooting.md`](docs/project/09-troubleshooting.md) | Errores comunes y soluciones |
+
+### 🎓 Defensa del TFM — [`docs/master/`](docs/master/00-index.md)
+
+Documentación formal para defender el proyecto ante tribunal.
+
+| Documento | Contenido |
+|---|---|
+| [`01-introduccion-del-proyecto.md`](docs/master/01-introduccion-del-proyecto.md) | Contexto y motivación |
+| [`02-objetivos-y-alcance.md`](docs/master/02-objetivos-y-alcance.md) | Objetivo general, específicos, alcance |
+| [`03-analisis-funcional.md`](docs/master/03-analisis-funcional.md) | Usuarios, funcionalidades, flujos |
+| [`04-arquitectura-y-decisiones-tecnicas.md`](docs/master/04-arquitectura-y-decisiones-tecnicas.md) | Arquitectura + ADRs |
+| [`05-buenas-practicas-y-principios-de-diseno.md`](docs/master/05-buenas-practicas-y-principios-de-diseno.md) | SOLID, DRY, KISS, YAGNI |
+| [`06-calidad-testing-y-refactorizacion.md`](docs/master/06-calidad-testing-y-refactorizacion.md) | Pirámide, coverage estratégico, métricas |
+| [`07-seguridad.md`](docs/master/07-seguridad.md) | Security by Design + Default + OWASP |
+| [`08-uso-de-ia-en-el-desarrollo.md`](docs/master/08-uso-de-ia-en-el-desarrollo.md) | Claude Code, prompts, supervisión humana |
+| [`09-limitaciones-y-mejoras-futuras.md`](docs/master/09-limitaciones-y-mejoras-futuras.md) | Deuda asumida, evolución |
+| [`10-conclusiones.md`](docs/master/10-conclusiones.md) | Cierre académico |
+
+### 📐 Decisiones arquitectónicas — [`docs/adr/`](docs/adr/00-index.md)
+
+9 ADRs firmados que documentan las decisiones clave: monolito modular,
+API Gateway, autenticación, persistencia, validación doble frontera,
+RLS, DI, estrategia de calidad y uso de IA.
+
+### 📚 Referencias técnicas — [`docs/reference/`](docs/reference/)
+
+- [`PLAN_ARQUITECTURA.md`](docs/reference/PLAN_ARQUITECTURA.md) — Sprint de hardening F1–F7 completado.
+- [`SECURITY_AUDIT.md`](docs/reference/SECURITY_AUDIT.md) — Auditoría OWASP Top 10 con 10 hallazgos.
+- [`SMOKE_TEST.md`](docs/reference/SMOKE_TEST.md) — Checklist manual pre-release.
+
+### 📌 Documentos en raíz
+
+| Documento | Contenido |
+|---|---|
+| [`PROJECT_STATUS.md`](PROJECT_STATUS.md) | Bitácora viva (CHANGELOG en prosa) |
+| [`SECURITY.md`](SECURITY.md) | Política de divulgación responsable (convención GitHub) |
+| [`CLAUDE.md`](CLAUDE.md) | Instrucciones permanentes para asistentes de IA |
+| [`buenchollo-api/MIGRATIONS.md`](buenchollo-api/MIGRATIONS.md) | Setup Alembic |
+
+### 🗃️ Histórico
+
+Documentos antiguos preservados en [`docs/archive/`](docs/archive/) con
+índice del motivo de cada movido.
 
 ---
 
