@@ -132,6 +132,34 @@ Probado tras el fix: home, login, favoritos, comentarios, votos, panel admin
 
 ---
 
+### 3.sexies  Módulo de Seguridad — 2026-06-02
+
+Sprint dedicado al módulo de Seguridad del TFM. Auditoría completa
+OWASP Top 10 con 6 hallazgos medios resueltos (ninguno crítico).
+
+- `docs/SECURITY_AUDIT.md`: informe completo con threat model, mapa
+  de superficie de ataque, evaluación OWASP Top 10, hallazgos
+  priorizados con cómo se explotan, impacto y cambio mínimo.
+- `docs/SECURITY.md`: política, controles, deuda asumida, plan de
+  respuesta a incidentes, checklist pre-go-live, defensa TFM.
+- Fixes aplicados:
+  - SEC-01: pin `python-multipart==0.0.27` (5 CVEs DoS resueltas).
+  - SEC-02: handler 500 ya no refleja Origin arbitrario.
+  - SEC-03: `SecurityHeadersMiddleware` con CSP, X-Frame-Options,
+    X-Content-Type-Options, Referrer-Policy, Permissions-Policy y
+    HSTS en producción.
+  - SEC-04: `CORS_ORIGINS` default sensato + warning startup en prod.
+  - SEC-05: `max_length` en schemas Pydantic de deals.
+  - SEC-06: SSRF allowlist Amazon + bloqueo IPs privadas en preview.
+  - SEC-09: quitar email de logger.debug (PII).
+- CI ampliado con job `security-audit`: pip-audit, npm audit
+  (--omit=dev --audit-level=high), gitleaks.
+
+10 tests nuevos para Security Headers (5) y SSRF allowlist (10) → 97
+pytest verde.
+
+---
+
 ### 3.quinquies  Módulo de Calidad QA — 2026-05-30
 
 Sprint dedicado al módulo de Calidad del software del TFM. El backend ya
