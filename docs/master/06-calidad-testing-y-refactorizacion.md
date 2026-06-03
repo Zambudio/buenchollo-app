@@ -1,72 +1,93 @@
-# 06 — Calidad, testing y refactorización
+# 🧪 06 · Calidad, testing y refactorización
 
-## Estrategia general
+> **TL;DR** · Pirámide de testing clásica (más unit, menos E2E) con
+> **167 tests verdes en ~13 segundos**. Coverage estratégico **100/80/0**
+> en lugar de perseguir 100% global. Quality gates en **3 niveles**
+> (pre-commit, pre-push, CI).
 
-La calidad del proyecto se aborda en tres ejes coordinados:
+---
 
-1. **Testing automatizado** con pirámide clara (más unit, menos E2E).
-2. **Coverage estratégico** sin perseguir 100% global ("vanity metric").
-3. **Quality gates** automáticos en local (Husky) y en CI (GitHub Actions).
+## 🧠 Filosofía de fondo
 
-Estos tres ejes se apoyan en una filosofía:
+> _Los tests son la red de seguridad que permite refactorizar sin miedo._
+>
+> _Si los tests son rígidos o frágiles, dejas de refactorizar. Si son
+> útiles, refactorizas todo el tiempo._
 
-> Los tests son la red de seguridad que permite refactorizar sin miedo.
-> Si los tests son rígidos o frágiles, dejas de refactorizar. Si son
-> útiles, refactorizas todo el tiempo.
+---
 
-## Pirámide de testing
+## 🔺 Pirámide de testing
 
 ```
-              ┌─────────────┐
-              │  E2E (8)    │    Playwright + chromium · ~6s
-              └─────────────┘
-        ┌──────────────────────┐
-        │ Integration (13)     │  RTL + userEvent · ~0,7s
-        └──────────────────────┘
-   ┌──────────────────────────────────┐
-   │  Unit (137 = 78 backend + 59 web) │ Vitest / pytest · ~1,1s
-   └──────────────────────────────────┘
+                    ┌─────────────────────┐
+                    │  🎭 E2E  (8 tests)  │   Playwright + chromium · ~6s
+                    └─────────────────────┘
+              ┌────────────────────────────────┐
+              │  🔗 Integration (13 tests)     │   RTL + userEvent · ~0,7s
+              └────────────────────────────────┘
+       ┌──────────────────────────────────────────────┐
+       │  ⚛️ Unit  (137 = 78 backend + 59 web)         │   Vitest / pytest · ~1,1s
+       └──────────────────────────────────────────────┘
 ```
 
-**Total automatizado**: 167 tests verdes en aproximadamente 13 segundos
-(suma de todas las suites).
+📊 **Total**: **167 tests automatizados** en **~13 segundos**.
 
-### Por qué esta proporción
+### 🎯 Por qué esta proporción
 
 | Capa | Coste por test | Valor que aporta |
 |---|---|---|
-| Unit | < 5 ms | Verifica lógica pura: validaciones, cálculos, type guards. **Si esta capa es robusta, el resto se simplifica**. |
-| Integration | < 100 ms | Verifica que un componente real se comporta como espera el usuario. Mocks sólo en fronteras (auth, red). |
-| E2E | < 1 s | Sólo flujos críticos: la app responde, el guard de admin funciona, la búsqueda redirige. **No reglas de negocio**. |
+| ⚛️ **Unit** | < 5 ms | Lógica pura. Si esta capa es robusta, el resto se simplifica. |
+| 🔗 **Integration** | < 100 ms | Comportamiento user-centric con mocks sólo en fronteras. |
+| 🎭 **E2E** | < 1 s | Sólo flujos críticos: la app responde, el guard de admin funciona. **No reglas de negocio**. |
 
-Un E2E que prueba "click en favorito guarda en BD" es un fallo de
-pirámide: lo correcto es un unit test del guard, un integration test
-del click + mock favoritesApi, y un E2E que sólo verifique que la app
-no está rota.
+> 💡 Un E2E que prueba "click en favorito guarda en BD" es un **fallo
+> de pirámide**: lo correcto es unit del guard + integration del click
+> con mock + E2E que sólo verifique que la app no está rota.
 
-## Coverage estratégico — 100/80/0
+---
 
-No se persigue 100% global. En su lugar, **100 / 80 / 0** por tier:
+## 🎯 Coverage estratégico — `100/80/0`
 
-| Tier | % objetivo | Qué entra | Estado real |
-|---|---|---|---|
-| **CORE** | 90–100% | Funciones puras: validaciones, cálculos, type guards, transformaciones críticas | ✅ Threshold automático en `vitest.config.ts` |
-| **IMPORTANT** | ~80% | Componentes visibles, formularios, flujos de navegación | 🟡 Cubierto parcialmente con integration tests |
-| **INFRASTRUCTURE** | 0% | Tipos, constantes, configs, código generado, primitivos shadcn | ⛔ Excluido |
+> **No** se persigue 100% global. Esa es métrica de vanidad.
 
-### CORE — código que si falla rompe el negocio
+<table>
+<thead>
+<tr><th>Tier</th><th>% objetivo</th><th>Qué entra</th><th>Estado</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>🔴 <strong>CORE</strong></td>
+  <td>90–100%</td>
+  <td>Lógica pura: validaciones, cálculos, type guards, transformaciones críticas (<code>src/lib/**</code>)</td>
+  <td>✅ Threshold automático</td>
+</tr>
+<tr>
+  <td>🟡 <strong>IMPORTANT</strong></td>
+  <td>~80%</td>
+  <td>Componentes visibles, formularios, flujos de navegación</td>
+  <td>🟡 Cubierto parcialmente con integration tests</td>
+</tr>
+<tr>
+  <td>⚫ <strong>INFRASTRUCTURE</strong></td>
+  <td>0%</td>
+  <td>Tipos, constantes, configs, código generado, primitivos shadcn</td>
+  <td>⛔ Excluido del cómputo</td>
+</tr>
+</tbody>
+</table>
+
+### 🔴 CORE — código que si falla, rompe el negocio
 
 | Archivo | Coverage |
 |---|---|
-| `src/lib/errors.ts` | 100% |
+| `src/lib/errors.ts` | **100%** |
 | `src/lib/format.ts` | 96.07% |
-| `src/lib/validation/deals.ts` | 100% |
-| `src/lib/validation/alerts.ts` | 100% |
-| `src/lib/utils.ts` | 100% |
-| `src/lib/constants.ts` | 100% |
-| `src/services/api/deals.ts` (type guard `isDuplicateDealError`) | ✅ tipado guard cubierto |
+| `src/lib/validation/deals.ts` | **100%** |
+| `src/lib/validation/alerts.ts` | **100%** |
+| `src/lib/utils.ts` | **100%** |
+| `src/lib/constants.ts` | **100%** |
 
-Threshold en `vitest.config.ts`:
+#### Threshold automático en `vitest.config.ts`
 
 ```ts
 thresholds: {
@@ -74,211 +95,245 @@ thresholds: {
 }
 ```
 
-Si baja, CI rompe.
+> 🚨 Si baja, CI rompe.
 
-### IMPORTANT — visible al usuario
+### 🟡 IMPORTANT — visible al usuario
 
 Cubierto con integration tests:
 
-- `DealCard` (7 tests): título, precio, descuento, badge caducado, favorito.
-- `Header` (6 tests): CTA acceder/perfil, badge unread, dropdown admin.
+- **`DealCard`** (7 tests): título, precio, descuento, badge caducado, favorito
+- **`Header`** (6 tests): CTA acceder/perfil, badge unread, dropdown admin
 
-### INFRASTRUCTURE — excluido
+### ⚫ INFRASTRUCTURE — excluido
 
-- `src/components/ui/**` (shadcn upstream, ya testado).
-- `src/routeTree.gen.ts` (generado por TanStack Router).
-- `src/integrations/supabase/types.ts` (generado por Supabase CLI).
-- `src/lib/query-client.ts` (config sin lógica).
-- Todos los `*.config.*`.
+```
+src/components/ui/**                  (shadcn upstream)
+src/routeTree.gen.ts                  (TanStack auto-generated)
+src/integrations/supabase/types.ts    (Supabase CLI generated)
+src/lib/query-client.ts               (config sin lógica)
+**/*.config.*
+```
 
-### Por qué NO 100% global
+### 💡 Por qué NO 100% global
 
-Subir el porcentaje global escribiendo tests sobre `routeTree.gen.ts`
-o sobre los primitivos shadcn **no mejora la calidad real**. Es una
-métrica de vanidad. La métrica útil es **el coverage del código que
-puede romper el negocio**.
+> Subir coverage cubriendo `routeTree.gen.ts` o primitivos shadcn
+> **no mejora la calidad real**. Es métrica de vanidad.
+>
+> La métrica útil es **coverage del código que puede romper el negocio**.
 
-## Quality gates
+---
 
-### Pre-commit (Husky, ~10 s)
+## 🚪 Quality gates
+
+```
+                              git commit                              git push
+                                  │                                      │
+                                  ▼                                      ▼
+                          ┌───────────────┐                      ┌───────────────┐
+                          │ 🪝 Pre-commit │                      │ 🪝 Pre-push   │
+                          │   (Husky)     │                      │   (Husky)     │
+                          │   ~10s        │                      │   ~3s         │
+                          │   lint + tsc  │                      │   vitest run  │
+                          └───────────────┘                      └───────────────┘
+                                                                          │
+                                                                          ▼
+                                                                  ┌───────────────┐
+                                                                  │ ⚙️ CI (GitHub)│
+                                                                  │   4 jobs:     │
+                                                                  │   - backend   │
+                                                                  │   - frontend  │
+                                                                  │   - e2e       │
+                                                                  │   - security  │
+                                                                  └───────────────┘
+```
+
+### 🪝 Pre-commit (Husky, ~10s)
 
 ```bash
 npm run lint        # ESLint estricto
-npm run typecheck   # tsc --noEmit con strict + noUncheckedIndexedAccess
+npm run typecheck   # tsc --noEmit (strict + noUncheckedIndexedAccess)
 ```
 
-Si falla, el commit se aborta.
+> 🚨 Si falla, el commit se aborta.
 
-### Pre-push (Husky, ~3 s)
+### 🪝 Pre-push (Husky, ~3s)
 
 ```bash
 npm run test:run    # Vitest run (72 unit + integration)
 ```
 
-Si falla, el push se aborta. Los E2E NO entran como gate local: tardan
-~10 s y dependen del build de Vite; corresponden a CI.
+> 🚨 Si falla, el push se aborta. Los E2E **no** entran como gate
+> local (tardan ~10s y dependen del build).
 
-### Bypass legítimo `--no-verify`
+### 🚨 Bypass legítimo `--no-verify`
 
-Sólo en emergencia y con justificación en el mensaje del commit:
+> ⚠️ **Sólo en emergencia** con justificación en el mensaje del commit:
 
 ```bash
 git commit --no-verify -m "fix(prod): rollback urgente — bypass gate"
 git push --no-verify
 ```
 
-Reglas:
+📜 **Reglas**:
 
-- Nunca en `main` con otros desarrolladores activos.
-- El siguiente commit debe restaurar el estado verde.
+- ❌ Nunca en `main` con otros desarrolladores activos
+- ✅ El siguiente commit debe restaurar el estado verde
 
-### CI — `.github/workflows/ci.yml`
+### ⚙️ CI — `.github/workflows/ci.yml`
 
 4 jobs en cada `push` a `main` y cada `pull_request`:
 
 | Job | Comprueba | Artifact |
 |---|---|---|
-| `backend` | pytest -m "not integration" (78 unit) | — |
-| `frontend` | typecheck + ESLint + Vitest con coverage threshold | `coverage/` siempre |
-| `e2e` | Playwright chromium con webServer | HTML report + traces en fallo |
-| `security-audit` | pip-audit, npm audit --omit=dev, gitleaks | — |
+| 🐍 `backend` | `pytest -m "not integration"` (78 unit) | — |
+| ⚛️ `frontend` | typecheck + ESLint + Vitest con coverage threshold | `coverage/` siempre |
+| 🎭 `e2e` | Playwright chromium con webServer | HTML report + traces en fallo |
+| 🛡️ `security-audit` | `pip-audit`, `npm audit --omit=dev`, `gitleaks` | — |
 
-Si cualquier job falla, el commit aparece rojo y no se mergea.
+> 🚨 Si **cualquier job** falla, el commit aparece rojo y no se mergea.
 
-## Métricas accionables
+---
 
-### Tier 1 — revisión frecuente (cada PR / cada día)
+## 📊 Métricas accionables
+
+### 🟢 Tier 1 — revisión frecuente (cada PR / cada día)
 
 | Métrica | 🟢 Verde | 🟡 Amarillo | 🔴 Rojo | Acción si rojo |
 |---|---|---|---|---|
 | Test Success Rate | 100% | 95–99% | < 95% | Bloquear merge, investigar |
-| Build Success Rate (main, semanal) | 100% | 90–99% | < 90% | Hotfix prioritario |
+| Build SR (main, semanal) | 100% | 90–99% | < 90% | Hotfix prioritario |
 | Lint errors | 0 | 0 | ≥ 1 | Pre-commit bloquea |
 | E2E pasando | 8/8 | 7/8 | < 7/8 | Revertir cambio sospechoso |
 
-### Tier 2 — revisión por hito (release / milestone)
+### 🟡 Tier 2 — revisión por hito (release / milestone)
 
 | Métrica | 🟢 | 🟡 | 🔴 |
 |---|---|---|---|
-| Duración test:run | < 5 s | 5–15 s | > 15 s |
+| Duración `test:run` | < 5s | 5–15s | > 15s |
 | Duración CI completa | < 5 min | 5–10 min | > 10 min |
-| MTTR fallo CI en main | < 4 h | 4–24 h | > 24 h |
+| MTTR fallo CI en main | < 4h | 4–24h | > 24h |
 
-### Tier 3 — revisión periódica (mensual / pre-release)
+### 🔵 Tier 3 — revisión periódica (mensual / pre-release)
 
 | Métrica | 🟢 | 🟡 | 🔴 |
 |---|---|---|---|
 | CORE coverage | ≥ 90% | 80–89% | < 80% |
-| TODO / FIXME en `src/` | ≤ 5 | 6–15 | > 15 |
+| TODO/FIXME en `src/` | ≤ 5 | 6–15 | > 15 |
 | Smells críticos ESLint + SonarLint | 0 | 1–3 | > 3 |
-| Dependencias desactualizadas (Dependabot) | 0 major | 1–3 | > 3 |
+| Deps desactualizadas (Dependabot) | 0 major | 1–3 | > 3 |
 
-### Métricas que NO se persiguen
+### ❌ Métricas que NO se persiguen
 
-- Líneas de código.
-- Número de commits.
-- Coverage global sin contexto.
-- Número de features.
+> _Estas son métricas de vanidad. No las medimos._
 
-Estas son métricas de vanidad. Aumentar líneas no es valor; aumentar
-coverage global cubriendo `types.ts` es ruido; "más features" sin
-justificación es scope creep.
+- Líneas de código
+- Número de commits
+- Coverage global sin contexto
+- Número de features
 
-## Refactor seguro
+---
+
+## 🛡️ Refactor seguro
 
 La estrategia de testing **permite refactorizar con confianza**. Cada
-sprint del proyecto incluyó refactors significativos sin que ningún
-test rojo se quedara en main:
+sprint del proyecto incluyó refactors sin dejar tests rojos en `main`:
 
-- **Refactor F-03 (frontend)**: split de hooks gigantes en
-  `features/<dominio>/hooks/` con TanStack Query.
-- **Refactor B-02 (backend)**: extraer `DealService` del router, con
-  `AlertMatcher` por DI.
-- **Refactor B-03**: helper `_base_deal_query()` para centralizar
-  `selectinload` repetido.
-- **Refactor B-04**: `matches_alert()` extraído del repositorio a
-  función pura testeable.
-- **Refactor B-05**: `_safe_run()` para el cleaner, eliminando el
-  patrón triple try/except idéntico.
+| Refactor | Qué se mejoró |
+|---|---|
+| **F-03** (frontend) | Split de hooks gigantes en `features/<dominio>/hooks/` con TanStack Query |
+| **B-02** (backend) | Extraer `DealService` del router, con `AlertMatcher` por DI |
+| **B-03** | Helper `_base_deal_query()` centralizando `selectinload` repetido |
+| **B-04** | `matches_alert()` extraído del repositorio a función pura testeable |
+| **B-05** | `_safe_run()` para el cleaner, eliminando triple try/except idéntico |
 
-**El proceso aplicado en cada uno**:
+### 🔄 Proceso aplicado en cada refactor
 
-1. Verificar que los tests cubren el comportamiento actual.
-2. Si no, añadir tests **antes** de refactorizar.
-3. Refactorizar.
-4. Tests siguen verdes → commit.
+```
+1. ✅ Verificar que los tests cubren el comportamiento actual
+       │
+       └─ ❌ Si no, AÑADIR TESTS antes del refactor
+       │
+       ▼
+2. 🛠️ Refactorizar
+       │
+       ▼
+3. ✅ Tests siguen verdes → commit
+```
 
-## Code smells detectados y resueltos
+---
 
-| Smell | Dónde estaba | Resolución |
-|---|---|---|
-| **Long Method** | `DealService.create_deal()` con 40+ líneas mezclando slug, FK check, AlertMatcher | Extraído a `_check_external_id_unique`, ajuste de FK en helper |
-| **Duplicate Code** | `selectinload(category, subcategory, store)` en 6 queries | `_base_deal_query()` centraliza |
-| **Magic Numbers** | `200`, `100` thresholds de temperatura, `30`, `5` rate limits | Constantes con nombre |
-| **Primitive Obsession** | Strings para status de chollos | `DealStatus` literal type + `DEAL_STATUS_OPTIONS as const` |
-| **Long Parameter List** | `search()` con 5+ params | Object pattern `{category_id, store_id, search, limit, offset}` |
-| **Inappropriate Intimacy** | Frontend consultando Supabase directamente | ADR-002: ningún `supabase.from()` en frontend |
+## 🚨 Code smells detectados y resueltos
 
-## Deuda asumida (con justificación)
+<table>
+<thead>
+<tr><th>Smell</th><th>Dónde estaba</th><th>Resolución</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>📏 <strong>Long Method</strong></td>
+  <td><code>DealService.create_deal()</code> con 40+ líneas mezclando slug, FK check, AlertMatcher</td>
+  <td>Extraído a <code>_check_external_id_unique</code> + helpers</td>
+</tr>
+<tr>
+  <td>🔁 <strong>Duplicate Code</strong></td>
+  <td><code>selectinload(category, subcategory, store)</code> en 6 queries</td>
+  <td><code>_base_deal_query()</code> centraliza</td>
+</tr>
+<tr>
+  <td>🔢 <strong>Magic Numbers</strong></td>
+  <td><code>200</code>, <code>100</code> thresholds temperatura · <code>30</code>, <code>5</code> rate limits</td>
+  <td>Constantes con nombre</td>
+</tr>
+<tr>
+  <td>📦 <strong>Primitive Obsession</strong></td>
+  <td>Strings para status de chollos</td>
+  <td><code>DealStatus</code> literal type + <code>DEAL_STATUS_OPTIONS as const</code></td>
+</tr>
+<tr>
+  <td>📋 <strong>Long Parameter List</strong></td>
+  <td><code>search()</code> con 5+ params</td>
+  <td>Object pattern <code>{category_id, store_id, search, limit, offset}</code></td>
+</tr>
+<tr>
+  <td>🔓 <strong>Inappropriate Intimacy</strong></td>
+  <td>Frontend consultando Supabase directamente</td>
+  <td>ADR-002: ningún <code>supabase.from()</code> en frontend</td>
+</tr>
+</tbody>
+</table>
+
+---
+
+## 📋 Deuda asumida (con justificación)
 
 | Item | Por qué se asume |
 |---|---|
-| **Visual regression** con `toHaveScreenshot` | Brittleness sin valor — cambios CSS sin defecto rompen tests |
-| **Page Object Model elaborado** | Con 8 E2E, helpers ad-hoc son más legibles |
-| **MSW (Mock Service Worker)** | Playwright `page.route` + Vitest mocks bastan; MSW tendría sentido con docenas de tests |
-| **Tests E2E completos del admin** | OAuth Google requiere mocks complejos; cubierto con integration tests + smoke manual |
-| **Tests integración en CI** | Requiere Postgres real; en CI no levantamos BD |
-| **Refactor `admin.chollos.tsx`** (940 líneas) | God Component conocido; partir tiene alto riesgo de regresión |
-| **SonarJS / SonarQube** | ESLint estricto + TS strict ya cubren lo que SonarJS detectaría |
+| 📷 **Visual regression** (`toHaveScreenshot`) | Brittleness sin valor — cambios CSS sin defecto rompen tests |
+| 🎭 **Page Object Model elaborado** | Con 8 E2E, helpers ad-hoc son más legibles |
+| 🎯 **MSW (Mock Service Worker)** | `page.route` + Vitest mocks bastan; MSW tendría sentido con docenas de tests |
+| 🛠️ **Tests E2E del admin completos** | OAuth Google requiere mocks complejos; cubierto con integration + smoke manual |
+| 🧪 **Tests integración en CI** | Requiere Postgres real; Supabase no levantable en CI |
+| 🪨 **Refactor `admin.chollos.tsx`** (940 líneas) | God Component conocido; partir tiene alto riesgo |
+| 🔍 **SonarJS / SonarQube** | ESLint estricto + TS strict ya cubren lo que detectaría |
 
-## Defensa ante el tribunal
+---
 
-### ¿Por qué no se busca 100% global de coverage?
+## 🎯 Performance budget
 
-Porque sería una métrica de vanidad. Aplicamos **100/80/0**: 90–100%
-en CORE (lógica de negocio), ~80% en componentes visibles, 0% en
-infraestructura (tipos, configs, generado, primitivos).
+| Métrica | Objetivo | Cómo se mide |
+|---|---|---|
+| 🚀 **LCP** (Largest Contentful Paint) | < 2.5s en 3G fast | Lighthouse manualmente en cada release |
+| 📐 **CLS** (Cumulative Layout Shift) | < 0.1 | Lighthouse |
+| 🖱️ **INP** (Interaction to Next Paint) | < 200ms | Lighthouse |
+| 📦 **Bundle inicial gzip** | < 250 KB | `npm run build` + visualizer |
 
-El threshold automático del CI (`vitest.config.ts`) sólo gatea
-`src/lib/**`. Subir el porcentaje global escribiendo tests sobre
-`routeTree.gen.ts` no mejora la calidad real.
+> 🔭 **Lighthouse-CI automatizado** aplazado como mejora futura
+> (ver [`09 · Limitaciones y mejoras futuras`](09-limitaciones-y-mejoras-futuras.md)).
 
-### ¿Cómo se controla la deuda técnica?
+---
 
-- **Documentada explícitamente** en `PROJECT_STATUS.md §4`, en este
-  documento y en `docs/SECURITY.md`. Cada item tiene justificación y
-  coste futuro estimado.
-- **Métricas Tier 3** monitorizadas: TODO/FIXME en `src/`, smells
-  críticos ESLint, dependencias desactualizadas (Dependabot weekly).
-- **Política Boy Scout Rule**: cada PR deja el código tocado algo más
-  limpio que como estaba.
-- **Refactor seguro**: tenemos red de 167 tests antes de tocar
-  cualquier lógica crítica.
-
-### ¿Cómo se asegura que los flujos críticos funcionan?
-
-Tres redes complementarias:
-
-1. **Tests automáticos en CI**: el merge a `main` exige verde en
-   backend + frontend + E2E + security-audit. Cualquier ruptura es
-   detectada antes de llegar a producción.
-2. **Husky pre-push**: imposible pushear código que no pasa el suite
-   Vitest sin `--no-verify` explícito.
-3. **Smoke test manual antes de cada release**: 10 secciones,
-   ~50 checks, documentado en
-   [`docs/reference/SMOKE_TEST.md`](../reference/SMOKE_TEST.md). Se
-   ejecuta antes de cada tag.
-
-### ¿Cómo se usan métricas accionables y no de vanidad?
-
-Tres tiers (§ Métricas accionables):
-
-- **T1** se revisa **cada PR** y dispara acción inmediata.
-- **T2** se revisa **por hito**, identifica regresiones de tiempo y
-  estabilidad.
-- **T3** se revisa **mensualmente** o pre-release, vigila la salud a
-  medio plazo.
-
-Cada métrica tiene umbrales verde/amarillo/rojo concretos y una
-acción prescrita si entra en rojo. No medimos "líneas de código" ni
-"número de commits".
+<p align="center">
+  <a href="05-buenas-practicas-y-principios-de-diseno.md">← Anterior: Buenas prácticas</a> ·
+  <a href="00-index.md">Índice</a> ·
+  <a href="07-seguridad.md">Siguiente: Seguridad →</a>
+</p>

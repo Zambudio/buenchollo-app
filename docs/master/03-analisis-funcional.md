@@ -1,241 +1,319 @@
-# 03 — Análisis funcional
+# 👥 03 · Análisis funcional
 
-## Usuarios previstos
+> **TL;DR** · Tres perfiles de usuario (anónimo, registrado, admin) con
+> permisos crecientes. La funcionalidad estrella es el flujo de
+> publicación: el admin pega una URL de Amazon, el sistema enriquece
+> con IA y publica en web + Telegram simultáneamente con alertas a
+> usuarios suscritos.
 
-El proyecto distingue tres perfiles, con permisos crecientes y casos
-de uso diferenciados.
+---
 
-### Usuario anónimo
+## 👤 Perfiles de usuario
 
-Acceso público sin necesidad de cuenta. Representa al consumidor
-casual: alguien que llega a la web por buscador, por enlace
-compartido en Telegram, o por curiosidad.
+```
+                            ┌──────────────┐
+                            │  Anónimo     │
+                            │              │
+                            │  Ver feed    │
+                            │  Ver detalle │
+                            │  Buscar      │
+                            └──────┬───────┘
+                                   │  +login Google
+                                   ▼
+                            ┌──────────────┐
+                            │  Registrado  │
+                            │              │
+                            │  + votar     │
+                            │  + comentar  │
+                            │  + favoritos │
+                            │  + alertas   │
+                            └──────┬───────┘
+                                   │  +rol admin
+                                   ▼
+                            ┌──────────────┐
+                            │  Admin       │
+                            │              │
+                            │  + CRUD      │
+                            │  + IA copy   │
+                            │  + Telegram  │
+                            │  + audit log │
+                            └──────────────┘
+```
 
-**Lo que puede hacer**:
+---
 
-- Navegar la home con el feed de chollos recientes y la sección de
-  más populares.
-- Buscar y filtrar chollos por categoría, tienda y término libre.
-- Ver el detalle de un chollo: descripción técnica, gráfica de
-  precios Keepa, comentarios, votos.
-- Abrir el enlace afiliado para ir a Amazon.
-- Acceder al canal de Telegram desde el footer.
-- Iniciar sesión con Google si quiere pasar a usuario registrado.
+### 👀 Usuario anónimo
 
-**Lo que NO puede hacer**:
+> _Acceso público sin cuenta. El visitante casual que llega por buscador
+> o por enlace compartido en Telegram._
 
-- Votar, comentar, marcar favoritos, crear alertas. Cualquier intento
-  muestra un mensaje de "Inicia sesión para…".
+**Puede hacer**:
 
-### Usuario registrado
+| Acción | Dónde |
+|---|---|
+| 📰 Navegar el feed de chollos | Home |
+| 🔍 Buscar y filtrar | `/explorar` |
+| 📄 Ver el detalle de un chollo (precio, descuento, Keepa, comentarios) | `/chollo/{slug}` |
+| 🛒 Abrir el enlace afiliado (ir a Amazon) | Detalle |
+| 💬 Acceder al canal de Telegram | Footer |
+| 🔐 Iniciar sesión con Google | Header |
 
-Acceso autenticado mediante Google OAuth (gestionado por Supabase
-Auth). Representa al miembro activo de la comunidad.
+**NO puede hacer** (cualquier intento muestra "Inicia sesión para…"):
 
-**Lo que puede hacer (además de lo anterior)**:
+- ❌ Votar
+- ❌ Comentar
+- ❌ Marcar favoritos
+- ❌ Crear alertas
 
-- Votar chollos con `up`/`down`. El voto es toggle: votar lo mismo
-  dos veces lo retira. La temperatura del chollo se recalcula en cada
-  voto.
-- Comentar chollos en hilos. Anidamiento por `parent_id`. Cada usuario
-  sólo puede borrar sus propios comentarios (ownership check
-  server-side).
-- Votar comentarios.
-- Marcar y desmarcar favoritos. Lista accesible en `/favoritos`.
-- Crear alertas personalizadas en `/alertas/nueva` con uno o varios
-  criterios: palabra clave, categoría, tienda, marca, precio máximo,
-  descuento mínimo.
-- Gestionar sus alertas en `/alertas` (listar, activar/desactivar,
-  borrar).
-- Ver la bandeja de notificaciones en `/notificaciones` y el badge en
-  el header.
-- Editar su perfil (nombre público, bio) en `/perfil`.
-- Cerrar sesión.
+---
 
-### Administrador
+### 🔑 Usuario registrado
 
-Mismos permisos que un usuario registrado, más el panel
-administrativo. En el proyecto actual hay un único administrador (el
-autor). Documentado como decisión y como mejora futura en
-[`09-limitaciones-y-mejoras-futuras.md`](09-limitaciones-y-mejoras-futuras.md).
+> _Autenticado con Google OAuth (Supabase Auth). El miembro activo de
+> la comunidad._
 
-**Lo que puede hacer (además)**:
+**Además de lo anterior**:
 
-- Acceder al panel `/admin` con dashboard de estadísticas (chollos
-  totales, activos, usuarios, favoritos, alertas, comentarios).
-- Gestionar chollos (`/admin/chollos`): crear, editar, programar,
-  publicar inmediatamente, marcar como expirado, eliminar.
-- Usar el **autocompletado desde URL de Amazon**: pega una URL
-  (incluso acortada `amzn.to/xxx`), el sistema extrae el ASIN, llama
-  a Amazon Creators API para obtener título, precio, imágenes y
-  metadatos, y a OpenAI para generar copy técnico y copy para
-  Telegram. El admin revisa y guarda.
-- Recibir el diálogo de **chollo duplicado**: si intenta publicar un
-  producto cuyo ASIN ya existe en otro chollo, la plataforma lo avisa
-  con dos opciones: ir al chollo existente para editarlo, o
-  sobrescribirlo con los datos del nuevo (conservando id, slug,
-  comentarios y votos).
-- Gestionar el **catálogo maestro** (`/admin/categorias`,
-  `/admin/tiendas`) con CRUD.
-- Ver el **listado de usuarios** registrados con sus roles
-  (`/admin/usuarios`).
-- Publicar manualmente en Telegram con copy adaptado (panel
-  integrado en el form de chollos).
+<table>
+<thead>
+<tr><th>Acción</th><th>Detalle técnico</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>👍 <strong>Votar chollos</strong> con <code>up</code> / <code>down</code></td>
+  <td>Toggle: votar lo mismo dos veces lo retira. Recalcula temperatura. Rate limit 30/min.</td>
+</tr>
+<tr>
+  <td>💬 <strong>Comentar</strong> con hilos anidados</td>
+  <td>Por <code>parent_id</code>. Cada usuario sólo borra los suyos (ownership check server-side).</td>
+</tr>
+<tr>
+  <td>👍 <strong>Votar comentarios</strong></td>
+  <td>Sistema simétrico al de chollos.</td>
+</tr>
+<tr>
+  <td>❤️ <strong>Marcar y desmarcar favoritos</strong></td>
+  <td>Lista accesible en <code>/favoritos</code>.</td>
+</tr>
+<tr>
+  <td>🔔 <strong>Crear alertas personalizadas</strong></td>
+  <td>Uno o varios criterios: palabra clave · categoría · tienda · marca · precio máximo · descuento mínimo.</td>
+</tr>
+<tr>
+  <td>⚙️ <strong>Gestionar sus alertas</strong></td>
+  <td>Listar, activar/desactivar, borrar en <code>/alertas</code>.</td>
+</tr>
+<tr>
+  <td>📬 <strong>Ver bandeja de notificaciones</strong></td>
+  <td>Badge en el header (TanStack Query + <code>refetchOnWindowFocus</code>).</td>
+</tr>
+<tr>
+  <td>👤 <strong>Editar perfil</strong></td>
+  <td>Nombre público y bio en <code>/perfil</code>.</td>
+</tr>
+<tr>
+  <td>🚪 <strong>Cerrar sesión</strong></td>
+  <td>Invalida la sesión Supabase.</td>
+</tr>
+</tbody>
+</table>
 
-## Funcionalidades principales
+---
 
-### Feed y navegación
+### 🛠️ Administrador
 
-- **Home** (`/`): hero + sección "MÁS POPULARES" (4 chollos por
-  temperatura) + sección "TRANSMISIÓN EN VIVO" (feed infinito por
-  `published_at desc` con paginación offset/limit por bloques de
-  16).
-- **Explorar** (`/explorar?q=...`): vista de búsqueda con filtros por
-  categoría/tienda/término.
-- **Detalle** (`/chollo/{slug}`): título, precio actual y anterior
-  con descuento, imagen, descripción Markdown, gráfica Keepa
-  (cuando hay ASIN), comentarios, votos, botón compartir.
-- **Categorías** (`/categorias`): vista de todas las categorías con
-  iconografía Lucide dinámica desde la BD.
+> _Mismos permisos que un usuario registrado, más el panel
+> administrativo. En el proyecto actual hay **un único administrador**
+> (el autor) — decisión consciente, no limitación técnica._
 
-### Sistema de alertas
+#### 🎛️ Panel `/admin`
 
-- Modelo `Alert` con campos `keyword`, `category_id`, `store_id`,
-  `brand`, `max_price`, `min_discount_percentage`, `notify_email`
-  (preparado), `notify_in_app` (activo por defecto), `is_active`,
-  `last_triggered_at`.
-- **`AlertMatcher`** en `alerts/application/`: recibe un `Deal`,
-  busca alertas activas que coincidan según los criterios del modelo,
-  crea una `Notification` por cada usuario con alerta compatible,
-  actualiza `last_triggered_at`.
-- **Anti-spam**: si ya existe una notificación para el par
-  `(alert_id, deal_id)`, no se crea duplicada (aunque el chollo se
-  actualice múltiples veces).
-- **Keyword matching tolerante**: si la frase exacta aparece en
-  `title`, `short_description` o `description`, hay match. Si no,
-  se exige que todos los tokens aparezcan. Se normaliza el texto
-  para tolerar mayúsculas/minúsculas y acentos.
+```
+/admin
+├── /admin            → Dashboard con KPIs
+├── /admin/chollos    → CRUD de chollos + autocomplete + Telegram
+├── /admin/categorias → CRUD de categorías
+├── /admin/tiendas    → CRUD de tiendas
+└── /admin/usuarios   → Lista de usuarios y roles
+```
 
-### Notificaciones in-app
+#### ⚡ Funcionalidad estrella: autocomplete desde URL de Amazon
 
-- Modelo `Notification` con `type`, `title`, `body`, `link_url`,
-  `deal_id`, `alert_id`, `is_read`.
-- **Bandeja** en `/notificaciones` que marca como leídas al cargar.
-- **Badge** en el header que muestra el conteo de no leídas (`9+`
-  cuando supera 9). Refrescado con TanStack Query
-  (`useUnreadNotifications`) y `refetchOnWindowFocus: true`.
+```
+1. ✏️  Admin pega "https://amzn.to/3xyz"
+   ▼
+2. 🌐  Backend sigue el redirect (con allowlist Amazon + bloqueo IPs privadas)
+   ▼
+3. 🔍  Extrae el ASIN
+   ▼
+4. 📡  Amazon Creators API → título, precio, imágenes, descripción técnica
+   ▼
+5. 🤖  OpenAI → copy adaptado + categorización sugerida
+   ▼
+6. ✅  Formulario rellenado en el frontend
+   ▼
+7. 🔁  Si el ASIN ya existe → diálogo "Chollo duplicado" (3 opciones)
+   ▼
+8. 💾  Admin guarda → dispara AlertMatcher → audit_log
+```
 
-### Publicación a Telegram
+#### 📤 Publicación a Telegram
 
-- El módulo `telegram/` tiene su `TelegramPostGenerator` que combina:
-  - Título, precio, descuento, imagen.
-  - Copy técnico generado por OpenAI a partir de la descripción
-    Amazon (limpiado y adaptado a tono comercial).
-  - Footer con el enlace de afiliado.
-  - Emojis Premium si el chat lo soporta.
-- Botón "Enviar a Telegram" en el panel admin con preview editable
-  antes de publicar. Rate limit 5/min para evitar dobles envíos
-  accidentales.
+Botón "Enviar a Telegram" integrado en el form de chollos. Genera
+copy adaptado con OpenAI, lo muestra editable y publica al canal. Rate
+limit 5/min para evitar dobles envíos.
 
-### Scheduler
+---
 
-- `DealCleanerService` registrado en el `lifespan` de FastAPI:
-  - `mark_expired_deals`: cada 5 min, marca como `expired` los
-    chollos cuyo `expires_at` ha pasado.
-  - `activate_scheduled_deals`: cada 5 min, pasa a `active` los
-    chollos `scheduled` cuya fecha `scheduled_for` ha llegado.
-  - `clean_expired_deals`: 03:00 diariamente, limpia recursos
-    asociados a chollos antiguos.
-- Cada job está aislado: si uno revienta, los otros siguen
-  ejecutándose (patrón `_safe_run`).
+## 🔄 Sistema de alertas (la feature más usada)
 
-## Flujos de uso clave
+### Modelo `Alert`
 
-### F1 — Usuario anónimo descubre un chollo
+| Campo | Para qué |
+|---|---|
+| `keyword` | Texto a buscar en title / short_description / description |
+| `category_id` / `subcategory_id` | Filtrar por categoría |
+| `store_id` | Filtrar por tienda |
+| `brand` | Filtrar por marca |
+| `max_price` | Sólo alertar si el precio actual está por debajo |
+| `min_discount_percentage` | Sólo alertar si el descuento es alto |
+| `notify_in_app` | ✅ activo por defecto |
+| `notify_email` | ⏸️ preparado para futuro |
+| `is_active` | Permite pausar sin borrar |
+| `last_triggered_at` | Auditoría |
 
-1. Llega a `/` → ve el feed.
-2. Click en una card → `/chollo/{slug}`.
-3. Ve precio, descuento, gráfica Keepa.
-4. Click en "Ir a la oferta" → abre Amazon con el tag de afiliado.
+### 🎯 `AlertMatcher`
 
-### F2 — Usuario se registra y crea una alerta
+```python
+# alerts/application/alert_matcher.py
+class AlertMatcher:
+    """Recibe un Deal, busca alertas activas que coincidan,
+    crea Notification por cada usuario con alerta compatible."""
+```
 
-1. Click en `[ ACCEDER ]` en el header → `/login`.
-2. Click en "Continuar con Google" → flujo OAuth de Supabase →
-   redirección de vuelta a `/`.
-3. Va a `/alertas/nueva` → escribe "monitor 4k" + descuento mínimo
-   30 → "Crear alerta".
-4. Cuando el admin publica un monitor 4K con ≥30% descuento, el
-   `AlertMatcher` crea una notificación, el badge sube a 1.
-5. El usuario va a `/notificaciones`, ve el aviso, lo clicka y aterriza
-   en el detalle del chollo.
+**Anti-spam**: si ya existe una notificación para el par
+`(alert_id, deal_id)`, **no** se crea duplicada (aunque el chollo se
+actualice múltiples veces).
 
-### F3 — Admin publica un chollo desde URL de Amazon
+**Matching tolerante**:
+- Frase exacta en el texto → match.
+- Si no, todos los tokens en el texto (en cualquier orden) → match.
+- Normalización de mayúsculas/minúsculas y acentos.
 
-1. Login admin → `/admin/chollos` → "NUEVO".
-2. Pega `https://amzn.to/3xyz` → "AUTOCOMPLETAR".
-3. El backend:
-   - Sigue el redirect (con allowlist Amazon + bloqueo IPs privadas
-     — defensa SSRF).
-   - Extrae el ASIN.
-   - Llama a Amazon Creators API → título, precio, imágenes,
-     descripción técnica.
-   - Llama a OpenAI → copy adaptado + categorización sugerida.
-   - Devuelve todo al frontend.
-4. El admin revisa el formulario ya rellenado, ajusta categoría si
-   procede, click "Guardar".
-5. Si el ASIN ya existía en otro chollo → diálogo "Chollo duplicado"
-   con tres opciones (sobrescribir / ir al existente / cancelar).
-6. Si no → se crea el deal, se dispara `AlertMatcher` y se actualiza
-   `admin_audit_log`.
-7. Opcionalmente, el admin pulsa "Enviar a Telegram" con el copy
-   generado.
+---
 
-### F4 — Usuario vota un chollo
+## 🔄 Flujos de uso clave
 
-1. Estando logueado, en el detalle → click en `↑` o `↓`.
-2. `POST /v1/deals/{id}/vote` (rate limit 30/min):
-   - Si era el mismo voto: lo retira (toggle).
-   - Si era distinto o ninguno: lo registra.
-3. El backend recalcula la temperatura del chollo (`votes_up -
-   votes_down + offset`) y devuelve los contadores actualizados.
-4. El frontend muestra inmediatamente la nueva temperatura sin
-   refresco completo.
+### 🌐 F1 · Usuario anónimo descubre un chollo
 
-## Casos de uso secundarios
+```
+🏠 Llega a /              ← desde Google o link compartido
+   ▼
+📰 Ve el feed de chollos
+   ▼
+👆 Click en una card
+   ▼
+📄 /chollo/{slug}         ← detalle completo
+   ▼
+📈 Ve precio, descuento, gráfica Keepa
+   ▼
+🛒 Click en "Ir a la oferta"  → abre Amazon con tag de afiliado
+```
 
-- **Recuperación de ASINs históricos**: el endpoint one-shot
-  `POST /v1/deals/admin/backfill-external-ids` (eliminado en producción
-  tras uso) permitió rellenar `external_id` de chollos publicados
-  antes de que existiera el campo. Documentado en
-  `PROJECT_STATUS.md`.
+### 🔔 F2 · Usuario crea una alerta y recibe notificación
 
-- **Compartir un chollo**: cada detalle tiene un `ShareBox` con la URL
-  canónica + botones de copy/share.
+```
+🔐 Login con Google                              [Supabase OAuth]
+   ▼
+🆕 /alertas/nueva
+   ▼
+✍️  Escribe "monitor 4k" + descuento mínimo 30
+   ▼
+💾 Crear alerta                                  [POST /v1/alerts]
+   ▼
+   ··· tiempo después ···
+   ▼
+🛠️ Admin publica un monitor 4K con 33% descuento
+   ▼
+🎯 AlertMatcher detecta coincidencia
+   ▼
+📬 Crea Notification → badge sube a 1
+   ▼
+👀 Usuario va a /notificaciones
+   ▼
+👆 Click en el aviso
+   ▼
+📄 Aterriza en el detalle del chollo
+```
 
-- **Detección de duplicados a futuro**: el índice único parcial
-  `uq_deals_external_id ON deals(external_id) WHERE external_id IS
-  NOT NULL` garantiza a nivel de BD que dos chollos no compartan
-  ASIN.
+### ⚡ F3 · Admin publica desde URL de Amazon
 
-## Limitaciones funcionales actuales
+```
+🔐 Login admin → /admin/chollos → NUEVO
+   ▼
+📋 Pega "https://amzn.to/3xyz" → AUTOCOMPLETAR
+   ▼
+[Backend ejecuta el flujo de 8 pasos descrito arriba]
+   ▼
+📝 Admin revisa el form ya rellenado
+   ▼
+   ├─ ⚠️  Si ASIN ya existe → diálogo duplicado (3 opciones)
+   └─ ✅ Si no → continúa
+   ▼
+💾 GUARDAR                                       [POST /v1/deals/admin]
+   ▼
+🎯 AlertMatcher dispara notificaciones
+   ▼
+📋 admin_audit_log registra la acción
+   ▼
+📤 Botón "Enviar a Telegram" (opcional)
+```
 
-- **Sin notificaciones por email**: el modelo `notify_email` está
-  preparado pero no se ha integrado proveedor SMTP. Decisión:
-  priorizar primer canal (in-app) y dejar la elección de proveedor
-  (Resend / Sendgrid / Supabase Edge Function) para después de
-  validar la audiencia.
-- **Sin filtrado por usuario en la bandeja**: las notificaciones se
-  ordenan por fecha sin opción de filtro avanzado.
-- **Sin tracking de "leído" granular**: marcar como leído opera sobre
-  todas las pendientes al cargar `/notificaciones`. No hay marcado
-  individual.
-- **Matching de alertas básico**: el algoritmo soporta substring y
-  tokens, pero no sinónimos, stemming ni búsqueda semántica.
-  Documentado como mejora futura.
-- **Sin API pública**: la API es de uso interno del frontend, no
-  pensada para integraciones de terceros (CORS restringido, sin
-  documentación pública del endpoint).
+### 👍 F4 · Usuario vota un chollo
 
-Estas limitaciones se han mantenido **a sabiendas** como deuda
-asumida y conscientemente documentada, no como omisiones.
+```
+🔐 Estando logueado, en /chollo/{slug}
+   ▼
+👆 Click en ↑ o ↓                                [POST /v1/deals/{id}/vote]
+   ▼
+🔁 Si era el mismo voto → toggle (lo retira)
+🆕 Si era distinto → lo registra
+   ▼
+🌡️ Backend recalcula temperatura
+   ▼
+🔄 Frontend muestra los contadores actualizados (sin refresco)
+```
+
+---
+
+## 🎁 Casos de uso secundarios
+
+| Caso | Cómo se resuelve |
+|---|---|
+| 🔄 **Recuperación de ASINs históricos** | Endpoint one-shot temporal (eliminado tras uso) que rellenaba `external_id` de chollos publicados antes del campo. Documentado en `PROJECT_STATUS.md`. |
+| 🔗 **Compartir un chollo** | Cada detalle tiene `ShareBox` con URL canónica + botones copy/share. |
+| 🛡️ **Detección de duplicados a futuro** | Índice único parcial `uq_deals_external_id ON deals(external_id) WHERE external_id IS NOT NULL` garantiza a nivel de BD que dos chollos no compartan ASIN. |
+
+---
+
+## ⚠️ Limitaciones funcionales conscientes
+
+> Estas no son omisiones — son **decisiones diseñadas para el MVP**.
+> Detalle en [`09 · Limitaciones y mejoras futuras`](09-limitaciones-y-mejoras-futuras.md).
+
+| Limitación | Por qué |
+|---|---|
+| ❌ Sin email | Primer canal in-app, proveedor SMTP elegir tras validar audiencia. Modelo `Alert.notify_email` ya preparado. |
+| ❌ Sin filtrado avanzado en bandeja | Volumen actual bajo. Cuando crezca, se añade. |
+| ❌ Sin marcado individual de leído | Marca todas al cargar `/notificaciones`. Diseño simplificado del MVP. |
+| ❌ Matching de alertas básico (sin sinónimos ni embeddings) | Para el volumen actual basta substring + tokens. |
+| ❌ Sin push del navegador (PWA) | Requeriría Service Worker + permisos + sistema de envío. |
+| ❌ Single admin | Modelo deliberado del producto (curación de calidad). |
+
+---
+
+<p align="center">
+  <a href="02-objetivos-y-alcance.md">← Anterior: Objetivos y alcance</a> ·
+  <a href="00-index.md">Índice</a> ·
+  <a href="04-arquitectura-y-decisiones-tecnicas.md">Siguiente: Arquitectura →</a>
+</p>

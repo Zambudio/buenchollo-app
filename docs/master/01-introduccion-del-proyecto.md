@@ -1,115 +1,158 @@
-# 01 — Introducción del proyecto
+# 🌱 01 · Introducción del proyecto
 
-## Presentación
+> **TL;DR** · BuenCholloTech es una plataforma web de comunidad para
+> ofertas tecnológicas, construida sobre un **NAS doméstico** con
+> arquitectura profesional. Combina curación humana del admin con
+> alertas personalizadas, votación comunitaria y publicación
+> automatizada a Telegram. Es **producto personal real** y a la vez
+> **Trabajo Final del Máster en Desarrollo con IA 2025**.
 
-**BuenCholloTech** es una plataforma web de comunidad para descubrir,
-publicar, gestionar y automatizar ofertas tecnológicas (chollos
-tech): monitores, periféricos, móviles, audio, gaming, componentes,
-etc. Combina la curación humana de un administrador con un sistema de
-alertas personalizadas, votación comunitaria y publicación
-automatizada al canal de Telegram del proyecto.
+---
 
-El proyecto se presenta como **Trabajo Final del Máster en Desarrollo
-con IA 2025**, pero se ha diseñado y construido con vocación de
-producto personal a medio plazo. Las decisiones técnicas no se
-limitan al alcance académico: están orientadas a un sistema que
-seguirá creciendo y manteniéndose más allá de la entrega.
+## 🎯 Una frase
 
-## Contexto
+> Un Chollometro pequeño, curado, automatizado por IA y desplegado en
+> mi NAS de casa.
 
-En el ecosistema español hay numerosos foros y canales de Telegram
-dedicados a "chollos" tecnológicos. El más conocido (Chollometro) es
-una comunidad abierta donde el contenido depende del voto colectivo y
-los usuarios proponen ofertas en bruto. Existen también canales más
-verticales (PCComponentes, Amazon, MediaMarkt, etc.) y agregadores que
-copian sin filtro y dependen del SEO.
+---
 
-**BuenCholloTech** se sitúa en un punto intermedio: una comunidad
-abierta con vista pública para usuarios anónimos, pero con curación
-humana del administrador para garantizar calidad. Las ofertas las
-publica un único responsable (el autor del proyecto) y la plataforma se
-encarga de:
+## 🧭 El contexto
 
-- Enriquecer cada chollo con metadatos automáticos: imagen, precio
-  histórico, descripción técnica, copy adaptado para Telegram, todo
-  ello generado a partir de la URL del producto en Amazon mediante la
-  Creators API y OpenAI.
-- Distribuir notificaciones a los usuarios suscritos a alertas
-  personalizadas (por palabra clave, categoría, tienda, marca o
-  descuento mínimo).
-- Publicar simultáneamente en la web y en el canal público de
-  Telegram con un copy adaptado a cada medio.
+En España hay numerosos foros y canales de Telegram dedicados a
+"chollos" tecnológicos. Los principales son:
 
-## Motivación
+| Tipo | Ejemplo | Problema |
+|---|---|---|
+| 🏟️ **Comunidad abierta** | Chollometro | El contenido depende del voto colectivo; muchas ofertas son ruido |
+| 📺 **Canal vertical** | PCComponentes, MediaMarkt | Sólo una tienda, sin curación |
+| 🤖 **Agregadores SEO** | Varios | Copian sin filtro, dependen de adsense |
+
+**BuenCholloTech** se sitúa en un punto intermedio:
+
+```
+┌─────────────────────────────────────────────────┐
+│  Comunidad abierta                              │
+│  (vista pública para usuarios anónimos)         │
+│                                                 │
+│      + Curación humana del admin                │
+│        (publica sólo lo que merece la pena)     │
+│                                                 │
+│      + Enriquecimiento automático con IA        │
+│        (título, copy, imagen, categoría)        │
+│                                                 │
+│      + Distribución multi-canal                 │
+│        (web + Telegram + alertas in-app)        │
+└─────────────────────────────────────────────────┘
+```
+
+---
+
+## 💡 ¿Por qué este proyecto?
 
 ### Motivación personal
 
-El autor mantiene un canal informal de Telegram donde comparte
-ofertas tecnológicas con un grupo reducido de personas. Lo que empezó
-como mensajes ocasionales se convirtió en una rutina de buscar
-manualmente productos, escribir el texto, sacar la imagen, calcular el
-descuento y enviar. **El objetivo personal es automatizar todo ese
-flujo manual** para poder escalar a una audiencia mayor y, en su caso,
-abrirlo como producto real con su propio dominio.
+El autor mantiene desde hace tiempo un **canal informal de Telegram**
+donde comparte ofertas tecnológicas con un grupo reducido de personas.
+Lo que empezó como mensajes ocasionales se convirtió en una rutina
+manual:
+
+```
+🔍 Buscar manualmente en Amazon
+✍️  Escribir el texto a mano
+🖼️  Sacar la imagen y subirla
+🧮  Calcular el descuento
+📤  Enviar al canal
+```
+
+**Objetivo personal**: automatizar todo ese flujo manual para escalar
+a una audiencia mayor y, en su caso, abrirlo como producto real con
+dominio propio.
 
 ### Motivación académica
 
-El máster cubre arquitectura de software, calidad, seguridad y uso de
-IA. **BuenCholloTech permite poner en práctica los cuatro bloques
-sobre un único producto real**, no sobre un ejercicio académico
-sintético. Cada decisión técnica se ha tomado pensando en defenderla
-ante tribunal:
+El máster cubre cuatro grandes bloques: **arquitectura**, **calidad**,
+**seguridad** y **uso de IA**. BuenCholloTech permite ponerlos en
+práctica simultáneamente sobre un único producto **real**, no sobre
+un ejercicio académico desechable.
 
-- Cada gran decisión vive en un ADR firmado.
-- Cada sprint tiene una bitácora cronológica en `PROJECT_STATUS.md`.
-- Cada módulo del máster tiene un sprint dedicado (F1–F7
-  arquitectura, Q1–Q7 calidad, S1–S7 seguridad).
+Cada decisión técnica está pensada para ser **defendible
+profesionalmente**:
 
-## Problema que resuelve
+- 🗂️ Cada gran decisión vive en un **ADR firmado**.
+- 📅 Cada sprint tiene una **bitácora cronológica** en
+  [`PROJECT_STATUS.md`](../../PROJECT_STATUS.md).
+- 🎯 Cada bloque del máster tiene **un sprint dedicado**: F1–F7
+  arquitectura, Q1–Q7 calidad, S1–S7 seguridad.
 
-| Problema | Cómo lo aborda BuenCholloTech |
-|---|---|
-| Las ofertas tech buenas se pierden entre el ruido. | Curación humana del admin: sólo entra lo que el autor considera buen chollo. |
-| Buscar chollos manualmente es tedioso. | Alertas personalizadas por keyword/categoría/precio que disparan notificaciones in-app cuando aparece algo coincidente. |
-| Reescribir cada publicación para distintos canales (web, Telegram) consume tiempo. | El admin pega la URL de Amazon → el sistema genera título, imagen, precio, copy Telegram y ASIN automáticamente. Publica simultáneamente. |
-| Sin gráfica de precios no se sabe si una oferta es realmente buena. | Cada chollo enlaza a su gráfica Keepa por ASIN para validar el descuento contra el histórico. |
-| Los agregadores genéricos son spam y no aportan contexto. | Curación + descripción técnica enriquecida + temperatura por votos. |
+---
 
-## Alcance del proyecto
+## 🔧 El problema que resuelve
+
+<table>
+<thead>
+<tr>
+  <th>Problema real</th>
+  <th>Cómo lo aborda BuenCholloTech</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>Las ofertas tech buenas se pierden entre el ruido.</td>
+  <td>✅ <strong>Curación humana</strong> del admin: sólo entra lo que el autor considera buen chollo.</td>
+</tr>
+<tr>
+  <td>Buscar chollos manualmente es tedioso.</td>
+  <td>🔔 <strong>Alertas personalizadas</strong> que disparan notificaciones in-app al matchear con un chollo nuevo.</td>
+</tr>
+<tr>
+  <td>Reescribir publicaciones para cada canal consume tiempo.</td>
+  <td>🤖 <strong>Autocompletado IA desde Amazon</strong>: pega la URL, el sistema genera título, imagen, precio, copy Telegram y ASIN automáticamente.</td>
+</tr>
+<tr>
+  <td>Sin gráfica de precios no se sabe si la oferta es realmente buena.</td>
+  <td>📈 Cada chollo enlaza a su <strong>gráfica Keepa</strong> por ASIN.</td>
+</tr>
+<tr>
+  <td>Los agregadores genéricos son spam y no aportan contexto.</td>
+  <td>🌡️ <strong>Curación + descripción técnica enriquecida + temperatura por votos comunitarios</strong>.</td>
+</tr>
+</tbody>
+</table>
+
+---
+
+## 📦 Alcance del proyecto
 
 El TFM cubre un **MVP funcional en producción** desplegado en NAS
-Synology, con:
+Synology:
 
-- Frontend público con feed, búsqueda y detalle de chollos.
-- Sistema de autenticación con Google OAuth.
-- Funciones de usuario registrado: votar, comentar, marcar favoritos,
-  crear alertas, recibir notificaciones.
-- Panel administrativo con CRUD completo, autocomplete desde URL de
-  Amazon y publicación a Telegram.
-- Pipeline de CI/CD con tests automáticos, gates de calidad y auditoría
-  de seguridad.
-- Documentación completa para defensa académica.
+✅ Frontend público con feed, búsqueda y detalle de chollos
+✅ Autenticación con **Google OAuth** (Supabase Auth)
+✅ Funciones de usuario: votar, comentar, favoritos, alertas, notificaciones
+✅ Panel administrativo con CRUD, autocomplete Amazon, publicación a Telegram
+✅ Pipeline CI/CD con tests automáticos y auditoría de seguridad
+✅ Documentación completa (la que estás leyendo)
 
-**Lo que queda fuera del alcance del TFM** (documentado como mejora
-futura en [`09-limitaciones-y-mejoras-futuras.md`](09-limitaciones-y-mejoras-futuras.md)):
+> 🔭 **Lo que queda fuera del MVP** está documentado en
+> [`09 · Limitaciones y mejoras futuras`](09-limitaciones-y-mejoras-futuras.md)
+> con justificación de por qué se ha aplazado cada cosa.
 
-- Notificaciones por email.
-- Múltiples administradores y panel de gestión de roles vía UI.
-- Búsqueda semántica con embeddings.
-- App móvil nativa.
-- Internacionalización (la web es sólo en español).
-- DAST automatizado y SBOM.
+---
 
-## Estructura del documento
+## 🗺️ Cómo seguir leyendo
 
-El resto de la documentación del máster se organiza en 9 capítulos
-(02–10). Cada uno aborda un eje de los módulos cursados, con
-referencias cruzadas al código y a la documentación operativa cuando
-proceda.
+Si te interesa…
 
-- Si quieres la versión **práctica** (cómo instalar, cómo ejecutar
-  tests), consulta [`docs/project/`](../project/00-index.md).
-- Si quieres ver **decisiones documentadas con su contexto**, consulta
-  [`docs/adr/`](../adr/00-index.md).
-- Si quieres **referencias técnicas densas** (auditoría OWASP completa,
-  plan de hardening), consulta [`docs/reference/`](../reference/).
+- **El producto y sus flujos** → [`03 · Análisis funcional`](03-analisis-funcional.md)
+- **Las decisiones técnicas** → [`04 · Arquitectura`](04-arquitectura-y-decisiones-tecnicas.md) + [ADRs](../adr/00-index.md)
+- **Cómo se garantiza la calidad** → [`06 · Calidad y testing`](06-calidad-testing-y-refactorizacion.md)
+- **El papel de la IA en el desarrollo** → [`08 · Uso de IA`](08-uso-de-ia-en-el-desarrollo.md)
+- **Cómo se ha aplicado seguridad** → [`07 · Seguridad`](07-seguridad.md)
+- **Una versión rápida** → [`10 · Conclusiones`](10-conclusiones.md)
+
+---
+
+<p align="center">
+  <a href="00-index.md">← Volver al índice</a> ·
+  <a href="02-objetivos-y-alcance.md">Siguiente: Objetivos y alcance →</a>
+</p>

@@ -1,66 +1,128 @@
-# Documentación de entrega — Trabajo Final de Máster
+# 🎓 Bloque académico — entrega del Máster
 
-> Documentación formal del proyecto **BuenCholloTech** para la defensa
-> ante tribunal del **Máster en Desarrollo con IA 2025**.
+<p align="center">
+  <strong>Documentación de entrega de <code>BuenCholloTech</code></strong><br>
+  <em>Máster en Desarrollo con IA · 2025</em>
+</p>
+
+---
+
+> 📖 **¿Qué encontrarás aquí?**
+> Diez capítulos numerados que explican **qué se ha construido**, **por
+> qué se ha construido así**, y **cómo se han aplicado los cuatro grandes
+> bloques del máster** sobre un único producto real.
 >
-> Para la operativa del repositorio (instalación, comandos, troubleshooting)
-> ver [`docs/project/`](../project/00-index.md).
+> Si lo que buscas es **cómo instalar o ejecutar** BuenCholloTech, eso
+> vive en [`docs/project/`](../project/00-index.md). Aquí se explican
+> las decisiones, no los comandos.
 
-## Índice
+---
 
-1. [01 — Introducción del proyecto](01-introduccion-del-proyecto.md)
-   Contexto, motivación, problema que resuelve, alcance del proyecto.
+## 🗺️ Recorrido sugerido
 
-2. [02 — Objetivos y alcance](02-objetivos-y-alcance.md)
-   Objetivo general, objetivos específicos, alcance funcional y técnico,
-   qué queda fuera.
+Si tienes 5 minutos → lee `01` + `10` (introducción + conclusiones).
+Si tienes 15 minutos → añade `04` (arquitectura).
+Si tienes una hora → léelo todo.
 
-3. [03 — Análisis funcional](03-analisis-funcional.md)
-   Usuarios previstos, funcionalidades principales, flujos de uso,
-   casos de uso, limitaciones funcionales.
+```
+┌─ 01 · Introducción       ─── Qué es y por qué existe
+├─ 02 · Objetivos          ─── A dónde queremos llegar
+├─ 03 · Análisis funcional ─── Usuarios y flujos reales
+├─ 04 · Arquitectura       ─── Decisiones técnicas con ADRs
+├─ 05 · Buenas prácticas   ─── SOLID, DRY, KISS, YAGNI aplicados
+├─ 06 · Calidad y testing  ─── Pirámide + coverage 100/80/0
+├─ 07 · Seguridad          ─── OWASP Top 10 sobre el proyecto
+├─ 08 · Uso de IA          ─── Claude Code supervisado
+├─ 09 · Limitaciones       ─── Lo que conscientemente NO se hizo
+└─ 10 · Conclusiones       ─── Lectura final
+```
 
-4. [04 — Arquitectura y decisiones técnicas](04-arquitectura-y-decisiones-tecnicas.md)
-   Arquitectura elegida (monolito modular + API Gateway), justificación,
-   organización, dependencias externas, referencia a los 9 ADRs.
+---
 
-5. [05 — Buenas prácticas y principios de diseño](05-buenas-practicas-y-principios-de-diseno.md)
-   Cómo se han aplicado SOLID, DRY, KISS, YAGNI; refactorizaciones
-   documentadas; antipatrones evitados.
+## 📚 Índice completo
 
-6. [06 — Calidad, testing y refactorización](06-calidad-testing-y-refactorizacion.md)
-   Estrategia de calidad, pirámide de testing, coverage estratégico,
-   métricas accionables, quality gates.
+| # | Capítulo | Tema | Lectura aprox. |
+|---|---|---|---:|
+| [01](01-introduccion-del-proyecto.md) | 🌱 **Introducción del proyecto** | Contexto, motivación, problema | ~5 min |
+| [02](02-objetivos-y-alcance.md) | 🎯 **Objetivos y alcance** | Qué se entrega y qué queda fuera | ~5 min |
+| [03](03-analisis-funcional.md) | 👥 **Análisis funcional** | Usuarios, funcionalidades, flujos | ~10 min |
+| [04](04-arquitectura-y-decisiones-tecnicas.md) | 📐 **Arquitectura y decisiones técnicas** | Monolito modular + API Gateway + ADRs | ~15 min |
+| [05](05-buenas-practicas-y-principios-de-diseno.md) | ✨ **Buenas prácticas y principios de diseño** | SOLID, DRY, KISS, YAGNI con ejemplos del código | ~15 min |
+| [06](06-calidad-testing-y-refactorizacion.md) | 🧪 **Calidad, testing y refactorización** | Pirámide 167 tests · coverage estratégico | ~10 min |
+| [07](07-seguridad.md) | 🛡️ **Seguridad** | Security by Design + OWASP Top 10 + hallazgos | ~15 min |
+| [08](08-uso-de-ia-en-el-desarrollo.md) | 🤖 **Uso de IA en el desarrollo** | Claude Code, patrones, supervisión humana | ~15 min |
+| [09](09-limitaciones-y-mejoras-futuras.md) | 🔭 **Limitaciones y mejoras futuras** | Deuda asumida con justificación | ~10 min |
+| [10](10-conclusiones.md) | 🏁 **Conclusiones** | Lectura final | ~5 min |
 
-7. [07 — Seguridad](07-seguridad.md)
-   Security by Design, Security by Default, OWASP Top 10 aplicado,
-   controles implementados, riesgos detectados y mitigaciones,
-   mejoras futuras.
+---
 
-8. [08 — Uso de IA en el desarrollo](08-uso-de-ia-en-el-desarrollo.md)
-   Herramientas, patrones de uso, supervisión humana, ejemplos
-   concretos, riesgos y mitigaciones aplicadas.
+## 🧭 Mapa por bloque del máster
 
-9. [09 — Limitaciones y mejoras futuras](09-limitaciones-y-mejoras-futuras.md)
-   Limitaciones actuales del proyecto y mejoras técnicas, funcionales,
-   de seguridad, rendimiento y testing.
+Para que puedas saltar directamente al material relevante de cada
+bloque cursado:
 
-10. [10 — Conclusiones](10-conclusiones.md)
-    Qué se ha aprendido, qué demuestra el proyecto, contenidos del
-    máster aplicados, valor del proyecto, pasos futuros.
+<table>
+<thead>
+<tr><th>Bloque del máster</th><th>Documentos clave</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>📐 <strong>Arquitectura de Software</strong></td>
+  <td>
+    <a href="04-arquitectura-y-decisiones-tecnicas.md">04 · Arquitectura</a> ·
+    <a href="05-buenas-practicas-y-principios-de-diseno.md">05 · Buenas prácticas</a> ·
+    <a href="../adr/00-index.md">9 ADRs firmados</a>
+  </td>
+</tr>
+<tr>
+  <td>🧪 <strong>Calidad del Software</strong></td>
+  <td>
+    <a href="06-calidad-testing-y-refactorizacion.md">06 · Calidad y testing</a> ·
+    <a href="../project/06-testing-and-quality.md">guía operativa</a> ·
+    <a href="../adr/ADR-008-estrategia-calidad-testing.md">ADR-008</a>
+  </td>
+</tr>
+<tr>
+  <td>🛡️ <strong>Seguridad</strong></td>
+  <td>
+    <a href="07-seguridad.md">07 · Seguridad</a> ·
+    <a href="../reference/SECURITY_AUDIT.md">auditoría OWASP completa</a> ·
+    <a href="../../SECURITY.md">SECURITY.md raíz</a>
+  </td>
+</tr>
+<tr>
+  <td>🤖 <strong>Desarrollo con IA</strong></td>
+  <td>
+    <a href="08-uso-de-ia-en-el-desarrollo.md">08 · Uso de IA</a> ·
+    <a href="../adr/ADR-009-uso-de-ia-en-desarrollo.md">ADR-009</a> ·
+    <a href="../../CLAUDE.md">CLAUDE.md (configuración del asistente)</a>
+  </td>
+</tr>
+<tr>
+  <td>📝 <strong>Cierre / Conclusiones</strong></td>
+  <td>
+    <a href="01-introduccion-del-proyecto.md">01</a> ·
+    <a href="09-limitaciones-y-mejoras-futuras.md">09</a> ·
+    <a href="10-conclusiones.md">10</a>
+  </td>
+</tr>
+</tbody>
+</table>
 
-## Lectura recomendada por bloque del máster
+---
 
-| Bloque del máster | Documentos clave |
+## 📎 Documentación complementaria
+
+| Carpeta | Para qué |
 |---|---|
-| **Arquitectura de Software** | `04`, `05`, [`docs/adr/`](../adr/00-index.md) |
-| **Calidad del Software** | `06`, [`docs/reference/SECURITY_AUDIT.md`](../reference/SECURITY_AUDIT.md) (no, esto es seguridad), [`docs/project/06-testing-and-quality.md`](../project/06-testing-and-quality.md) |
-| **Seguridad** | `07`, [`docs/reference/SECURITY_AUDIT.md`](../reference/SECURITY_AUDIT.md), [`SECURITY.md`](../../SECURITY.md) |
-| **Desarrollo con IA** | `08`, [ADR-009](../adr/ADR-009-uso-de-ia-en-desarrollo.md), [`CLAUDE.md`](../../CLAUDE.md) |
-| **Cierre / Conclusiones** | `01`, `09`, `10` |
+| [`../adr/`](../adr/00-index.md) | **9 ADRs** firmados y datados (decisiones arquitectónicas) |
+| [`../reference/`](../reference/) | Referencias densas: plan de hardening, auditoría OWASP completa, smoke test |
+| [`../project/`](../project/00-index.md) | Operativa del repositorio (cómo instalar, ejecutar, desplegar) |
+| [`../../PROJECT_STATUS.md`](../../PROJECT_STATUS.md) | Bitácora viva del proyecto con cronología completa de sprints |
+| [`../archive/`](../archive/) | Documentación histórica preservada con índice de motivos |
 
-## Documentación complementaria
+---
 
-- [`docs/adr/`](../adr/00-index.md) — 9 ADRs firmados y datados.
-- [`docs/reference/PLAN_ARQUITECTURA.md`](../reference/PLAN_ARQUITECTURA.md) — Sprint completo de hardening F1–F7 con métricas.
-- [`docs/reference/SECURITY_AUDIT.md`](../reference/SECURITY_AUDIT.md) — Auditoría OWASP Top 10 con 10 hallazgos priorizados.
-- [`PROJECT_STATUS.md`](../../PROJECT_STATUS.md) — Bitácora viva del proyecto (cronología completa de sprints).
+<p align="center">
+  <em>Pedro Zambudio · Máster en Desarrollo con IA · 2025</em>
+</p>
