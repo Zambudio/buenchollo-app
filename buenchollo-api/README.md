@@ -1,207 +1,221 @@
 # buenchollo-api
 
-Backend **FastAPI** de BuenCholloTech. Actúa como **API Gateway** centralizado: autenticación, lógica de negocio, acceso a PostgreSQL (Supabase) e integración con Amazon Creators API y OpenAI.
+Backend **FastAPI** de BuenCholloTech. Actúa como **API Gateway** del
+sistema: autenticación con JWT de Supabase, autorización por rol,
+lógica de negocio en módulos con Clean Architecture pragmática, y
+acceso único a PostgreSQL (Supabase pooler PgBouncer).
 
-- Swagger UI: `http://localhost:8000/docs`
-- Health check: `http://localhost:8000/health`
+- **OpenAPI**: `http://localhost:8000/docs`
+- **Health**: `http://localhost:8000/health`
+- **Readiness** (incluye latencia BD): `http://localhost:8000/health/ready`
+
+Para la documentación completa del repositorio (instalación, setup,
+estructura, despliegue, troubleshooting) ver
+[`docs/project/`](../docs/project/00-index.md).
 
 ---
 
-## Prerequisitos
-
-- **Python 3.11+** (el contenedor Docker usa `python:3.11-slim`)
-- Acceso a un proyecto de **Supabase** (BD PostgreSQL + Auth)
-- Credenciales de **Amazon Creators API** y **OpenAI** (opcionales para arrancar, obligatorias para el autocomplete)
-
----
-
-## Setup local (desarrollo)
+## Setup rápido
 
 ```bash
-cd buenchollo-api
-
-# 1. Crear y activar entorno virtual
+# Entorno virtual
 python -m venv .venv
-source .venv/bin/activate          # Linux/Mac
-.venv\Scripts\Activate.ps1         # Windows PowerShell
+.\.venv\Scripts\Activate.ps1      # Windows
+# source .venv/bin/activate        # Linux/Mac
 
-# 2. Instalar dependencias
-pip install -r requirements.txt
+# Dependencias (runtime + tests)
+pip install -r requirements-dev.txt
 
-# 3. Configurar variables de entorno
+# Variables de entorno
 cp .env.example .env
-# Editar .env con los valores reales (ver sección Variables de entorno)
+# Editar .env (ver tabla de variables abajo)
 
-# 4. Arrancar en modo desarrollo (hot-reload)
-uvicorn app.main:app --reload
+# Arrancar
+uvicorn app.main:app --reload --port 8000
 ```
+
+Setup detallado, incluido Supabase con Auth Google y RLS:
+[`docs/project/02-installation-and-setup.md`](../docs/project/02-installation-and-setup.md).
 
 ---
 
 ## Variables de entorno
 
-Copia `.env.example` a `.env` y rellena cada valor. Nunca subas `.env` al repositorio.
-
 | Variable | Obligatoria | Descripción |
 |---|---|---|
-| `DATABASE_URL` | ✅ | Conexión asyncpg al pooler de Supabase. Formato: `postgresql+asyncpg://postgres.[REF]:[PWD]@aws-0-[region].pooler.supabase.com:6543/postgres` |
-| `SUPABASE_URL` | ✅ | URL del proyecto: `https://[REF].supabase.co` |
-| `SUPABASE_KEY` | ✅ | **Service role key** (no la anon key). Empieza por `eyJ...` y tiene `"role":"service_role"` |
-| `CORS_ORIGINS` | ✅ | Orígenes CORS permitidos, separados por comas. En local: `*` |
-| `OPENAI_API_KEY` | ⚠️ | Necesaria para el autocomplete con IA. Sin ella, el endpoint `/products/preview-from-url` falla |
-| `AMAZON_CLIENT_ID` | ⚠️ | Necesaria para el autocomplete de Amazon |
-| `AMAZON_CLIENT_SECRET` | ⚠️ | Necesaria para el autocomplete de Amazon |
-| `AMAZON_AFFILIATE_TAG` | ⚠️ | Tag de afiliado Amazon (p.ej. `buenchollo0b-21`) |
-| `AMAZON_API_VERSION` | — | Versión LWA. Por defecto: `3.2` |
-| `APP_ENV` | — | `local` \| `staging` \| `production`. Por defecto: `local` |
-| `LOG_LEVEL` | — | `DEBUG` \| `INFO` \| `WARNING`. Por defecto: `INFO` |
+| `DATABASE_URL` | ✅ | Conexión asyncpg al pooler de Supabase (puerto **6543**) |
+| `SUPABASE_URL` | ✅ | `https://<ref>.supabase.co` |
+| `SUPABASE_KEY` | ✅ | **service_role key** (privada, bypassa RLS) |
+| `CORS_ORIGINS` | ✅ | Lista separada por comas. **Nunca `*`** en producción |
+| `APP_ENV` | — | `local` \| `staging` \| `production` |
+| `LOG_LEVEL` | — | `INFO` recomendado. **Nunca `DEBUG` en prod** |
+| `LOG_FORMAT` | — | `json` para Loki/ELK, `text` para dev |
+| `RATE_LIMIT_ENABLED` | — | `true` por defecto |
+| `SENTRY_DSN` | — | Vacío para desactivar tracking |
+| `OPENAI_API_KEY` | ⚠️ | Para copy del autocomplete |
+| `AMAZON_CLIENT_ID/SECRET` | ⚠️ | Para preview Amazon |
+| `AMAZON_AFFILIATE_TAG` | ⚠️ | Tag de afiliado |
+| `TELEGRAM_BOT_TOKEN` | ⚠️ | Para publicación al canal |
+| `TELEGRAM_MAIN_CHANNEL_ID` / `ADMIN_CHANNEL_ID` | ⚠️ | Canales |
 
-> **Nota sobre `SUPABASE_KEY`**: usa siempre la `service_role key`, nunca la `anon key`. El backend la necesita para validar JWTs y acceder a tablas con RLS desactivada.
+✅ obligatoria · ⚠️ obligatoria para la feature concreta.
+Detalle completo: [`docs/project/04-configuration.md`](../docs/project/04-configuration.md).
+
+> **Nota sobre `SUPABASE_KEY`**: usa la `service_role key`, nunca la
+> `anon key`. El backend la necesita para validar JWT con
+> `supabase.auth.get_user()` y para escribir sobre tablas con RLS
+> activado.
 
 ---
 
-## Estructura del proyecto
+## Estructura
+
+Clean Architecture pragmática · una carpeta por módulo de dominio
+con 4 capas:
 
 ```
 app/
-├── core/
-│   ├── config.py        # Settings cargadas desde .env (Pydantic Settings)
-│   ├── database.py      # Motor SQLAlchemy async, sesión get_db()
-│   ├── security.py      # get_current_user, require_admin
-│   └── logging.py       # Configuración de logs estructurados
+├── core/                  config · database · security · request_id ·
+│                          rate_limit · security_headers · sentry ·
+│                          audit · health · logging · exceptions
 │
-├── modules/             # Cada módulo es independiente
-│   ├── deals/
-│   │   ├── domain/      # Modelos ORM: Deal, DealVote
-│   │   ├── application/ # DealCleanerService (scheduler)
-│   │   ├── infrastructure/ # DealRepository — único acceso a BD
-│   │   └── api/         # Router FastAPI + schemas Pydantic
-│   ├── categories/      # (mismo patrón)
-│   ├── stores/          # (mismo patrón)
-│   ├── products/
-│   │   ├── domain/      # ProductPreview entity + Protocols (DIP)
-│   │   ├── application/ # PreviewProductFromUrlUseCase
-│   │   └── infrastructure/ # AmazonProductClient, OpenAIAssistant
-│   ├── users/           # Endpoint /auth/me
-│   └── telegram/        # (pendiente de implementar)
+├── modules/               1 carpeta por dominio
+│   └── <dominio>/
+│       ├── domain/        modelos SQLAlchemy + excepciones de dominio
+│       ├── application/   servicios / casos de uso (sin FastAPI ni SQL)
+│       ├── infrastructure/repositorios + clientes externos
+│       └── api/           router FastAPI + schemas Pydantic
 │
-├── tests/               # Unitarios e integración
-└── main.py              # Entrypoint: lifespan, CORS, routers
+├── alembic/               migraciones versionadas
+├── supabase/migrations/   histórico SQL pre-Alembic
+└── tests/                 unitarios + integración (marker)
 ```
+
+Módulos: `deals`, `comments`, `alerts`, `notifications`, `categories`,
+`stores`, `users`, `products`, `telegram`.
+
+Flujo de dependencias: `api → application → domain ← infrastructure`.
+El dominio no depende de FastAPI ni SQLAlchemy.
+
+Justificación arquitectónica: [ADR-001](../docs/adr/ADR-001-monolito-modular-fastapi.md)
+y [`docs/project/03-project-structure.md`](../docs/project/03-project-structure.md).
 
 ---
 
-## API Reference
+## API versionada `/v1`
 
-### Públicos (sin autenticación)
+Todos los routers de negocio cuelgan de **`/v1/`**. Sólo `/health` y
+`/health/ready` quedan sin versionar (son infraestructura, no
+contrato de negocio).
 
-| Método | Ruta | Descripción |
-|---|---|---|
-| `GET` | `/health` | Estado de la API |
-| `GET` | `/deals/latest` | Últimos chollos activos (`?limit=8`) |
-| `GET` | `/deals/popular` | Chollos más calientes por temperatura (`?limit=4`) |
-| `GET` | `/deals` | Buscar chollos (`?category_id=&store_id=&search=&limit=20`) |
-| `GET` | `/deals/{slug}` | Detalle de un chollo por slug |
-| `GET` | `/categories` | Listado de categorías |
-| `GET` | `/stores` | Listado de tiendas |
-
-### Requieren JWT (`Authorization: Bearer <token>`)
+### Públicos (sin auth)
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| `GET` | `/auth/me` | Diagnóstico: usuario, roles y perfil |
-| `POST` | `/deals/{id}/vote` | Votar un chollo (👍/👎, toggle) |
-| `GET` | `/deals/{id}/my-vote` | Voto actual del usuario en un chollo |
+| `GET` | `/health` | Liveness check |
+| `GET` | `/health/ready` | Readiness + latencia BD |
+| `GET` | `/v1/deals/latest` | Últimos chollos activos |
+| `GET` | `/v1/deals/popular` | Por temperatura |
+| `GET` | `/v1/deals/search` | Buscar con paginación |
+| `GET` | `/v1/deals/{slug}` | Detalle por slug |
+| `GET` | `/v1/categories` | Catálogo de categorías |
+| `GET` | `/v1/stores` | Catálogo de tiendas |
+
+### Requieren JWT
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| `GET` | `/v1/auth/me` | Diagnóstico de sesión + rol |
+| `POST` | `/v1/deals/{id}/vote` | Votar (toggle, rate-limit 30/min) |
+| `POST` | `/v1/deals/comments` | Comentar (rate-limit 10/min) |
+| `GET` | `/v1/notifications` | Bandeja |
+| `GET` | `/v1/notifications/unread-count` | Badge |
+| `POST` | `/v1/notifications/mark-read` | Marcar todas leídas |
+| `GET` | `/v1/alerts` / `POST` / `PUT` / `DELETE` | Gestión de alertas |
+| `GET` | `/v1/favorites` / `POST /v1/deals/{id}/favorite` | Favoritos |
 
 ### Requieren JWT + rol `admin`
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| `GET` | `/deals/admin/all` | Todos los chollos (`?status=&limit=200`) |
-| `POST` | `/deals/admin` | Crear chollo |
-| `PUT` | `/deals/admin/{id}` | Actualizar chollo |
-| `DELETE` | `/deals/admin/{id}` | Eliminar chollo |
-| `POST` | `/products/preview-from-url` | Preview de producto Amazon con IA |
+| `GET` | `/v1/deals/admin/all` | Todos los chollos |
+| `POST` | `/v1/deals/admin` | Crear |
+| `PUT` | `/v1/deals/admin/{id}` | Actualizar (detecta duplicados por ASIN) |
+| `DELETE` | `/v1/deals/admin/{id}` | Eliminar |
+| `POST` | `/v1/products/preview` | Preview desde URL Amazon (rate-limit 10/min) |
+| `POST` | `/v1/telegram/publish` | Publicar al canal (rate-limit 5/min) |
+| `GET` | `/v1/admin/stats` | 6 KPIs en una query |
+| `GET` | `/v1/admin/audit` | Audit log paginado |
 
----
-
-## Autenticación
-
-1. El frontend obtiene el `access_token` de la sesión de Supabase Auth.
-2. Lo envía en la cabecera `Authorization: Bearer <token>`.
-3. `get_current_user()` llama a `supabase.auth.get_user(token)` con la `service_role key`.
-4. `require_admin()` comprueba la tabla `user_roles` en la BD.
-
-Para diagnosticar problemas de sesión en producción: `GET /auth/me` con el token en las DevTools.
+Documentación interactiva completa con request/response en
+`http://localhost:8000/docs` (OpenAPI auto-generado).
 
 ---
 
 ## Tests
 
 ```bash
-# Desde buenchollo-api/ con el venv activado
-python -m pytest app/tests/ -v
+pytest -q -m "not integration"   # 78 unitarios, ~1s, sin BD
+pytest -q                         # toda la suite (incluye 9 integración con BD real)
 ```
 
-Los tests de integración (`test_deals_api.py`, `test_categories_stores_api.py`) necesitan el `.env` configurado porque conectan con la BD real de Supabase.
+Los unitarios mockean Supabase, Amazon y la BD. Los de integración
+exigen `.env` con Postgres real (Supabase) — no corren en CI, sí en
+local antes de cada release.
 
-Los tests unitarios (`test_preview_use_case.py`) usan mocks y no necesitan credenciales.
+Estrategia completa: [`docs/project/06-testing-and-quality.md`](../docs/project/06-testing-and-quality.md).
 
 ---
 
-## Despliegue en NAS Synology (Docker)
+## Migraciones (Alembic)
 
-### Primera vez
+Convive con SQL histórico (pre-2026-05-27). Desde el baseline
+`20260527120000_baseline.py`, los cambios de esquema se gestionan con
+Alembic desde el código Python.
+
+Cada arranque del contenedor ejecuta `alembic upgrade head`
+automáticamente antes de uvicorn, así Pedro no necesita SSH al NAS
+para aplicar migraciones.
+
+Setup detallado: [`MIGRATIONS.md`](MIGRATIONS.md).
+
+---
+
+## Despliegue en NAS Synology
+
+Documentación operativa completa en
+[`docs/project/08-deployment.md`](../docs/project/08-deployment.md):
+Docker Compose, reverse proxy DSM, Let's Encrypt, pre-go-live al
+dominio definitivo, rollback.
+
+Resumen del flujo:
 
 ```bash
-# En el NAS, desde la carpeta del proyecto (p.ej. /volume1/docker/buenchollo-api)
-docker-compose build
+# En el NAS (carpeta del proyecto)
+git pull
+docker-compose build --no-cache
 docker-compose up -d
+
+# Verificar
+curl -s https://embyzambu.synology.me:8000/health
+# {"status":"ok"}
 ```
 
-### Actualizar tras cambios en el código
-
-```bash
-# El volumen .:/app hace que los cambios de código se reflejen sin rebuild
-docker-compose restart
-
-# Si cambiaron requirements.txt o el Dockerfile:
-docker-compose build --no-cache && docker-compose up -d
-```
-
-### Verificar que funciona
-
-```
-GET https://[tu-ddns]:8000/health
-→ {"status": "ok", "app": "BuenChollo API", "environment": "production"}
-```
-
-### Configuración de producción
-
-El archivo `docker-compose.yml` monta el directorio del proyecto como volumen (`.:/app`), por lo que los cambios de código en el NAS se reflejan sin rebuild. El `.env` debe estar en la misma carpeta que `docker-compose.yml`.
-
-> **CORS en producción**: configura `CORS_ORIGINS` con los dominios exactos del frontend. Ejemplo: `CORS_ORIGINS=https://tudominio.com,https://www.tudominio.com`
+El `docker-compose.yml` ejecuta `alembic upgrade head` antes de
+arrancar uvicorn. Las migraciones se aplican automáticamente.
 
 ---
 
-## Scheduler (tareas automáticas)
+## Documentación relacionada
 
-`DealCleanerService` se ejecuta cada día a las **03:00 AM** vía APScheduler:
-- Marca como `expired` los chollos con `expires_at` pasado.
-- Se arranca y para automáticamente con el `lifespan` de FastAPI en `main.py`.
-
----
-
-## Solución de problemas frecuentes
-
-**Puerto 8000 ocupado (Windows)**
-```powershell
-netstat -ano | Select-String ':8000'
-Stop-Process -Id <PID> -Force
-```
-
-**Error `statement_cache_size` al conectar con PostgreSQL**  
-Asegúrate de que `DATABASE_URL` apunta al pooler de PgBouncer (puerto **6543**, no 5432). La configuración en `database.py` ya incluye `statement_cache_size=0` para compatibilidad.
-
-**`La librería creators no está instalada`**  
-Este error ya no debería ocurrir. El cliente Amazon fue reescrito usando `requests` directamente (sin SDK externo). Si aparece, revisa que estás usando el código más reciente.
+| Tema | Documento |
+|---|---|
+| **Setup completo del repo** | [`docs/project/02-installation-and-setup.md`](../docs/project/02-installation-and-setup.md) |
+| **Arquitectura del backend** | [`docs/project/03-project-structure.md`](../docs/project/03-project-structure.md) + [ADRs](../docs/adr/00-index.md) |
+| **Variables de entorno detalladas** | [`docs/project/04-configuration.md`](../docs/project/04-configuration.md) |
+| **Tests y quality gates** | [`docs/project/06-testing-and-quality.md`](../docs/project/06-testing-and-quality.md) |
+| **Seguridad operativa** | [`docs/project/07-security.md`](../docs/project/07-security.md) |
+| **Despliegue NAS + dominio** | [`docs/project/08-deployment.md`](../docs/project/08-deployment.md) |
+| **Troubleshooting** | [`docs/project/09-troubleshooting.md`](../docs/project/09-troubleshooting.md) |
+| **Migraciones Alembic** | [`MIGRATIONS.md`](MIGRATIONS.md) |
+| **Política de seguridad** | [`SECURITY.md`](../SECURITY.md) raíz |

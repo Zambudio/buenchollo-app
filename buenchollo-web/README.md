@@ -1,116 +1,190 @@
 # buenchollo-web
 
-Frontend de BuenCholloTech. SPA en React + TypeScript con TanStack Router.  
-Se comunica **exclusivamente** con `buenchollo-api` mediante el cliente HTTP centralizado en `src/services/api/`.
+Frontend de **BuenCholloTech**. SPA con SSR opcional en React 19 +
+TypeScript strict + Vite + TanStack Router/Query + Tailwind +
+shadcn/ui.
+
+Se comunica **exclusivamente** con `buenchollo-api` mediante el
+cliente HTTP centralizado en `src/services/api/`. Las consultas a la
+BD nunca pasan por el cliente directamente: van por la API
+([ADR-002](../docs/adr/ADR-002-migracion-baas-a-api-gateway.md)).
+Sólo se usa Supabase directamente para Auth (OAuth Google) y Storage
+(subida de imágenes desde el panel admin).
+
+Para la documentación completa del repositorio (instalación, setup,
+estructura, despliegue, troubleshooting) ver
+[`docs/project/`](../docs/project/00-index.md).
 
 ---
 
-## Prerequisitos
-
-| Herramienta | Versión | Instalación |
-|---|---|---|
-| Node.js | 18+ | https://nodejs.org |
-| pnpm | 8+ | `npm install -g pnpm` |
-
----
-
-## Setup local (desarrollo)
+## Setup rápido
 
 ```bash
-cd buenchollo-web
+# Dependencias (npm, no pnpm — el monorepo usa Husky con package.json root)
+npm install
 
-# 1. Instalar dependencias
-pnpm install
-
-# 2. Configurar variables de entorno
+# Variables de entorno
 cp .env.example .env.local
-# Editar .env.local con los valores reales (ver sección Variables de entorno)
+# Editar .env.local
 
-# 3. Arrancar en modo desarrollo
-pnpm dev
+# Arrancar
+npm run dev
 ```
 
-Web disponible en `http://localhost:5173`
+Servidor en `http://localhost:8080` (vinxi default; salta a 8081/8082
+si está ocupado). Setup detallado:
+[`docs/project/02-installation-and-setup.md`](../docs/project/02-installation-and-setup.md).
 
 ---
 
 ## Variables de entorno
 
-Copia `.env.example` a `.env.local` y rellena los valores. Nunca subas `.env.local` al repositorio.
-
 | Variable | Obligatoria | Descripción |
 |---|---|---|
-| `VITE_SUPABASE_URL` | ✅ | URL del proyecto Supabase: `https://[REF].supabase.co` |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | ✅ | **Anon key** de Supabase (pública, para Auth y Storage) |
-| `VITE_API_URL` | ✅ | URL base de `buenchollo-api`. En local: `http://localhost:8000`. En producción: `https://[tu-ddns]:8000` |
+| `VITE_SUPABASE_URL` | ✅ | URL del proyecto Supabase |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | ✅ | **anon key** (pública, embebida en el bundle) |
+| `VITE_API_URL` | ✅ | Base de `buenchollo-api` sin `/v1` final |
 
-> Las variables `VITE_*` se embeben en el build. No pongas aquí claves secretas.
+> Las `VITE_*` se **embeben en el JavaScript del cliente** al hacer
+> `npm run build`. Cualquier valor que pongas aquí es público. Nunca
+> pongas la `service_role key` de Supabase.
 
 ---
 
-## Scripts disponibles
+## Scripts
 
 ```bash
-pnpm dev          # Servidor de desarrollo con hot-reload
-pnpm build        # Build de producción en dist/
-pnpm preview      # Previsualizar el build de producción localmente
-pnpm lint         # ESLint
-pnpm format       # Prettier
+# Desarrollo
+npm run dev               # vite dev con hot-reload
+npm run build             # build estático en dist/
+
+# Calidad
+npm run lint              # ESLint estricto
+npm run typecheck         # tsc --noEmit (strict)
+npm run format            # Prettier
+
+# Tests
+npm run test              # Vitest watch
+npm run test:run          # 72 tests one-shot
+npm run test:coverage     # con threshold en src/lib/**
+npm run test:e2e          # 8 Playwright (chromium, levanta dev server)
+npm run test:e2e:ui       # modo interactivo
+
+# Gates compuestos
+npm run quality           # lint + typecheck + test:run (lo del Husky pre-commit/pre-push)
+npm run quality:full      # + test:e2e
 ```
 
 ---
 
-## Estructura del proyecto
+## Estructura
+
+Organización por features de dominio (no por tipos de archivo):
 
 ```
 src/
-├── services/api/         # ⚠️ Único punto de contacto con buenchollo-api
-│   ├── client.ts         # fetchWithAuth: añade Bearer token automáticamente
-│   ├── deals.ts          # dealsService: chollos, votos, favoritos
-│   ├── categories.ts     # categoriesService
-│   └── stores.ts         # storesService
+├── routes/                TanStack Router file-based
+│   ├── __root.tsx         Providers (QueryClient, Auth, Toaster)
+│   ├── index.tsx          Home (feed infinito + populares)
+│   ├── chollo.$slug.tsx   Detalle
+│   ├── explorar.tsx       Búsqueda
+│   ├── alertas.tsx        Lista
+│   ├── alertas_.nueva.tsx Crear alerta (sin anidamiento)
+│   └── admin.*.tsx        Panel administración
 │
-├── routes/               # Páginas (TanStack Router, file-based routing)
-│   ├── index.tsx         # Home
-│   ├── explorar.tsx      # Explorar chollos
-│   ├── chollo.$slug.tsx  # Detalle de chollo
-│   ├── favoritos.tsx     # Chollos guardados
-│   ├── admin/            # Panel de administración (requiere rol admin)
-│   └── ...
+├── features/              Dominios funcionales
+│   ├── deals/components/  DealCard · Comments · ShareBox
+│   ├── admin/hooks/       useAdminStats
+│   ├── notifications/hooks/  useUnreadNotifications · useNotificationsList · …
+│   └── telegram/components/  TelegramPanel
 │
-├── components/           # Componentes reutilizables
-│   ├── ui/               # Shadcn/ui (no modificar manualmente)
-│   ├── DealCard.tsx
-│   ├── Header.tsx
-│   └── ...
+├── components/
+│   ├── layout/            Header · Footer · Logo · CategoriesDrawer · Layout
+│   └── ui/                Primitivos shadcn (no modificar manualmente)
 │
-├── hooks/
-│   └── useAuth.tsx       # Hook de autenticación (sesión Supabase)
+├── services/api/          ⚠️ Único punto de contacto con buenchollo-api
+│   ├── client.ts          fetchWithAuth + ApiError
+│   ├── deals.ts           + isDuplicateDealError type guard
+│   ├── alerts.ts · notifications.ts · comments.ts · …
 │
-└── integrations/
-    └── supabase/         # Cliente Supabase (solo Auth y Storage)
+├── lib/                   Lógica pura (CORE para coverage 90%+)
+│   ├── format.ts          formatPrice, calculateDiscount, slugify, …
+│   ├── errors.ts          errorMessage(unknown → string)
+│   ├── constants.ts       DEAL_STATUS_OPTIONS, TEMPERATURE_*
+│   ├── query-client.ts    config TanStack Query
+│   └── validation/        deals.ts, alerts.ts (Zod schemas)
+│
+├── hooks/useAuth.tsx      AuthProvider con supabase.auth.getSession
+├── integrations/supabase/ cliente lazy + tipos generados
+└── test/utils.tsx         renderWithProviders compartido
 ```
+
+Justificación: [`docs/project/03-project-structure.md`](../docs/project/03-project-structure.md).
 
 ---
 
-## Convenciones importantes
+## Reglas de oro
 
-- **Toda llamada HTTP a la API pasa por `src/services/api/`**. No uses `fetch` directo ni `supabase.from()` en las páginas.
-- **Supabase solo se usa para Auth y Storage** desde el frontend. Las consultas a la BD van siempre a través de FastAPI.
-- El token Bearer se añade automáticamente en `client.ts` — no lo gestiones manualmente en los componentes.
+1. **Toda llamada HTTP pasa por `services/api/`**. Nunca `fetch`
+   directo, nunca `supabase.from()`.
+2. **Supabase sólo para Auth y Storage** desde el cliente
+   ([ADR-002](../docs/adr/ADR-002-migracion-baas-a-api-gateway.md)).
+3. **Validación con Zod en cliente + Pydantic en servidor** (doble
+   frontera, [ADR-005](../docs/adr/ADR-005-validacion-doble-frontera.md)).
+4. **TanStack Query para fetching**: hooks por feature, sin
+   `useEffect + setState` manual.
+
+---
+
+## Tests
+
+| Capa | Cantidad | Stack | Duración |
+|---|---|---|---|
+| Unit | 59 | Vitest + jsdom | ~0,5 s |
+| Integration | 13 | Vitest + Testing Library + userEvent | ~0,7 s |
+| E2E | 8 | Playwright chromium | ~6 s |
+
+Threshold automático en `vitest.config.ts`:
+
+```ts
+"src/lib/**": { lines: 90, functions: 90, branches: 80, statements: 90 }
+```
+
+Estrategia completa: [`docs/project/06-testing-and-quality.md`](../docs/project/06-testing-and-quality.md).
 
 ---
 
 ## Despliegue
 
-El frontend se despliega estáticamente (Cloudflare Pages, Vercel, etc.) o se sirve localmente.
+Build estático:
 
 ```bash
-pnpm build        # Genera dist/
-# Subir el contenido de dist/ a tu proveedor de hosting estático
+# Crear .env.production con valores reales
+echo "VITE_API_URL=https://api.tudominio.com" > .env.production
+echo "VITE_SUPABASE_URL=https://<ref>.supabase.co" >> .env.production
+echo "VITE_SUPABASE_PUBLISHABLE_KEY=eyJ..." >> .env.production
+
+npm run build   # genera dist/
 ```
 
-Para desarrollo conectado a la API de producción, cambia `VITE_API_URL` en `.env.local`:
-```
-VITE_API_URL=https://[tu-ddns]:8000
-```
+Servir `dist/` desde:
+
+- Reverse proxy del NAS Synology (mismo que sirve el backend), o
+- Cloudflare Pages / Vercel / Netlify para CDN global.
+
+Despliegue completo con dominio definitivo:
+[`docs/project/08-deployment.md`](../docs/project/08-deployment.md).
+
+---
+
+## Documentación relacionada
+
+| Tema | Documento |
+|---|---|
+| **Setup completo del repo** | [`docs/project/02-installation-and-setup.md`](../docs/project/02-installation-and-setup.md) |
+| **Estructura por features** | [`docs/project/03-project-structure.md`](../docs/project/03-project-structure.md) |
+| **Variables de entorno** | [`docs/project/04-configuration.md`](../docs/project/04-configuration.md) |
+| **Tests y coverage** | [`docs/project/06-testing-and-quality.md`](../docs/project/06-testing-and-quality.md) |
+| **Seguridad** | [`docs/project/07-security.md`](../docs/project/07-security.md) |
+| **Despliegue** | [`docs/project/08-deployment.md`](../docs/project/08-deployment.md) |
+| **Troubleshooting** | [`docs/project/09-troubleshooting.md`](../docs/project/09-troubleshooting.md) |
