@@ -1,18 +1,30 @@
-# 02 — Instalación y setup
+# 📥 02 · Instalación y setup
 
-## Requisitos
+> **TL;DR** · Clonar repo · instalar Husky con `npm install` raíz ·
+> levantar backend con Python venv + uvicorn · levantar frontend con
+> `npm run dev` · configurar Supabase. En 10 minutos lo tienes
+> funcionando.
+
+---
+
+## ✅ Requisitos
 
 | Herramienta | Versión mínima | Comprobar con |
 |---|---|---|
-| Git | cualquiera reciente | `git --version` |
-| Python | 3.11+ | `python --version` |
-| Node.js | 20+ (LTS) | `node --version` |
-| npm | 10+ (viene con Node 20) | `npm --version` |
-| Docker + Compose | opcional para deploy NAS | `docker --version` |
+| 📦 Git | cualquiera reciente | `git --version` |
+| 🐍 Python | **3.11+** | `python --version` |
+| 🟢 Node.js | **20+ (LTS)** | `node --version` |
+| 📦 npm | **10+** (viene con Node 20) | `npm --version` |
+| 🐳 Docker + Compose | opcional para deploy NAS | `docker --version` |
 
-> Por qué npm y no pnpm: Husky (configurado en este proyecto) usa `package.json` de raíz con `prepare: husky`. El primer `npm install` engancha los hooks automáticamente. Si usaras pnpm, tendrías que reconfigurar.
+> 💡 **Por qué npm y no pnpm**: Husky (configurado en este proyecto)
+> usa `package.json` de raíz con `prepare: husky`. El primer
+> `npm install` engancha los hooks automáticamente. Si usaras pnpm,
+> tendrías que reconfigurar.
 
-## 1. Clonar el repositorio
+---
+
+## 1️⃣ Clonar el repositorio
 
 ```bash
 git clone https://github.com/Zambudio/buenchollo-app.git
@@ -22,130 +34,188 @@ cd buenchollo-app
 npm install
 ```
 
-## 2. Backend — `buenchollo-api`
+> ✅ Tras este `npm install`, los hooks de Git están activos.
+> Cualquier commit ejecutará lint + typecheck automáticamente.
+
+---
+
+## 2️⃣ Backend — `buenchollo-api`
 
 ```bash
 cd buenchollo-api
 
-# Entorno virtual
+# 📦 Entorno virtual
 python -m venv .venv
-.venv\Scripts\Activate.ps1            # Windows PowerShell
-# source .venv/bin/activate            # Linux/Mac
+.venv\Scripts\Activate.ps1            # 🪟 Windows PowerShell
+# source .venv/bin/activate           # 🐧 Linux/Mac
 
-# Dependencias (runtime + dev para tests)
+# 🔧 Dependencias (runtime + dev para tests)
 pip install -r requirements-dev.txt
 
-# Variables de entorno
+# 🔑 Variables de entorno
 cp .env.example .env
-# Editar .env con valores reales (ver 04-configuration.md)
+# 👉 Editar .env con valores reales (ver 04-configuration.md)
 
-# Arrancar en modo desarrollo
+# 🚀 Arrancar en modo desarrollo
 uvicorn app.main:app --reload --port 8000
 ```
 
-API en `http://localhost:8000` · OpenAPI en `http://localhost:8000/docs`
-· Health en `http://localhost:8000/health`.
+### 📡 Endpoints útiles tras arrancar
 
-**Tests**:
+| URL | Para qué |
+|---|---|
+| `http://localhost:8000` | Base de la API |
+| `http://localhost:8000/docs` | 📜 OpenAPI interactivo (Swagger) |
+| `http://localhost:8000/health` | ❤️ Liveness check |
+| `http://localhost:8000/health/ready` | 🩺 Readiness (incluye latencia BD) |
+
+### 🧪 Tests
 
 ```bash
-pytest -q -m "not integration"   # 87 unitarios, ~1s, sin BD
-pytest -q                         # incluye 9 integración (necesitan Postgres real)
+pytest -q -m "not integration"   # ✅ 87 unitarios, ~1s, sin BD
+pytest -q                         # 🟡 incluye 9 integración (Postgres real)
 ```
 
-**Migraciones Alembic**: ver [`buenchollo-api/MIGRATIONS.md`](../../buenchollo-api/MIGRATIONS.md).
+> 📚 **Migraciones Alembic**: ver
+> [`buenchollo-api/MIGRATIONS.md`](../../buenchollo-api/MIGRATIONS.md).
 
-## 3. Frontend — `buenchollo-web`
+---
+
+## 3️⃣ Frontend — `buenchollo-web`
 
 ```bash
 cd buenchollo-web
 
-# Dependencias
+# 📦 Dependencias
 npm install
 
-# Variables de entorno
+# 🔑 Variables de entorno
 cp .env.example .env.local
-# Editar .env.local (VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY, VITE_API_URL)
+# 👉 Editar .env.local (ver tabla más abajo)
 
-# Arrancar
+# 🚀 Arrancar
 npm run dev
 ```
 
-Web en `http://localhost:8080` (vinxi default; salta a 8081/8082 si está ocupado).
+> 🌐 Web disponible en `http://localhost:8080` (vinxi default; salta a
+> 8081/8082 si está ocupado).
 
-**Scripts útiles**:
+### 🛠️ Scripts útiles
 
-```bash
-npm run typecheck       # tsc --noEmit (strict)
-npm run lint            # ESLint estricto
-npm run test            # Vitest watch
-npm run test:run        # Vitest one-shot (72 tests)
-npm run test:coverage   # con thresholds en src/lib/**
-npm run test:e2e        # Playwright (8 tests, levanta dev server)
-npm run quality         # lint + typecheck + test:run
-npm run quality:full    # + E2E
+| Comando | Para qué |
+|---|---|
+| `npm run typecheck` | TypeScript strict |
+| `npm run lint` | ESLint estricto |
+| `npm run test` | Vitest en modo watch |
+| `npm run test:run` | Vitest one-shot (72 tests) |
+| `npm run test:coverage` | Con thresholds en `src/lib/**` |
+| `npm run test:e2e` | Playwright (8 tests) |
+| `npm run quality` | lint + typecheck + test:run |
+| `npm run quality:full` | + E2E |
+
+---
+
+## 4️⃣ Supabase (Auth + Storage + DB)
+
+> 🎯 El proyecto requiere un proyecto Supabase configurado.
+> Es lo único que no podemos preparar por ti.
+
+### 4.1 🆕 Crear proyecto
+
+1. Entra a [supabase.com](https://supabase.com) → **New project**
+   - Elige región más cercana (p.ej. `eu-central-1`)
+2. En `Settings → API`, anota:
+
+| Credencial | Dónde se usa |
+|---|---|
+| **Project URL** | `SUPABASE_URL` (backend) y `VITE_SUPABASE_URL` (frontend) |
+| **anon public** | `VITE_SUPABASE_PUBLISHABLE_KEY` (frontend) — pública por diseño |
+| **service_role** | `SUPABASE_KEY` (backend) — 🔒 **secreta**, bypassa RLS |
+
+### 4.2 🔐 Auth con Google
+
+```
+1. Google Cloud Console
+   ├─ Crear OAuth Client ID
+   └─ Redirect URI:
+      https://<tu-supabase-ref>.supabase.co/auth/v1/callback
+
+2. Supabase → Authentication → Providers → Google
+   ├─ Pegar Client ID
+   └─ Pegar Client Secret
+
+3. Supabase → Authentication → URL Configuration
+   ├─ Site URL: http://localhost:8080
+   └─ Redirect URLs: http://localhost:8080/**
 ```
 
-## 4. Supabase (Auth + Storage + DB)
+### 4.3 💾 Base de datos
 
-El proyecto requiere un proyecto Supabase configurado. Los pasos:
+El esquema vive en dos sitios por motivos históricos:
 
-### 4.1 Crear proyecto
+```
+buenchollo-api/
+├── supabase/migrations/*.sql     ← Histórico (2026-04 a 2026-05)
+└── alembic/versions/*.py         ← Desde 2026-05-27 en adelante
+```
 
-1. [supabase.com](https://supabase.com) → New project (región más cercana, p.ej. `eu-central-1`).
-2. Copiar las credenciales que aparecen en `Settings → API`:
-   - `Project URL` → `SUPABASE_URL` (backend) y `VITE_SUPABASE_URL` (frontend).
-   - `anon public` → `VITE_SUPABASE_PUBLISHABLE_KEY` (frontend, embebida en el bundle, pública por diseño).
-   - `service_role` → `SUPABASE_KEY` (backend, **secreta**, bypassa RLS).
+> 📚 Setup completo de un proyecto Supabase nuevo:
+> [`buenchollo-api/MIGRATIONS.md`](../../buenchollo-api/MIGRATIONS.md).
 
-### 4.2 Auth con Google
+### 4.4 🔒 RLS activado
 
-1. Google Cloud Console → crear OAuth Client ID con redirect URI `https://<tu-supabase-ref>.supabase.co/auth/v1/callback`.
-2. Supabase → `Authentication → Providers → Google` → pegar Client ID + Client Secret.
-3. Supabase → `Authentication → URL Configuration`:
-   - `Site URL`: `http://localhost:8080` (dev) o tu dominio real.
-   - `Redirect URLs`: `http://localhost:8080/**` para dev.
+✅ Las **12 tablas** de `public` tienen Row Level Security activado.
+El backend usa la `service_role key` para bypassarlo de forma
+controlada ([ADR-006](../adr/ADR-006-rls-service-role.md)).
 
-### 4.3 Base de datos
+> ⚠️ **Sin RLS activado**, cualquier visitante con el `anon key`
+> podría leer la BD.
 
-El esquema vive parcialmente en `buenchollo-api/supabase/migrations/*.sql` (histórico) y se gestiona desde 2026-05-27 con Alembic.
+**Verificación**: Supabase Dashboard → `Authentication → Policies` →
+cada tabla debe tener **RLS = ON**.
 
-Pasos para sincronizar un proyecto Supabase nuevo:
+---
 
-1. Aplicar los SQL históricos de `buenchollo-api/supabase/migrations/` desde el SQL Editor de Supabase **en orden cronológico**.
-2. Crear la tabla `alembic_version` y marcar la baseline (ver [`buenchollo-api/MIGRATIONS.md`](../../buenchollo-api/MIGRATIONS.md)).
-3. Las siguientes migraciones (Alembic) se aplicarán automáticamente cada vez que el contenedor del NAS arranque (`alembic upgrade head` en el `command` del docker-compose).
+## 5️⃣ Servicios externos opcionales
 
-### 4.4 RLS activado
+| Servicio | Necesario para | Donde se obtiene |
+|---|---|---|
+| 🛒 **Amazon Creators API** | Autocomplete del panel admin | `developer.amazon.com` (Associate Creators) |
+| 🤖 **OpenAI API** | Copy del autocomplete | `platform.openai.com` |
+| ✈️ **Telegram Bot** | Publicación al canal | `@BotFather` en Telegram |
+| 🐛 **Sentry SaaS** | Error tracking | `sentry.io` (gratuito) |
 
-Las 12 tablas de `public` tienen Row Level Security activado. El backend usa la `service_role key` para bypassarlo de forma controlada (ver [ADR-006](../adr/ADR-006-rls-service-role.md)). Sin RLS activado, cualquier visitante con el `anon key` podría leer la BD.
+> ⚙️ **Sin estas credenciales el proyecto arranca igual**; sólo se
+> desactivan las features que dependen de cada una.
 
-Verificar en Supabase Dashboard → `Authentication → Policies` que cada tabla tiene RLS = ON.
+---
 
-## 5. Servicios externos opcionales
-
-- **Amazon Creators API**: necesario para el autocomplete del panel admin. Obtener credenciales en `developer.amazon.com` (Associate Creators).
-- **OpenAI API**: necesario para el copy del autocomplete. Obtener key en `platform.openai.com`.
-- **Telegram Bot**: opcional. Crear bot con `@BotFather`, anotar token + canal.
-- **Sentry SaaS**: opcional. Sin DSN, no se envía nada.
-
-Sin estas credenciales el proyecto arranca igual; sólo se desactivan las features que dependen de cada una.
-
-## 6. Comprobación final
+## ✅ Comprobación final
 
 ```bash
-# Backend
+# 🐍 Backend
 curl -s http://localhost:8000/health
-# {"status":"ok"}
+# → {"status":"ok"}
 
-# Frontend
+# 🌐 Frontend
 # Abrir http://localhost:8080 → debe cargar la home con el shell
 
-# Suite completa
-cd buenchollo-web && npm run quality        # frontend
-cd ../buenchollo-api && pytest -q -m "not integration"   # backend
+# 🧪 Suite completa
+cd buenchollo-web && npm run quality
+cd ../buenchollo-api && pytest -q -m "not integration"
 ```
 
-Si todo verde, listo para desarrollar.
+> ✅ Si todo verde → **listo para desarrollar**.
 
-Para problemas comunes ver [`09-troubleshooting.md`](09-troubleshooting.md).
+---
+
+> 🔍 Para problemas comunes ver
+> [`09 · Troubleshooting`](09-troubleshooting.md).
+
+---
+
+<p align="center">
+  <a href="01-overview.md">← Anterior: Overview</a> ·
+  <a href="00-index.md">Índice</a> ·
+  <a href="03-project-structure.md">Siguiente: Estructura →</a>
+</p>
