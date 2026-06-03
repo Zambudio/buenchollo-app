@@ -237,7 +237,7 @@ Los unitarios mockean Supabase, Amazon y la BD; los de integración usan
 una BD Postgres real (marcador `@pytest.mark.integration`). El workflow
 de GitHub Actions ejecuta únicamente los unitarios; los de integración
 se validan en local antes de cada release (ver
-[`docs/SMOKE_TEST.md`](docs/SMOKE_TEST.md)).
+[`docs/reference/SMOKE_TEST.md`](docs/reference/SMOKE_TEST.md)).
 
 **Frontend**:
 

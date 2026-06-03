@@ -392,7 +392,7 @@ cross-repo, se extrae el service en ese momento siguiendo el patrón de
 ## FASE 7 — Validación final y entrega
 
 ### 7.1 Recorrido manual exhaustivo
-- [x] Lista de pruebas (~15 flujos) en `docs/SMOKE_TEST.md`.
+- [x] Lista de pruebas (~15 flujos) en `docs/reference/SMOKE_TEST.md`.
 - [ ] Ejecutar y firmar (commit). ⏳ Pendiente — manual antes del go-live al dominio definitivo.
 
 ### 7.2 Actualizar PROJECT_STATUS.md

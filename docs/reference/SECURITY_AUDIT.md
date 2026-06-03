@@ -610,7 +610,7 @@ cliente sin filtrar stack traces.
 
 **OWASP Top 10 como marco:**
 Se ha realizado una auditoría completa contra OWASP Top 10:2021. Los
-hallazgos se documentan en `docs/SECURITY_AUDIT.md` y se han resuelto
+hallazgos se documentan en `docs/reference/SECURITY_AUDIT.md` y se han resuelto
 los 6 medios identificados. Quedan dos asunciones documentadas (JWT
 en localStorage por requisito del Supabase JS SDK, MFA admin no
 implementado por escala del proyecto).

@@ -137,7 +137,7 @@ Probado tras el fix: home, login, favoritos, comentarios, votos, panel admin
 Sprint dedicado al módulo de Seguridad del TFM. Auditoría completa
 OWASP Top 10 con 6 hallazgos medios resueltos (ninguno crítico).
 
-- `docs/SECURITY_AUDIT.md`: informe completo con threat model, mapa
+- `docs/reference/SECURITY_AUDIT.md`: informe completo con threat model, mapa
   de superficie de ataque, evaluación OWASP Top 10, hallazgos
   priorizados con cómo se explotan, impacto y cambio mínimo.
 - `docs/SECURITY.md`: política, controles, deuda asumida, plan de
@@ -181,7 +181,7 @@ Suite total automatizada: **158 tests verde**.
 
 ### 3.quater  Hardening arquitectónico F1–F7 — 2026-05-30 (release v1.0.0-tfm)
 
-Sprint final de hardening definido en [`docs/PLAN_ARQUITECTURA.md`](docs/PLAN_ARQUITECTURA.md).
+Sprint final de hardening definido en [`docs/reference/PLAN_ARQUITECTURA.md`](docs/reference/PLAN_ARQUITECTURA.md).
 30 tareas en 7 fases. Todas verdes.
 
 **F1 — Documentación arquitectónica (6 ADRs + diagrama)**
@@ -232,7 +232,7 @@ Sprint final de hardening definido en [`docs/PLAN_ARQUITECTURA.md`](docs/PLAN_AR
   minor/patch para no ahogar PRs.
 
 **F7 — Cierre**
-- `F7.1` [`docs/SMOKE_TEST.md`](docs/SMOKE_TEST.md) con guion exhaustivo manual
+- `F7.1` [`docs/reference/SMOKE_TEST.md`](docs/reference/SMOKE_TEST.md) con guion exhaustivo manual
   pre-release (10 secciones, ~50 checks).
 - `F7.2` Esta sección.
 - `F7.3` Tag `v1.0.0-tfm`.
@@ -335,7 +335,7 @@ Es el único test roto conocido.
 - [x] **Supabase RLS** activado en las 12 tablas (ver § 3.ter)
 - [ ] **Dockerfile** probado con `docker build` limpio desde el repo (no desde imagen cacheada)
 - [ ] **`categories.json`** del backend sincronizado con el catálogo definitivo de Telegram
-- [ ] **Ejecutar `docs/SMOKE_TEST.md` completo** antes del go-live al dominio definitivo
+- [ ] **Ejecutar `docs/reference/SMOKE_TEST.md` completo** antes del go-live al dominio definitivo
 
 ### Muy recomendable (todos completados en hardening F1–F7)
 - [x] ~~Migrar `explorar.tsx` e `index.tsx` a `favoritesApi`~~ (cumplido en cleanup 2026-05-26)
