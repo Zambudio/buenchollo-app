@@ -121,7 +121,7 @@ para optimizar otra cosa**:
 | **Image optimization automatizada** (WebP, sizes responsive) | Imagen original sin optimizar | Cuando se ponga CDN delante |
 | **Lighthouse-CI automatizado** | Métricas documentadas pero no automatizadas | Si se entrega a usuarios externos con SLAs |
 
-Performance budget documentado en `docs/QUALITY.md` (movido a master):
+Performance budget documentado en [`docs/master/06-calidad-testing-y-refactorizacion.md`](06-calidad-testing-y-refactorizacion.md):
 
 | Métrica | Objetivo |
 |---|---|

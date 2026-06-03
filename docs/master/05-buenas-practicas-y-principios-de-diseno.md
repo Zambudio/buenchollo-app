@@ -293,7 +293,7 @@ documentado y commit por tarea. Métricas finales:
 
 ### Calidad del software Q1–Q7 (2026-05-30)
 
-`docs/QUALITY.md` (movido a `docs/master/06`). 7 fases con setup
+[`docs/master/06-calidad-testing-y-refactorizacion.md`](06-calidad-testing-y-refactorizacion.md) (anteriormente `docs/QUALITY.md`). 7 fases con setup
 Vitest, Testing Library, Playwright, Husky, CI con coverage, docs.
 
 ### Seguridad S1–S7 (2026-06-02)
