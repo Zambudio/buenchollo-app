@@ -21,9 +21,9 @@ El proyecto necesitaba una decisión documentada sobre:
 4. Qué decisiones siguen siendo exclusivamente humanas.
 5. Qué riesgos asume el uso de IA y cómo se mitigan.
 
-Esta decisión necesitaba quedar firmada como ADR para defender
-públicamente ante tribunal el papel que la IA ha tenido en
-BuenCholloTech.
+Esta decisión necesitaba quedar firmada como ADR para que cualquier
+persona que evalúe el proyecto pueda entender de forma explícita el
+papel que la IA ha tenido en BuenCholloTech.
 
 ## Decisión
 
@@ -163,9 +163,9 @@ Decisiones que siguen siendo exclusivamente humanas:
 
 ### Por qué documentar todo esto
 
-- Defensa ante tribunal: "¿qué papel ha tenido la IA?" tiene una
-  respuesta concreta con evidencia (CLAUDE.md, commits, ADRs,
-  documentos).
+- Trazabilidad: "¿qué papel ha tenido la IA?" tiene una respuesta
+  concreta con evidencia (CLAUDE.md, commits, ADRs, documentos)
+  que cualquier evaluador puede verificar.
 - Reproducibilidad: alguien puede leer este ADR y replicar el método
   en su propio proyecto.
 

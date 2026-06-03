@@ -269,9 +269,10 @@ La documentación se organiza en **dos bloques** claramente separados:
 | [`08-deployment.md`](docs/project/08-deployment.md) | NAS Synology + Docker, dominio definitivo |
 | [`09-troubleshooting.md`](docs/project/09-troubleshooting.md) | Errores comunes y soluciones |
 
-### 🎓 Defensa del TFM — [`docs/master/`](docs/master/00-index.md)
+### 🎓 Bloque académico del Máster — [`docs/master/`](docs/master/00-index.md)
 
-Documentación formal para defender el proyecto ante tribunal.
+Documentación formal con la justificación de las decisiones técnicas
+aplicadas al proyecto.
 
 | Documento | Contenido |
 |---|---|

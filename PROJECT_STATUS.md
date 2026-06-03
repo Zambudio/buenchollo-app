@@ -173,7 +173,7 @@ línea de test. Tras este sprint:
 - CI GitHub Actions ampliado: 4 jobs (backend, frontend con coverage,
   e2e Playwright). Artifacts subidos en cada run / en fallo.
 - Documento [`docs/master/06-calidad-testing-y-refactorizacion.md`](docs/master/06-calidad-testing-y-refactorizacion.md) con pirámide, coverage
-  100/80/0, métricas accionables, deuda asumida y defensa ante tribunal.
+  100/80/0, métricas accionables y deuda asumida documentada.
 
 Suite total automatizada: **158 tests verde**.
 

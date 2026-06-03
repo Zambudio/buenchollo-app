@@ -18,8 +18,8 @@ JWT contra Supabase, RLS activado en todas las tablas, ADR-002 que
 prohíbe llamadas directas a la BD desde el cliente). **No detecto
 vulnerabilidades críticas explotables** ni credenciales hardcoded en el
 código fuente. Sin embargo, hay **6 hallazgos medios** y varios bajos
-que conviene resolver antes de la entrega para que la defensa ante
-tribunal sea sólida.
+que conviene resolver antes de la entrega para dejar una postura de
+seguridad sólida.
 
 **Riesgos principales (en orden):**
 
@@ -45,7 +45,8 @@ tribunal sea sólida.
 
 **Recomendación general:** Aplicar las 6 mejoras de severidad media en
 3-4 commits pequeños y seguros. Documentar el resto como deuda asumida.
-El proyecto queda defendible al 100% para tribunal.
+Tras esos cambios el proyecto queda con una postura de seguridad
+sólida y verificable.
 
 ---
 
@@ -555,7 +556,7 @@ en CI. Coste +2 min, valor educativo alto para TFM.
    - Plan de respuesta a incidentes (§10).
    - Checklist pre-go-live al dominio definitivo (verificación NAS,
      HSTS, certificados Let's Encrypt).
-   - Defensa ante tribunal (§14).
+   - Resumen para evaluación del proyecto (§14).
 10. **`npm audit fix`** en `buenchollo-web` (corrige los 17 moderate
     de tooling).
 
@@ -588,7 +589,7 @@ Tras aplicar los puntos 1-7 del plan (imprescindible + recomendable):
 
 ---
 
-## 14. Defensa ante el tribunal (borrador)
+## 14. Resumen para evaluación del proyecto (borrador)
 
 > *Para incluir en la memoria una vez aplicado el plan.*
 
