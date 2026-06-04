@@ -27,6 +27,7 @@
 | `LOG_LEVEL` | `INFO` | `DEBUG` · `INFO` · `WARNING` · `ERROR`. ⚠️ Nunca DEBUG en prod |
 | `LOG_FORMAT` | `json` | `json` (Loki/ELK) o `text` (legible local) |
 | `RATE_LIMIT_ENABLED` | `true` | Desactiva todos los `@limiter.limit` sin tocar código |
+| `CLOUDFLARE_DDNS_TOKEN` | (vacío) | Token "Edit zone DNS" de Cloudflare. Lo usa el contenedor `cloudflare-ddns` para mantener `api.<dominio>` apuntando a la IP pública del NAS (IP dinámica) |
 
 ### 🐛 Sentry (opcional)
 

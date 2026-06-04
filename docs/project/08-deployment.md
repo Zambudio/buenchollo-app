@@ -151,28 +151,51 @@ docker-compose up -d
 
 ---
 
-## 🌐 Frontend en producción
+## 🌐 Frontend en producción — Cloudflare Workers
 
-### 📦 Build estático
+> 🎯 **Vía elegida**: el frontend es **TanStack Start** (SSR), no un SPA
+> estático. Se despliega como un **Cloudflare Worker** (config en
+> `buenchollo-web/wrangler.jsonc`, `main: @tanstack/react-start/server-entry`).
+> El NAS solo aloja la API. El Worker renderiza en el edge y sirve los
+> estáticos de `dist/client`.
+
+### 📦 Build
 
 ```bash
 cd buenchollo-web
-
-# Crear .env.production con valores reales
-echo "VITE_API_URL=https://api.tudominio.com" > .env.production
-echo "VITE_SUPABASE_URL=https://<ref>.supabase.co" >> .env.production
-echo "VITE_SUPABASE_PUBLISHABLE_KEY=eyJ..." >> .env.production
-
-npm run build
-# Genera dist/ con los archivos estáticos
+npm run build      # genera dist/client (estáticos) + dist/server (worker SSR)
 ```
 
-### 🌍 Dónde servir `dist/`
+### 🚀 Despliegue
 
-| Opción | Cuándo |
-|---|---|
-| 🏠 Reverse proxy del NAS apuntando a Nginx local | Coste cero, control total |
-| ☁️ Cloudflare Pages / Vercel / Netlify | CDN global, ideal si la audiencia es internacional |
+Dos opciones (elegir una):
+
+| Opción | Cómo | Previews por rama |
+|---|---|---|
+| 🔗 Workers Builds (Git) | `Workers & Pages → Create → Workers → Connect to Git`, root `buenchollo-web`, build `npm run build`, deploy `wrangler deploy` | ✅ automáticos |
+| 💻 Wrangler CLI | `cd buenchollo-web && npx wrangler deploy` | manual (`--name` distinto) |
+
+> 💡 **Recomendado**: Workers Builds conectado al repo. Push a `main` →
+> deploy a producción; push a otra rama → **versión preview** con su propia
+> URL `*.workers.dev`. Aísla cada rama sin tocar producción.
+
+### 🔑 Variables de entorno (build-time)
+
+> ⚠️ Los `VITE_*` se embeben en el bundle al construir, **no** en un
+> `.env.production` del repo (no existe ni debe existir). En Workers Builds se
+> definen como *build variables* en el panel:
+
+```
+VITE_API_URL=https://api.tudominio.com
+VITE_SUPABASE_URL=https://<ref>.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=eyJ...   # anon key (pública por diseño)
+```
+
+### 🌍 Dominio propio
+
+`Worker → Settings → Domains & Routes → Add Custom Domain` →
+`tudominio.com` y `www.tudominio.com`. Cloudflare crea los registros DNS
+automáticamente (no hace falta apuntar a la IP del NAS).
 
 ---
 
@@ -200,16 +223,19 @@ Cuando BuenCholloTech se mueva de DDNS Synology a su propio dominio
   `https://www.buenchollotech.com/**`
 - 🗑️ Eliminar `localhost`
 
-### 🌐 DNS (Cloudflare recomendado)
+### 🌐 DNS (Cloudflare)
 
-| Tipo | Nombre | Valor | Proxy |
-|---|---|---|---|
-| A | `@` | IP pública del NAS | ✅ |
-| A | `www` | IP pública del NAS | ✅ |
-| A | `api` | IP pública del NAS | ✅ |
+| Tipo | Nombre | Valor | Proxy | Quién lo crea |
+|---|---|---|---|---|
+| — | `@` | Worker `buenchollotech` | ✅ | Cloudflare al añadir Custom Domain al Worker |
+| — | `www` | Worker `buenchollotech` | ✅ | Cloudflare al añadir Custom Domain al Worker |
+| A | `api` | IP pública del NAS | ✅ | Manual + lo mantiene `cloudflare-ddns` |
 
-> 💡 Con proxy de Cloudflare activo, la IP real del NAS queda oculta
-> y ganamos CDN + protección DDoS básica.
+> 💡 El frontend (`@`, `www`) lo resuelve el Worker (Cloudflare crea su ruta
+> al añadir el Custom Domain). Solo `api` apunta al NAS; con proxy activo su IP
+> real queda oculta (CDN + DDoS básica). Como la IP es **dinámica**, el
+> contenedor `cloudflare-ddns` actualiza el registro `api` automáticamente —
+> ver `docker-compose.yml`.
 
 ### 🔄 IP dinámica → DDNS Cloudflare
 

@@ -113,17 +113,32 @@ Estilo **Conventional Commits**:
 
 ## 🌿 Ramas
 
+Desde que la web es **pública** (`tudominio.com`, frontend en Cloudflare
+Workers), `main` siempre está desplegado. Para no romper producción, el
+desarrollo pasa por feature branches con preview:
+
 ```
-main  ← única rama estable. CI verde permanente.
+main  ← rama estable. Cada push despliega a tudominio.com (Cloudflare Workers).
        │
-       └─ Para cambios grandes (sprints F1-F7, Q1-Q7, S1-S7):
-          commits pequeños directos a main, cada uno verificado en
-          local antes del push.
+feat/lo-que-sea
+       │  push  →  Workers Builds construye una VERSIÓN PREVIEW automática:
+       │           https://<hash>-buenchollotech.<cuenta>.workers.dev
+       │           (web pública aislada, NO toca producción)
+       ▼
+   PR feat/… → main  →  revisar  →  merge  →  deploy a producción
 ```
 
-> 💡 No hay PR workflow estricto porque el proyecto tiene un único
-> mantenedor. Si entrara un segundo dev, pasaríamos a feature
-> branches + PR review.
+### 🧪 Dónde se prueba cada cosa
+
+| Entorno | URL | Para qué |
+|---|---|---|
+| 🖥️ Local | `localhost:8080` + API `localhost:8000` | Día a día, hot reload, no toca prod |
+| 🔍 Preview | `*.workers.dev` (por rama) | Validar una rama como web pública real |
+| 🌐 Producción | `tudominio.com` | Solo tras merge a `main` |
+
+> 🔴 **Regla de oro con web pública**: nunca commits directos a `main`.
+> Siempre rama → preview → PR → merge. El backend del NAS se actualiza
+> aparte (`git pull` + `docker-compose up -d`) y solo si la rama tocó la API.
 
 ---
 
