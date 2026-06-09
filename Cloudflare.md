@@ -96,14 +96,27 @@ Cloudflare → validar en esa URL (la API se prueba en localhost o contra la rea
     container_name: buenchollo-cloudflared
     restart: always
     command: tunnel --no-autoupdate run
-    environment:
-      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    env_file:
+      - .env
     depends_on:
       - buenchollo-api
 ```
 
-En el `.env` del NAS: `CLOUDFLARE_TUNNEL_TOKEN=eyJ...`. Luego Container Manager
-→ Build/Up (o `docker-compose up -d`).
+En el `.env` del NAS: **`TUNNEL_TOKEN=eyJ...`** (cloudflared lee `TUNNEL_TOKEN`
+de forma nativa).
+
+> ⚠️ **Aprendido a la fuerza (Synology Container Manager):**
+> 1. CM **no interpola** `${VAR}` en el YAML → usar **`env_file`**, no
+>    `environment: - X=${VAR}`.
+> 2. La variable debe llamarse **`TUNNEL_TOKEN`** (no `CLOUDFLARE_TUNNEL_TOKEN`).
+> 3. CM guarda **su propia copia** del compose; editar el fichero en disco no
+>    basta — hay que reflejarlo en la pestaña *Configuraciones de YAML*.
+> 4. **"Guardar"/"Iniciar" a veces solo REINICIA** el contenedor (conserva el
+>    entorno antiguo, token vacío). Para que tome el `.env` nuevo hay que
+>    **RECREAR** el contenedor: borrarlo (Contenedor → Eliminar) y recrear, o
+>    por SSH `docker compose -p bc-api up -d --force-recreate cloudflared`.
+> 5. Verificar que el token entró: `docker exec buenchollo-cloudflared printenv
+>    TUNNEL_TOKEN | cut -c1-12`.
 
 **Comprobaciones:**
 ```bash
@@ -269,3 +282,12 @@ curl -sI https://buenchollotech.com | findstr /I "strict-transport content-secur
 > Anotar aquí fecha + qué se hizo, para no perder el hilo entre sesiones.
 
 - 2026-06-09 — Creada rama `develop` y este `Cloudflare.md`. Pendiente: empezar por T1.
+- 2026-06-09 — T1.1 (túnel `buenchollo-nas`) y T1.2 (public hostname `api` →
+  `buenchollo-api:8000`) hechos. T2 hecho (borrado DNS `api → synology.me`).
+  `cloudflared` añadido al `docker-compose.yml` (pasado de `environment:${}` a
+  `env_file`). `.env` del NAS con `TUNNEL_TOKEN`. **T1.3 BLOQUEADO**: el
+  contenedor `cloudflared` arranca sin token (`requires the ID or name`) porque
+  CM lo **reinicia** en vez de **recrearlo**. Ficheros verificados OK. **Acción
+  al volver:** recrear el contenedor (Opción A borrar+recrear en CM, u Opción B
+  SSH `docker compose -p bc-api up -d --force-recreate cloudflared`) y verificar
+  con `docker exec ... printenv TUNNEL_TOKEN`. Después: T3.
