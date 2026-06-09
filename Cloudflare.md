@@ -142,7 +142,18 @@ acceso anterior (`embyzambu.synology.me:8000`) sigue intacto por separado.
 
 ---
 
-### ⬜ T3 — Cutover: frontend → API nueva + cerrar CORS + redeploy · 🟡
+### ✅ T3 — Cutover: frontend → API nueva + cerrar CORS + redeploy · 🟡 — HECHO (2026-06-09)
+
+> ⚠️ **OJO con `CORS_ORIGINS` en el `.env`**: pydantic-settings decodifica el
+> valor como **JSON** (es `list[str]`), así que la lista separada por comas
+> **PETÉA el arranque** (`SettingsError: error parsing value for field
+> "cors_origins"` → 502). Hay que ponerlo como **array JSON**:
+> `CORS_ORIGINS=["https://buenchollotech.com","https://www.buenchollotech.com"]`
+> (Pendiente: arreglar `config.py` con `NoDecode` para aceptar comas como dice
+> el `.env.example`, y corregir el ejemplo.)
+> Recuerda: el frontend (Worker) solo se actualiza al hacer build de **`main`**
+> (los builds de `develop` son previews). Y recrear el contenedor para releer
+> el `.env` (reiniciar no basta).
 
 **Por qué:** el Worker de prod aún llama a `embyzambu.synology.me:8000`.
 
@@ -301,3 +312,12 @@ curl -sI https://buenchollotech.com | findstr /I "strict-transport content-secur
   NAS → para cambios en el `.env` del NAS, editarlo **directamente en el NAS**.
   🔐 Pendiente: rotar el TUNNEL_TOKEN (quedó en texto plano en el chat).
   **Siguiente: T3** (VITE_API_URL→api.buenchollotech.com + CORS/APP_ENV prod).
+- 2026-06-09 — ✅ **T3 HECHO**. Frontend de prod apunta a api.buenchollotech.com
+  (build de `main` de16b09). API en `APP_ENV=production` y CORS cerrado a
+  `buenchollotech.com`/`www`. Sustos resueltos: (1) los builds de `develop` son
+  previews → producción necesita build de `main`; (2) `CORS_ORIGINS` debe ir en
+  formato **array JSON** o pydantic-settings peta (502); (3) recrear el
+  contenedor para releer el `.env`. Además se **excluyó `.env` del sync de
+  SynologyDrive** (PC-local y NAS-prod ahora independientes).
+  **Pendientes:** T4 (TLS/HSTS), T5 (redirect www), T6 (WAF/rate/bots);
+  rotar TUNNEL_TOKEN; arreglar `config.py` (cors comma-separated) + `.env.example`.
