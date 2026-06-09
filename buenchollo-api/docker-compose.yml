@@ -17,18 +17,18 @@ services:
     #    cambia a:  command: uvicorn app.main:app --host 0.0.0.0 --port 8000
     command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
 
-  # Cloudflare DDNS — mantiene api.<dominio> apuntando a la IP pública del NAS
-  # aunque el ISP la cambie (IP dinámica). Descomentar cuando tengas:
-  #   1) El dominio en Cloudflare (zona activa).
-  #   2) Un token de API "Edit zone DNS" en .env como CLOUDFLARE_DDNS_TOKEN.
-  #   3) Un registro A "api" creado en Cloudflare (con proxy activado).
-  # Ajusta ZONE/SUBDOMAIN a tu dominio real.
-  # cloudflare-ddns:
-  #   image: oznu/cloudflare-ddns:latest
-  #   container_name: buenchollo-ddns
-  #   restart: always
-  #   environment:
-  #     - API_KEY=${CLOUDFLARE_DDNS_TOKEN}
-  #     - ZONE=tudominio.com
-  #     - SUBDOMAIN=api
-  #     - PROXIED=true
+  # Cloudflare Tunnel — expone la API en api.buenchollotech.com SIN abrir puertos
+  # ni depender de la IP pública (conexión saliente). Por estar en este mismo
+  # compose, alcanza la API por el nombre de servicio: http://buenchollo-api:8000
+  # (ese es el destino que se configura en el Public Hostname del túnel).
+  # Requisito: CLOUDFLARE_TUNNEL_TOKEN en el .env del NAS (token del túnel creado
+  # en Zero Trust → Tunnels). Con túnel NO se necesita DDNS ni abrir el 443.
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: buenchollo-cloudflared
+    restart: always
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - buenchollo-api
