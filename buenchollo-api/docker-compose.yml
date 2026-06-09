@@ -21,14 +21,18 @@ services:
   # ni depender de la IP pública (conexión saliente). Por estar en este mismo
   # compose, alcanza la API por el nombre de servicio: http://buenchollo-api:8000
   # (ese es el destino que se configura en el Public Hostname del túnel).
-  # Requisito: CLOUDFLARE_TUNNEL_TOKEN en el .env del NAS (token del túnel creado
-  # en Zero Trust → Tunnels). Con túnel NO se necesita DDNS ni abrir el 443.
+  # Requisito: TUNNEL_TOKEN en el .env del NAS (token del túnel creado en
+  # Zero Trust → Tunnels). cloudflared lee la variable TUNNEL_TOKEN del entorno.
+  # Usamos env_file (no `environment: ${...}`) porque Synology Container Manager
+  # no interpola variables ${...} en el YAML, pero sí inyecta env_file.
+  # Con túnel NO se necesita DDNS ni abrir el 443.
   cloudflared:
     image: cloudflare/cloudflared:latest
     container_name: buenchollo-cloudflared
     restart: always
     command: tunnel --no-autoupdate run
-    environment:
-      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    env_file:
+      - .env
     depends_on:
       - buenchollo-api
+
