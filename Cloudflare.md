@@ -70,7 +70,7 @@ Cloudflare → validar en esa URL (la API se prueba en localhost o contra la rea
 
 > Marca `[x]` al terminar cada una. Riesgo: 🟢 bajo · 🟡 medio · 🔴 alto.
 
-### ⬜ T1 — Crear y desplegar Cloudflare Tunnel para `api.buenchollotech.com` · 🟡
+### ✅ T1 — Crear y desplegar Cloudflare Tunnel para `api.buenchollotech.com` · 🟡 — HECHO (2026-06-09)
 
 **Por qué:** expone la API del NAS sin abrir puertos ni depender de IP fija.
 
@@ -130,7 +130,7 @@ acceso anterior (`embyzambu.synology.me:8000`) sigue intacto por separado.
 
 ---
 
-### ⬜ T2 — Borrar DNS `api → embyzambu.synology.me` · 🟢
+### ✅ T2 — Borrar DNS `api → embyzambu.synology.me` · 🟢 — HECHO (2026-06-09)
 
 **Por qué:** choca con el túnel (corrección §3.1).
 
@@ -291,3 +291,13 @@ curl -sI https://buenchollotech.com | findstr /I "strict-transport content-secur
   al volver:** recrear el contenedor (Opción A borrar+recrear en CM, u Opción B
   SSH `docker compose -p bc-api up -d --force-recreate cloudflared`) y verificar
   con `docker exec ... printenv TUNNEL_TOKEN`. Después: T3.
+- 2026-06-09 — ✅ **T1 RESUELTO**. Causa final: el `.env` del **NAS** no tenía
+  la línea `TUNNEL_TOKEN` (SynologyDrive **no la sincronizó** desde el PC —
+  posible conflicto). Solución: añadir `TUNNEL_TOKEN` directamente en el `.env`
+  del NAS + `sudo docker compose -p bc-api up -d --force-recreate cloudflared`
+  (por SSH). Túnel HEALTHY; `https://api.buenchollotech.com/health` → ok desde
+  fuera (pasa por Cloudflare). **T1 y T2 COMPLETADOS.**
+  ⚠️ Pendiente investigar: SynologyDrive no sincroniza fiablemente el `.env` al
+  NAS → para cambios en el `.env` del NAS, editarlo **directamente en el NAS**.
+  🔐 Pendiente: rotar el TUNNEL_TOKEN (quedó en texto plano en el chat).
+  **Siguiente: T3** (VITE_API_URL→api.buenchollotech.com + CORS/APP_ENV prod).
