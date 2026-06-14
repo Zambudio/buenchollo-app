@@ -14,6 +14,11 @@ updates:
     groups:
       python-minor-patch:
         update-types: [minor, patch]
+    ignore:
+      # No proponer saltos de versión MAYOR (rompen y generan PRs en rojo).
+      # Se siguen recibiendo minor/patch (agrupados) y parches de seguridad.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: npm
     directory: /buenchollo-web
@@ -30,6 +35,11 @@ updates:
         patterns: ["@radix-ui/*"]
       tanstack:
         patterns: ["@tanstack/*"]
+    ignore:
+      # No proponer saltos de versión MAYOR (rompen el build y dejan PRs en rojo).
+      # Se siguen recibiendo minor/patch (agrupados) y parches de seguridad.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
