@@ -72,7 +72,7 @@ Convive con SQL histórico pre-2026-05-27 y nuevas migraciones Alembic
 desde el baseline `20260527120000_baseline.py` (vacío, marca el punto
 de cambio de formato).
 
-> 📚 Detalle: [`buenchollo-api/MIGRATIONS.md`](../../buenchollo-api/MIGRATIONS.md).
+> 📚 Detalle: [`MIGRATIONS.md`](../guides/MIGRATIONS.md).
 
 ---
 

@@ -119,6 +119,18 @@ El dominio no depende de FastAPI, SQLAlchemy, ni ningún framework externo.
 - **Documentación**: actualizar README o docs si cambia el uso del sistema. Proponer ADR cuando haya decisión técnica relevante.
 - **No romper** funcionalidad existente ni tests existentes.
 
+### Flujo de ramas (web en producción)
+
+- La web está **en producción** en `buenchollotech.com`. `main` = producción; `develop` = integración/pruebas.
+- Ciclo permanente: trabajar en `develop` → push (genera *preview* en Cloudflare) → validar → `merge develop → main` (deploy a producción). **Nunca** commits directos a `main`.
+- **Cambios de dependencias / framework**: solo en `develop` y con CI en verde antes de tocar `main` (un bump a `main` sin verificar puede romper el build de producción).
+- **Cambios de panel Cloudflare / `.env` del NAS**: se aplican directos a prod; cada uno con su verificación y rollback. El `.env` del NAS está **excluido del sync de SynologyDrive** (independiente del `.env` local).
+- Ante un **aspecto crítico** (entorno roto, CI/hooks fallando, datos/seguridad en riesgo): **parar y resolverlo** antes de avanzar; no ofrecer "seguir o arreglar".
+
+### Memoria y contexto
+
+El asistente mantiene **memoria persistente** de las preferencias de Pedro y el estado del proyecto (rol, forma de trabajo iterativa, flujo `main`/`develop`, lecciones aprendidas). La guía operativa **viva** de la infraestructura (Cloudflare, túnel, hardening) está en [`docs/guides/Cloudflare.md`](docs/guides/Cloudflare.md); úsala y mantenla al día al tocar infraestructura.
+
 ---
 
 ## Workflows disponibles (`.agents/workflows/`)
@@ -136,13 +148,13 @@ El dominio no depende de FastAPI, SQLAlchemy, ni ningún framework externo.
 
 ---
 
-## Estado actual (2026-05-26)
+## Estado actual (2026-06-14)
 
-- Fases 1-7 del plan de refactorización: **completadas**
-- Refactor de buenas prácticas para TFM: **completado** — ver `PROJECT_STATUS.md` § 3.bis
-- Tests unitarios: 21 verdes (DealService, AlertMatcher, matches_alert) + integración
-- TypeScript: `tsc --noEmit` 0 errores
-- Panel de admin (CRUD chollos + usuarios): **funcionando en producción**
-- Telegram: aún usa Supabase Functions — pendiente migrar a `POST /telegram/notify`
-- Alembic: pendiente configurar migraciones desde el backend
-- Deuda ADR-002 restante: 4 rutas (ver `PROJECT_STATUS.md` § 4)
+- **Web en producción** en `https://buenchollotech.com` (frontend TanStack Start SSR como **Cloudflare Worker**; deploy automático al hacer push a `main` vía Workers Builds).
+- **API** FastAPI en el NAS Synology, expuesta en `https://api.buenchollotech.com` vía **Cloudflare Tunnel** (sin abrir puertos, sin DDNS). `APP_ENV=production`, CORS cerrado al dominio.
+- **Cloudflare endurecido**: TLS Full (strict) + HSTS, redirect `www`→raíz, WAF + rate limiting + Bot Fight Mode. Detalle y bitácora en [`docs/guides/Cloudflare.md`](docs/guides/Cloudflare.md).
+- Login Google (Supabase) OK · Panel admin funcionando · CI de `main` en verde · flujo `main`/`develop` operativo.
+- **Deuda técnica** (no urgente):
+  - `config.py` debe aceptar `CORS_ORIGINS` separado por comas (hoy exige formato JSON array, si no peta el arranque) + corregir `.env.example`.
+  - Telegram: aún usa Supabase Functions — pendiente migrar a `POST /telegram/notify`.
+  - Deuda ADR-002 restante: 4 rutas (ver `PROJECT_STATUS.md` § 4).

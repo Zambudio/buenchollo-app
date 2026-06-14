@@ -180,7 +180,7 @@ Alembic.
 > ✅ Cada arranque del contenedor ejecuta `alembic upgrade head`
 > automáticamente antes de uvicorn.
 
-📚 Setup: [`MIGRATIONS.md`](MIGRATIONS.md).
+📚 Setup: [`MIGRATIONS.md`](../docs/guides/MIGRATIONS.md).
 
 ---
 
@@ -214,5 +214,5 @@ curl -s https://embyzambu.synology.me:8000/health
 | 🛡️ **Seguridad operativa** | [`docs/project/07`](../docs/project/07-security.md) |
 | 🚀 **Despliegue NAS + dominio** | [`docs/project/08`](../docs/project/08-deployment.md) |
 | 🔍 **Troubleshooting** | [`docs/project/09`](../docs/project/09-troubleshooting.md) |
-| 🛠️ **Migraciones Alembic** | [`MIGRATIONS.md`](MIGRATIONS.md) |
+| 🛠️ **Migraciones Alembic** | [`MIGRATIONS.md`](../docs/guides/MIGRATIONS.md) |
 | 🛡️ **Política de seguridad** | [`SECURITY.md`](../SECURITY.md) (raíz) |

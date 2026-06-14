@@ -51,7 +51,7 @@
 | [`../master/`](../master/00-index.md) | 🎓 **Bloque académico** del Máster — explicación formal de decisiones |
 | [`../adr/`](../adr/00-index.md) | 📋 **9 ADRs** firmados y datados (decisiones arquitectónicas) |
 | [`../reference/`](../reference/) | 📚 Referencias densas (plan hardening, auditoría OWASP, smoke test) |
-| [`../../buenchollo-api/MIGRATIONS.md`](../../buenchollo-api/MIGRATIONS.md) | 🛠️ Setup Alembic |
+| [`../guides/MIGRATIONS.md`](../guides/MIGRATIONS.md) | 🛠️ Setup Alembic |
 | [`../archive/`](../archive/) | 🗄️ Documentación histórica preservada con índice de motivos |
 
 ---

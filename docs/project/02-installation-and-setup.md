@@ -77,7 +77,7 @@ pytest -q                         # 🟡 incluye 9 integración (Postgres real)
 ```
 
 > 📚 **Migraciones Alembic**: ver
-> [`buenchollo-api/MIGRATIONS.md`](../../buenchollo-api/MIGRATIONS.md).
+> [`MIGRATIONS.md`](../guides/MIGRATIONS.md).
 
 ---
 
@@ -160,7 +160,7 @@ buenchollo-api/
 ```
 
 > 📚 Setup completo de un proyecto Supabase nuevo:
-> [`buenchollo-api/MIGRATIONS.md`](../../buenchollo-api/MIGRATIONS.md).
+> [`MIGRATIONS.md`](../guides/MIGRATIONS.md).
 
 ### 4.4 🔒 RLS activado
 

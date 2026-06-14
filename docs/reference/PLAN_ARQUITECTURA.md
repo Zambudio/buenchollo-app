@@ -99,7 +99,7 @@
 - [x] Migración baseline `alembic/versions/20260527120000_baseline.py`
   vacía a propósito para marcar el punto donde SQL legacy y Alembic se
   encuentran. Listo para `alembic stamp head` en producción.
-- [x] `buenchollo-api/MIGRATIONS.md` documenta setup inicial, flujo
+- [x] `docs/guides/MIGRATIONS.md` documenta setup inicial, flujo
   diario, reglas y troubleshooting.
 - **Acción pendiente del operador** (una sola vez, en NAS y en local):
   ejecutar `alembic stamp head` para registrar la baseline como aplicada.

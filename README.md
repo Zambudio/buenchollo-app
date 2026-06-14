@@ -338,7 +338,7 @@ La documentación se organiza en **dos bloques** claramente separados:
 | [`PROJECT_STATUS.md`](PROJECT_STATUS.md) | 📅 Bitácora viva (CHANGELOG en prosa) |
 | [`SECURITY.md`](SECURITY.md) | 🛡️ Política de divulgación responsable |
 | [`CLAUDE.md`](CLAUDE.md) | 🤖 Instrucciones permanentes para asistentes IA |
-| [`buenchollo-api/MIGRATIONS.md`](buenchollo-api/MIGRATIONS.md) | 🛠️ Setup Alembic |
+| [`docs/guides/MIGRATIONS.md`](docs/guides/MIGRATIONS.md) | 🛠️ Setup Alembic |
 
 ---
 
