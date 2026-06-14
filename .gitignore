@@ -70,7 +70,10 @@ buenchollo-api/creatorsapi_python_sdk/
 buenchollo-api/*.whl
 
 # ─── Claude Code ────────────────────────────────────────────────────────────
-.claude/
+# Se ignora todo .claude/ (settings.json, settings.local.json) EXCEPTO la
+# memoria de trabajo, que sí se versiona para tenerla en el proyecto.
+.claude/*
+!.claude/memory/
 
 # ─── Alembic (versiones generadas localmente si aplica) ─────────────────────
 # alembic/versions/   # descomenta si no quieres versionar las migraciones

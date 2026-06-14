@@ -129,7 +129,9 @@ El dominio no depende de FastAPI, SQLAlchemy, ni ningún framework externo.
 
 ### Memoria y contexto
 
-El asistente mantiene **memoria persistente** de las preferencias de Pedro y el estado del proyecto (rol, forma de trabajo iterativa, flujo `main`/`develop`, lecciones aprendidas). La guía operativa **viva** de la infraestructura (Cloudflare, túnel, hardening) está en [`docs/guides/Cloudflare.md`](docs/guides/Cloudflare.md); úsala y mantenla al día al tocar infraestructura.
+Las **normas de trabajo y la memoria del proyecto** viven **dentro del repo** en [`.claude/memory/`](.claude/memory/) (versionadas). El índice [`.claude/memory/MEMORY.md`](.claude/memory/MEMORY.md) lista cada nota: forma de trabajo iterativa, no continuar con lo crítico, deps solo en `develop`, método de revisión/auditoría, estado del proyecto, etc. **Consúltalas al inicio de cada sesión** y mantenlas al día (una nota por fichero, con frontmatter; actualiza también el índice).
+
+La guía operativa **viva** de la infraestructura (Cloudflare, túnel, hardening) está en [`docs/guides/Cloudflare.md`](docs/guides/Cloudflare.md); úsala y mantenla al día al tocar infraestructura.
 
 ---
 
