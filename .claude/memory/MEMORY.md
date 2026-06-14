@@ -4,5 +4,6 @@
 - [Deps/framework solo en develop con CI verde](feedback_deps_solo_en_develop.md) — nunca empujar bumps a main sin verificar; main = producción y se despliega solo.
 - [Método de revisión/auditoría/documentación](feedback_metodo_revision_auditoria.md) — analizar antes de tocar, rol revisor senior pragmático, criterios SOLID/DRY/antipatrones, fases, formato de informe, doc interna vs máster, seguridad/testing transversal.
 - [Método de auditoría de arquitectura](feedback_metodo_arquitectura.md) — entender antes de proponer; monolito modular + Clean/Hexagonal parciales; sin micro/EDA prematuros; criterios, fases, formato ARQ-XX e informe; defensa ante tribunal.
+- [Método de auditoría de calidad/testing](feedback_metodo_calidad.md) — auditar antes de tocar; calidad defendible no decorativa; pirámide de testing, coverage estratégico 100/80/0, smells/deuda, quality gates, métricas accionables, performance; fases, formatos SMELL/DEBT e informe.
 - [Synology Drive corrompe node_modules](project_synology_excluir_node_modules.md) — el repo está en SynologyDrive; excluir node_modules/.venv/dist/.git/.env del sync; restaurar con npm install.
 - [Estado del proyecto a 2026-06](project_estado_2026-06.md) — web en producción en buenchollotech.com (Cloudflare Workers + Tunnel); hardening completo; flujo main/develop; guía viva en `docs/guides/Cloudflare.md`.

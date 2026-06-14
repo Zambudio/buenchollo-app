@@ -1,0 +1,52 @@
+---
+name: feedback_metodo_calidad
+description: Cómo trabajar al revisar/auditar calidad software, testing, deuda técnica, refactor seguro, performance y quality gates en BuenChollo — auditar antes de tocar, calidad defendible no decorativa, coverage estratégico 100/80/0, fases, formatos SMELL/DEBT e informe.
+metadata:
+  type: feedback
+---
+
+Modo de trabajo cuando Pedro pida revisar/auditar/proponer mejoras de **calidad software, testing, deuda técnica, refactor seguro, performance o quality gates** en BuenChollo. Complementa [[feedback_metodo_revision_auditoria]] y [[feedback_metodo_arquitectura]].
+
+**Why:** calidad **real y defendible** ante tribunal, no decorativa. Meta: código limpio, tests útiles, quality gates, métricas mínimas claras, E2E de flujos críticos, coverage útil, deuda controlada y visible. Sin perfección artificial ni coverage vacío.
+
+**How to apply:**
+
+1. **Auditar antes de tocar.** Primero: árbol, stack, `package.json` y scripts, herramientas de test/lint/build/coverage/CI; diagnóstico; plan. Solo aplicar cambios si Pedro lo pide o si son pequeños, seguros y justificados.
+
+2. **Rol:** ingeniero senior de calidad + QA automation + revisor de TFM + asesor pragmático. No llenar de tests sin sentido ni perseguir porcentajes vacíos; mejorar la **confianza real**.
+
+3. **Inspección inicial:** comprobar `vitest.config.*`, `playwright.config.*`, `eslint.config.*`, `.github/workflows/*`, `.husky/*`, carpetas `tests`/`e2e`/`__tests__`, `test-results`, `playwright-report`, `package.json` y scripts; devolver resumen del estado antes de proponer. **Stack real de BuenChollo:** Vitest + Testing Library + Playwright, ESLint, TypeScript, **npm** (no pnpm), Husky (pre-commit lint+typecheck, pre-push vitest), GitHub Actions (4 jobs). Usar los **scripts reales** del `package.json` (`lint`, `typecheck`, `test`, `test:run`, `test:coverage`, `test:e2e`, `build`, `quality`, `quality:full`) — no inventar herramientas ni usar `pnpm`.
+
+4. **Pirámide de testing:** muchos unit (rápidos, aislados, deterministas), integración moderada (flujos de usuario), pocos E2E (flujos críticos). No E2E para todo ni sustituir unit/integración por E2E. Señalar si todo depende de E2E o falta test de lógica crítica.
+
+5. **Flujos críticos de BuenChollo a proteger:** unit (cálculo precio/descuento, validación URLs/formularios, formateo de precios, filtrado/búsqueda, reglas de favoritos/votos/alertas/roles, helpers); integración (listado de ofertas, búsqueda/filtro por categoría, login/register, crear oferta, favorito, voto, formularios con errores, estados loading/error/empty); E2E (ver ofertas, buscar/filtrar, login/registro, detalle de oferta, favorito, admin crea/aprueba/edita, flujo crítico principal). Elegir nivel según riesgo/coste.
+
+6. **Testing Library user-centric:** `getByRole` primero, `getByLabelText` en formularios, `getByText` para contenido visible, `getByTestId` último recurso; evitar selectores CSS frágiles; no probar estado interno; `userEvent` sobre `fireEvent`; async con `findBy`/`waitFor`/`await`. Si un test prueba implementación en vez de comportamiento, proponer corrección.
+
+7. **Playwright/E2E:** `playwright.config`, `forbidOnly:!!CI`, `retries` en CI, `baseURL`, `webServer`, `trace`, `screenshot`/`video` solo en fallo; tests independientes, datos controlados, sin `setTimeout` artificiales, selectores estables, artefactos en CI. POM solo con criterio (no si hay pocos E2E). **Visual regression** (`toHaveScreenshot`) solo en pantallas críticas y estables, nunca en páginas dinámicas/ruidosas.
+
+8. **TDD/refactor seguro:** no hace falta TDD en todo; comprobar si se puede refactorizar con seguridad (tests antes de tocar lógica crítica, lógica aislada en funciones puras, efectos difíciles de probar, tests como documentación viva). Código crítico sin tests → 1) crear tests, 2) ver que fallan si corresponde, 3) implementar/refactor, 4) ejecutar, 5) cambios pequeños. Reglas de refactor: preservar comportamiento externo, cambios pequeños, tests antes/después, no mezclar 10 refactors, Boy Scout Rule, sin sobreingeniería. Refactors según caso: Extract Constant/Function/Component, Custom Hook, Parameter Object, funciones puras; Strategy/Factory/Observer/composición **solo si hay razón real**.
+
+9. **Code smells (buscar activamente):** *structural* (Long Method, Large/God Component >300-500 líneas, Long Parameter List, Data Clumps, hooks/services gigantes); *behavioral* (Duplicate Code, if/switch repetidos, Dead Code, comentado antiguo, imports sin usar); *data* (Magic Numbers/Strings, Primitive Obsession, formateo/validaciones repetidas, constantes dispersas); *design* (Feature Envy, Inappropriate Intimacy, God Object/Hook, acoplamiento fuerte, baja cohesión, deps hardcoded, mutación peligrosa, efectos ocultos); *React/UI* (props drilling, componentes mezclando UI+negocio+API, estados duplicados, `useEffect` complejo, formularios sin validación, loading/error/empty mal, accesibilidad pobre).
+
+10. **Formato `[SMELL-XX]` / `[DEBT-XX]`:** Título · Severidad (Crítica/Alta/Media/Baja) · Tipo · Archivo(s) · Evidencia · Por qué es problema · Impacto en mantenibilidad · Refactor recomendado · Riesgo del cambio · Prioridad. No listar smells menores sin impacto solo para rellenar.
+
+11. **Deuda técnica:** buscar (grep) TODO/FIXME/HACK/XXX, "temporal", código muerto, tests desactivados, `test.only`/`describe.only`, `eslint-disable` innecesarios, `any` injustificados, `catch` vacío, `console.log`, configs duplicadas, docs desactualizadas, deps sin usar. Clasificar: Crítica (bloquea calidad/rompe prod) / Alta (seguridad, datos, flujos críticos, mantenibilidad) / Media (antes de entregar) / Baja (documentar como mejora futura). Inventario priorizado.
+
+12. **Coverage estratégico 100/80/0** (no 100% global por postureo): **CORE 100%** (cálculos precio/descuento, validaciones críticas, permisos/roles, reglas de ofertas, favoritos/votos/alertas con datos, seguridad/autorización, transformaciones críticas); **IMPORTANT 80%** (componentes principales, formularios, navegación, loading/error/empty, interacciones); **INFRASTRUCTURE 0%/sin tests** (interfaces TS, tipos, constantes, config sin lógica, generados). Identificar áreas por tier, revisar coverage actual, proponer thresholds realistas, priorizar funciones críticas sobre % global, evitar tests que solo inflan.
+
+13. **Métricas accionables** (NO vanity: ni LoC, ni nº commits, ni coverage global sin contexto, ni nº features). *Tier 1 (frecuente):* Test/Build Success Rate, Error Rate si hay prod, lint status, E2E de críticos. *Tier 2 (por hito):* MTTR/tiempo de fix, duración de tests/build, deployment frequency, performance de rutas. *Tier 3 (periódica):* Technical Debt Ratio, nº TODO/FIXME/HACK, smells de alta severidad, coverage CORE, complejidad de funciones críticas. Por métrica: qué mide, cómo se obtiene, umbral verde/amarillo/rojo, acción.
+
+14. **Quality Gates (Husky):** pre-commit (lint, typecheck/build rápido, unit rápidos si no pesan) — no lentísimo; pre-push (test:coverage, test:e2e si el tiempo es razonable, build) — puede pesar. `--no-verify` solo en emergencias justificadas. Mantener scripts: lint/typecheck/test/test:run/test:coverage/test:e2e/build/quality/quality:full.
+
+15. **CI/CD:** GitHub Actions debe ejecutar lint, build y tests; fallar si hay `test.only`; subir artefactos Playwright en fallo; env vars seguras; sin secretos hardcodeados; workflows simples y defendibles. Si no hay CI, proponer mínimo (install, lint, typecheck/build, unit/integración, E2E si aplica, upload artifacts en fallo). Sin pipelines complejos innecesarios.
+
+16. **Performance (sin optimización prematura):** Core Web Vitals (LCP, INP/FID, CLS) si hay medición; tamaño de bundle, lazy loading, code splitting, imágenes WebP/AVIF + dimensiones reservadas, fuentes externas, peticiones repetidas/innecesarias, caché, paginación/infinite scroll, skeleton/loading, móvil. Proponer **performance budget** básico (bundle inicial, imágenes, LCP/CLS objetivo, nº peticiones). Priorizar problemas evidentes.
+
+17. **Comandos de validación:** revisar `package.json` antes; usar scripts reales (npm). Tras cada bloque de cambios: lint + typecheck/build + tests relacionados. Si algo falla: qué, por qué y cómo corregir. No ocultar errores.
+
+18. **Metodología por fases (auditoría de calidad):** F1 Inspección inicial → F2 Testing (unit/integración/E2E, cubiertos/sin cubrir, frágiles) → F3 Testing Library user-centric → F4 Playwright/E2E → F5 TDD/refactor seguro → F6 Code smells → F7 Deuda técnica → F8 Coverage estratégico → F9 Métricas → F10 Quality gates → F11 CI/CD → F12 Performance → F13 Informe.
+
+19. **Formato de informe** ("Auditoría de Calidad Software - BuenChollo"): (1) Resumen ejecutivo (estado, cumplimiento Alto/Medio/Bajo, riesgos, recomendación); (2) Estado de herramientas (tabla Herramienta/Existe/Estado/Recomendación: Vitest, Testing Library, Playwright, ESLint, TS, Husky, GitHub Actions, Coverage, reports); (3) Testing (unit/integración/E2E, críticos cubiertos/sin cubrir, frágiles); (4) Smells y deuda (`SMELL-XX`/`DEBT-XX` priorizados); (5) Coverage estratégico (tabla Área/Tier/Objetivo/Actual/Acción); (6) Quality gates (estado, pre-commit, pre-push, scripts, riesgo de lentitud); (7) Métricas (verde/amarillo/rojo/acción); (8) E2E y visibilidad; (9) Performance (problemas, quick wins, budget); (10) Plan de acción (imprescindible / recomendable / opcional-futuro / **NO tocar**); (11) Cambios propuestos (archivo/descripción/motivo/riesgo/comando de validación); (12) Defensa ante tribunal (estrategia de testing, por qué no 100% global, quality gates, control de deuda, cómo se aseguran flujos críticos, métricas accionables no vanidad).
+
+20. **Ejecución y respuesta:** diagnóstico antes de modificar; sin cambios masivos; no inventar herramientas; proponer instalación justificada si falta; cambios en bloques pequeños con validación después; informar fallos sin ocultarlos; no perseguir coverage inútil; priorizar calidad defendible. Responder claro, directo, ordenado, sin relleno ni inventar, separando hechos de recomendaciones y ordenando por impacto/riesgo. Prioridad final: tests útiles → flujos críticos protegidos → build estable → lint/TS limpios → deuda visible → refactor seguro → quality gates razonables → performance básica → defensa clara. Ver [[feedback_no_continuar_con_critico]] y [[feedback_forma_trabajo_iterativa]].
