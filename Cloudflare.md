@@ -215,7 +215,7 @@ https://buenchollotech.com/`.
 
 ---
 
-### ⬜ T6 — WAF / Rate limiting / Bots · 🟡
+### ✅ T6 — WAF / Rate limiting / Bots · 🟡 — HECHO (2026-06-09): Bot Fight Mode ON; rate limit api 100/10s (probado: 429); WAF métodos (PROPFIND→403)
 
 **6.1 Bot Fight Mode:** Security → Bots → **ON** (gratis).
 
@@ -238,7 +238,7 @@ la web y el login siguen OK.
 
 ---
 
-### ⬜ T7 — Caching (SSR) · 🟢
+### ✅ T7 — Caching (SSR) · 🟢 — HECHO (no-op): no se cachea HTML (correcto por defecto)
 
 **Qué hacer:** **nada**. El frontend es SSR en el Worker; cachear HTML daría
 contenido obsoleto. Cloudflare por defecto no cachea respuestas dinámicas. No
@@ -246,7 +246,7 @@ crear Cache Rules sobre `buenchollotech.com`. (Futuro: cachear solo `/assets/*`.
 
 ---
 
-### ⬜ T8 — Tokens / secretos · 🟢
+### ✅ T8 — Tokens / secretos · 🟢 — HECHO: TUNNEL_TOKEN solo en .env del NAS. ⚠️ PENDIENTE rotarlo (quedó en el chat)
 
 - `TUNNEL_TOKEN` → solo en el `.env` del NAS (gitignored). **No** a git.
 - **No** hace falta API Token de Cloudflare (DDNS descartado).
@@ -321,3 +321,10 @@ curl -sI https://buenchollotech.com | findstr /I "strict-transport content-secur
   SynologyDrive** (PC-local y NAS-prod ahora independientes).
   **Pendientes:** T4 (TLS/HSTS), T5 (redirect www), T6 (WAF/rate/bots);
   rotar TUNNEL_TOKEN; arreglar `config.py` (cors comma-separated) + `.env.example`.
+- 2026-06-09 — ✅ **T4, T5, T6, T7, T8 HECHOS** → hardening Cloudflare COMPLETO.
+  T4: Full(strict)+Always HTTPS+min TLS 1.2+HSTS 6m. T5: redirect www→raíz 301.
+  T6: Bot Fight Mode ON + rate limit api 100/10s (probado, 429) + WAF métodos
+  (PROPFIND→403). T7: caching SSR sin tocar. T8: token solo en .env del NAS.
+  **Checklist de go-live verificado en verde desde fuera** (health, redirects,
+  HSTS, headers, CORS). **Pendiente (no bloqueante):** confirmar en navegador
+  login Google + 403 admin; rotar TUNNEL_TOKEN; fix `config.py` CORS + `.env.example`.
