@@ -176,7 +176,7 @@ https://buenchollotech.com`; logs del NAS sin warning de `CORS=*`.
 
 ---
 
-### ⬜ T4 — TLS / Edge security · 🟢 (🟡 solo si activas HSTS preload)
+### ✅ T4 — TLS / Edge security · 🟢 — HECHO (2026-06-09): Full (strict), Always HTTPS, Min TLS 1.2, HSTS 6m (sin preload)
 
 Dashboard → **SSL/TLS**:
 
