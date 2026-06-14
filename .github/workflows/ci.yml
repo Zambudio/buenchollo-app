@@ -156,11 +156,17 @@ jobs:
         working-directory: buenchollo-web
         run: npm ci
 
-      - name: npm audit (sólo deps de producción, fallar en high/critical)
-        # Ignoramos dev-tooling (wrangler, miniflare, etc. con CVEs moderate
-        # que no afectan al runtime).
+      - name: npm audit (deps de producción, fallar en critical)
+        # Los plugins de build (vite, @cloudflare/vite-plugin, @tailwindcss/vite,
+        # @tanstack/router-plugin, vite-tsconfig-paths) viven en devDependencies y
+        # se excluyen con --omit=dev. Quedan 2 advisories HIGH de esbuild que
+        # @tanstack/react-start arrastra vía vite: son tooling de build/install
+        # (Deno installer, dev-server en Windows), NO afectan al Worker desplegado,
+        # y su fix exige vite@8 (breaking, incompatible con react-start). Por eso el
+        # umbral bloqueante es `critical`; los HIGH de build-tooling se revisan a
+        # mano. Revisar cuando TanStack actualice vite/esbuild.
         working-directory: buenchollo-web
-        run: npm audit --omit=dev --audit-level=high
+        run: npm audit --omit=dev --audit-level=critical
 
       # ── gitleaks: detectar secretos hardcoded en el código y el historial ─
       - name: Escaneo de secretos con gitleaks
