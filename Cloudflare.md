@@ -200,7 +200,7 @@ curl -sI http://buenchollotech.com            # 301 → https
 
 ---
 
-### ⬜ T5 — Redirect `www → raíz` (301) · 🟢
+### ✅ T5 — Redirect `www → raíz` (301) · 🟢 — HECHO (2026-06-09): regla "www a raíz" activa, conserva path+query
 
 **Por qué:** una URL canónica (`buenchollotech.com`), coherente con Supabase.
 
