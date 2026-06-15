@@ -1,9 +1,17 @@
 # 🚀 08 · Despliegue
 
-> **TL;DR** · Docker Compose en NAS Synology con reverse proxy DSM +
-> Let's Encrypt. El contenedor ejecuta `alembic upgrade head` antes
-> de uvicorn al arrancar — migraciones automáticas, sin SSH. Para el
-> dominio definitivo, Cloudflare + 2FA en Supabase admin.
+> ⚠️ **ESTADO ACTUAL (2026-06):** la migración al dominio definitivo **ya está
+> hecha**. Producción = **frontend en Cloudflare Workers** (`buenchollotech.com`)
+> + **API en el NAS expuesta vía Cloudflare Tunnel** (`api.buenchollotech.com`).
+> La **guía operativa viva y verificada** es
+> [`docs/guides/Cloudflare.md`](../guides/Cloudflare.md). Las secciones de abajo
+> (DDNS Synology, reverse proxy DSM, "Cloudflare Pages/Vercel") describen el
+> **enfoque anterior / la transición** y se conservan como histórico/contexto.
+
+> **TL;DR (backend)** · Docker Compose en NAS Synology; el contenedor ejecuta
+> `alembic upgrade head` antes de uvicorn al arrancar — migraciones automáticas,
+> sin SSH. La exposición pública del NAS hoy es por **Cloudflare Tunnel**
+> (`cloudflared` en el `docker-compose.yml`), no por reverse proxy + DDNS.
 
 ---
 

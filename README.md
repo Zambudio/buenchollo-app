@@ -338,6 +338,7 @@ La documentación se organiza en **dos bloques** claramente separados:
 | [`PROJECT_STATUS.md`](PROJECT_STATUS.md) | 📅 Bitácora viva (CHANGELOG en prosa) |
 | [`SECURITY.md`](SECURITY.md) | 🛡️ Política de divulgación responsable |
 | [`CLAUDE.md`](CLAUDE.md) | 🤖 Instrucciones permanentes para asistentes IA |
+| [`docs/guides/Cloudflare.md`](docs/guides/Cloudflare.md) | ☁️ Guía operativa viva: Cloudflare (Workers, túnel, TLS, WAF) |
 | [`docs/guides/MIGRATIONS.md`](docs/guides/MIGRATIONS.md) | 🛠️ Setup Alembic |
 
 ---
@@ -346,10 +347,10 @@ La documentación se organiza en **dos bloques** claramente separados:
 
 ```
 🟢 v1.0.0-tfm publicado
-🟢 167 tests automatizados verdes
-🟢 0 CVEs en dependencias de producción
-🟢 CI verde en 4 jobs (backend, frontend, e2e, security-audit)
-🟢 Desplegado en NAS Synology con HTTPS
+🟢 En producción en https://buenchollotech.com — frontend en Cloudflare Workers
+🟢 API FastAPI en el NAS expuesta vía Cloudflare Tunnel (api.buenchollotech.com)
+🟢 167 tests automatizados verdes · CI verde en main
+🟢 Backend sin CVEs (pip-audit); avisos HIGH solo en tooling de build (esbuild/vite), sin impacto en runtime
 🟢 Documentación dual (operativa + académica) completa
 ```
 

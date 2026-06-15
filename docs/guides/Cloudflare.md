@@ -16,8 +16,8 @@
 | Dominio | ✅ `buenchollotech.com` comprado en Cloudflare Registrar |
 | Frontend | ✅ En producción como **Cloudflare Worker** `buenchollotech` (Workers Builds conectado al repo, rama de prod = `main`). Preview: `buenchollotech.pjzambudio.workers.dev` |
 | Login Google (Supabase) | ✅ Funciona. Site URL y Redirect URLs ya apuntan a `https://buenchollotech.com` y `https://www.buenchollotech.com` |
-| API (FastAPI) | ⏳ En el NAS, aún accesible por `https://embyzambu.synology.me:8000`. **Pendiente** moverla a `api.buenchollotech.com` vía túnel |
-| DNS | `www CNAME → buenchollotech.pjzambudio.workers.dev` (proxy ON). `api CNAME → embyzambu.synology.me` (proxy ON) **← a corregir, ver §3** |
+| API (FastAPI) | ✅ En el NAS, expuesta en `https://api.buenchollotech.com` vía **Cloudflare Tunnel** (`APP_ENV=production`, CORS cerrado al dominio) |
+| DNS | `www`/`@` → Worker (Custom Domain). `api` → túnel (`…cfargotunnel.com`). El antiguo `api → embyzambu.synology.me` se eliminó (T2) |
 | Routes Worker | `buenchollotech.com/*` y `www.buenchollotech.com/*` → Worker |
 
 **Infra de la API (para el túnel):** contenedor Docker `buenchollo-api`,

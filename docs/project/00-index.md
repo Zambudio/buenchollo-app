@@ -51,6 +51,7 @@
 | [`../master/`](../master/00-index.md) | 🎓 **Bloque académico** del Máster — explicación formal de decisiones |
 | [`../adr/`](../adr/00-index.md) | 📋 **9 ADRs** firmados y datados (decisiones arquitectónicas) |
 | [`../reference/`](../reference/) | 📚 Referencias densas (plan hardening, auditoría OWASP, smoke test) |
+| [`../guides/Cloudflare.md`](../guides/Cloudflare.md) | ☁️ **Guía operativa viva** de Cloudflare (Workers, túnel, TLS, WAF) — estado real de producción |
 | [`../guides/MIGRATIONS.md`](../guides/MIGRATIONS.md) | 🛠️ Setup Alembic |
 | [`../archive/`](../archive/) | 🗄️ Documentación histórica preservada con índice de motivos |
 

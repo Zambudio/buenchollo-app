@@ -106,7 +106,7 @@
 | 🏠 **Despliegue en NAS doméstico** | Si el ISP cae, el NAS se apaga o la IP cambia sin DDNS actualizado, la web cae | Para un MVP con audiencia inicial pequeña es proporcional al riesgo. Migración a VPS / Cloudflare Tunnel documentada |
 | 🔁 **Sin múltiples instancias** | No hay alta disponibilidad ni balanceo | Innecesario al volumen actual. SlowAPI tiene soporte de Redis para storage compartido |
 | 💾 **Sin backup automatizado** | Si Supabase pierde un proyecto, no hay snapshot diario propio | Supabase free tier tiene backups limitados pero existentes |
-| 🌐 **Sin CDN del frontend** | Se sirve desde el NAS | Si se mueve a dominio definitivo, se servirá desde Cloudflare Pages |
+| 🌐 **Sin CDN del frontend** | Se sirve desde el NAS | Si se mueve a dominio definitivo, se sirve ya desde Cloudflare Workers (CDN global) |
 
 ### 🎯 Decisiones conscientes que limitan capacidades
 

@@ -59,7 +59,7 @@ Auditoría completa en
 <tr><td>A03</td><td>Injection</td><td>🟢</td><td>SQLAlchemy ORM + <code>text(... :param)</code>, Pydantic en entrada, react-markdown sin <code>rehype-raw</code></td></tr>
 <tr><td>A04</td><td>Insecure Design</td><td>🟢</td><td>Rate limit, audit log, RLS, SSRF allowlist Amazon</td></tr>
 <tr><td>A05</td><td>Security Misconfiguration</td><td>🟢</td><td>CORS lista explícita, sin origin reflection, Security Headers, sin debug en prod</td></tr>
-<tr><td>A06</td><td>Vulnerable Components</td><td>🟢</td><td><code>pip-audit</code> 0 CVEs · <code>npm audit --omit=dev</code> sin high+ · Dependabot semanal · CI gatea</td></tr>
+<tr><td>A06</td><td>Vulnerable Components</td><td>🟢</td><td><code>pip-audit</code> 0 CVEs · <code>npm audit --omit=dev</code> sin criticals (HIGH solo en tooling de build esbuild/vite) · Dependabot semanal · CI gatea</td></tr>
 <tr><td>A07</td><td>Identification / Auth Failures</td><td>🟢</td><td>Supabase Auth gestiona login/registro/recovery con rate limit</td></tr>
 <tr><td>A08</td><td>Software / Data Integrity</td><td>🟢</td><td>Lockfiles versionados, Dependabot, no scripts remotos, imágenes Docker oficiales</td></tr>
 <tr><td>A09</td><td>Logging / Monitoring Failures</td><td>🟢</td><td>request_id, Sentry <code>send_default_pii=False</code>, audit_log, no PII en logs DEBUG</td></tr>
