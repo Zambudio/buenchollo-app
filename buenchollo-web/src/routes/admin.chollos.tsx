@@ -210,8 +210,8 @@ function AdminDeals() {
         previous_price: d.original_price ? String(d.original_price) : f.previous_price,
         affiliate_url: url,
         store_id: amazonStore?.id ?? f.store_id,
-        category_id: d.category_id ?? f.category_id,
-        subcategory_id: d.subcategory_id ?? f.subcategory_id,
+        category_id: d.category_id ?? "",
+        subcategory_id: d.subcategory_id ?? "",
         expires_at: d.expires_at ? toDatetimeLocal(d.expires_at) : "",
         telegram_text: d.telegram_text || f.telegram_text,
         external_id: d.asin || f.external_id,
@@ -337,6 +337,14 @@ function AdminDeals() {
     });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "Datos inválidos");
+      return;
+    }
+    if (!form.category_id) {
+      toast.error("Selecciona una categoría antes de guardar");
+      return;
+    }
+    if (!form.subcategory_id) {
+      toast.error("Selecciona una subcategoría antes de guardar");
       return;
     }
 
