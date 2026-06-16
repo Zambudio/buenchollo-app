@@ -7,7 +7,7 @@
 # Web framework
 fastapi==0.136.1
 uvicorn[standard]==0.34.0
-python-multipart==0.0.27  # 0.0.6 tenía 5 CVEs (DoS via multipart parsing) — ver SECURITY_AUDIT.md SEC-01
+python-multipart==0.0.31  # 0.0.27 tenía 3 CVEs (CVE-2026-53538/53539/53540, DoS via multipart parsing) — ver SECURITY_AUDIT.md SEC-01
 
 # Validación y configuración
 pydantic==2.13.4
