@@ -2,8 +2,8 @@
 
 Índice y plan de agentes de Claude Code para el proyecto **BuenChollo Tech / BuenCholloTech**.
 
-> Estado: **estructura inicial**. Este README deja preparado el índice y las reglas.
-> Los agentes se configuran **uno por uno**, no todos a la vez.
+> Estado: **configuración base completa** (12 agentes). El índice y las reglas están definidos.
+> Los agentes pueden ampliarse o afinarse de forma incremental según evolucione el proyecto.
 
 ---
 
@@ -25,6 +25,12 @@ incremental conforme se necesiten.
   modifica ni la ignora; debe respetarla y, cuando aplique, apoyarse en ella.
 - **Documentación**: `docs/project/` (operativo) y `docs/master/` (académico). Los agentes no mezclan
   ambos bloques.
+
+> **Fuente de verdad del formato de publicaciones de Telegram**: el código
+> (`buenchollo-api/app/modules/telegram/application/post_generator.py`) — 🍄/💶/💰/🛒/✏️/⚠️.
+> El formato editorial original (🔥/📉/📦/👉/ℹ️) queda archivado; cambiar el formato visual implica
+> tocar **en bloque** código + agentes + docs. La transparencia de afiliación en Telegram se cubre
+> vía **descripción del canal**, no por publicación.
 
 ---
 

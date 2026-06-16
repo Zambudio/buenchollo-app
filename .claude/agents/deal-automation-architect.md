@@ -222,6 +222,10 @@ Debe coordinarse conceptualmente con:
 * `seo-reviewer`: impacto SEO.
 * `analytics-reviewer`: métricas y mejora continua.
 * `security-reviewer`: riesgos técnicos y exposición de endpoints.
+* `qa-test-engineer`: pruebas, regresiones y criterios de aceptación de la automatización.
+* `frontend-designer`: si la automatización añade pantallas o acciones de admin.
+* `blog-writer`: si la automatización toca generación de contenido editorial.
+* `social-media-manager`: si la automatización alcanza adaptación/publicación en redes.
 
 Si una petición entra claramente en otro agente, indícalo y limita tu respuesta a la parte arquitectónica.
 
