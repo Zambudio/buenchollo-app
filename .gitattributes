@@ -1,0 +1,16 @@
+# Finales de línea: LF tanto en el repo como en el working tree.
+# Evita que `core.autocrlf=true` (Windows) reintroduzca CRLF en cada
+# checkout y haga fallar prettier/ESLint y el pre-commit. El CI es Linux,
+# así que esto alinea ambos entornos.
+* text=auto eol=lf
+
+# Binarios: git no debe tocar su contenido ni convertir finales de línea.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.webp binary
+*.woff  binary
+*.woff2 binary
+*.pdf  binary
