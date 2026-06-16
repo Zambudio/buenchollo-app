@@ -100,33 +100,10 @@ VITE_SUPABASE_ANON_KEY=<anon_key>
 
 ---
 
-## 3. API_Amazon_CloudCode (Python · app de escritorio)
-
-> ⚠️ Solo modificar bajo instrucción explícita. Es una referencia/herramienta independiente.
-
-### Primera vez
-
-```powershell
-cd API_Amazon_CloudCode
-
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-```
-
-### Arrancar
-
-```powershell
-python src/ui/main_gui.py
-```
-
----
-
 ## Orden de arranque recomendado
 
 1. `buenchollo-api` (backend)
 2. `buenchollo-web` (frontend)
-3. `API_Amazon_CloudCode` (opcional, app de escritorio)
 
 ---
 

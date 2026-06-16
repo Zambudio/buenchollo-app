@@ -25,7 +25,6 @@ Proyecto dual: uso personal + Trabajo Final de Máster (TFM) — las decisiones 
 |---|---|---|
 | `buenchollo-api/` | Python 3.11 · FastAPI · SQLAlchemy · asyncpg | API Gateway — toda la lógica de negocio |
 | `buenchollo-web/` | React · TypeScript · TanStack Router · Vite | Frontend — solo habla con buenchollo-api |
-| `API_Amazon_CloudCode/` | Python | Referencia para lógica Amazon/Telegram — no modificar salvo instrucción explícita |
 
 ### Infraestructura
 

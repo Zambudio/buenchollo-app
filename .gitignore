@@ -1,6 +1,3 @@
-# ─── Proyectos legado / referencia (contienen secretos y no forman parte del monorepo) ─
-API_Amazon_CloudCode/
-
 # ─── Secretos y variables de entorno ───────────────────────────────────────
 .env
 .env.local
@@ -71,9 +68,10 @@ buenchollo-api/*.whl
 
 # ─── Claude Code ────────────────────────────────────────────────────────────
 # Se ignora todo .claude/ (settings.json, settings.local.json) EXCEPTO la
-# memoria de trabajo, que sí se versiona para tenerla en el proyecto.
+# memoria de trabajo y los agentes, que sí se versionan para tenerlos en el proyecto.
 .claude/*
 !.claude/memory/
+!.claude/agents/
 
 # ─── Alembic (versiones generadas localmente si aplica) ─────────────────────
 # alembic/versions/   # descomenta si no quieres versionar las migraciones
