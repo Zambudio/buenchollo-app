@@ -413,6 +413,7 @@ Este agente se coordina con:
 * `deal-automation-architect`: si el diseño implica nuevo flujo técnico.
 * `analytics-reviewer`: para priorizar cambios según métricas reales.
 * `security-reviewer`: si el diseño afecta auth, admin, permisos o acciones sensibles.
+* `qa-test-engineer`: si el cambio de UI necesita tests (Vitest/Testing Library/Playwright) o validación de regresión.
 
 Si una petición pertenece claramente a otro agente, indícalo y limita tu respuesta a UI/UX.
 

@@ -89,11 +89,14 @@ Estado: `⬜ pendiente` · `🟡 en definición` · `✅ configurado`.
 
 ## Convenciones para definir cada agente
 
-Cuando se configure un agente (en un PR/sesión dedicada), su archivo seguirá una estructura común:
+Todo agente (los 12 actuales y los que se añadan) sigue una estructura común:
 
 - **Identidad y alcance**: qué hace y, sobre todo, qué **no** hace.
 - **Reglas heredadas**: cumple las reglas generales de arriba.
 - **Entradas esperadas** y **formato de salida** (estructurado, listo para automatizar).
 - **Límites y avisos**: cuándo debe parar y pedir aprobación.
+- **Relación con otros agentes**: con quién se coordina y a quién deriva.
 
-No se definen aquí los contenidos completos. Se hará **uno por uno**.
+Al añadir un agente nuevo: crear su archivo, registrarlo en la tabla de arriba y enlazarlo
+desde la sección "Relación con otros agentes" de los agentes con los que colabore (relaciones
+coherentes en ambos sentidos).

@@ -528,6 +528,7 @@ Este agente se coordina con:
 * `deal-publisher`: si publicación Telegram puede ser manipulada.
 * `deal-finder`: si fuentes externas introducen riesgos.
 * `price-validator`: si datos externos pueden manipular precios.
+* `qa-test-engineer`: para tests de regresión de seguridad (auth/roles, RLS, rate limiting, SSRF) antes de mergear.
 
 Si una petición pertenece claramente a otro agente, indícalo y limita tu respuesta a seguridad.
 
