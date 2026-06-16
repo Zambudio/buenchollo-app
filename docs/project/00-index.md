@@ -25,6 +25,7 @@
 | 🛡️ **Revisar la seguridad operativa** | [07](07-security.md) |
 | 🚀 **Desplegar al NAS o al dominio definitivo** | [08](08-deployment.md) |
 | 🔍 **Algo no funciona** | [09](09-troubleshooting.md) |
+| 🧾 **Ver qué deuda técnica queda pendiente** | [10](10-technical-debt.md) |
 
 ---
 
@@ -41,6 +42,7 @@
 | [07](07-security.md) | 🛡️ **Seguridad** | Controles, política `--no-verify`, incidentes |
 | [08](08-deployment.md) | 🚀 **Despliegue** | NAS Synology + Docker, dominio definitivo |
 | [09](09-troubleshooting.md) | 🔍 **Troubleshooting** | Errores comunes y soluciones |
+| [10](10-technical-debt.md) | 🧾 **Deuda técnica** | Registro vivo de lo pendiente (interno, no académico) |
 
 ---
 

@@ -19,6 +19,11 @@ literal: "primero modificamos, después verificamos probando, luego commit, se
 marca la tarea y a por la siguiente".
 
 **How to apply:**
+- **"Commit" = flujo completo por defecto**: cuando Pedro dice "commit" (o
+  "commitea"), el ciclo por defecto es commit → push `develop` → merge a
+  `main` (deploy a producción) → vuelta a `develop`. No hace falta volver a
+  preguntar por el merge/deploy cada vez. Quote: "si haz commit merge y vuelta
+  a develop, eso siempre que te diga de hacer commit" (2026-06-16).
 - No agrupar varias tareas distintas en un commit (excepto micro-cambios
   triviales del mismo ámbito que sí se cierran juntos).
 - **Confianza por defecto**: Pedro autoriza a avanzar sin pedir

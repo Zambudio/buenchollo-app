@@ -118,6 +118,7 @@ El dominio no depende de FastAPI, SQLAlchemy, ni ningún framework externo.
 - **Refactoring**: no hacerlo de forma masiva sin explicar impacto. No cambiar contratos de API sin avisar.
 - **Documentación**: actualizar README o docs si cambia el uso del sistema. Proponer ADR cuando haya decisión técnica relevante.
 - **No romper** funcionalidad existente ni tests existentes.
+- **Recordatorio de deuda técnica**: al **cambiar de tarea** (cuando se cierra algo y se pasa a otra cosa), recuérdame brevemente que hay deuda técnica pendiente y apunta a [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md). Mantén ese registro al día: al cerrar un item, bórralo de ahí y anota el cierre en `PROJECT_STATUS.md`.
 
 ### Flujo de ramas (web en producción)
 
@@ -156,7 +157,4 @@ La guía operativa **viva** de la infraestructura (Cloudflare, túnel, hardening
 - **API** FastAPI en el NAS Synology, expuesta en `https://api.buenchollotech.com` vía **Cloudflare Tunnel** (sin abrir puertos, sin DDNS). `APP_ENV=production`, CORS cerrado al dominio.
 - **Cloudflare endurecido**: TLS Full (strict) + HSTS, redirect `www`→raíz, WAF + rate limiting + Bot Fight Mode. Detalle y bitácora en [`docs/guides/Cloudflare.md`](docs/guides/Cloudflare.md).
 - Login Google (Supabase) OK · Panel admin funcionando · CI de `main` en verde · flujo `main`/`develop` operativo.
-- **Deuda técnica** (no urgente):
-  - `config.py` debe aceptar `CORS_ORIGINS` separado por comas (hoy exige formato JSON array, si no peta el arranque) + corregir `.env.example`.
-  - Telegram: aún usa Supabase Functions — pendiente migrar a `POST /telegram/notify`.
-  - Deuda ADR-002 restante: 4 rutas (ver `PROJECT_STATUS.md` § 4).
+- **Deuda técnica**: registro vivo y completo en [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md). Lo más urgente: cifras de tests por reconciliar (TD-01) y `CORS_ORIGINS` que exige JSON array en vez de CSV (TD-02).

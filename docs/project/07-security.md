@@ -73,6 +73,9 @@ startup si producción tiene `*`.
 ### 🔑 Secretos y configuración
 
 - 🚫 `.env` reales NUNCA trackeados; sólo `.env.example` versionado
+- 📤 **Entrega del proyecto**: usar el repositorio (clon o `git archive`),
+  nunca un ZIP de la carpeta de trabajo. El `.env` real existe en el árbol
+  local (no en git) y un ZIP de carpeta lo incluiría, filtrando secretos.
 - 🔐 Service role key sólo en backend, anon key sólo en frontend
 - 🧪 CI usa env dummy para tests
 - 📦 Dependabot semanal con grupos

@@ -1,5 +1,5 @@
 - [Pedro construye BuenChollo como proyecto personal a largo plazo](user_proyecto_personal.md) — TFM es la presentación inmediata pero el proyecto crecerá en producción; decisiones técnicas con vista a escalabilidad real.
-- [Forma de trabajo iterativa tarea-a-tarea](feedback_forma_trabajo_iterativa.md) — modificar → verificar → commit + push → marcar → confirmar antes de la siguiente.
+- [Forma de trabajo iterativa tarea-a-tarea](feedback_forma_trabajo_iterativa.md) — modificar → verificar → commit + push → marcar → confirmar antes de la siguiente. "Commit" = flujo completo por defecto: push develop → merge main → vuelta a develop.
 - [No continuar si hay un aspecto crítico](feedback_no_continuar_con_critico.md) — parar y resolverlo antes de avanzar; no ofrecer "seguir o arreglar".
 - [Deps/framework solo en develop con CI verde](feedback_deps_solo_en_develop.md) — nunca empujar bumps a main sin verificar; main = producción y se despliega solo.
 - [Método de revisión/auditoría/documentación](feedback_metodo_revision_auditoria.md) — analizar antes de tocar, rol revisor senior pragmático, criterios SOLID/DRY/antipatrones, fases, formato de informe, doc interna vs máster, seguridad/testing transversal.
@@ -9,3 +9,5 @@
 - [Normas de documentación](feedback_metodo_documentacion.md) — dos bloques (docs/project operativo + docs/master académico, sin mezclar); código manda sobre docs viejas; no inventar; README entrada + índice máster; ADRs solo relevantes; archive histórico; IA como apoyo supervisado; revisar al cambiar arquitectura/seguridad/testing/despliegue.
 - [Synology Drive corrompe node_modules](project_synology_excluir_node_modules.md) — el repo está en SynologyDrive; excluir node_modules/.venv/dist/.git/.env del sync; restaurar con npm install.
 - [Estado del proyecto a 2026-06](project_estado_2026-06.md) — web en producción en buenchollotech.com (Cloudflare Workers + Tunnel); hardening completo; flujo main/develop; guía viva en `docs/guides/Cloudflare.md`.
+- [Auditoría final TFM 2026-06](buenchollo-final-review-2026-06.md) — veredicto 8,7–9/10 (potencial 9,5–10); falsos positivos a no repetir (.env NO commiteado, CI SÍ existe); cifras de tests pendientes de fijar con pytest bajo Python 3.11.
+- [Recordar deuda técnica al cambiar de tarea](feedback_recordar_deuda_tecnica.md) — en la transición entre tareas, recordar la deuda pendiente y apuntar a `docs/project/10-technical-debt.md`; mantener ese registro al día.
