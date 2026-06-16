@@ -489,6 +489,7 @@ function AdminDeals() {
         <h2 className="font-mono text-sm uppercase text-cyan-glow">Gestión de chollos</h2>
         <div className="flex items-center gap-2">
           <select
+            aria-label="Filtrar por estado"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             className="bg-surface-900 border border-surface-700 px-3 py-2 font-mono text-xs uppercase outline-none focus:border-cyan-glow"
@@ -707,6 +708,7 @@ function AdminDeals() {
           />
           <div className="grid sm:grid-cols-4 gap-3">
             <select
+              aria-label="Tienda"
               value={form.store_id}
               onChange={(e) => setForm({ ...form, store_id: e.target.value })}
               className={inputCls}
@@ -719,6 +721,7 @@ function AdminDeals() {
               ))}
             </select>
             <select
+              aria-label="Categoría"
               value={form.category_id}
               onChange={(e) =>
                 setForm({ ...form, category_id: e.target.value, subcategory_id: "" })
@@ -733,6 +736,7 @@ function AdminDeals() {
               ))}
             </select>
             <select
+              aria-label="Subcategoría"
               value={form.subcategory_id}
               onChange={(e) => setForm({ ...form, subcategory_id: e.target.value })}
               className={inputCls}
@@ -752,6 +756,7 @@ function AdminDeals() {
               ))}
             </select>
             <select
+              aria-label="Estado"
               value={form.status}
               onChange={(e) => setForm({ ...form, status: e.target.value as DealStatus })}
               className={inputCls}
