@@ -2,7 +2,7 @@
 
 Índice y plan de agentes de Claude Code para el proyecto **BuenChollo Tech / BuenCholloTech**.
 
-> Estado: **configuración base completa** (12 agentes). El índice y las reglas están definidos.
+> Estado: **configuración base completa** (14 agentes). El índice y las reglas están definidos.
 > Los agentes pueden ampliarse o afinarse de forma incremental según evolucione el proyecto.
 
 ---
@@ -66,6 +66,8 @@ Estado: `⬜ pendiente` · `🟡 en definición` · `✅ configurado`.
 | [`frontend-designer`](frontend-designer.md) | Revisión y diseño UI/UX: pantallas, componentes, responsive, jerarquía visual, accesibilidad, usabilidad y conversión limpia (web y admin), sin implementar código salvo instrucción. | ✅ |
 | [`security-reviewer`](security-reviewer.md) | Revisor de seguridad técnica: auth/roles, Supabase/RLS, CORS, secretos, variables de entorno, endpoints, logs, dependencias, integraciones, Cloudflare, CI/CD y OWASP. | ✅ |
 | [`qa-test-engineer`](qa-test-engineer.md) | Ingeniero QA: tests (Vitest/Testing Library/Playwright/pytest), regresiones, criterios de aceptación, CI y validación antes de mergear. Único agente con `Bash` para ejecutar pruebas de solo lectura. | ✅ |
+| [`docs-reviewer`](docs-reviewer.md) | Revisor de documentación: coherencia código↔docs, separación `docs/project` (operativo) vs `docs/master` (TFM), ADRs, guías vivas y deuda técnica; sin inventar ni mezclar bloques. | ✅ |
+| [`devops-deploy-reviewer`](devops-deploy-reviewer.md) | Revisor de despliegue/infra: CI (GitHub Actions), Cloudflare Worker/Tunnel, NAS/Docker, variables de prod, flujo `develop→main` y checklists de deploy/rollback. No ejecuta despliegues. | ✅ |
 
 ### Agentes de chollos y afiliación
 

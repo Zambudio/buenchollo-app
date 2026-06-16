@@ -226,6 +226,8 @@ Debe coordinarse conceptualmente con:
 * `frontend-designer`: si la automatización añade pantallas o acciones de admin.
 * `blog-writer`: si la automatización toca generación de contenido editorial.
 * `social-media-manager`: si la automatización alcanza adaptación/publicación en redes.
+* `docs-reviewer`: para documentar decisiones de arquitectura (ADRs) y mantener la doc coherente.
+* `devops-deploy-reviewer`: si la automatización añade jobs/schedulers o afecta CI/despliegue.
 
 Si una petición entra claramente en otro agente, indícalo y limita tu respuesta a la parte arquitectónica.
 

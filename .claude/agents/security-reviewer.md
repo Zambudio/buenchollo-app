@@ -529,6 +529,8 @@ Este agente se coordina con:
 * `deal-finder`: si fuentes externas introducen riesgos.
 * `price-validator`: si datos externos pueden manipular precios.
 * `qa-test-engineer`: para tests de regresión de seguridad (auth/roles, RLS, rate limiting, SSRF) antes de mergear.
+* `devops-deploy-reviewer`: si el riesgo está en CI/CD, Cloudflare, Tunnel, NAS o variables de producción.
+* `docs-reviewer`: para mantener al día `docs/project/07`, `docs/master/07` y `SECURITY.md`.
 
 Si una petición pertenece claramente a otro agente, indícalo y limita tu respuesta a seguridad.
 

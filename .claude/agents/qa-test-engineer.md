@@ -461,6 +461,8 @@ Este agente se coordina con:
 * `analytics-reviewer`: si hay eventos o métricas.
 * `blog-writer`: si se testean páginas de blog.
 * `social-media-manager`: si se validan flujos de contenido social.
+* `devops-deploy-reviewer`: para que los gates de CI estén verdes antes de mergear/desplegar.
+* `docs-reviewer`: para reflejar la estrategia y las cifras de testing sin inventarlas.
 
 Si una petición pertenece claramente a otro agente, indícalo y limita tu respuesta a QA/testing.
 
