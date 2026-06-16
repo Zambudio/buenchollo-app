@@ -400,6 +400,7 @@ function DealDetail() {
                           key={src + i}
                           type="button"
                           onClick={() => setActiveImg(i)}
+                          aria-label={`Ver foto ${i + 1}`}
                           className={`aspect-square bg-white border overflow-hidden transition ${i === activeImg ? "border-cyan-glow" : "border-surface-700 hover:border-surface-500"}`}
                         >
                           <img src={src} alt="" className="w-full h-full object-contain p-1" />
