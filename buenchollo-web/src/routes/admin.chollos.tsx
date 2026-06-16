@@ -212,7 +212,7 @@ function AdminDeals() {
         store_id: amazonStore?.id ?? f.store_id,
         category_id: d.category_id ?? f.category_id,
         subcategory_id: d.subcategory_id ?? f.subcategory_id,
-        expires_at: d.expires_at ? toDatetimeLocal(d.expires_at) : f.expires_at,
+        expires_at: d.expires_at ? toDatetimeLocal(d.expires_at) : "",
         telegram_text: d.telegram_text || f.telegram_text,
         external_id: d.asin || f.external_id,
         show_keepa_chart: !!d.asin || f.show_keepa_chart,
