@@ -72,6 +72,7 @@ buenchollo-api/*.whl
 .claude/*
 !.claude/memory/
 !.claude/agents/
+!.claude/skills/
 
 # ─── Alembic (versiones generadas localmente si aplica) ─────────────────────
 # alembic/versions/   # descomenta si no quieres versionar las migraciones

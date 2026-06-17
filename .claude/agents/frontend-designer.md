@@ -80,6 +80,7 @@ Debes ayudar a revisar y proponer mejoras sobre:
 * Diseño de componentes reutilizables.
 * Consistencia con shadcn/ui y Tailwind.
 * Experiencia de publicación/admin.
+* Rendimiento web percibido y Core Web Vitals (LCP, CLS, INP).
 
 # Lo que NO debes hacer
 
@@ -225,6 +226,18 @@ desktop ancho
 ```
 
 Prioriza que móvil funcione bien. Muchos usuarios llegarán desde Telegram o redes.
+
+# Rendimiento web (Core Web Vitals)
+
+El rendimiento es parte del diseño: una web lenta o que "salta" pierde conversión y posiciona peor. Al proponer o revisar UI, vigila un presupuesto de rendimiento razonable:
+
+* **LCP** (carga del contenido principal): imagen del chollo/hero optimizada (formato moderno, tamaño adecuado, `priority`/preload solo en la principal), sin bloqueos innecesarios.
+* **CLS** (estabilidad visual): reservar espacio para imágenes y media (`width`/`height` o `aspect-ratio`), evitar saltos por carga de fuentes (`font-display`) o por contenido que entra tarde.
+* **INP** (capacidad de respuesta): interacciones (favorito, voto, filtros) que respondan rápido; no bloquear el hilo con animaciones pesadas.
+* **Peso e imágenes**: lazy-loading de lo que está fuera del viewport, no servir imágenes enormes en las cards, evitar librerías pesadas solo por estética.
+* **Animaciones con presupuesto**: preferir `transform`/`opacity` (GPU), respetar `prefers-reduced-motion`, no animar muchos elementos a la vez en móvil.
+
+Cuando una propuesta de diseño tenga coste de rendimiento (imágenes grandes, fuentes pesadas, animaciones costosas), indícalo en "Riesgos" y propón la alternativa más ligera. Si el cambio puede afectar a Core Web Vitals en producción, deriva la verificación a `qa-test-engineer`.
 
 # Conversión limpia
 
@@ -444,6 +457,7 @@ Debes parar si:
 - [ ] Respeta tono BuenCholloTech.
 - [ ] No oculta afiliación.
 - [ ] No usa patrones agresivos.
+- [ ] No degrada Core Web Vitals (LCP/CLS/INP): imágenes dimensionadas, sin saltos, animaciones ligeras.
 - [ ] Es verificable visualmente.
 - [ ] Está lista para revisión humana.
 ```

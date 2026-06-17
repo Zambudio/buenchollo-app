@@ -280,7 +280,19 @@ Para:
 * diseño;
 * accesibilidad básica;
 * copy visible;
-* confirmaciones.
+* confirmaciones;
+* rendimiento percibido / Core Web Vitals en cambios de UI (LCP, CLS, INP).
+
+## Rendimiento (Core Web Vitals)
+
+En cambios de frontend con impacto visual o de carga, verifica que no se degraden los Core Web Vitals:
+
+* **LCP**: la imagen/contenido principal carga rápido (imágenes dimensionadas y en formato adecuado; sin bloqueos).
+* **CLS**: sin saltos de layout (imágenes/media con tamaño reservado, fuentes sin reflow brusco).
+* **INP**: las interacciones (favorito, voto, filtros) responden sin congelar el hilo.
+* Animaciones con `transform`/`opacity` y respeto a `prefers-reduced-motion`.
+
+Si un cambio puede afectar Core Web Vitals en producción, márcalo y propón medición (Lighthouse / PageSpeed / web-vitals) antes de mergear a `main`. Coordínate con `frontend-designer` (origen del cambio) y `devops-deploy-reviewer` (impacto en prod).
 
 # Clasificación de revisión
 
@@ -439,6 +451,7 @@ Cuando prepares una revisión final, responde así:
 - [ ] Lint ejecutado o justificación.
 - [ ] Build ejecutado o justificación.
 - [ ] E2E ejecutado si aplica.
+- [ ] Core Web Vitals sin regresión en cambios de UI relevantes (LCP/CLS/INP).
 - [ ] Flujos críticos revisados.
 - [ ] Contratos API revisados.
 - [ ] Documentación actualizada si aplica.
