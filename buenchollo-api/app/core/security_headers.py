@@ -48,6 +48,27 @@ _CSP = "; ".join([
     "form-action 'self'",
 ])
 
+# CSP relajada SÓLO para las páginas de documentación interactiva (Swagger UI
+# y ReDoc), que cargan su JS/CSS desde cdn.jsdelivr.net e incluyen un script
+# inline de arranque. Sin esto la página sale en blanco. El alcance se limita
+# a las rutas de docs (ver `_DOCS_PATHS`); el resto de la API mantiene la CSP
+# estricta de arriba.
+_CSP_DOCS = "; ".join([
+    "default-src 'self'",
+    "img-src 'self' data: https:",
+    "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+    "font-src 'self' data: https://cdn.jsdelivr.net",
+    "connect-src 'self'",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+])
+
+# Rutas (HTML) donde aplica `_CSP_DOCS`. Son las que sirve FastAPI por defecto
+# para Swagger UI / ReDoc. `/openapi.json` no se incluye: es JSON y no necesita
+# excepción de CSP.
+_DOCS_PATHS = frozenset({"/docs", "/redoc", "/docs/oauth2-redirect"})
+
 # Permissions-Policy: deshabilitamos por completo lo que no usamos. Si
 # alguna feature legítima rompe en el futuro, quitarla de la lista.
 _PERMISSIONS_POLICY = ", ".join([
@@ -74,8 +95,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next) -> Response:
         response = await call_next(request)
         # setdefault: si una respuesta ya trae su propia cabecera (raro),
-        # no la pisamos.
-        response.headers.setdefault("Content-Security-Policy", _CSP)
+        # no la pisamos. Las páginas de docs usan una CSP relajada acotada.
+        csp = _CSP_DOCS if request.url.path in _DOCS_PATHS else _CSP
+        response.headers.setdefault("Content-Security-Policy", csp)
         response.headers.setdefault("X-Frame-Options", "DENY")
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")

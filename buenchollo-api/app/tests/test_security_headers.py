@@ -17,6 +17,10 @@ def _app(*, enable_hsts: bool = False) -> TestClient:
     def x() -> dict:
         return {"ok": True}
 
+    @app.get("/docs")
+    def docs() -> dict:
+        return {"ok": True}
+
     return TestClient(app)
 
 
@@ -57,3 +61,19 @@ def test_csp_permite_supabase_y_sentry():
     csp = response.headers["Content-Security-Policy"]
     assert "https://*.supabase.co" in csp
     assert "https://*.ingest.sentry.io" in csp
+
+
+def test_csp_relajada_en_docs_permite_swagger_cdn():
+    """`/docs` necesita cargar Swagger UI desde cdn.jsdelivr.net."""
+    client = _app()
+    csp = client.get("/docs").headers["Content-Security-Policy"]
+    assert "https://cdn.jsdelivr.net" in csp
+    assert "'unsafe-inline'" in csp  # script de arranque inline de Swagger
+
+
+def test_csp_estricta_fuera_de_docs():
+    """Las rutas normales NO deben llevar la excepción de los docs."""
+    client = _app()
+    csp = client.get("/x").headers["Content-Security-Policy"]
+    assert "https://cdn.jsdelivr.net" not in csp
+    assert "script-src 'self'" in csp
