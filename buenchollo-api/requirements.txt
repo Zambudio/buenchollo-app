@@ -5,38 +5,38 @@
 # ──────────────────────────────────────────────
 
 # Web framework
-fastapi==0.136.1
-uvicorn[standard]==0.34.0
-python-multipart==0.0.31  # 0.0.27 tenía 3 CVEs (CVE-2026-53538/53539/53540, DoS via multipart parsing) — ver SECURITY_AUDIT.md SEC-01
+fastapi==0.138.0
+uvicorn[standard]==0.49.0
+python-multipart==0.0.32  # 0.0.27 tenía 3 CVEs (CVE-2026-53538/53539/53540, DoS via multipart parsing) — ver SECURITY_AUDIT.md SEC-01
 
 # Validación y configuración
 pydantic==2.13.4
-pydantic-settings==2.14.1
+pydantic-settings==2.14.2
 python-dotenv==1.2.2
 
 # Base de datos (async)
-sqlalchemy[asyncio]==2.0.49
+sqlalchemy[asyncio]==2.0.51
 asyncpg==0.31.0
-greenlet==3.5.0
+greenlet==3.5.2
 alembic==1.18.4
 psycopg2-binary>=2.9
 
 # Integraciones externas
-supabase==2.9.1       # storage3>=2.x introduce pyiceberg (no compila sin Build Tools) — mantener <2.10
-openai==2.37.0
-httpx==0.27.2         # supabase 2.9.1 requiere httpx<0.28; openai acepta >=0.23
+supabase==2.31.0       # storage3>=2.x introduce pyiceberg (no compila sin Build Tools) — mantener <2.10
+openai==2.43.0
+httpx==0.28.1         # supabase 2.9.1 requiere httpx<0.28; openai acepta >=0.23
 requests==2.34.2
 
 # Tareas en background
 apscheduler==3.11.2
-tzlocal==5.3.1
+tzlocal==5.4.3
 tzdata==2026.2
 
 # Rate limiting (slowapi). Storage en memoria por defecto — suficiente para el
 # monolito; cambiar a Redis si se escala a múltiples instancias.
-slowapi==0.1.9
+slowapi==0.1.10
 
 # Error tracking (Sentry SaaS o cualquier endpoint compatible con su protocolo,
 # p.ej. GlitchTip). Desactivado por defecto: si SENTRY_DSN está vacío, init_sentry
 # no inicializa nada y el SDK queda inerte.
-sentry-sdk[fastapi]==2.20.0
+sentry-sdk[fastapi]==2.63.0
