@@ -31,7 +31,7 @@
 | Entregable | Ubicación |
 |---|---|
 | 🖥️ **Slides de la presentación** | [`presentacion/BuenCholloTech-TFM.pptx`](presentacion/BuenCholloTech-TFM.pptx) |
-| 🎥 **Vídeo de presentación** | ▶️ _Pendiente de publicar_ — sustituir por el enlace de YouTube: `https://youtu.be/XXXXXXXXXXX` |
+| 🎥 **Vídeo de presentación** | [▶️ Ver en YouTube](https://youtu.be/ZyAo8iIAIXQ) |
 
 ---
 
