@@ -24,6 +24,17 @@
 
 ---
 
+## 🎓 Entrega · Trabajo Final de Máster
+
+> Materiales de defensa del TFM: la presentación en diapositivas y el vídeo explicativo del proyecto.
+
+| Entregable | Ubicación |
+|---|---|
+| 🖥️ **Slides de la presentación** | [`presentacion/BuenCholloTech-TFM.pptx`](presentacion/BuenCholloTech-TFM.pptx) |
+| 🎥 **Vídeo de presentación** | ▶️ _Pendiente de publicar_ — sustituir por el enlace de YouTube: `https://youtu.be/XXXXXXXXXXX` |
+
+---
+
 ## 📖 ¿Qué es BuenCholloTech?
 
 Plataforma web tipo comunidad para descubrir, publicar y automatizar
@@ -33,6 +44,24 @@ automatizada al canal de Telegram del proyecto.
 
 > 💡 **Producto real desplegado en un NAS Synology con arquitectura
 > profesional**, no un prototipo académico desechable.
+
+---
+
+## ✨ Funcionalidades principales
+
+Organizadas por rol de usuario:
+
+- **👀 Visitante** — explorar chollos publicados, filtrar por categoría y tienda,
+  ver el detalle de cada oferta y acceder al enlace de afiliado.
+- **🔑 Usuario registrado** — crear **alertas personalizadas** por palabra clave y
+  categoría, recibir notificaciones cuando entra un chollo que encaja, marcar
+  **favoritos** y **votar** los chollos de la comunidad.
+- **🛠️ Administrador** — publicar y editar chollos, **autocomplete desde una URL de
+  Amazon** (feature estrella: rellena producto, precio e imagen automáticamente),
+  **categorización y copy generados con IA**, **publicación automática al canal de
+  Telegram**, panel de administración y **audit log** de las acciones admin.
+
+📐 Detalle funcional, perfiles y flujos: [`docs/master/03 · Análisis funcional`](docs/master/03-analisis-funcional.md).
 
 ---
 
