@@ -3,10 +3,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { DealCard, type DealCardData } from "@/features/deals/components/DealCard";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowRight, Send, Zap } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { dealsService, favoritesApi } from "@/services/api/deals";
 
-const TELEGRAM_URL = "https://t.me/buenchollotech";
 const SITE = "https://buenchollotech.com";
 const LIVE_LIMIT = 8;
 
@@ -108,92 +107,15 @@ function HomePage() {
       <section className="border-b border-surface-700 bg-surface-900 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-glow/5 blur-[120px] pointer-events-none" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-20 relative">
-          <div className="font-mono text-cyan-glow text-xs mb-4 animate-pulse">
-            &gt; CONEXIÓN ESTABLECIDA · MONITOREANDO NODOS
+          <div className="font-mono text-cyan-glow text-xs tracking-[0.2em] mb-5">
+            &gt; SELECCIÓN DIARIA DE OFERTAS
           </div>
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold text-foreground tracking-tighter leading-[1.05] mb-6">
-            INTERCEPTANDO
-            <br />
-            <span className="text-cyan-glow text-glow">CAÍDAS DE PRECIO</span>
+          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold text-foreground tracking-tighter leading-[1.02] mb-6">
+            Chollos en <span className="text-cyan-glow text-glow">tecnología</span>
           </h1>
-          <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mb-8">
-            Chollos reales en tecnología, seleccionados y comparados para que encuentres el mejor
-            precio.
+          <p className="text-muted-foreground text-base sm:text-xl max-w-2xl leading-relaxed">
+            Seleccionamos y comparamos ofertas para que encuentres el mejor precio.
           </p>
-          <div className="flex flex-wrap gap-3">
-            {!user && (
-              <Link
-                to="/registro"
-                className="inline-flex items-center gap-2 border border-surface-700 bg-surface-800 text-foreground font-mono text-xs font-bold px-5 py-3 hover:border-cyan-glow hover:text-cyan-glow transition-colors"
-              >
-                [ CREAR CUENTA ]
-              </Link>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* QUÉ ES — describe la funcionalidad y el propósito del acceso (requisito de verificación de Google) */}
-      <section className="border-b border-surface-700 bg-surface-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
-          <h2 className="font-mono text-cyan-glow text-xs uppercase tracking-wider mb-3">
-            &gt; QUÉ ES BUENCHOLLO TECH
-          </h2>
-          <p className="text-muted-foreground text-sm sm:text-base max-w-3xl leading-relaxed">
-            BuenChollo Tech es una web que busca, selecciona y publica ofertas reales de tecnología
-            y electrónica. Puedes explorar los chollos, consultar su precio y compararlos sin
-            necesidad de registrarte. Si creas una cuenta gratuita —con tu correo o con tu cuenta de
-            Google— podrás guardar favoritos, crear alertas de precio y recibir notificaciones.
-          </p>
-          <p className="text-muted-foreground text-sm sm:text-base max-w-3xl leading-relaxed mt-3">
-            Usamos el inicio de sesión con Google únicamente para identificarte y crear tu cuenta;
-            no accedemos a tu Gmail, Drive, contactos ni calendario. Puedes consultar cómo tratamos
-            tus datos en la{" "}
-            <Link to="/politica-de-privacidad" className="text-cyan-glow hover:underline">
-              Política de privacidad
-            </Link>{" "}
-            y los{" "}
-            <Link to="/terminos-y-condiciones" className="text-cyan-glow hover:underline">
-              Términos y condiciones
-            </Link>
-            .
-          </p>
-        </div>
-      </section>
-
-      {/* TELEGRAM BANNER */}
-      <section className="border-b border-surface-700 bg-surface-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-          <div className="relative overflow-hidden border border-surface-700 hover:border-cyan-glow transition-colors bg-gradient-to-r from-surface-900 via-surface-800 to-surface-900 p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
-            <div className="absolute -left-8 -top-8 w-40 h-40 bg-cyan-glow/10 blur-[80px] pointer-events-none" />
-            <div className="flex items-start sm:items-center gap-4 relative z-10">
-              <div className="shrink-0 size-12 sm:size-14 bg-cyan-glow/10 border border-cyan-glow/40 flex items-center justify-center">
-                <Send className="size-6 sm:size-7 text-cyan-glow" strokeWidth={2.2} />
-              </div>
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <Zap className="size-3.5 text-cyan-glow" />
-                  <span className="font-mono text-[10px] sm:text-xs text-cyan-glow uppercase tracking-wider">
-                    Canal oficial · Notificaciones al instante
-                  </span>
-                </div>
-                <h2 className="text-foreground font-bold text-base sm:text-lg tracking-tight leading-snug">
-                  También publicamos los chollos en <span className="text-cyan-glow">Telegram</span>
-                </h2>
-                <p className="text-muted-foreground text-xs sm:text-sm mt-0.5">
-                  Únete al canal y no te pierdas ninguna oferta — directo a tu móvil.
-                </p>
-              </div>
-            </div>
-            <a
-              href={TELEGRAM_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="relative z-10 inline-flex items-center gap-2 bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-5 py-3 hover:bg-foreground transition-colors whitespace-nowrap w-full sm:w-auto justify-center"
-            >
-              <Send className="size-4" />[ UNIRME AL CANAL ]
-            </a>
-          </div>
         </div>
       </section>
 

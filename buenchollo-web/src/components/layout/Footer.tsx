@@ -9,8 +9,8 @@ export function Footer() {
             BUENCHOLLO<span className="text-cyan-glow">_TECH</span>
           </div>
           <p className="text-muted-foreground text-xs leading-relaxed">
-            Las mejores ofertas de tecnología, monitorizadas y curadas. Sin ruido, solo chollos
-            reales.
+            Puedes usar la web sin registrarte. Si creas una cuenta, usamos el acceso con Google
+            solo para iniciar sesión e identificarte; no accedemos a tu Gmail ni a tus datos.
           </p>
         </div>
         <div>
