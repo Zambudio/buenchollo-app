@@ -11,14 +11,14 @@ export const Route = createFileRoute("/perfil")({
   component: ProfilePage,
   head: () => ({
     meta: [
-      { title: "Mi perfil · BuencholloTech" },
-      { name: "description", content: "Ajustes de tu cuenta de BuencholloTech." },
-      { property: "og:title", content: "Mi perfil · BuencholloTech" },
-      { property: "og:description", content: "Ajustes de tu cuenta de BuencholloTech." },
-      { property: "og:url", content: "https://buenchollotech.lovable.app/perfil" },
+      { title: "Mi perfil · BuenChollo Tech" },
+      { name: "description", content: "Ajustes de tu cuenta de BuenChollo Tech." },
+      { property: "og:title", content: "Mi perfil · BuenChollo Tech" },
+      { property: "og:description", content: "Ajustes de tu cuenta de BuenChollo Tech." },
+      { property: "og:url", content: "https://buenchollotech.com/perfil" },
       { name: "robots", content: "noindex, nofollow" },
     ],
-    links: [{ rel: "canonical", href: "https://buenchollotech.lovable.app/perfil" }],
+    links: [{ rel: "canonical", href: "https://buenchollotech.com/perfil" }],
   }),
 });
 

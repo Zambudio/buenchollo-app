@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-const BASE_URL = "https://buenchollotech.lovable.app";
+const BASE_URL = "https://buenchollotech.com";
 
 interface SitemapEntry {
   path: string;
@@ -19,6 +19,8 @@ export const Route = createFileRoute("/sitemap.xml")({
           { path: "/", changefreq: "hourly", priority: "1.0" },
           { path: "/explorar", changefreq: "hourly", priority: "0.9" },
           { path: "/categorias", changefreq: "weekly", priority: "0.7" },
+          { path: "/politica-de-privacidad", changefreq: "yearly", priority: "0.5" },
+          { path: "/terminos-y-condiciones", changefreq: "yearly", priority: "0.5" },
         ];
 
         try {

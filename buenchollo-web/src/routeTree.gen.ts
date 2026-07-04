@@ -9,8 +9,10 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TerminosYCondicionesRouteImport } from './routes/terminos-y-condiciones'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RegistroRouteImport } from './routes/registro'
+import { Route as PoliticaDePrivacidadRouteImport } from './routes/politica-de-privacidad'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as NotificacionesRouteImport } from './routes/notificaciones'
 import { Route as LoginRouteImport } from './routes/login'
@@ -30,6 +32,11 @@ import { Route as AdminTiendasRouteImport } from './routes/admin.tiendas'
 import { Route as AdminChollosRouteImport } from './routes/admin.chollos'
 import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
 
+const TerminosYCondicionesRoute = TerminosYCondicionesRouteImport.update({
+  id: '/terminos-y-condiciones',
+  path: '/terminos-y-condiciones',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
@@ -38,6 +45,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const RegistroRoute = RegistroRouteImport.update({
   id: '/registro',
   path: '/registro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PoliticaDePrivacidadRoute = PoliticaDePrivacidadRouteImport.update({
+  id: '/politica-de-privacidad',
+  path: '/politica-de-privacidad',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PerfilRoute = PerfilRouteImport.update({
@@ -142,8 +154,10 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/notificaciones': typeof NotificacionesRoute
   '/perfil': typeof PerfilRoute
+  '/politica-de-privacidad': typeof PoliticaDePrivacidadRoute
   '/registro': typeof RegistroRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/terminos-y-condiciones': typeof TerminosYCondicionesRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/chollos': typeof AdminChollosRoute
   '/admin/tiendas': typeof AdminTiendasRoute
@@ -163,8 +177,10 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/notificaciones': typeof NotificacionesRoute
   '/perfil': typeof PerfilRoute
+  '/politica-de-privacidad': typeof PoliticaDePrivacidadRoute
   '/registro': typeof RegistroRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/terminos-y-condiciones': typeof TerminosYCondicionesRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/chollos': typeof AdminChollosRoute
   '/admin/tiendas': typeof AdminTiendasRoute
@@ -186,8 +202,10 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/notificaciones': typeof NotificacionesRoute
   '/perfil': typeof PerfilRoute
+  '/politica-de-privacidad': typeof PoliticaDePrivacidadRoute
   '/registro': typeof RegistroRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/terminos-y-condiciones': typeof TerminosYCondicionesRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/chollos': typeof AdminChollosRoute
   '/admin/tiendas': typeof AdminTiendasRoute
@@ -210,8 +228,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/notificaciones'
     | '/perfil'
+    | '/politica-de-privacidad'
     | '/registro'
     | '/sitemap.xml'
+    | '/terminos-y-condiciones'
     | '/admin/categorias'
     | '/admin/chollos'
     | '/admin/tiendas'
@@ -231,8 +251,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/notificaciones'
     | '/perfil'
+    | '/politica-de-privacidad'
     | '/registro'
     | '/sitemap.xml'
+    | '/terminos-y-condiciones'
     | '/admin/categorias'
     | '/admin/chollos'
     | '/admin/tiendas'
@@ -253,8 +275,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/notificaciones'
     | '/perfil'
+    | '/politica-de-privacidad'
     | '/registro'
     | '/sitemap.xml'
+    | '/terminos-y-condiciones'
     | '/admin/categorias'
     | '/admin/chollos'
     | '/admin/tiendas'
@@ -276,8 +300,10 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   NotificacionesRoute: typeof NotificacionesRoute
   PerfilRoute: typeof PerfilRoute
+  PoliticaDePrivacidadRoute: typeof PoliticaDePrivacidadRoute
   RegistroRoute: typeof RegistroRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  TerminosYCondicionesRoute: typeof TerminosYCondicionesRoute
   AlertasNuevaRoute: typeof AlertasNuevaRoute
   CategoriaSlugRoute: typeof CategoriaSlugRoute
   CholloSlugRoute: typeof CholloSlugRoute
@@ -285,6 +311,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terminos-y-condiciones': {
+      id: '/terminos-y-condiciones'
+      path: '/terminos-y-condiciones'
+      fullPath: '/terminos-y-condiciones'
+      preLoaderRoute: typeof TerminosYCondicionesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -297,6 +330,13 @@ declare module '@tanstack/react-router' {
       path: '/registro'
       fullPath: '/registro'
       preLoaderRoute: typeof RegistroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/politica-de-privacidad': {
+      id: '/politica-de-privacidad'
+      path: '/politica-de-privacidad'
+      fullPath: '/politica-de-privacidad'
+      preLoaderRoute: typeof PoliticaDePrivacidadRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/perfil': {
@@ -457,8 +497,10 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   NotificacionesRoute: NotificacionesRoute,
   PerfilRoute: PerfilRoute,
+  PoliticaDePrivacidadRoute: PoliticaDePrivacidadRoute,
   RegistroRoute: RegistroRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TerminosYCondicionesRoute: TerminosYCondicionesRoute,
   AlertasNuevaRoute: AlertasNuevaRoute,
   CategoriaSlugRoute: CategoriaSlugRoute,
   CholloSlugRoute: CholloSlugRoute,

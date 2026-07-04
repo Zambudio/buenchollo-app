@@ -23,14 +23,14 @@ const search = z.object({
  *  componentes (Header, CategoriesDrawer) puedan tipar sus enlaces. */
 export type ExplorarSearch = z.infer<typeof search>;
 
-const SITE = "https://buenchollotech.lovable.app";
+const SITE = "https://buenchollotech.com";
 
 export const Route = createFileRoute("/explorar")({
   component: ExplorePage,
   validateSearch: (s) => search.parse(s),
   head: () => ({
     meta: [
-      { title: "Explorar chollos de tecnología · BuencholloTech" },
+      { title: "Explorar chollos de tecnología · BuenChollo Tech" },
       {
         name: "description",
         content:

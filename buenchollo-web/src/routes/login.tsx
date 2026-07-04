@@ -1,32 +1,33 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
+import { signInWithGoogle } from "@/lib/auth";
 import { useAuth } from "@/hooks/useAuth";
 import { Logo } from "@/components/layout/Logo";
 import { toast } from "sonner";
 import { z } from "zod";
+import { SITE_URL } from "@/lib/site";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
   head: () => ({
     meta: [
-      { title: "Acceder · BuencholloTech" },
+      { title: "Acceder · BuenChollo Tech" },
       {
         name: "description",
         content:
-          "Accede a tu cuenta de BuencholloTech para gestionar alertas, favoritos y notificaciones.",
+          "Accede a tu cuenta de BuenChollo Tech para gestionar alertas, favoritos y notificaciones.",
       },
-      { property: "og:title", content: "Acceder · BuencholloTech" },
+      { property: "og:title", content: "Acceder · BuenChollo Tech" },
       {
         property: "og:description",
         content:
-          "Accede a tu cuenta de BuencholloTech para gestionar alertas, favoritos y notificaciones.",
+          "Accede a tu cuenta de BuenChollo Tech para gestionar alertas, favoritos y notificaciones.",
       },
-      { property: "og:url", content: "https://buenchollotech.lovable.app/login" },
+      { property: "og:url", content: `${SITE_URL}/login` },
       { name: "robots", content: "noindex, nofollow" },
     ],
-    links: [{ rel: "canonical", href: "https://buenchollotech.lovable.app/login" }],
+    links: [{ rel: "canonical", href: `${SITE_URL}/login` }],
   }),
 });
 
@@ -66,12 +67,7 @@ function LoginPage() {
   };
 
   const onGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: window.location.origin,
-      },
-    });
+    const { error } = await signInWithGoogle();
     if (error) {
       toast.error("No se pudo iniciar sesión con Google");
       return;
@@ -115,6 +111,18 @@ function LoginPage() {
             </svg>
             CONTINUAR CON GOOGLE
           </button>
+
+          <p className="text-xs text-muted-foreground leading-relaxed mb-4">
+            Al continuar, aceptas los{" "}
+            <Link to="/terminos-y-condiciones" className="text-cyan-glow hover:underline">
+              Términos y condiciones
+            </Link>{" "}
+            y confirmas que has leído la{" "}
+            <Link to="/politica-de-privacidad" className="text-cyan-glow hover:underline">
+              Política de privacidad
+            </Link>
+            .
+          </p>
 
           <div className="flex items-center gap-3 my-4 text-xs font-mono text-muted-foreground">
             <div className="flex-1 h-px bg-surface-700" /> O{" "}

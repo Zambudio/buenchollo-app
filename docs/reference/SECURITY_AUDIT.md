@@ -312,8 +312,8 @@ sólida y verificable.
     completo sigue verde. Dependabot ya está propuesto auto-bumps
     semanales.
   - Considerar **eliminar** `@cloudflare/vite-plugin` si no se va a
-    desplegar en Cloudflare (lo añadió Lovable.dev en su template
-    inicial).
+    desplegar en Cloudflare (procede del scaffolding inicial del
+    proyecto).
 - **Cambio mínimo**: opcional, decisión de Pedro.
 
 ---

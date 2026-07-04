@@ -61,13 +61,23 @@ export function Footer() {
                 Contacto
               </Link>
             </li>
+            <li>
+              <Link to="/politica-de-privacidad" className="hover:text-foreground">
+                Política de privacidad
+              </Link>
+            </li>
+            <li>
+              <Link to="/terminos-y-condiciones" className="hover:text-foreground">
+                Términos y condiciones
+              </Link>
+            </li>
           </ul>
         </div>
         <div>
           <h4 className="font-mono text-xs uppercase text-cyan-glow mb-3">Aviso</h4>
           <p className="text-muted-foreground text-xs leading-relaxed">
-            BuencholloTech contiene enlaces de afiliado. Si compras a través de ellos, recibimos una
-            pequeña comisión sin coste para ti.
+            BuenChollo Tech contiene enlaces de afiliado. Si compras a través de ellos, recibimos
+            una pequeña comisión sin coste para ti.
           </p>
         </div>
       </div>

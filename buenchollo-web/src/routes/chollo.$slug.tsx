@@ -24,7 +24,7 @@ import {
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 
-const SITE = "https://buenchollotech.lovable.app";
+const SITE = "https://buenchollotech.com";
 
 export const Route = createFileRoute("/chollo/$slug")({
   component: DealDetail,
@@ -41,7 +41,7 @@ export const Route = createFileRoute("/chollo/$slug")({
     const url = `${SITE}/chollo/${params.slug}`;
     if (!m) {
       return {
-        meta: [{ title: `${params.slug} · BuencholloTech` }, { property: "og:url", content: url }],
+        meta: [{ title: `${params.slug} · BuenChollo Tech` }, { property: "og:url", content: url }],
         links: [{ rel: "canonical", href: url }],
       };
     }
@@ -49,7 +49,7 @@ export const Route = createFileRoute("/chollo/$slug")({
       (m.short_description || (m.description ? String(m.description).slice(0, 200) : "")) +
       (m.current_price ? ` · ${m.current_price}€` : "");
     const img = (m.images && m.images[0]) || m.image_url || undefined;
-    const title = `${m.title} — ${m.current_price ? `${m.current_price}€` : "Chollo"} · BuencholloTech`;
+    const title = `${m.title} — ${m.current_price ? `${m.current_price}€` : "Chollo"} · BuenChollo Tech`;
     return {
       meta: [
         { title },

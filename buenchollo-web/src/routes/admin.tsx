@@ -6,7 +6,7 @@ import { Package, FolderTree, Users, BarChart3, ShoppingBag } from "lucide-react
 
 export const Route = createFileRoute("/admin")({
   component: AdminLayout,
-  head: () => ({ meta: [{ title: "Admin · BuencholloTech" }] }),
+  head: () => ({ meta: [{ title: "Admin · BuenChollo Tech" }] }),
 });
 
 function AdminLayout() {

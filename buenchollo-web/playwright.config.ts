@@ -12,9 +12,8 @@
  */
 import { defineConfig, devices } from "@playwright/test";
 
-// El servidor de dev de Vite (configurado por @lovable.dev/vite-tanstack-config)
-// usa 8080 por defecto. Si está ocupado salta al siguiente; en CI siempre
-// está libre.
+// El servidor de dev de Vite está configurado en 8080 (ver vite.config.ts).
+// Si está ocupado salta al siguiente; en CI siempre está libre.
 const PORT = 8080;
 
 export default defineConfig({
