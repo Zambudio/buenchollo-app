@@ -119,6 +119,35 @@ function HomePage() {
         </div>
       </section>
 
+      {/* DESCRIPCIÓN — propósito de la app (requisito de verificación de marca de Google) */}
+      <section className="border-b border-surface-700 bg-surface-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
+          <h2 className="font-mono text-cyan-glow text-xs uppercase tracking-wider mb-3">
+            &gt; QUÉ ES BUENCHOLLO TECH
+          </h2>
+          <p className="text-muted-foreground text-sm sm:text-base max-w-3xl leading-relaxed">
+            BuenChollo Tech es una web de ofertas y chollos de tecnología. Buscamos, seleccionamos y
+            comparamos ofertas reales de productos tecnológicos y electrónica para que encuentres el
+            mejor precio. Puedes explorar los chollos y consultar sus precios sin necesidad de
+            registrarte.
+          </p>
+          <p className="text-muted-foreground text-sm sm:text-base max-w-3xl leading-relaxed mt-3">
+            Si creas una cuenta gratuita —con tu correo o con tu cuenta de Google— puedes guardar
+            favoritos, crear alertas de precio y recibir notificaciones. Usamos el inicio de sesión
+            con Google únicamente para identificarte y crear tu cuenta; no accedemos a tu Gmail,
+            Drive, contactos ni calendario. Consulta cómo tratamos tus datos en la{" "}
+            <Link to="/politica-de-privacidad" className="text-cyan-glow hover:underline">
+              Política de privacidad
+            </Link>{" "}
+            y los{" "}
+            <Link to="/terminos-y-condiciones" className="text-cyan-glow hover:underline">
+              Términos y condiciones
+            </Link>
+            .
+          </p>
+        </div>
+      </section>
+
       {/* MÁS POPULARES */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex items-center justify-between border-b border-surface-700 pb-3 mb-6">
