@@ -117,8 +117,8 @@ function HomePage() {
             <span className="text-cyan-glow text-glow">CAÍDAS DE PRECIO</span>
           </h1>
           <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mb-8">
-            Las mejores ofertas de tecnología, monitorizadas en tiempo real. Sin spam, sin ruido —
-            solo chollos que merecen tu atención.
+            Chollos reales en tecnología, seleccionados y comparados para que encuentres el mejor
+            precio.
           </p>
           <div className="flex flex-wrap gap-3">
             {!user && (
