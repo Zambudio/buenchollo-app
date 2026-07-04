@@ -78,6 +78,8 @@ export const Route = createRootRoute({
               "@type": "Organization",
               "@id": "https://buenchollotech.com/#org",
               name: "BuenChollo Tech",
+              description:
+                "BuenChollo Tech es una web de ofertas y chollos de tecnología: buscamos, seleccionamos y comparamos ofertas de productos tecnológicos y electrónica para que encuentres el mejor precio.",
               url: "https://buenchollotech.com/",
               logo: "https://buenchollotech.com/favicon.png",
               sameAs: ["https://t.me/buenchollotech"],
@@ -87,6 +89,8 @@ export const Route = createRootRoute({
               "@id": "https://buenchollotech.com/#site",
               url: "https://buenchollotech.com/",
               name: "BuenChollo Tech",
+              description:
+                "BuenChollo Tech es una web de ofertas y chollos de tecnología: buscamos, seleccionamos y comparamos ofertas de productos tecnológicos y electrónica para que encuentres el mejor precio.",
               publisher: { "@id": "https://buenchollotech.com/#org" },
               inLanguage: "es-ES",
               potentialAction: {
