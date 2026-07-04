@@ -35,6 +35,8 @@ export default defineConfig({
         // Config sin lógica testeable (INFRASTRUCTURE en términos del módulo
         // de Calidad). Documentado en docs/QUALITY.md.
         "src/lib/query-client.ts",
+        // Constantes de marca/dominio/contacto, sin lógica.
+        "src/lib/site.ts",
       ],
       thresholds: {
         "src/lib/**": {

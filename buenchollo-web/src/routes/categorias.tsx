@@ -3,13 +3,13 @@ import { useEffect, useState } from "react";
 import { categoriesService, type Category } from "@/services/api/categories";
 import { Layout } from "@/components/layout/Layout";
 
-const SITE = "https://buenchollotech.lovable.app";
+const SITE = "https://buenchollotech.com";
 
 export const Route = createFileRoute("/categorias")({
   component: CategoriesPage,
   head: () => ({
     meta: [
-      { title: "Todas las categorías de chollos · BuencholloTech" },
+      { title: "Todas las categorías de chollos · BuenChollo Tech" },
       {
         name: "description",
         content:

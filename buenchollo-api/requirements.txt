@@ -11,7 +11,7 @@ python-multipart==0.0.31  # 0.0.27 tenía 3 CVEs (CVE-2026-53538/53539/53540, Do
 
 # Validación y configuración
 pydantic==2.13.4
-pydantic-settings==2.14.1
+pydantic-settings==2.14.2  # 2.14.1 tenía GHSA-4xgf-cpjx-pc3j — fix en 2.14.2
 python-dotenv==1.2.2
 
 # Base de datos (async)

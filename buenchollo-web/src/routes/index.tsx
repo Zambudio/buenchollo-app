@@ -7,14 +7,14 @@ import { ArrowRight, Send, Zap } from "lucide-react";
 import { dealsService, favoritesApi } from "@/services/api/deals";
 
 const TELEGRAM_URL = "https://t.me/buenchollotech";
-const SITE = "https://buenchollotech.lovable.app";
+const SITE = "https://buenchollotech.com";
 const LIVE_LIMIT = 8;
 
 export const Route = createFileRoute("/")({
   component: HomePage,
   head: () => ({
     meta: [
-      { title: "BuencholloTech — Chollos y ofertas de tecnología en España" },
+      { title: "BuenChollo Tech — Chollos y ofertas de tecnología en España" },
       {
         name: "description",
         content:
@@ -22,7 +22,7 @@ export const Route = createFileRoute("/")({
       },
       {
         property: "og:title",
-        content: "BuencholloTech — Chollos y ofertas de tecnología en España",
+        content: "BuenChollo Tech — Chollos y ofertas de tecnología en España",
       },
       {
         property: "og:description",

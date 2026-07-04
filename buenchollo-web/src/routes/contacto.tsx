@@ -26,11 +26,11 @@ function Contacto() {
             en contacto con nosotros.
           </p>
           <a
-            href="mailto:buenchollotech@gmail.com"
+            href="mailto:contacto@buenchollotech.com"
             className="inline-flex items-center gap-3 border border-cyan-glow/50 text-cyan-glow font-mono text-sm px-5 py-3 hover:bg-cyan-glow/10 transition-colors"
           >
             <Mail className="size-4" />
-            buenchollotech@gmail.com
+            contacto@buenchollotech.com
           </a>
         </div>
       </div>

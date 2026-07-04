@@ -5,7 +5,7 @@ import { DealCard, type DealCardData } from "@/features/deals/components/DealCar
 import { categoriesService, type Category } from "@/services/api/categories";
 import { dealsService } from "@/services/api/deals";
 
-const SITE = "https://buenchollotech.lovable.app";
+const SITE = "https://buenchollotech.com";
 
 export const Route = createFileRoute("/categoria/$slug")({
   component: CategoryPage,
@@ -22,10 +22,10 @@ export const Route = createFileRoute("/categoria/$slug")({
     const name = c?.name ?? params.slug;
     const url = `${SITE}/categoria/${params.slug}`;
     const desc =
-      c?.description ?? `Chollos y ofertas de ${name} curados a diario en BuencholloTech.`;
+      c?.description ?? `Chollos y ofertas de ${name} curados a diario en BuenChollo Tech.`;
     return {
       meta: [
-        { title: `Chollos de ${name} · BuencholloTech` },
+        { title: `Chollos de ${name} · BuenChollo Tech` },
         { name: "description", content: String(desc).slice(0, 200) },
         { property: "og:title", content: `Chollos de ${name}` },
         { property: "og:description", content: String(desc).slice(0, 200) },

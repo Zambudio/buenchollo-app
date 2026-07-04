@@ -9,14 +9,14 @@ export const Route = createFileRoute("/favoritos")({
   component: FavoritesPage,
   head: () => ({
     meta: [
-      { title: "Favoritos · BuencholloTech" },
-      { name: "description", content: "Tus chollos guardados en BuencholloTech." },
-      { property: "og:title", content: "Favoritos · BuencholloTech" },
-      { property: "og:description", content: "Tus chollos guardados en BuencholloTech." },
-      { property: "og:url", content: "https://buenchollotech.lovable.app/favoritos" },
+      { title: "Favoritos · BuenChollo Tech" },
+      { name: "description", content: "Tus chollos guardados en BuenChollo Tech." },
+      { property: "og:title", content: "Favoritos · BuenChollo Tech" },
+      { property: "og:description", content: "Tus chollos guardados en BuenChollo Tech." },
+      { property: "og:url", content: "https://buenchollotech.com/favoritos" },
       { name: "robots", content: "noindex, nofollow" },
     ],
-    links: [{ rel: "canonical", href: "https://buenchollotech.lovable.app/favoritos" }],
+    links: [{ rel: "canonical", href: "https://buenchollotech.com/favoritos" }],
   }),
 });
 

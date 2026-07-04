@@ -1,31 +1,32 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
+import { signInWithGoogle } from "@/lib/auth";
 import { useAuth } from "@/hooks/useAuth";
 import { Logo } from "@/components/layout/Logo";
 import { toast } from "sonner";
 import { z } from "zod";
+import { SITE_URL } from "@/lib/site";
 
 export const Route = createFileRoute("/registro")({
   component: RegisterPage,
   head: () => ({
     meta: [
-      { title: "Crear cuenta · BuencholloTech" },
+      { title: "Crear cuenta · BuenChollo Tech" },
       {
         name: "description",
         content:
-          "Crea una cuenta gratuita en BuencholloTech para crear alertas y guardar tus chollos favoritos.",
+          "Crea una cuenta gratuita en BuenChollo Tech para crear alertas y guardar tus chollos favoritos.",
       },
-      { property: "og:title", content: "Crear cuenta · BuencholloTech" },
+      { property: "og:title", content: "Crear cuenta · BuenChollo Tech" },
       {
         property: "og:description",
         content:
-          "Crea una cuenta gratuita en BuencholloTech para crear alertas y guardar tus chollos favoritos.",
+          "Crea una cuenta gratuita en BuenChollo Tech para crear alertas y guardar tus chollos favoritos.",
       },
-      { property: "og:url", content: "https://buenchollotech.lovable.app/registro" },
+      { property: "og:url", content: `${SITE_URL}/registro` },
     ],
-    links: [{ rel: "canonical", href: "https://buenchollotech.lovable.app/registro" }],
+    links: [{ rel: "canonical", href: `${SITE_URL}/registro` }],
   }),
 });
 
@@ -69,21 +70,16 @@ function RegisterPage() {
       toast.error(error.message);
       return;
     }
-    toast.success("Cuenta creada. Bienvenido a BuencholloTech.");
+    toast.success("Cuenta creada. Bienvenido a BuenChollo Tech.");
     nav({ to: "/" });
   };
 
   const onGoogle = async () => {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (result.error) {
+    const { error } = await signInWithGoogle();
+    if (error) {
       toast.error("No se pudo registrar con Google");
       return;
     }
-    if (result.redirected) return;
-    toast.success("Cuenta creada");
-    nav({ to: "/" });
   };
 
   return (
@@ -123,6 +119,18 @@ function RegisterPage() {
             </svg>
             REGISTRARSE CON GOOGLE
           </button>
+
+          <p className="text-xs text-muted-foreground leading-relaxed mb-4">
+            Al continuar, aceptas los{" "}
+            <Link to="/terminos-y-condiciones" className="text-cyan-glow hover:underline">
+              Términos y condiciones
+            </Link>{" "}
+            y confirmas que has leído la{" "}
+            <Link to="/politica-de-privacidad" className="text-cyan-glow hover:underline">
+              Política de privacidad
+            </Link>
+            .
+          </p>
 
           <div className="flex items-center gap-3 my-4 text-xs font-mono text-muted-foreground">
             <div className="flex-1 h-px bg-surface-700" /> O{" "}

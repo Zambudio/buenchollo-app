@@ -13,20 +13,20 @@ export const Route = createFileRoute("/notificaciones")({
   component: NotificationsPage,
   head: () => ({
     meta: [
-      { title: "Notificaciones · BuencholloTech" },
+      { title: "Notificaciones · BuenChollo Tech" },
       {
         name: "description",
-        content: "Bandeja de notificaciones de tus alertas en BuencholloTech.",
+        content: "Bandeja de notificaciones de tus alertas en BuenChollo Tech.",
       },
-      { property: "og:title", content: "Notificaciones · BuencholloTech" },
+      { property: "og:title", content: "Notificaciones · BuenChollo Tech" },
       {
         property: "og:description",
-        content: "Bandeja de notificaciones de tus alertas en BuencholloTech.",
+        content: "Bandeja de notificaciones de tus alertas en BuenChollo Tech.",
       },
-      { property: "og:url", content: "https://buenchollotech.lovable.app/notificaciones" },
+      { property: "og:url", content: "https://buenchollotech.com/notificaciones" },
       { name: "robots", content: "noindex, nofollow" },
     ],
-    links: [{ rel: "canonical", href: "https://buenchollotech.lovable.app/notificaciones" }],
+    links: [{ rel: "canonical", href: "https://buenchollotech.com/notificaciones" }],
   }),
 });
 

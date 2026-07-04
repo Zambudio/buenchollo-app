@@ -5,7 +5,7 @@ export function Logo({ className = "" }: { className?: string }) {
     <div className={`flex items-center gap-2 ${className}`}>
       <img
         src={logoBcTech}
-        alt="BuenchólloTech logo"
+        alt="BuenChollo Tech logo"
         className="size-9 sm:size-10 object-contain drop-shadow-[0_0_8px_rgba(34,211,238,0.55)]"
         loading="eager"
         decoding="async"

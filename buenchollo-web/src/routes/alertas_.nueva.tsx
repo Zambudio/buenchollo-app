@@ -37,13 +37,13 @@ export const Route = createFileRoute("/alertas_/nueva")({
   component: NewAlertPage,
   head: () => ({
     meta: [
-      { title: "Nueva alerta · BuencholloTech" },
+      { title: "Nueva alerta · BuenChollo Tech" },
       {
         name: "description",
         content:
           "Crea una alerta para recibir avisos cuando aparezcan chollos de tus productos favoritos.",
       },
-      { property: "og:title", content: "Nueva alerta · BuencholloTech" },
+      { property: "og:title", content: "Nueva alerta · BuenChollo Tech" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),

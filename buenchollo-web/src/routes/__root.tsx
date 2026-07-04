@@ -4,6 +4,8 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { Toaster } from "@/components/ui/sonner";
 import { queryClient } from "@/lib/query-client";
 
+import { SITE_URL } from "@/lib/site";
+
 import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
@@ -34,24 +36,24 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "BuencholloTech — Las mejores ofertas de tecnología" },
+      { title: "BuenChollo Tech — Las mejores ofertas de tecnología" },
       {
         name: "description",
         content:
           "Portal de ofertas y chollos de tecnología y electrónica. Descuentos curados, alertas personalizadas y comunidad.",
       },
-      { name: "author", content: "BuencholloTech" },
-      { property: "og:title", content: "BuencholloTech — Las mejores ofertas de tecnología" },
+      { name: "author", content: "BuenChollo Tech" },
+      { property: "og:title", content: "BuenChollo Tech — Las mejores ofertas de tecnología" },
       {
         property: "og:description",
         content:
           "Portal de ofertas y chollos de tecnología y electrónica. Descuentos curados, alertas personalizadas y comunidad.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:site_name", content: "BuencholloTech" },
+      { property: "og:site_name", content: "BuenChollo Tech" },
       { property: "og:locale", content: "es_ES" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "BuencholloTech — Las mejores ofertas de tecnología" },
+      { name: "twitter:title", content: "BuenChollo Tech — Las mejores ofertas de tecnología" },
       {
         name: "twitter:description",
         content:
@@ -59,13 +61,11 @@ export const Route = createRootRoute({
       },
       {
         property: "og:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/2d10f0b6-2af5-434a-8618-dbc51e27c961/id-preview-5636a208--6598b564-42fc-4036-9f9c-29d936b259e5.lovable.app-1776711372677.png",
+        content: `${SITE_URL}/og-image.png`,
       },
       {
         name: "twitter:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/2d10f0b6-2af5-434a-8618-dbc51e27c961/id-preview-5636a208--6598b564-42fc-4036-9f9c-29d936b259e5.lovable.app-1776711372677.png",
+        content: `${SITE_URL}/og-image.png`,
       },
     ],
     scripts: [
@@ -76,22 +76,22 @@ export const Route = createRootRoute({
           "@graph": [
             {
               "@type": "Organization",
-              "@id": "https://buenchollotech.lovable.app/#org",
-              name: "BuencholloTech",
-              url: "https://buenchollotech.lovable.app/",
-              logo: "https://buenchollotech.lovable.app/favicon.png",
+              "@id": "https://buenchollotech.com/#org",
+              name: "BuenChollo Tech",
+              url: "https://buenchollotech.com/",
+              logo: "https://buenchollotech.com/favicon.png",
               sameAs: ["https://t.me/buenchollotech"],
             },
             {
               "@type": "WebSite",
-              "@id": "https://buenchollotech.lovable.app/#site",
-              url: "https://buenchollotech.lovable.app/",
-              name: "BuencholloTech",
-              publisher: { "@id": "https://buenchollotech.lovable.app/#org" },
+              "@id": "https://buenchollotech.com/#site",
+              url: "https://buenchollotech.com/",
+              name: "BuenChollo Tech",
+              publisher: { "@id": "https://buenchollotech.com/#org" },
               inLanguage: "es-ES",
               potentialAction: {
                 "@type": "SearchAction",
-                target: "https://buenchollotech.lovable.app/explorar?q={search_term_string}",
+                target: "https://buenchollotech.com/explorar?q={search_term_string}",
                 "query-input": "required name=search_term_string",
               },
             },

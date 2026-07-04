@@ -10,4 +10,4 @@ Disallow: /notificaciones
 Disallow: /login
 Disallow: /registro
 
-Sitemap: https://buenchollotech.lovable.app/sitemap.xml
+Sitemap: https://buenchollotech.com/sitemap.xml
