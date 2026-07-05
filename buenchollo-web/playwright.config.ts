@@ -1,5 +1,5 @@
 /**
- * Configuración de Playwright para los E2E de BuenCholloTech.
+ * Configuración de Playwright para los E2E de BuenChollo Tech.
  *
  * Filosofía: pocos tests E2E (3) cubriendo los flujos críticos del usuario
  * anónimo. La pirámide del módulo de Calidad recomienda usar E2E sólo para

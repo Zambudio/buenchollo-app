@@ -1,8 +1,8 @@
-# BuencholloTech
+# BuenChollo Tech
 
 > Portal en español de chollos y ofertas de tecnología y electrónica. Curamos descuentos en móviles, portátiles, audio, TV, gaming, periféricos y smart home, y permitimos crear alertas personalizadas para avisar cuando aparece un chollo que cumple tus criterios.
 
-BuencholloTech publica chollos verificados con enlaces de afiliado, temperatura comunitaria (votos) y comentarios. También difunde las mejores ofertas en su canal de Telegram.
+BuenChollo Tech publica chollos verificados con enlaces de afiliado, temperatura comunitaria (votos) y comentarios. También difunde las mejores ofertas en su canal de Telegram.
 
 ## Pages
 

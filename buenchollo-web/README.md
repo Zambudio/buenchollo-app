@@ -1,6 +1,6 @@
 # ⚛️ buenchollo-web
 
-> **Frontend de BuenCholloTech**. SPA con SSR opcional en React 19 +
+> **Frontend de BuenChollo Tech**. SPA con SSR opcional en React 19 +
 > TypeScript strict + Vite + TanStack Router/Query + Tailwind +
 > shadcn/ui.
 
@@ -48,11 +48,11 @@ npm run dev
 
 ## ⚙️ Variables de entorno
 
-| Variable | Obligatoria | Descripción |
-|---|---|---|
-| 🔑 `VITE_SUPABASE_URL` | ✅ | URL del proyecto Supabase |
-| 🔐 `VITE_SUPABASE_PUBLISHABLE_KEY` | ✅ | **anon key** (pública). ⚠️ Nunca service_role |
-| 🌐 `VITE_API_URL` | ✅ | Base de `buenchollo-api` (sin `/v1`) |
+| Variable                           | Obligatoria | Descripción                                   |
+| ---------------------------------- | ----------- | --------------------------------------------- |
+| 🔑 `VITE_SUPABASE_URL`             | ✅          | URL del proyecto Supabase                     |
+| 🔐 `VITE_SUPABASE_PUBLISHABLE_KEY` | ✅          | **anon key** (pública). ⚠️ Nunca service_role |
+| 🌐 `VITE_API_URL`                  | ✅          | Base de `buenchollo-api` (sin `/v1`)          |
 
 > ⚠️ Las `VITE_*` se **embeben en el JavaScript del cliente** al
 > hacer `npm run build`. Cualquier valor que pongas aquí es público.
@@ -64,35 +64,35 @@ npm run dev
 
 ### 💻 Desarrollo
 
-| Comando | Para qué |
-|---|---|
-| `npm run dev` | vite dev con hot-reload |
+| Comando         | Para qué                  |
+| --------------- | ------------------------- |
+| `npm run dev`   | vite dev con hot-reload   |
 | `npm run build` | build estático en `dist/` |
 
 ### 🧪 Calidad
 
-| Comando | Para qué |
-|---|---|
-| `npm run lint` | ESLint estricto |
+| Comando             | Para qué              |
+| ------------------- | --------------------- |
+| `npm run lint`      | ESLint estricto       |
 | `npm run typecheck` | tsc --noEmit (strict) |
-| `npm run format` | Prettier |
+| `npm run format`    | Prettier              |
 
 ### 🧪 Tests
 
-| Comando | Para qué |
-|---|---|
-| `npm run test` | Vitest watch |
-| `npm run test:run` | 72 tests one-shot |
+| Comando                 | Para qué                      |
+| ----------------------- | ----------------------------- |
+| `npm run test`          | Vitest watch                  |
+| `npm run test:run`      | 72 tests one-shot             |
 | `npm run test:coverage` | Con threshold en `src/lib/**` |
-| `npm run test:e2e` | 8 Playwright (chromium) |
-| `npm run test:e2e:ui` | Modo interactivo |
+| `npm run test:e2e`      | 8 Playwright (chromium)       |
+| `npm run test:e2e:ui`   | Modo interactivo              |
 
 ### 🎯 Gates compuestos
 
-| Comando | Para qué |
-|---|---|
-| `npm run quality` | lint + typecheck + test:run |
-| `npm run quality:full` | + test:e2e |
+| Comando                | Para qué                    |
+| ---------------------- | --------------------------- |
+| `npm run quality`      | lint + typecheck + test:run |
+| `npm run quality:full` | + test:e2e                  |
 
 ---
 
@@ -157,11 +157,11 @@ src/
 
 ## 🧪 Tests
 
-| Capa | Cantidad | Stack | Duración |
-|---|---|---|---|
-| ⚛️ Unit | **59** | Vitest + jsdom | ~0,5 s |
-| 🔗 Integration | **13** | Vitest + Testing Library + userEvent | ~0,7 s |
-| 🎭 E2E | **8** | Playwright chromium | ~6 s |
+| Capa           | Cantidad | Stack                                | Duración |
+| -------------- | -------- | ------------------------------------ | -------- |
+| ⚛️ Unit        | **59**   | Vitest + jsdom                       | ~0,5 s   |
+| 🔗 Integration | **13**   | Vitest + Testing Library + userEvent | ~0,7 s   |
+| 🎭 E2E         | **8**    | Playwright chromium                  | ~6 s     |
 
 ### 🎯 Threshold automático en `vitest.config.ts`
 
@@ -189,10 +189,10 @@ npm run build   # 📦 genera dist/
 
 ### 🌍 Dónde servir `dist/`
 
-| Opción | Cuándo |
-|---|---|
-| 🏠 Reverse proxy del NAS apuntando a Nginx local | Coste cero, control total |
-| ☁️ Cloudflare Pages / Vercel / Netlify | CDN global, ideal para audiencia internacional |
+| Opción                                           | Cuándo                                         |
+| ------------------------------------------------ | ---------------------------------------------- |
+| 🏠 Reverse proxy del NAS apuntando a Nginx local | Coste cero, control total                      |
+| ☁️ Cloudflare Pages / Vercel / Netlify           | CDN global, ideal para audiencia internacional |
 
 📚 Guía completa: [`../docs/project/08-deployment.md`](../docs/project/08-deployment.md).
 
@@ -200,12 +200,12 @@ npm run build   # 📦 genera dist/
 
 ## 📚 Documentación relacionada
 
-| Tema | Documento |
-|---|---|
+| Tema                           | Documento                                                         |
+| ------------------------------ | ----------------------------------------------------------------- |
 | 📥 **Setup completo del repo** | [`docs/project/02`](../docs/project/02-installation-and-setup.md) |
-| 🗂️ **Estructura por features** | [`docs/project/03`](../docs/project/03-project-structure.md) |
-| ⚙️ **Variables de entorno** | [`docs/project/04`](../docs/project/04-configuration.md) |
-| 🧪 **Tests y coverage** | [`docs/project/06`](../docs/project/06-testing-and-quality.md) |
-| 🛡️ **Seguridad** | [`docs/project/07`](../docs/project/07-security.md) |
-| 🚀 **Despliegue** | [`docs/project/08`](../docs/project/08-deployment.md) |
-| 🔍 **Troubleshooting** | [`docs/project/09`](../docs/project/09-troubleshooting.md) |
+| 🗂️ **Estructura por features** | [`docs/project/03`](../docs/project/03-project-structure.md)      |
+| ⚙️ **Variables de entorno**    | [`docs/project/04`](../docs/project/04-configuration.md)          |
+| 🧪 **Tests y coverage**        | [`docs/project/06`](../docs/project/06-testing-and-quality.md)    |
+| 🛡️ **Seguridad**               | [`docs/project/07`](../docs/project/07-security.md)               |
+| 🚀 **Despliegue**              | [`docs/project/08`](../docs/project/08-deployment.md)             |
+| 🔍 **Troubleshooting**         | [`docs/project/09`](../docs/project/09-troubleshooting.md)        |
