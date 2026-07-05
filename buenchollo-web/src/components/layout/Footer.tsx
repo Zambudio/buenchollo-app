@@ -6,7 +6,7 @@ export function Footer() {
       <div className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
         <div className="col-span-2 md:col-span-1">
           <div className="font-bold text-lg tracking-tighter mb-3">
-            BUENCHOLLO<span className="text-cyan-glow">_TECH</span>
+            BuenChollo<span className="text-cyan-glow"> Tech</span>
           </div>
           <p className="text-muted-foreground text-xs leading-relaxed">
             Puedes usar la web sin registrarte. Si creas una cuenta, usamos el acceso con Google
@@ -82,7 +82,7 @@ export function Footer() {
         </div>
       </div>
       <div className="border-t border-surface-700 px-6 py-4 text-center text-xs font-mono text-muted-foreground">
-        © {new Date().getFullYear()} BUENCHOLLO_TECH · v1.0
+        © {new Date().getFullYear()} BuenChollo Tech · v1.0
       </div>
     </footer>
   );

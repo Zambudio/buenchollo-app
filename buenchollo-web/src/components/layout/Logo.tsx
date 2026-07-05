@@ -11,7 +11,7 @@ export function Logo({ className = "" }: { className?: string }) {
         decoding="async"
       />
       <div className="font-bold text-lg sm:text-xl tracking-tighter text-foreground">
-        BUENCHOLLO<span className="text-cyan-glow">_TECH</span>
+        BuenChollo<span className="text-cyan-glow"> Tech</span>
       </div>
     </div>
   );

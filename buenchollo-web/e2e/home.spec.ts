@@ -20,9 +20,9 @@ test.describe("Home pública", () => {
 
   test("el header muestra el logo BuenChollo Tech", async ({ page }) => {
     await page.goto("/");
-    // El logo es un Link a "/" con el texto BUENCHOLLO_TECH renderizado en
+    // El logo es un Link a "/" con el texto "BuenChollo Tech" renderizado en
     // varios elementos. Usar getByText con regex tolerante a fragmentos.
-    await expect(page.getByText(/BUENCHOLLO/i).first()).toBeVisible();
+    await expect(page.getByText(/BuenChollo\s*Tech/i).first()).toBeVisible();
   });
 
   test("el header tiene un buscador identificado por su input id", async ({ page }) => {
