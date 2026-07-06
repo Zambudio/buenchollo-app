@@ -89,11 +89,16 @@ export function Footer() {
                 Términos y condiciones
               </Link>
             </li>
+            <li>
+              <Link to="/politica-de-cookies" className="hover:text-foreground">
+                Política de cookies
+              </Link>
+            </li>
           </ul>
         </div>
-        <div>
+        <div className="col-span-2 md:col-span-4 pt-4 border-t border-surface-700">
           <h4 className="font-mono text-xs uppercase text-cyan-glow mb-3">Aviso</h4>
-          <p className="text-muted-foreground text-xs leading-relaxed">
+          <p className="text-muted-foreground text-xs leading-relaxed max-w-3xl">
             BuenChollo Tech contiene enlaces de afiliado. Si compras a través de ellos, recibimos
             una pequeña comisión sin coste para ti.
           </p>
