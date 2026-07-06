@@ -38,7 +38,7 @@ function PoliticaDePrivacidad() {
         </h1>
         <div className="h-px bg-cyan-glow/40 mb-4" />
         <p className="font-mono text-xs text-muted-foreground mb-8">
-          Última actualización: 4 de julio de 2026
+          Última actualización: 6 de julio de 2026
         </p>
 
         <div
@@ -306,7 +306,10 @@ function PoliticaDePrivacidad() {
             funcionamiento del inicio de sesión y el mantenimiento de tu sesión: tu sesión se guarda
             en el almacenamiento local de tu navegador mediante nuestro proveedor de autenticación.
             No utilizamos cookies ni herramientas de analítica, publicidad o seguimiento no
-            esenciales, por lo que no se muestra un banner de consentimiento de cookies. Si en el
+            esenciales. La primera vez que visitas la web te mostramos un aviso informativo breve
+            sobre este almacenamiento técnico —sin categorías de cookies que aceptar o rechazar,
+            porque no existen—, que puedes cerrar pulsando «Entendido». Puedes consultar el detalle
+            completo en nuestra <Link to="/politica-de-cookies">Política de cookies</Link>. Si en el
             futuro incorporásemos herramientas no esenciales, actualizaríamos esta política y
             gestionaríamos el consentimiento correspondiente.
           </p>
