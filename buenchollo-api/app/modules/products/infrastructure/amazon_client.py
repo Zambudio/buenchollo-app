@@ -155,32 +155,6 @@ def extract_asin_from_url(url_or_asin: str) -> str | None:
     return match.group(1) if match else None
 
 
-def _format_price(value: float | None, currency: str) -> str:
-    if value is None:
-        return "Precio no disponible"
-    return f"{value:.2f} EUR"
-
-
-def build_telegram_text(product: ProductPreview) -> str:
-    """Construye el texto inicial para Telegram."""
-    current_price = _format_price(product.current_price, product.currency)
-    original_price = _format_price(product.original_price, product.currency)
-    description = product.description or "Sin descripción técnica adicional."
-    url = product.affiliate_url or product.product_url
-
-    lines = [f"🍄 {product.title or 'Título no disponible'}", ""]
-    if product.original_price:
-        lines.append(f"💶 Precio: {current_price} (antes {original_price})")
-    else:
-        lines.append(f"💶 Precio: {current_price}")
-
-    if product.discount_percentage:
-        lines.append(f"💰 Descuento: -{product.discount_percentage} %")
-
-    lines.extend(["", f"🛒 {url}", "", f"✏️{description}"])
-    return "\n".join(lines)
-
-
 class AmazonProductClient:
     """Obtiene productos de Amazon Creators API mediante HTTP directo."""
 
@@ -308,7 +282,6 @@ class AmazonProductClient:
 
         self._fill_price_data(product, item)
         self._fill_deal_data(product, item)
-        product.telegram_text = build_telegram_text(product)
         return product
 
     @staticmethod

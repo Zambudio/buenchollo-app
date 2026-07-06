@@ -85,7 +85,11 @@ def test_amazon_client_maps_creators_api_payload(monkeypatch) -> None:
     assert product.current_price == 10.0
     assert product.original_price == 20.0
     assert product.discount_percentage == 50
-    assert "Producto Test" in product.telegram_text
+    # telegram_text no se rellena aquí: lo genera la IA en el enriquecimiento
+    # posterior (preview_product_from_url.py). Si queda vacío, el generador
+    # de posts de Telegram simplemente omite la sección de descripción en
+    # lugar de incrustar un mensaje pre-formateado obsoleto.
+    assert product.telegram_text == ""
 
 
 def test_amazon_client_returns_none_when_asin_missing() -> None:
