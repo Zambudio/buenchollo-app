@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { useAuth } from "@/hooks/useAuth";
+import { googleAvatarUrl } from "@/lib/google-profile";
 import { useUnreadNotifications } from "@/features/notifications/hooks/useNotifications";
 import { CategoriesDrawer } from "./CategoriesDrawer";
 import {
@@ -25,12 +26,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export function Header() {
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, me, isAdmin, signOut } = useAuth();
   const [q, setQ] = useState("");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const nav = useNavigate();
   const { data: unread = 0 } = useUnreadNotifications();
+  const avatarUrl = me?.avatar_url || googleAvatarUrl(user);
 
   const onSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -112,9 +114,18 @@ export function Header() {
                 <DropdownMenu>
                   <DropdownMenuTrigger
                     aria-label="Menú de perfil"
-                    className="size-9 rounded-full bg-surface-700 border border-surface-600 flex items-center justify-center hover:border-cyan-glow transition-colors"
+                    className="size-9 overflow-hidden rounded-full bg-surface-700 border border-surface-600 flex items-center justify-center hover:border-cyan-glow transition-colors"
                   >
-                    <UserIcon className="size-4" />
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt=""
+                        className="size-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <UserIcon className="size-4" />
+                    )}
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-52">
                     <DropdownMenuItem asChild>

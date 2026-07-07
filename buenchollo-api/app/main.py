@@ -79,7 +79,9 @@ app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 #   2) RateLimit  (filtra antes de tocar la lógica)
 #   3) CORS       (envuelve la respuesta final)
 # Así que registramos en orden inverso: CORS, RateLimit, RequestId.
-_allow_all = "*" in settings.cors_origins
+cors_origins = settings.effective_cors_origins
+logger.info("CORS origins configurados: %s", cors_origins)
+_allow_all = "*" in cors_origins
 # Bandera roja si producción arranca con CORS_ORIGINS=* (descuido típico).
 # No bloquea el arranque (un mantenedor podría haberlo decidido a sabiendas
 # tras un incidente) pero deja constancia en logs y en Sentry.
@@ -90,7 +92,7 @@ if _allow_all and settings.app_env == "production":
     )
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"] if _allow_all else settings.cors_origins,
+    allow_origins=["*"] if _allow_all else cors_origins,
     allow_credentials=not _allow_all,  # credentials=True es incompatible con allow_origins=["*"]
     allow_methods=["*"],
     allow_headers=["*"],
@@ -162,7 +164,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     cors_headers: dict[str, str] = {}
     if _allow_all:
         cors_headers["Access-Control-Allow-Origin"] = "*"
-    elif origin in settings.cors_origins:
+    elif origin in cors_origins:
         cors_headers["Access-Control-Allow-Origin"] = origin
         cors_headers["Access-Control-Allow-Credentials"] = "true"
     return JSONResponse(

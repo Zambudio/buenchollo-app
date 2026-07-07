@@ -16,7 +16,6 @@ def _build_service(**repo_overrides):
     sobreescribibles. Por defecto los métodos devuelven valores neutros."""
     repo = MagicMock()
     repo.get_user_roles = AsyncMock(return_value=[])
-    repo.get_username = AsyncMock(return_value=None)
     repo.get_by_user_id = AsyncMock(return_value=None)
     repo.update_profile = AsyncMock(return_value=None)
     repo.get_user_stats = AsyncMock(return_value={"comments_made": 0})
@@ -33,9 +32,14 @@ def _build_service(**repo_overrides):
 
 @pytest.mark.asyncio
 async def test_get_me_overview_devuelve_admin_true_si_rol_admin():
+    profile = SimpleNamespace(
+        display_name="Pedro",
+        avatar_url="https://x.com/a.png",
+        username="pedrillo",
+    )
     service, _ = _build_service(
         get_user_roles=AsyncMock(return_value=["user", "admin"]),
-        get_username=AsyncMock(return_value="pedrillo"),
+        get_by_user_id=AsyncMock(return_value=profile),
     )
 
     result = await service.get_me_overview(CurrentUser(id="u1", email="a@b.es"))
@@ -46,6 +50,9 @@ async def test_get_me_overview_devuelve_admin_true_si_rol_admin():
         "roles": ["user", "admin"],
         "is_admin": True,
         "has_profile": True,
+        "needs_onboarding": False,
+        "display_name": "Pedro",
+        "avatar_url": "https://x.com/a.png",
         "username": "pedrillo",
     }
 
@@ -61,6 +68,9 @@ async def test_get_me_overview_sin_perfil_devuelve_has_profile_false():
 
     assert result["is_admin"] is False
     assert result["has_profile"] is False
+    assert result["needs_onboarding"] is True
+    assert result["display_name"] is None
+    assert result["avatar_url"] is None
     assert result["username"] is None
 
 
@@ -103,13 +113,18 @@ async def test_get_my_profile_serializa_la_entidad():
 async def test_update_my_profile_trunca_a_los_limites_de_bd():
     captured = {}
 
-    async def fake_update(user_id, display_name, bio):
-        captured.update({"display_name": display_name, "bio": bio})
+    async def fake_update(user_id, display_name, bio, avatar_url=None, update_avatar=False):
+        captured.update({
+            "display_name": display_name,
+            "bio": bio,
+            "avatar_url": avatar_url,
+            "update_avatar": update_avatar,
+        })
         return SimpleNamespace(
             user_id=user_id,
             display_name=display_name,
             bio=bio,
-            avatar_url=None,
+            avatar_url=avatar_url,
             username=None,
         )
 
@@ -118,10 +133,45 @@ async def test_update_my_profile_trunca_a_los_limites_de_bd():
     nombre_largo = "x" * 80   # > 50
     bio_larga = "y" * 500     # > 300
 
-    await service.update_my_profile("u1", display_name=nombre_largo, bio=bio_larga)
+    await service.update_my_profile(
+        "u1",
+        display_name=nombre_largo,
+        bio=bio_larga,
+        avatar_url="https://x.com/avatar.png",
+    )
 
     assert len(captured["display_name"]) == 50
     assert len(captured["bio"]) == 300
+    assert captured["avatar_url"] == "https://x.com/avatar.png"
+    assert captured["update_avatar"] is True
+
+
+@pytest.mark.asyncio
+async def test_update_my_profile_permita_borrar_avatar():
+    captured = {}
+
+    async def fake_update(user_id, display_name, bio, avatar_url=None, update_avatar=False):
+        captured.update({"avatar_url": avatar_url, "update_avatar": update_avatar})
+        return SimpleNamespace(
+            user_id=user_id,
+            display_name=display_name,
+            bio=bio,
+            avatar_url=avatar_url,
+            username=None,
+        )
+
+    service, _ = _build_service(update_profile=AsyncMock(side_effect=fake_update))
+
+    result = await service.update_my_profile(
+        "u1",
+        display_name="Pedro",
+        bio="",
+        avatar_url=None,
+        update_avatar=True,
+    )
+
+    assert captured == {"avatar_url": None, "update_avatar": True}
+    assert result["avatar_url"] is None
 
 
 @pytest.mark.asyncio

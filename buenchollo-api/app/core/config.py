@@ -1,9 +1,10 @@
 """Application settings loaded from environment variables."""
 
 from functools import lru_cache
+from typing import Annotated
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -39,7 +40,7 @@ class Settings(BaseSettings):
     # Orígenes CORS permitidos, separados por comas en la variable de entorno.
     # Ejemplo: CORS_ORIGINS=https://buenchollotech.com,https://www.buenchollotech.com
     # En local se puede dejar vacío o usar "*" para permitir cualquier origen.
-    cors_origins: list[str] = Field(default=["*"])
+    cors_origins: Annotated[list[str], NoDecode] = Field(default=["*"])
 
     @field_validator("cors_origins", mode="before")
     @classmethod
@@ -47,6 +48,26 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             return [origin.strip() for origin in v.split(",") if origin.strip()]
         return v
+
+    @property
+    def effective_cors_origins(self) -> list[str]:
+        origins = list(dict.fromkeys(self.cors_origins))
+        if self.app_env != "production" and "*" not in origins:
+            origins.extend(
+                origin
+                for origin in (
+                    "http://localhost:8080",
+                    "http://127.0.0.1:8080",
+                    "http://localhost:8081",
+                    "http://127.0.0.1:8081",
+                    "http://localhost:8082",
+                    "http://127.0.0.1:8082",
+                    "http://localhost:5173",
+                    "http://127.0.0.1:5173",
+                )
+                if origin not in origins
+            )
+        return origins
 
     amazon_client_id: str = ""
     amazon_client_secret: str = ""

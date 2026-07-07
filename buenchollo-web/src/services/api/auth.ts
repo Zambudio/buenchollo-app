@@ -6,6 +6,9 @@ export interface MeResponse {
   roles: string[];
   is_admin: boolean;
   has_profile: boolean;
+  needs_onboarding: boolean;
+  display_name: string | null;
+  avatar_url: string | null;
   username: string | null;
 }
 
@@ -43,9 +46,12 @@ export const authApi = {
   /** Perfil completo del usuario autenticado. */
   getMyProfile: (): Promise<MyProfile> => apiClient.get<MyProfile>("/users/me/profile"),
 
-  /** Actualiza display_name y bio del usuario autenticado. */
-  updateMyProfile: (data: { display_name: string; bio: string }): Promise<MyProfile> =>
-    apiClient.put<MyProfile>("/users/me/profile", data),
+  /** Actualiza display_name, bio y avatar inicial del usuario autenticado. */
+  updateMyProfile: (data: {
+    display_name: string;
+    bio: string;
+    avatar_url?: string | null;
+  }): Promise<MyProfile> => apiClient.put<MyProfile>("/users/me/profile", data),
 
   /** Estadísticas agregadas del usuario (comentarios, votos, favoritos…). */
   getMyStats: (): Promise<MyStats> => apiClient.get<MyStats>("/users/me/stats"),

@@ -4,6 +4,8 @@ Encapsula toda la persistencia relacionada con perfiles, roles, stats por
 usuario y agregados del panel admin. La capa `application/UserService`
 consume estos métodos sin construir SQL.
 """
+from types import SimpleNamespace
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import desc, select, text
 
@@ -26,15 +28,36 @@ class ProfileRepository:
         return result.scalars().first()
 
     async def update_profile(
-        self, user_id: str, display_name: str, bio: str
-    ) -> Profile | None:
-        profile = await self.get_by_user_id(user_id)
-        if not profile:
-            return None
-        profile.display_name = display_name
-        profile.bio = bio
-        await self.session.flush()
-        return profile
+        self,
+        user_id: str,
+        display_name: str,
+        bio: str,
+        avatar_url: str | None = None,
+        update_avatar: bool = False,
+    ) -> SimpleNamespace | None:
+        result = await self.session.execute(
+            text(
+                "INSERT INTO public.profiles (user_id, display_name, bio, avatar_url) "
+                "VALUES (CAST(:user_id AS uuid), :display_name, :bio, :avatar_url) "
+                "ON CONFLICT (user_id) DO UPDATE SET "
+                "  display_name = EXCLUDED.display_name, "
+                "  bio = EXCLUDED.bio, "
+                "  avatar_url = CASE "
+                "    WHEN :update_avatar THEN EXCLUDED.avatar_url "
+                "    ELSE public.profiles.avatar_url "
+                "  END "
+                "RETURNING user_id::text AS user_id, display_name, bio, avatar_url, username"
+            ),
+            {
+                "user_id": user_id,
+                "display_name": display_name,
+                "bio": bio,
+                "avatar_url": avatar_url,
+                "update_avatar": update_avatar,
+            },
+        )
+        row = result.mappings().first()
+        return SimpleNamespace(**row) if row else None
 
     async def get_username(self, user_id: str) -> str | None:
         result = await self.session.execute(
