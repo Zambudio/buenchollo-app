@@ -2,6 +2,7 @@ import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/r
 import { QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/hooks/useAuth";
 import { Toaster } from "@/components/ui/sonner";
+import { WelcomeProfileDialog } from "@/features/auth/components/WelcomeProfileDialog";
 import { queryClient } from "@/lib/query-client";
 
 import { SITE_URL } from "@/lib/site";
@@ -140,6 +141,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Outlet />
+        <WelcomeProfileDialog />
         <Toaster />
       </AuthProvider>
     </QueryClientProvider>

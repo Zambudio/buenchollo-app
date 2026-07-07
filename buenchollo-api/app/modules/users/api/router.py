@@ -19,6 +19,7 @@ router = APIRouter(tags=["auth"])
 class ProfileUpdate(BaseModel):
     display_name: str = Field(min_length=1, max_length=50)
     bio: str = Field(default="", max_length=300)
+    avatar_url: str | None = Field(default=None, max_length=2048)
 
 
 def get_user_service(db: AsyncSession = Depends(get_db)) -> UserService:
@@ -55,6 +56,8 @@ async def update_my_profile(
         str(current_user.id),
         display_name=payload.display_name,
         bio=payload.bio,
+        avatar_url=payload.avatar_url,
+        update_avatar="avatar_url" in payload.model_fields_set,
     )
 
 

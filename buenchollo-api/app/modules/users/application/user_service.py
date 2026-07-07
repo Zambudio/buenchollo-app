@@ -40,14 +40,18 @@ class UserService:
         está bien validado y que las tablas auxiliares responden.
         """
         roles = await self.repo.get_user_roles(user.id)
-        username = await self.repo.get_username(user.id)
+        profile = await self.repo.get_by_user_id(user.id)
+        has_display_name = bool(profile and profile.display_name and profile.display_name.strip())
         return {
             "user_id": user.id,
             "email": user.email,
             "roles": roles,
             "is_admin": "admin" in roles,
-            "has_profile": username is not None,
-            "username": username,
+            "has_profile": profile is not None,
+            "needs_onboarding": not has_display_name,
+            "display_name": profile.display_name if profile else None,
+            "avatar_url": profile.avatar_url if profile else None,
+            "username": profile.username if profile else None,
         }
 
     # ── Perfil del usuario actual ────────────────────────────────────────────
@@ -76,14 +80,24 @@ class UserService:
             "username": profile.username,
         }
 
-    async def update_my_profile(self, user_id: str, display_name: str, bio: str) -> dict:
+    async def update_my_profile(
+        self,
+        user_id: str,
+        display_name: str,
+        bio: str,
+        avatar_url: str | None = None,
+        update_avatar: bool | None = None,
+    ) -> dict:
         """Actualiza `display_name` y `bio`. Trunca a los límites de la BD
         (50 y 300 caracteres respectivamente) para evitar errores 500 por
         violación de longitud."""
+        should_update_avatar = avatar_url is not None if update_avatar is None else update_avatar
         updated = await self.repo.update_profile(
             user_id,
             display_name=display_name.strip()[:50],
             bio=bio.strip()[:300],
+            avatar_url=avatar_url.strip()[:2048] if avatar_url else None,
+            update_avatar=should_update_avatar,
         )
         if not updated:
             raise ProfileNotFound()
