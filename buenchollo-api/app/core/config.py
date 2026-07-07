@@ -52,6 +52,15 @@ class Settings(BaseSettings):
     @property
     def effective_cors_origins(self) -> list[str]:
         origins = list(dict.fromkeys(self.cors_origins))
+        if self.app_env == "production" and "*" not in origins:
+            origins.extend(
+                origin
+                for origin in (
+                    "https://buenchollotech.com",
+                    "https://www.buenchollotech.com",
+                )
+                if origin not in origins
+            )
         if self.app_env != "production" and "*" not in origins:
             origins.extend(
                 origin
