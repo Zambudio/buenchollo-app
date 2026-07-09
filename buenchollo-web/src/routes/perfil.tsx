@@ -25,7 +25,7 @@ export const Route = createFileRoute("/perfil")({
 });
 
 function ProfilePage() {
-  const { user, loading: authLoading, refreshMe, signOut } = useAuth();
+  const { user, me, loading: authLoading, refreshMe, signOut } = useAuth();
   const nav = useNavigate();
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
@@ -44,8 +44,11 @@ function ProfilePage() {
   useEffect(() => {
     if (!user) return;
 
-    setName(googleName);
-    setAvatarUrl(googleAvatar);
+    // `me` ya viene cargado desde useAuth (mismo dato guardado en BD que
+    // getMyProfile) antes de que authLoading pase a false, así que evita
+    // pintar primero el avatar de Google mientras llega la respuesta.
+    setName(me?.display_name?.trim() || googleName);
+    setAvatarUrl(me?.avatar_url || googleAvatar);
 
     authApi
       .getMyProfile()
@@ -55,10 +58,9 @@ function ProfilePage() {
         setAvatarUrl(profile.avatar_url || googleAvatar);
       })
       .catch(() => {
-        setName(googleName);
-        setAvatarUrl(googleAvatar);
+        // bio queda vacío si falla; name/avatarUrl ya están bien seteados por `me`.
       });
-  }, [googleAvatar, googleName, user]);
+  }, [googleAvatar, googleName, me, user]);
 
   const persistProfile = async (
     nextAvatarUrl = avatarUrl,

@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Boolean, String, Integer, Numeric, ForeignKey, DateTime, JSON, Uuid, SmallInteger, UniqueConstraint
+from sqlalchemy import Boolean, String, Integer, Numeric, ForeignKey, DateTime, JSON, Uuid, SmallInteger, UniqueConstraint, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
@@ -10,6 +10,10 @@ import app.modules.users.domain.models  # noqa: F401
 
 class Deal(Base):
     __tablename__ = "deals"
+    __table_args__ = (
+        Index("ix_deals_status_published_at", "status", "published_at"),
+        Index("ix_deals_status_temperature", "status", "temperature"),
+    )
 
     id: Mapped[str] = mapped_column(Uuid(as_uuid=False), primary_key=True, default=lambda: str(uuid.uuid4()))
     title: Mapped[str] = mapped_column(String, nullable=False)
