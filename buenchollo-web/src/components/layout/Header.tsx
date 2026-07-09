@@ -26,13 +26,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export function Header() {
-  const { user, me, isAdmin, signOut } = useAuth();
+  const { user, me, loading: authLoading, isAdmin, signOut } = useAuth();
   const [q, setQ] = useState("");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const nav = useNavigate();
   const { data: unread = 0 } = useUnreadNotifications();
-  const avatarUrl = me?.avatar_url || googleAvatarUrl(user);
+  // Antes de que `me` termine de cargar (authLoading), `user` ya está
+  // disponible: no caer al avatar de Google en ese hueco o parpadea.
+  const avatarUrl = authLoading ? null : me?.avatar_url || googleAvatarUrl(user);
 
   const onSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
