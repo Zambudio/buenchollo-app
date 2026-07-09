@@ -42,11 +42,11 @@ function ProfilePage() {
   }, [authLoading, user, nav]);
 
   useEffect(() => {
-    if (!user) return;
+    // Esperamos a que authLoading sea false: `user` se setea antes de que
+    // `me` termine de cargar en useAuth, así que reaccionar solo a `user`
+    // seguía pintando el avatar de Google en ese hueco intermedio.
+    if (authLoading || !user) return;
 
-    // `me` ya viene cargado desde useAuth (mismo dato guardado en BD que
-    // getMyProfile) antes de que authLoading pase a false, así que evita
-    // pintar primero el avatar de Google mientras llega la respuesta.
     setName(me?.display_name?.trim() || googleName);
     setAvatarUrl(me?.avatar_url || googleAvatar);
 
@@ -60,7 +60,7 @@ function ProfilePage() {
       .catch(() => {
         // bio queda vacío si falla; name/avatarUrl ya están bien seteados por `me`.
       });
-  }, [googleAvatar, googleName, me, user]);
+  }, [authLoading, googleAvatar, googleName, me, user]);
 
   const persistProfile = async (
     nextAvatarUrl = avatarUrl,
