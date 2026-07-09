@@ -3,29 +3,7 @@ import { Link } from "@tanstack/react-router";
 export function Footer() {
   return (
     <footer className="border-t border-surface-700 bg-surface-800 mt-24">
-      <div className="max-w-7xl mx-auto px-6 pt-10">
-        <h4 className="font-mono text-xs uppercase text-cyan-glow mb-3">Qué es BuenChollo Tech</h4>
-        <p className="text-muted-foreground text-xs leading-relaxed max-w-3xl">
-          BuenChollo Tech es una web de ofertas y chollos de tecnología. Buscamos, seleccionamos y
-          comparamos ofertas reales de productos tecnológicos y electrónica para que encuentres el
-          mejor precio. Puedes explorar los chollos sin necesidad de registrarte.
-        </p>
-        <p className="text-muted-foreground text-xs leading-relaxed max-w-3xl mt-3">
-          Si creas una cuenta gratuita —con tu correo o con tu cuenta de Google— puedes guardar
-          favoritos, crear alertas de precio y recibir notificaciones. Usamos el inicio de sesión
-          con Google únicamente para identificarte y crear tu cuenta; no accedemos a tu Gmail,
-          Drive, contactos ni calendario. Consulta cómo tratamos tus datos en la{" "}
-          <Link to="/politica-de-privacidad" className="hover:text-cyan-glow hover:underline">
-            Política de privacidad
-          </Link>{" "}
-          y los{" "}
-          <Link to="/terminos-y-condiciones" className="hover:text-cyan-glow hover:underline">
-            Términos y condiciones
-          </Link>
-          .
-        </p>
-      </div>
-      <div className="max-w-7xl mx-auto px-6 pt-8 pb-12 mt-8 border-t border-surface-700 grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
+      <div className="max-w-7xl mx-auto px-6 pt-10 pb-12 grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
         <div className="col-span-2 md:col-span-1">
           <div className="font-bold text-lg tracking-tighter">
             BuenChollo<span className="text-cyan-glow"> Tech</span>

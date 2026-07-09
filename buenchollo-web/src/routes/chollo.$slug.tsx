@@ -92,30 +92,42 @@ export const Route = createFileRoute("/chollo/$slug")({
 
 function DealDetail() {
   const { slug } = Route.useParams();
+  const loaderData = Route.useLoaderData();
   const { user, isAdmin } = useAuth();
-  const [deal, setDeal] = useState<DealDetailData | null>(null);
+  const [deal, setDeal] = useState<DealDetailData | null>(
+    (loaderData?.meta as DealDetailData | null) ?? null,
+  );
   const [related, setRelated] = useState<DealCardData[]>([]);
   const [commentCount, setCommentCount] = useState(0);
   const [myVote, setMyVote] = useState<number>(0);
   const [votingLoading, setVotingLoading] = useState(false);
   const [fav, setFav] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!loaderData?.meta);
   const [activeImg, setActiveImg] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
 
-  // Efecto 1: carga los datos públicos del deal (no necesita auth)
+  // Efecto 1: carga los datos públicos del deal (no necesita auth).
+  // Si el loader del router ya trajo el deal para este slug (SSR), lo
+  // reutiliza en vez de repetir el fetch; "relacionados" ya no bloquea
+  // el pintado del deal principal.
   useEffect(() => {
     let cancelled = false;
     const loadDeal = async () => {
-      setLoading(true);
+      const dealFromLoader = loaderData?.meta as DealDetailData | null | undefined;
+      setLoading(!dealFromLoader);
       try {
-        const data = await dealsService.getBySlug(slug);
+        const data = dealFromLoader ?? (await dealsService.getBySlug(slug));
         if (cancelled) return;
         setDeal(data);
-        const rel = await dealsService.search({ category_id: data.category?.slug, limit: 5 });
-        if (cancelled) return;
-        setRelated(rel.filter((d) => d.id !== data.id).slice(0, 4));
         setCommentCount(data.comment_count ?? 0);
+
+        dealsService
+          .search({ category_id: data.category?.slug, limit: 5 })
+          .then((rel) => {
+            if (cancelled) return;
+            setRelated(rel.filter((d) => d.id !== data.id).slice(0, 4));
+          })
+          .catch((error) => console.error(error));
       } catch (error) {
         console.error(error);
       } finally {
@@ -126,7 +138,7 @@ function DealDetail() {
     return () => {
       cancelled = true;
     };
-  }, [slug]);
+  }, [slug, loaderData]);
 
   // Efecto 2: carga el estado del usuario (voto y favorito) — solo cuando deal y user están listos
   useEffect(() => {
