@@ -9,7 +9,6 @@ import {
   Shield,
   Menu,
   X,
-  LayoutGrid,
   BellPlus,
 } from "lucide-react";
 import { Logo } from "./Logo";
@@ -46,22 +45,23 @@ export function Header() {
       <CategoriesDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
       <header className="border-b border-surface-700 bg-surface-900/95 sticky top-0 z-50 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-3 shrink-0">
+            <Link to="/">
+              <Logo />
+            </Link>
             <button
               type="button"
               onClick={() => setDrawerOpen(true)}
               aria-label="Abrir menú de categorías"
-              className="p-2 border border-surface-600 text-foreground hover:border-cyan-glow hover:text-cyan-glow transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-surface-600 text-foreground hover:border-cyan-glow hover:text-cyan-glow transition-colors"
             >
-              <LayoutGrid className="size-5" />
+              <Menu className="size-5" />
+              <span className="text-sm font-medium">Menú</span>
             </button>
-            <Link to="/">
-              <Logo />
-            </Link>
           </div>
 
           <form onSubmit={onSearch} className="hidden md:flex flex-1 max-w-md">
-            <div className="w-full flex items-center bg-surface-800 border border-surface-700 px-3 py-1.5 focus-within:border-cyan-glow focus-within:glow-cyan transition-all">
+            <div className="w-full flex items-center bg-surface-800 border border-surface-700 rounded-full px-4 py-1.5 focus-within:border-cyan-glow focus-within:glow-cyan transition-all">
               <span className="text-cyan-glow font-mono mr-2 text-sm">&gt;</span>
               <label htmlFor="header-search" className="sr-only">
                 Buscar chollo
@@ -71,8 +71,8 @@ export function Header() {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 type="text"
-                placeholder="BUSCAR_CHOLLO..."
-                className="bg-transparent border-none outline-none w-full text-sm font-mono placeholder:text-muted-foreground text-foreground uppercase"
+                placeholder="Buscar chollo..."
+                className="bg-transparent border-none outline-none w-full text-sm font-mono placeholder:text-muted-foreground text-foreground"
               />
               <button
                 type="submit"
@@ -182,7 +182,7 @@ export function Header() {
           <div className="md:hidden border-t border-surface-700 px-4 py-4 space-y-3 bg-surface-800">
             <form
               onSubmit={onSearch}
-              className="flex items-center bg-surface-900 border border-surface-700 px-3 py-2"
+              className="flex items-center bg-surface-900 border border-surface-700 rounded-full px-4 py-2"
             >
               <span className="text-cyan-glow font-mono mr-2 text-sm">&gt;</span>
               <label htmlFor="header-search-mobile" className="sr-only">
@@ -192,8 +192,8 @@ export function Header() {
                 id="header-search-mobile"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="BUSCAR..."
-                className="bg-transparent outline-none w-full text-sm font-mono uppercase"
+                placeholder="Buscar..."
+                className="bg-transparent outline-none w-full text-sm font-mono"
               />
             </form>
             <Link
