@@ -5,8 +5,9 @@
 > resuelto vive en [`PROJECT_STATUS.md`](../../PROJECT_STATUS.md)). Esta página es
 > interna del proyecto; **no forma parte del bloque académico** ([`docs/master/`](../master/00-index.md)).
 
-Última revisión: **2026-07-17** (cierre completo de la auditoría [`AUDIT_REPORT.md`](../../AUDIT_REPORT.md):
-TD-03/05/07/08/12/13/14 y M-07 resueltos — ver `PROJECT_STATUS.md` § 3.septies).
+Última revisión: **2026-07-17** (cierre completo de la auditoría
+[`AUDIT_REPORT-2026-07.md`](../archive/AUDIT_REPORT-2026-07.md), ya archivada:
+TD-03/05/07/08/12/13/14 y M-07 resueltos — ver `PROJECT_STATUS.md` § 3.septies/octies).
 
 ---
 

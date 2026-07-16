@@ -162,7 +162,8 @@ pytest verde.
 
 ### 3.octies  Cierre completo de la auditoría — 2026-07-17
 
-Segunda tanda que cierra **todos** los hallazgos restantes de `AUDIT_REPORT.md`
+Segunda tanda que cierra **todos** los hallazgos restantes de la auditoría
+([`docs/archive/AUDIT_REPORT-2026-07.md`](docs/archive/AUDIT_REPORT-2026-07.md))
 (PR #41, CI verde con 6 checks):
 
 - **TD-05 cerrado** — `__init__.py` en los 20 subdirectorios de módulos que faltaban.
@@ -195,7 +196,7 @@ Segunda tanda que cierra **todos** los hallazgos restantes de `AUDIT_REPORT.md`
 
 ### 3.septies  Estabilización post-auditoría — 2026-07-16
 
-Auditoría técnica completa en [`AUDIT_REPORT.md`](AUDIT_REPORT.md) (veredicto:
+Auditoría técnica completa en [`docs/archive/AUDIT_REPORT-2026-07.md`](docs/archive/AUDIT_REPORT-2026-07.md) (veredicto:
 *listo para continuar con correcciones menores*; 0 críticos). Fase 1 ejecutada
 el mismo día:
 
