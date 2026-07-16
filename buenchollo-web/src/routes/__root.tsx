@@ -1,6 +1,8 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/hooks/useAuth";
+import { initErrorTracking } from "@/lib/logger";
 import { Toaster } from "@/components/ui/sonner";
 import { WelcomeProfileDialog } from "@/features/auth/components/WelcomeProfileDialog";
 import { queryClient } from "@/lib/query-client";
@@ -137,6 +139,12 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  // Error tracking del navegador (TD-14). Inerte si VITE_SENTRY_DSN está
+  // vacío; el SDK se carga en un chunk aparte solo cuando hay DSN.
+  useEffect(() => {
+    void initErrorTracking();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>

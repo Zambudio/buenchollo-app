@@ -1,3 +1,4 @@
+import { logError } from "@/lib/logger";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { categoriesService, type Category } from "@/services/api/categories";
@@ -29,7 +30,10 @@ export const Route = createFileRoute("/categorias")({
 function CategoriesPage() {
   const [cats, setCats] = useState<Category[]>([]);
   useEffect(() => {
-    categoriesService.getAll().then(setCats).catch(console.error);
+    categoriesService
+      .getAll()
+      .then(setCats)
+      .catch((error) => logError("Error cargando el listado de categorías", error));
   }, []);
   const top = cats.filter((c) => !c.parent_id);
   return (

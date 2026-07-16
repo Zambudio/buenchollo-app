@@ -1,3 +1,4 @@
+import { logError } from "@/lib/logger";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { favoritesApi } from "@/services/api/deals";
@@ -31,7 +32,10 @@ function FavoritesPage() {
 
   useEffect(() => {
     if (!user) return;
-    favoritesApi.getFavorites().then(setDeals).catch(console.error);
+    favoritesApi
+      .getFavorites()
+      .then(setDeals)
+      .catch((error) => logError("Error cargando favoritos", error));
   }, [user]);
 
   return (

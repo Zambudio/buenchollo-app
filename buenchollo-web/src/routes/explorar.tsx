@@ -1,3 +1,4 @@
+import { logError } from "@/lib/logger";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
@@ -67,7 +68,7 @@ function ExplorePage() {
         setCats(c.filter((x) => !x.parent_id));
         setSubs(c.filter((x) => !!x.parent_id));
       })
-      .catch(console.error);
+      .catch((error) => logError("Error cargando filtros de explorar", error));
   }, []);
 
   // Subcategorías filtradas según la categoría elegida
@@ -107,7 +108,7 @@ function ExplorePage() {
         setLoading(false);
       })
       .catch((error) => {
-        console.error(error);
+        logError("Error buscando chollos en explorar", error);
         setLoading(false);
       });
   }, [params]);

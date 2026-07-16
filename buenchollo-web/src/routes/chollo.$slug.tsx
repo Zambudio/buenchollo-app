@@ -1,3 +1,4 @@
+import { logError } from "@/lib/logger";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { dealsService, favoritesApi, type DealDetailData } from "@/services/api/deals";
@@ -127,9 +128,9 @@ function DealDetail() {
             if (cancelled) return;
             setRelated(rel.filter((d) => d.id !== data.id).slice(0, 4));
           })
-          .catch((error) => console.error(error));
+          .catch((error) => logError("Error cargando chollos relacionados", error));
       } catch (error) {
-        console.error(error);
+        logError("Error cargando el detalle del chollo", error);
       } finally {
         if (!cancelled) setLoading(false);
       }

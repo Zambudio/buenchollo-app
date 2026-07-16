@@ -1,3 +1,4 @@
+import { logError } from "@/lib/logger";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
@@ -62,7 +63,7 @@ function CategoryPage() {
         const data = await dealsService.search({ category_id: c.id, limit: 48 });
         setDeals(data);
       } catch (error) {
-        console.error("Error loading category or deals:", error);
+        logError("Error cargando la categoría o sus chollos", error);
       }
     })();
   }, [slug]);
