@@ -25,7 +25,14 @@ _PUBLIC_KEY = _PRIVATE_KEY.public_key()
 # Una segunda clave para simular un atacante firmando con otra clave.
 _ATTACKER_KEY = generate_private_key(SECP256R1())
 
-_SETTINGS = Settings(supabase_url="https://test.supabase.co", supabase_key="dummy")
+# supabase_jwt_secret se fija explícitamente a "" para que el test sea
+# hermético: el CI exporta SUPABASE_JWT_SECRET=dummy y pydantic-settings
+# lo cargaría del entorno, rompiendo el caso "HS256 sin secreto".
+_SETTINGS = Settings(
+    supabase_url="https://test.supabase.co",
+    supabase_key="dummy",
+    supabase_jwt_secret="",
+)
 
 
 def _token(
