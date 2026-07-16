@@ -77,10 +77,13 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements-dev.txt
 
-      - name: Aplicar migraciones (alembic upgrade head)
-        # El Postgres del service arranca vacío: las migraciones construyen el
-        # esquema completo, igual que hace el contenedor del NAS al arrancar.
-        run: alembic upgrade head
+      - name: Crear esquema de test desde los modelos ORM
+        # No se usa `alembic upgrade head`: el esquema base de producción lo
+        # crearon las migraciones SQL de Supabase (dependen de auth.* y RLS,
+        # irreproducibles en un Postgres vanilla) y Alembic solo versiona
+        # cambios incrementales. El grafo ORM es la superficie exacta que
+        # ejercitan los repositorios en estos tests.
+        run: python scripts/create_test_schema.py
 
       - name: Run pytest (solo integración)
         # Cierra TD-07: estos tests solo corrían en local antes de cada
