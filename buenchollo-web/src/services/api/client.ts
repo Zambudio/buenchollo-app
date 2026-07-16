@@ -54,6 +54,11 @@ async function buildApiError(response: Response): Promise<ApiError> {
   }
 }
 
+// Timeout por defecto para toda petición a la API. Evita spinners infinitos
+// si el backend (NAS) no responde; se puede sobrescribir pasando `signal`
+// en las options (p. ej. para uploads largos).
+const DEFAULT_TIMEOUT_MS = 15_000;
+
 async function fetchWithAuth<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_URL}${endpoint}`;
 
@@ -70,7 +75,11 @@ async function fetchWithAuth<T>(endpoint: string, options: RequestInit = {}): Pr
     headers["Authorization"] = `Bearer ${session.access_token}`;
   }
 
-  const response = await fetch(url, { ...options, headers });
+  const response = await fetch(url, {
+    signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS),
+    ...options,
+    headers,
+  });
 
   if (!response.ok) {
     throw await buildApiError(response);
