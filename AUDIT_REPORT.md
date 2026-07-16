@@ -1,5 +1,11 @@
 # AUDIT_REPORT — BuenCholloTech
 
+> ✅ **RESUELTO (2026-07-17)**: todos los hallazgos accionables de este informe
+> están cerrados (H-01, H-02, M-01…M-07 y los quick wins) — detalle en
+> `PROJECT_STATUS.md` § 3.septies y § 3.octies. TD-04/06/09 permanecen como
+> deuda consciente por decisión propia del informe (§ 12). Se conserva como
+> registro histórico y material del TFM.
+
 > Auditoría técnica completa previa a una nueva fase de desarrollo.
 > Fecha: **2026-07-16** · Rama auditada: `develop` (= `main` salvo el rediseño del header)
 > Método: análisis estático + lectura de código + ejecución real de lint, typecheck,

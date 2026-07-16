@@ -1,6 +1,6 @@
 # 🧪 06 · Testing y calidad
 
-> **TL;DR** · **224 tests automatizados** verdes en menos de un minuto.
+> **TL;DR** · **237 tests automatizados** verdes en menos de un minuto.
 > Pirámide unit/integration/E2E. Coverage estratégico 100/80/0 con
 > threshold automático en `src/lib/**`. Gates en 3 niveles
 > (pre-commit, pre-push, CI).
@@ -20,10 +20,10 @@
               │  🔗 Integración backend (9)      │   pytest -m integration · Postgres real (local)
               └──────────────────────────────────┘
        ┌────────────────────────────────────────────────┐
-       │  ⚛️ Unit + RTL (207 = 116 pytest + 91 vitest)   │   corren en CI en cada push
+       │  ⚛️ Unit + RTL (220 = 118 pytest + 102 vitest)   │   corren en CI en cada push
        └────────────────────────────────────────────────┘
 
-  Total: 224 tests (verificado 2026-07-16 · pytest bajo Python 3.11)
+  Total: 237 tests (verificado 2026-07-17 · pytest bajo Python 3.11)
 ```
 
 ---

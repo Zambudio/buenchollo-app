@@ -1,7 +1,7 @@
 # 🧪 06 · Calidad, testing y refactorización
 
 > **TL;DR** · Pirámide de testing clásica (más unit, menos E2E) con
-> **224 tests verdes en menos de un minuto**. Coverage estratégico **100/80/0**
+> **237 tests verdes en menos de un minuto**. Coverage estratégico **100/80/0**
 > en lugar de perseguir 100% global. Quality gates en **3 niveles**
 > (pre-commit, pre-push, CI).
 
@@ -26,11 +26,11 @@
               │  🔗 Integración backend (9)    │   pytest -m integration · Postgres real (local)
               └────────────────────────────────┘
        ┌──────────────────────────────────────────────┐
-       │  ⚛️ Unit + RTL (207 = 116 pytest + 91 vitest) │   corren en CI en cada push
+       │  ⚛️ Unit + RTL (220 = 118 pytest + 102 vitest) │   corren en CI en cada push
        └──────────────────────────────────────────────┘
 ```
 
-📊 **Total**: **224 tests automatizados** (verificado 2026-07-16, pytest bajo Python 3.11).
+📊 **Total**: **237 tests automatizados** (verificado 2026-07-17, pytest bajo Python 3.11).
 
 ### 🎯 Por qué esta proporción
 
