@@ -1,5 +1,5 @@
 # PROJECT_STATUS — BuenCholloTech
-*Última actualización: 2026-05-30 (cierre del hardening arquitectónico — release v1.0.0-tfm)*
+*Última actualización: 2026-07-16 (estabilización post-auditoría — ver § 3.septies)*
 
 > **⚠️ Revisar este documento antes de migrar a dominio web en producción.**
 > Contiene el estado real del proyecto, deuda técnica pendiente y la hoja de ruta completa.
@@ -157,6 +157,34 @@ OWASP Top 10 con 6 hallazgos medios resueltos (ninguno crítico).
 
 10 tests nuevos para Security Headers (5) y SSRF allowlist (10) → 97
 pytest verde.
+
+---
+
+### 3.septies  Estabilización post-auditoría — 2026-07-16
+
+Auditoría técnica completa en [`AUDIT_REPORT.md`](AUDIT_REPORT.md) (veredicto:
+*listo para continuar con correcciones menores*; 0 críticos). Fase 1 ejecutada
+el mismo día:
+
+- **TD-01 cerrado** — cifras de tests fijadas por fin bajo Python 3.11:
+  **208 totales** = 109 pytest (100 unit + 9 integración) + 91 vitest + 8 E2E.
+  Propagado a README raíz (badge + § tests), `buenchollo-api/README.md`,
+  `docs/project/06` y `docs/master/06`.
+- **TD-02 cerrado** — ya estaba resuelto en código: `config.py` usa
+  `Annotated[list[str], NoDecode]` + validator, que acepta CSV. Solo quedaba
+  cerrar el registro.
+- **TD-10 cerrado** — verificado en código: 0 `supabase.from()/rpc()` en el
+  frontend; la afirmación correcta es la del README (ADR-002 100%).
+- **AUDIT H-01 cerrado** — `npm audit fix` + vitest 2→4: **0 vulnerabilidades**
+  npm (prod y dev) y pip-audit ya estaba a 0. Suite verificada tras el bump.
+- **AUDIT M-06/L-01 cerrados** — timeout de 15 s en `apiClient` y limpieza de
+  import muerto.
+- **Deuda nueva registrada**: TD-12 (JWT round-trip, era H-02), TD-13 (Docker
+  root, era M-01), TD-14 (sin error tracking frontend, era M-04) y dependencia
+  scheduler↔workers anotada en TD-11 (era M-07).
+
+Pendiente de la auditoría: TD-12 (siguiente tarea recomendada), split de
+`admin.chollos.tsx` (TD-03) y CI con Postgres para integración (TD-07).
 
 ---
 

@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { DealCard, type DealCardData } from "@/features/deals/components/DealCard";

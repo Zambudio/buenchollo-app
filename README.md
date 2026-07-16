@@ -18,7 +18,7 @@
   </a>
   <img alt="python" src="https://img.shields.io/badge/python-3.11-3776AB?logo=python&logoColor=white">
   <img alt="typescript" src="https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white">
-  <img alt="tests" src="https://img.shields.io/badge/tests-167%20✓-22c55e">
+  <img alt="tests" src="https://img.shields.io/badge/tests-208%20✓-22c55e">
   <img alt="cve" src="https://img.shields.io/badge/CVEs%20prod-0-22c55e">
 </p>
 
@@ -259,7 +259,7 @@ npm run dev
 
 ## 🧪 Tests y calidad
 
-> 📊 **167 tests automatizados verdes en ~13 segundos** (137 unit + 13 integration + 8 E2E).
+> 📊 **208 tests automatizados verdes** (109 pytest + 91 vitest + 8 E2E · verificado 2026-07-16).
 
 ```bash
 # 🐍 Backend
@@ -378,8 +378,8 @@ La documentación se organiza en **dos bloques** claramente separados:
 🟢 v1.0.0-tfm publicado
 🟢 En producción en https://buenchollotech.com — frontend en Cloudflare Workers
 🟢 API FastAPI en el NAS expuesta vía Cloudflare Tunnel (api.buenchollotech.com)
-🟢 167 tests automatizados verdes · CI verde en main
-🟢 Backend sin CVEs (pip-audit); avisos HIGH solo en tooling de build (esbuild/vite), sin impacto en runtime
+🟢 208 tests automatizados verdes · CI verde en main
+🟢 Sin CVEs conocidas: pip-audit y npm audit a 0 (tooling de tests actualizado a vitest 4, 2026-07-16)
 🟢 Documentación dual (operativa + académica) completa
 ```
 
