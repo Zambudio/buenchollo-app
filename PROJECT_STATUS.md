@@ -183,8 +183,23 @@ el mismo día:
   root, era M-01), TD-14 (sin error tracking frontend, era M-04) y dependencia
   scheduler↔workers anotada en TD-11 (era M-07).
 
-Pendiente de la auditoría: TD-12 (siguiente tarea recomendada), split de
-`admin.chollos.tsx` (TD-03) y CI con Postgres para integración (TD-07).
+Pendiente de la auditoría: split de `admin.chollos.tsx` (TD-03) y CI con
+Postgres para integración (TD-07).
+
+**Cierre TD-12 (mismo día, 2026-07-16)** — validación JWT local con JWKS:
+`get_current_user` verifica firma ES256/exp/aud en local contra el JWKS
+público de Supabase (PyJWT + caché 1 h), con soporte HS256 opcional
+(`SUPABASE_JWT_SECRET`) y fallback a `get_user` remoto si no hay material
+de firma. Elimina un round-trip HTTP a Supabase **por cada request
+autenticada** y el SPOF de Auth. Decisión y trade-offs en
+[`ADR-010`](docs/adr/ADR-010-validacion-jwt-local.md). +16 tests
+(9 de JWT: firma inválida, expiración, audiencia, fallback, JWKS caído; 7 de parseo CORS_ORIGINS) →
+**suite total: 224** (125 pytest + 91 vitest + 8 E2E).
+De propina: el smoke de arranque destapó que un `.env` con `CORS_ORIGINS` en
+formato JSON (el que exigía el antiguo TD-02) se parseaba como CSV crudo tras
+el fix `NoDecode`, dejando corchetes en los orígenes. El validator ahora
+acepta **ambos formatos** (JSON array y CSV), así que no hay que tocar los
+`.env` desplegados.
 
 ---
 

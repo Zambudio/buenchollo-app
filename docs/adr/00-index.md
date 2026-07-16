@@ -68,6 +68,12 @@
   <td>✅ Aceptado</td>
   <td>2026-06-02</td>
 </tr>
+<tr>
+  <td><a href="ADR-010-validacion-jwt-local.md">010</a></td>
+  <td>🔑 Validación local de JWT con JWKS (sin round-trip a Supabase)</td>
+  <td>✅ Aceptado</td>
+  <td>2026-07-16</td>
+</tr>
 </tbody>
 </table>
 
@@ -82,7 +88,7 @@
 |---|---|
 | 📐 **Arquitectura de Software** | [001](ADR-001-monolito-modular-fastapi.md) · [002](ADR-002-migracion-baas-a-api-gateway.md) · [004](ADR-004-persistencia-sqlalchemy-pgbouncer.md) · [007](ADR-007-di-fastapi-depends.md) |
 | 🧪 **Calidad del Software** | [008](ADR-008-estrategia-calidad-testing.md) |
-| 🛡️ **Seguridad** | [003](ADR-003-autenticacion-supabase-jwt.md) · [005](ADR-005-validacion-doble-frontera.md) · [006](ADR-006-rls-service-role.md) |
+| 🛡️ **Seguridad** | [003](ADR-003-autenticacion-supabase-jwt.md) · [005](ADR-005-validacion-doble-frontera.md) · [006](ADR-006-rls-service-role.md) · [010](ADR-010-validacion-jwt-local.md) |
 | 🤖 **Desarrollo con IA** | [009](ADR-009-uso-de-ia-en-desarrollo.md) |
 
 ---

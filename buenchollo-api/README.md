@@ -8,7 +8,7 @@
 <p align="center">
   <img alt="python" src="https://img.shields.io/badge/python-3.11-3776AB?logo=python&logoColor=white">
   <img alt="fastapi" src="https://img.shields.io/badge/FastAPI-0.136-009688?logo=fastapi&logoColor=white">
-  <img alt="tests" src="https://img.shields.io/badge/tests-109%20✓-22c55e">
+  <img alt="tests" src="https://img.shields.io/badge/tests-125%20✓-22c55e">
   <img alt="cve" src="https://img.shields.io/badge/CVEs%20prod-0-22c55e">
 </p>
 
