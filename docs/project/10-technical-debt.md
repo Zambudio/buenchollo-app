@@ -65,6 +65,20 @@ No todos los módulos tienen excepciones de dominio propias; varios routers lanz
 Los marcados `@pytest.mark.integration` solo se ejecutan en local (requieren Postgres
 real). Migrar a CI con un servicio Postgres para cubrirlos automáticamente.
 
+### TD-11 · Latencia general al cargar chollos (home y detalle)
+Home y `/chollo/:slug` tardan varios segundos en cargar en producción. Diagnosticado
+2026-07-09: el waterfall duplicado del detalle ya se corrigió (fetch SSR+CSR
+redundante + relacionados bloqueando el render), y se añadieron índices compuestos
+`(status, published_at)` / `(status, temperature)` en `deals` (ya aplicados en BD),
+pero con solo ~117 filas ese índice apenas influye — el grueso sigue siendo:
+- El contenedor `uvicorn` del NAS corre **sin `--workers`** (proceso único) detrás de
+  Cloudflare Tunnel: cada request paga el salto NAS↔Tunnel↔cliente en serie.
+- No se ha medido el pool de conexiones SQLAlchemy async contra el pooler PgBouncer
+  (puerto 6543, modo transacción) — posible latencia extra de conexión por request.
+- **Acción:** revisar `--workers` de uvicorn en `docker-compose.yml`/`Dockerfile`,
+  medir tiempos reales con el NAS bajo carga normal, y decidir si compensa mover
+  algo de I/O (imágenes) a un CDN o cache.
+
 ---
 
 ## 🟢 Baja — pulido
