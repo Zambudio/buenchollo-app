@@ -1,5 +1,6 @@
 """Application settings loaded from environment variables."""
 
+import json
 from functools import lru_cache
 from typing import Annotated
 
@@ -45,8 +46,21 @@ class Settings(BaseSettings):
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, v: str | list) -> list[str]:
+        # Acepta ambos formatos en la variable de entorno: JSON array
+        # ('["a.com","b.com"]', formato histórico de los .env desplegados)
+        # y CSV plano ('a.com,b.com'). Sin esto, un .env en formato JSON
+        # se parsearía como CSV crudo dejando corchetes/comillas en los
+        # orígenes ('["a.com"'), que nunca casarían con un Origin real.
         if isinstance(v, str):
-            return [origin.strip() for origin in v.split(",") if origin.strip()]
+            s = v.strip()
+            if s.startswith("["):
+                try:
+                    parsed = json.loads(s)
+                    if isinstance(parsed, list):
+                        return [str(o).strip() for o in parsed if str(o).strip()]
+                except json.JSONDecodeError:
+                    pass  # no era JSON válido: se intenta como CSV
+            return [origin.strip() for origin in s.split(",") if origin.strip()]
         return v
 
     @property
@@ -93,6 +107,10 @@ class Settings(BaseSettings):
 
     supabase_url: str = ""
     supabase_key: str = ""
+    # Secreto HS256 legacy de Supabase Auth. Solo necesario si el proyecto
+    # firmara los JWT con HS256; con claves asimétricas (ES256/RS256, el caso
+    # actual) la verificación usa el JWKS público y esto puede quedar vacío.
+    supabase_jwt_secret: str = ""
     database_url: str = ""
 
     telegram_bot_token: str = ""

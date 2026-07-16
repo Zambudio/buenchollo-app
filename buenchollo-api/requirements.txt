@@ -21,6 +21,12 @@ greenlet==3.5.0
 alembic==1.18.4
 psycopg2-binary>=2.9
 
+# Auth: verificación local de JWT (firma ES256 via JWKS de Supabase).
+# Ya venía como dependencia transitiva de gotrue; se fija explícita porque
+# core/security.py la importa directamente. [crypto] = cryptography, necesaria
+# para validar firmas asimétricas.
+PyJWT[crypto]==2.13.0
+
 # Integraciones externas
 supabase==2.9.1       # storage3>=2.x introduce pyiceberg (no compila sin Build Tools) — mantener <2.10
 openai==2.37.0

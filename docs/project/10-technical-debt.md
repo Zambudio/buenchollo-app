@@ -11,14 +11,7 @@
 
 ## 🔴 Alta — resolver antes de seguir creciendo
 
-### TD-12 · Validación JWT con round-trip HTTP a Supabase por request (H-02)
-`core/security.py` llama a `supabase.auth.get_user(token)` en `get_current_user`,
-es decir, **cada request autenticada paga un viaje HTTP a Supabase** además del
-salto NAS↔Tunnel. Contribuye a TD-11 y convierte a Supabase Auth en punto único
-de fallo de toda la API autenticada.
-- **Acción:** validar el JWT localmente (JWKS o HS256 con `SUPABASE_JWT_SECRET` —
-  el CI ya inyecta esa variable), dejando `get_user` como fallback. Documentar en
-  ADR el trade-off (revocación inmediata vs latencia). Ver AUDIT_REPORT H-02.
+*(vacío — TD-12 cerrado el 2026-07-16 con ADR-010, ver `PROJECT_STATUS.md`)*
 
 ---
 
@@ -59,7 +52,8 @@ pero con solo ~117 filas ese índice apenas influye — el grueso sigue siendo:
   Cloudflare Tunnel: cada request paga el salto NAS↔Tunnel↔cliente en serie.
 - No se ha medido el pool de conexiones SQLAlchemy async contra el pooler PgBouncer
   (puerto 6543, modo transacción) — posible latencia extra de conexión por request.
-- El round-trip de validación JWT a Supabase por request (TD-12) se suma al coste.
+- ~~El round-trip de validación JWT a Supabase por request~~ — eliminado el
+  2026-07-16 (ADR-010, validación local con JWKS); medir cuánto mejora.
 - **Acción:** revisar `--workers` de uvicorn en `docker-compose.yml`/`Dockerfile`,
   medir tiempos reales con el NAS bajo carga normal, y decidir si compensa mover
   algo de I/O (imágenes) a un CDN o cache.
