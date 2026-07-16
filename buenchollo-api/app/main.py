@@ -41,24 +41,24 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """Gestiona el ciclo de vida de la aplicación: inicia y detiene el scheduler."""
     scheduler = None
-    try:
-        from app.modules.deals.application.cleaner_service import DealCleanerService
-        from apscheduler.schedulers.background import BackgroundScheduler
+    if not settings.scheduler_enabled:
+        # Scheduler en proceso dedicado (app.run_scheduler) — necesario con
+        # uvicorn --workers N para no ejecutar los jobs N veces (M-07).
+        logger.info("Scheduler desactivado en este proceso (SCHEDULER_ENABLED=false).")
+    else:
+        try:
+            from app.modules.deals.application.scheduler import build_deals_scheduler
 
-        scheduler = BackgroundScheduler()
-        cleaner = DealCleanerService(settings)
-        scheduler.add_job(cleaner.mark_expired_deals, "interval", minutes=5)
-        scheduler.add_job(cleaner.activate_scheduled_deals, "interval", minutes=5)
-        scheduler.add_job(cleaner.clean_expired_deals, "cron", hour=3, minute=0)
-        scheduler.start()
-        # Ejecutar limpieza una vez al arrancar para no esperar a las 3am
-        cleaner.clean_expired_deals()
-        logger.info(
-            "Background scheduler iniciado: "
-            "mark_expired + activate_scheduled (cada 5 min) | clean (03:00 diario)"
-        )
-    except Exception as exc:
-        logger.warning("Scheduler no disponible, la API arranca sin él: %s", exc)
+            scheduler, cleaner = build_deals_scheduler(settings)
+            scheduler.start()
+            # Ejecutar limpieza una vez al arrancar para no esperar a las 3am
+            cleaner.clean_expired_deals()
+            logger.info(
+                "Background scheduler iniciado: "
+                "mark_expired + activate_scheduled (cada 5 min) | clean (03:00 diario)"
+            )
+        except Exception as exc:
+            logger.warning("Scheduler no disponible, la API arranca sin él: %s", exc)
 
     yield  # La aplicación está en funcionamiento
 

@@ -24,6 +24,12 @@ class Settings(BaseSettings):
     # cuando se quieran bombardear endpoints en tests sin disparar 429.
     rate_limit_enabled: bool = True
 
+    # Scheduler de mantenimiento de deals dentro del proceso web. Poner a
+    # false cuando el scheduler corra en un proceso dedicado
+    # (`python -m app.run_scheduler`) — imprescindible antes de subir
+    # uvicorn a --workers N, o los jobs se ejecutarían N veces (M-07).
+    scheduler_enabled: bool = True
+
     # Sentry (error tracking). Si SENTRY_DSN está vacío, el SDK no se
     # inicializa y todo funciona normal: útil en local y en tests.
     sentry_dsn: str = ""
