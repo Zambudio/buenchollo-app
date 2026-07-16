@@ -5,42 +5,30 @@
 > resuelto vive en [`PROJECT_STATUS.md`](../../PROJECT_STATUS.md)). Esta página es
 > interna del proyecto; **no forma parte del bloque académico** ([`docs/master/`](../master/00-index.md)).
 
-Última revisión: **2026-07-16** (post-auditoría [`AUDIT_REPORT.md`](../../AUDIT_REPORT.md)).
+Última revisión: **2026-07-17** (cierre completo de la auditoría [`AUDIT_REPORT.md`](../../AUDIT_REPORT.md):
+TD-03/05/07/08/12/13/14 y M-07 resueltos — ver `PROJECT_STATUS.md` § 3.septies).
 
 ---
 
 ## 🔴 Alta — resolver antes de seguir creciendo
 
-*(vacío — TD-12 cerrado el 2026-07-16 con ADR-010, ver `PROJECT_STATUS.md`)*
+*(vacío)*
 
 ---
 
 ## 🟡 Media — mejora de mantenibilidad
-
-### TD-03 · God Component `admin.chollos.tsx` (≈986 líneas)
-Mezcla UI + lógica de negocio + 13 estados; sin tests unitarios dedicados (se cubre
-vía E2E/smoke). Es el punto más atacable en SRP.
-- **Acción:** extraer hooks (`useAdminDeals`, `useDealForm`) y subcomponentes de
-  formulario/listado. Mientras tanto, queda registrado aquí como deuda consciente.
 
 ### TD-04 · Capas `application/` incompletas en módulos menores
 `categories/` y `stores/` van `router → repository` sin capa de aplicación.
 Aceptable para CRUD simple, pero inconsistente con la arquitectura declarada.
 Revisar también `users/` (PROJECT_STATUS tiene afirmaciones contradictorias sobre si
 ya tiene capa de uso).
-
-### TD-05 · `__init__.py` faltantes en subdirectorios de módulos
-Funciona por namespace packages, pero da problemas con linters/IDEs/herramientas de
-test. Faltan en varios subdirectorios de `deals/`, `categories/`, `stores/`, `users/`,
-`telegram/api/`.
+- **Deuda consciente**: resolver al tocar cada módulo, no en bloque (AUDIT_REPORT §12).
 
 ### TD-06 · Excepciones de dominio incompletas
 No todos los módulos tienen excepciones de dominio propias; varios routers lanzan
 `HTTPException` directa, mezclando protocolo HTTP con lógica de negocio.
-
-### TD-07 · Tests de integración no corren en CI
-Los marcados `@pytest.mark.integration` solo se ejecutan en local (requieren Postgres
-real). Migrar a CI con un servicio Postgres para cubrirlos automáticamente.
+- **Deuda consciente**: resolver al tocar cada módulo, no en bloque (AUDIT_REPORT §12).
 
 ### TD-11 · Latencia general al cargar chollos (home y detalle)
 Home y `/chollo/:slug` tardan varios segundos en cargar en producción. Diagnosticado
@@ -57,28 +45,14 @@ pero con solo ~117 filas ese índice apenas influye — el grueso sigue siendo:
 - **Acción:** revisar `--workers` de uvicorn en `docker-compose.yml`/`Dockerfile`,
   medir tiempos reales con el NAS bajo carga normal, y decidir si compensa mover
   algo de I/O (imágenes) a un CDN o cache.
-- ⚠️ **Dependencia (AUDIT_REPORT M-07):** NO subir `--workers` sin antes sacar el
-  scheduler del proceso web (`main.py` lifespan) o gatearlo con lock — con N workers
-  los jobs correrían N veces (dobles notificaciones Telegram).
-
-### TD-13 · Contenedor API como root e imagen no inmutable (AUDIT_REPORT M-01)
-El `Dockerfile` no declara `USER` ni `HEALTHCHECK`, y el compose monta `.:/app`
-pisando el código de la imagen. Mitigado por el túnel (NAS no expuesto) y el WAF.
-- **Acción:** usuario no-root + `HEALTHCHECK /health`; valorar eliminar el volumen
-  en producción. Probar en local antes de tocar el NAS.
-
-### TD-14 · Frontend sin error tracking (AUDIT_REPORT M-04)
-Sentry solo existe en el backend; los errores de usuarios reales en el
-navegador/Worker son invisibles. Al resolverlo se cierra también TD-08.
+- ✅ **Desbloqueado (2026-07-17)**: el scheduler ya es desacoplable — flag
+  `SCHEDULER_ENABLED` + servicio dedicado comentado en `docker-compose.yml`
+  (`python -m app.run_scheduler`). Al subir `--workers`, activar ese servicio y
+  poner `SCHEDULER_ENABLED=false` en la API para no duplicar jobs.
 
 ---
 
 ## 🟢 Baja — pulido
-
-### TD-08 · `console.error` en rutas frontend
-8 ocurrencias en rutas (`chollo.$slug.tsx`, `explorar.tsx`, `favoritos.tsx`,
-`categorias.tsx`, `index.tsx`, `CategoriesDrawer.tsx`). Enrutar a un logger central o
-justificar por qué se dejan.
 
 ### TD-09 · Telegram aún usa Supabase Functions
 Pendiente migrar a `POST /telegram/notify` en el backend (coherencia con ADR-002).

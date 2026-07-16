@@ -1,3 +1,4 @@
+import { logError } from "@/lib/logger";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
@@ -61,7 +62,7 @@ export function CategoriesDrawer({ open, onClose }: Props) {
         setStores(sts);
         setLoaded(true);
       })
-      .catch(console.error);
+      .catch((error) => logError("Error cargando categorías/tiendas del drawer", error));
   }, [open, loaded]);
 
   const itemCls =

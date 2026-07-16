@@ -1,3 +1,4 @@
+import { logError } from "@/lib/logger";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
@@ -71,7 +72,10 @@ function HomePage() {
 
   // Carga inicial: populares + primera página de live
   useEffect(() => {
-    dealsService.getPopular(4).then(setPopular).catch(console.error);
+    dealsService
+      .getPopular(4)
+      .then(setPopular)
+      .catch((error) => logError("Error cargando chollos populares", error));
     loadLive();
   }, [loadLive]);
 

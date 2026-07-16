@@ -11,4 +11,3 @@
 - [Estado del proyecto a 2026-06](project_estado_2026-06.md) — web en producción en buenchollotech.com (Cloudflare Workers + Tunnel); hardening completo; flujo main/develop; guía viva en `docs/guides/Cloudflare.md`.
 - [Auditoría final TFM 2026-06](buenchollo-final-review-2026-06.md) — veredicto 8,7–9/10 (potencial 9,5–10); falsos positivos a no repetir (.env NO commiteado, CI SÍ existe); cifras de tests pendientes de fijar con pytest bajo Python 3.11.
 - [Recordar deuda técnica al cambiar de tarea](feedback_recordar_deuda_tecnica.md) — en la transición entre tareas, recordar la deuda pendiente y apuntar a `docs/project/10-technical-debt.md`; mantener ese registro al día.
-- [Gate: resolver auditoría 2026-07 antes de avanzar](project_gate_audit_2026-07.md) — hallazgos de `AUDIT_REPORT.md` (0 críticos, 2 altos) son lo siguiente; no empezar otra tarea sin recordarlo y sin confirmación explícita de Pedro.

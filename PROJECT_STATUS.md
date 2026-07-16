@@ -1,5 +1,5 @@
 # PROJECT_STATUS — BuenCholloTech
-*Última actualización: 2026-07-16 (estabilización post-auditoría — ver § 3.septies)*
+*Última actualización: 2026-07-17 (auditoría 2026-07 cerrada al completo — ver § 3.octies)*
 
 > **⚠️ Revisar este documento antes de migrar a dominio web en producción.**
 > Contiene el estado real del proyecto, deuda técnica pendiente y la hoja de ruta completa.
@@ -157,6 +157,39 @@ OWASP Top 10 con 6 hallazgos medios resueltos (ninguno crítico).
 
 10 tests nuevos para Security Headers (5) y SSRF allowlist (10) → 97
 pytest verde.
+
+---
+
+### 3.octies  Cierre completo de la auditoría — 2026-07-17
+
+Segunda tanda que cierra **todos** los hallazgos restantes de `AUDIT_REPORT.md`
+(PR #41, CI verde con 6 checks):
+
+- **TD-05 cerrado** — `__init__.py` en los 20 subdirectorios de módulos que faltaban.
+- **TD-13 cerrado** — Dockerfile con usuario no-root (`useradd app` + `USER app`)
+  y `HEALTHCHECK` sobre `/health`. ⚠️ Requiere rebuild del contenedor NAS y
+  verificar permisos de lectura del volumen.
+- **M-07 cerrado** — scheduler extraído a `build_deals_scheduler()`
+  (deals/application/scheduler.py) con flag `SCHEDULER_ENABLED` y entrypoint
+  dedicado `python -m app.run_scheduler`; servicio comentado en compose listo
+  para cuando se suba `--workers` (TD-11 desbloqueado).
+- **TD-07 cerrado** — job CI "Backend (integración + Postgres)": `postgres:16`
+  service + esquema generado desde los modelos ORM (`scripts/create_test_schema.py`;
+  no vale `alembic upgrade head` porque el esquema base es de las migraciones SQL
+  de Supabase). Los 9 tests de integración corren ahora en cada push/PR a main.
+- **TD-14 y TD-08 cerrados** — `lib/logger.ts` con `logError()` central (consola
+  siempre; Sentry browser si `VITE_SENTRY_DSN` está configurado, SDK lazy en chunk
+  aparte, `sendDefaultPii=false`). Los 9 `console.error` de rutas migrados.
+  ⚠️ Para activarlo: crear proyecto browser en Sentry y poner `VITE_SENTRY_DSN`
+  en las build vars de Cloudflare Workers.
+- **TD-03 cerrado** — split de `admin.chollos.tsx`: 999 → 349 líneas. Extraído a
+  `features/admin/`: `deal-form.ts` (lógica pura + 7 tests), hooks `useAdminDeals`
+  y `useDealImages`, componentes `AmazonAutofillPanel` / `DealFormPanel` /
+  `AdminDealsTable` / `DuplicateDealDialog`. Comportamiento intacto (E2E verdes).
+- TD-04/TD-06/TD-09 permanecen como **deuda consciente** (resolver al tocar cada
+  módulo — recomendación explícita de AUDIT_REPORT §12).
+
+**Suite total: 237 tests** (127 pytest = 118 unit + 9 integración · 102 vitest · 8 E2E).
 
 ---
 
