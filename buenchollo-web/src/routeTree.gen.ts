@@ -21,6 +21,7 @@ import { Route as FavoritosRouteImport } from './routes/favoritos'
 import { Route as ExplorarRouteImport } from './routes/explorar'
 import { Route as ContactoRouteImport } from './routes/contacto'
 import { Route as CategoriasRouteImport } from './routes/categorias'
+import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AlertasRouteImport } from './routes/alertas'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -93,6 +94,11 @@ const CategoriasRoute = CategoriasRouteImport.update({
   path: '/categorias',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogRoute = BlogRouteImport.update({
+  id: '/blog',
+  path: '/blog',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AlertasRoute = AlertasRouteImport.update({
   id: '/alertas',
   path: '/alertas',
@@ -153,6 +159,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/alertas': typeof AlertasRoute
+  '/blog': typeof BlogRoute
   '/categorias': typeof CategoriasRoute
   '/contacto': typeof ContactoRoute
   '/explorar': typeof ExplorarRoute
@@ -177,6 +184,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/alertas': typeof AlertasRoute
+  '/blog': typeof BlogRoute
   '/categorias': typeof CategoriasRoute
   '/contacto': typeof ContactoRoute
   '/explorar': typeof ExplorarRoute
@@ -203,6 +211,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/alertas': typeof AlertasRoute
+  '/blog': typeof BlogRoute
   '/categorias': typeof CategoriasRoute
   '/contacto': typeof ContactoRoute
   '/explorar': typeof ExplorarRoute
@@ -230,6 +239,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/alertas'
+    | '/blog'
     | '/categorias'
     | '/contacto'
     | '/explorar'
@@ -254,6 +264,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/alertas'
+    | '/blog'
     | '/categorias'
     | '/contacto'
     | '/explorar'
@@ -279,6 +290,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/alertas'
+    | '/blog'
     | '/categorias'
     | '/contacto'
     | '/explorar'
@@ -305,6 +317,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   AlertasRoute: typeof AlertasRoute
+  BlogRoute: typeof BlogRoute
   CategoriasRoute: typeof CategoriasRoute
   ContactoRoute: typeof ContactoRoute
   ExplorarRoute: typeof ExplorarRoute
@@ -406,6 +419,13 @@ declare module '@tanstack/react-router' {
       path: '/categorias'
       fullPath: '/categorias'
       preLoaderRoute: typeof CategoriasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog': {
+      id: '/blog'
+      path: '/blog'
+      fullPath: '/blog'
+      preLoaderRoute: typeof BlogRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/alertas': {
@@ -510,6 +530,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   AlertasRoute: AlertasRoute,
+  BlogRoute: BlogRoute,
   CategoriasRoute: CategoriasRoute,
   ContactoRoute: ContactoRoute,
   ExplorarRoute: ExplorarRoute,
