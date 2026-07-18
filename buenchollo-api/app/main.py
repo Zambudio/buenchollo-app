@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import APIRouter, FastAPI, Request
 from fastapi.exceptions import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -192,3 +192,13 @@ v1.include_router(comments_router)
 
 app.include_router(v1)
 app.include_router(health_router)  # /health y /health/ready — sin /v1
+
+
+@app.get("/robots.txt", include_in_schema=False)
+async def robots_txt() -> PlainTextResponse:
+    """La API no es contenido indexable: bloquea todo rastreo de buscadores.
+
+    Sin esto, Google rastrea api.buenchollotech.com (la propiedad de Search
+    Console es de dominio completo) y reporta la raíz como error 404.
+    """
+    return PlainTextResponse("User-agent: *\nDisallow: /\n")
