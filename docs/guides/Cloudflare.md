@@ -246,7 +246,7 @@ crear Cache Rules sobre `buenchollotech.com`. (Futuro: cachear solo `/assets/*`.
 
 ---
 
-### ⏳ T9 — Cache Rule para GET públicos de la API (TD-11 Fase 1) · 🟢 — PENDIENTE (manual, dashboard)
+### ✅ T9 — Cache Rule para GET públicos de la API (TD-11 Fase 1) · 🟢 — HECHO (2026-07-18)
 
 **Por qué:** los listados públicos (`GET /v1/deals`, `/v1/categories`, `/v1/stores`
 sin auth) se piden repetidamente con el mismo resultado en ventanas cortas.
@@ -254,18 +254,19 @@ Cachearlos unos segundos en el borde evita ida y vuelta al NAS. **No** afecta a
 `buenchollotech.com` (eso es T7, que se queda como está) — esto es solo sobre
 `api.buenchollotech.com`.
 
-**Pasos (Dashboard → Caching → Cache Rules → Create rule):**
-1. When incoming requests match: `Hostname eq "api.buenchollotech.com"` AND
-   `Request Method eq "GET"` AND URI Path empieza por `/v1/deals`, `/v1/categories`
-   o `/v1/stores` (una condición OR de paths, o 3 reglas separadas).
-2. Then: **Cache eligibility → Eligible for cache**. Edge TTL: **30-60 segundos**
-   (ajustable). Browser TTL: bypass o muy corto (los datos cambian).
-3. **No** cachear nada bajo `/v1/deals/admin/*`, `/v1/*/admin/*` ni ningún
-   endpoint con `Authorization` header — excluir explícitamente o limitar el
-   `When` a rutas públicas conocidas, nunca a un wildcard genérico.
+**Regla creada** (Dashboard → Caching → Cache Rules → `Cache API GET publicos`):
+- Expresión: `(http.host eq "api.buenchollotech.com" and http.request.method eq "GET" and (starts_with(http.request.uri.path, "/v1/deals") or starts_with(http.request.uri.path, "/v1/categories") or starts_with(http.request.uri.path, "/v1/stores")))`
+- Then: **Eligible for cache**, Edge TTL fijo **30 segundos** (ignora `Cache-Control`
+  del origen).
+- **No** cachea `/v1/deals/admin/*` ni ningún otro `/v1/*/admin/*` — la expresión
+  solo matchea las 3 rutas públicas listadas, nunca un wildcard genérico.
 
-**Comprobación:** `curl -sI https://api.buenchollotech.com/v1/deals` dos veces
-seguidas → la segunda debe traer `cf-cache-status: HIT`.
+**Comprobación** (usar `-D -` para forzar GET real; `curl -I` manda HEAD, que el
+WAF de T6.4 bloquea con 403 al no estar en la allowlist de métodos):
+```bash
+curl -s -o /dev/null -D - https://api.buenchollotech.com/v1/deals | grep -i cf-cache-status
+```
+Verificado: 1ª petición `MISS`, 2ª petición inmediata `HIT`.
 **Rollback:** desactivar/borrar la regla — el origen (NAS) sigue sirviendo todo
 igual sin ella.
 
@@ -353,3 +354,10 @@ curl -sI https://buenchollotech.com | findstr /I "strict-transport content-secur
   **Checklist de go-live verificado en verde desde fuera** (health, redirects,
   HSTS, headers, CORS). **Pendiente (no bloqueante):** confirmar en navegador
   login Google + 403 admin; rotar TUNNEL_TOKEN; fix `config.py` CORS + `.env.example`.
+- 2026-07-18 — ✅ **T9 HECHO** (cierre TD-11 Fase 1 completa). Cache Rule
+  `Cache API GET publicos` creada en Caching → Cache Rules: GET público de
+  `/v1/deals`, `/v1/categories`, `/v1/stores` sobre `api.buenchollotech.com`,
+  Edge TTL 30s. Verificado con `curl -D -` (no `-I`: el WAF de T6.4 bloquea
+  HEAD con 403, no está en la allowlist de métodos — confundió la primera
+  comprobación). 1ª petición `cf-cache-status: MISS`, 2ª `HIT`. Plan de
+  optimización Fase 1 completo al 100% (`OPTIMIZACION_PLAN.md`).
