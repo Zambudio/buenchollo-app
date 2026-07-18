@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.audit import audit_log
@@ -7,6 +7,12 @@ from app.core.database import get_db
 from app.core.rate_limit import limiter
 from app.core.security import require_admin
 from app.modules.telegram.application.post_generator import TelegramPostGenerator
+from app.modules.telegram.domain.exceptions import (
+    TelegramChannelNotConfigured,
+    TelegramNotConfigured,
+    TelegramNotifyPayloadInvalid,
+    TelegramSendFailed,
+)
 from app.modules.telegram.infrastructure.category_repository import JsonCategoryRepository
 from app.modules.telegram.infrastructure.telegram_bot import TelegramBot
 from app.modules.telegram.api.schemas import (
@@ -23,10 +29,7 @@ router = APIRouter(prefix="/telegram", tags=["telegram"])
 
 def _require_telegram(settings: Settings) -> None:
     if not settings.telegram_bot_token:
-        raise HTTPException(
-            status_code=503,
-            detail="Telegram no configurado. Añade TELEGRAM_BOT_TOKEN al .env",
-        )
+        raise TelegramNotConfigured()
 
 
 def _get_bot(settings: Settings) -> TelegramBot:
@@ -133,10 +136,7 @@ async def notify_deal(
         or settings.telegram_main_channel_id
     )
     if not channel_id:
-        raise HTTPException(
-            status_code=503,
-            detail="No hay canal Telegram configurado. Añade TELEGRAM_MAIN_CHANNEL_ID al .env",
-        )
+        raise TelegramChannelNotConfigured()
 
     # Flujo panel: texto pre-formateado con custom entities
     if payload.text:
@@ -152,10 +152,7 @@ async def notify_deal(
     # Flujo rápido: construir mensaje en MarkdownV2
     else:
         if not payload.title or payload.current_price is None:
-            raise HTTPException(
-                status_code=422,
-                detail="Se requiere 'text' o bien 'title' + 'current_price'",
-            )
+            raise TelegramNotifyPayloadInvalid()
         ok = bot.send_deal(
             title=payload.title,
             current_price=payload.current_price,
@@ -169,7 +166,7 @@ async def notify_deal(
         )
 
     if not ok:
-        raise HTTPException(status_code=500, detail="Error al enviar a Telegram. Revisa los logs del servidor.")
+        raise TelegramSendFailed()
 
     await audit_log(
         db,

@@ -187,10 +187,51 @@ Segunda tanda que cierra **todos** los hallazgos restantes de la auditoría
   `features/admin/`: `deal-form.ts` (lógica pura + 7 tests), hooks `useAdminDeals`
   y `useDealImages`, componentes `AmazonAutofillPanel` / `DealFormPanel` /
   `AdminDealsTable` / `DuplicateDealDialog`. Comportamiento intacto (E2E verdes).
-- TD-04/TD-06/TD-09 permanecen como **deuda consciente** (resolver al tocar cada
-  módulo — recomendación explícita de AUDIT_REPORT §12).
+- TD-04/TD-06/TD-09/TD-11 cerrados el 2026-07-18 — ver § 3.novies.
 
 **Suite total: 237 tests** (127 pytest = 118 unit + 9 integración · 102 vitest · 8 E2E).
+
+---
+
+### 3.novies  Cierre completo de la deuda técnica — 2026-07-18
+
+Cierra los 4 items que quedaban abiertos en `10-technical-debt.md`, previo a
+abrir la web al público:
+
+- **TD-09 cerrado** — resultó estar casi resuelta de antemano: `POST /telegram/notify`
+  ya existía en el backend (auth admin, rate limit 5/min, audit log) y el frontend
+  ya lo consumía vía `apiClient` (no Supabase). Solo faltaba limpieza: borrada la
+  Edge Function huérfana `buenchollo-api/supabase/functions/notify-telegram/index.ts`,
+  que **no tenía autenticación** (cualquiera con la URL podía publicar en el canal) —
+  cierre de deuda y fix de seguridad menor a la vez.
+- **TD-06 cerrado** — vivía entera en `telegram/api/router.py`. Nuevo
+  `telegram/domain/exceptions.py` (`TelegramNotConfigured`, `TelegramChannelNotConfigured`,
+  `TelegramNotifyPayloadInvalid`, `TelegramSendFailed`) sustituye los 4
+  `raise HTTPException(...)` directos, usando por primera vez `ServiceUnavailableError`/
+  `ValidationError` de `core/exceptions.py`. Status codes preservados exactamente
+  (503/503/422/503) — sin cambio de contrato de API. 4 tests nuevos
+  (`test_telegram_api.py`).
+- **TD-04 cerrado sin tocar código** — `categories/` y `stores/` tienen una nota
+  arquitectónica explícita (F2.5, 2026-05-27) declarando la ausencia de capa
+  `application/` como decisión YAGNI deliberada (CRUD sin reglas de negocio real).
+  `users/` ya tenía su capa completa desde antes (`user_service.py`), más aislada
+  del SDK de auth incluso que `deals`. La sección de abajo (antes contradictoria)
+  queda corregida para reflejar el estado real en vez de "pendiente".
+- **TD-11 cerrado (Fase 1 del plan de optimización)** — `docker-compose.yml`:
+  `buenchollo-api` sube a `--workers 2` con `SCHEDULER_ENABLED=false`; se
+  descomenta el contenedor dedicado `buenchollo-scheduler` (`python -m app.run_scheduler`,
+  ya existía como código desde el cierre de M-07). `database.py`: pool SQLAlchemy
+  acotado explícitamente (`pool_size=3, max_overflow=2, pool_recycle=300`) — con
+  2 workers, máximo 10 conexiones simultáneas contra el pooler de Supabase en vez
+  de los defaults sin límite documentado. Cache Rule de la API documentada como
+  paso manual en `docs/guides/Cloudflare.md` (§ T9) — no ejecutable desde código.
+  ⚠️ **Requiere recrear el contenedor `buenchollo-api` en el NAS** (no solo
+  reiniciar) para que tome el `docker-compose.yml` nuevo, y confirmar que
+  `buenchollo-scheduler` arranca correctamente. Fase 2/3 del plan siguen
+  aparcadas sin trigger (`OPTIMIZACION_PLAN.md`).
+
+**Suite backend: 133 pytest** (124 no-integración + 9 integración; incluye los
+4 tests nuevos de `test_telegram_api.py`).
 
 ---
 
@@ -362,22 +403,24 @@ Histórico completo:
 
 ### 🟡 Media prioridad
 
-#### Capas incompletas en módulos menores
-
-`categories/`, `stores/` y `users/` van directamente `router → repository` sin capa `application/`.
-Funcional pero inconsistente con la arquitectura declarada.
+#### Capas `application/` — estado real (corregido 2026-07-18, cierre TD-04)
 
 ```
 deals/        ✅  api → DealService → DealRepository
 products/     ✅  api → PreviewProductFromUrlUseCase → adapters
-categories/   ⚠️  api → repository  (sin application layer)
-stores/       ⚠️  api → repository  (sin application layer)
-users/        ⚠️  api → repository  (sin application layer)
-telegram/     ✅  api → TelegramPostGenerator → infrastructure
+users/        ✅  api → UserService → ProfileRepository
+telegram/     ✅  api → TelegramPostGenerator/TelegramBot → infrastructure
+categories/   ⚠️  api → repository  (sin application layer, YAGNI deliberado)
+stores/       ⚠️  api → repository  (sin application layer, YAGNI deliberado)
 ```
 
-Para `categories` y `stores` (lógica CRUD simple) es aceptable.
-Para `users` (gestión de perfiles, roles) debería tener su capa de uso.
+`users/` ya tiene su capa completa (`user_service.py`) — el párrafo anterior de
+esta página decía lo contrario, era información desactualizada. `categories/` y
+`stores/` omiten `application/` a propósito: hay una nota arquitectónica en cada
+router (F2.5, 2026-05-27) explicando que son CRUD sin reglas de negocio reales
+todavía, y que crear un service que solo delegue sería boilerplate puro (YAGNI).
+Extraer el service cuando aparezca la primera regla real, siguiendo el patrón de
+`users/application/user_service.py`.
 
 #### `__init__.py` faltantes en subdirectorios
 
