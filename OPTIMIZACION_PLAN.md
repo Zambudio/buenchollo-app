@@ -32,12 +32,17 @@ justifique. Este plan prioriza mejoras **gratuitas o de bajo coste** primero.
 `SCHEDULER_ENABLED=false` en la API para no duplicar jobs (M-07).
 ⚠️ Requiere recrear el contenedor en el NAS para tomar el compose nuevo.
 
-### 2. Cache en el borde (Cloudflare) — ✅ hecho
-Cache Rule `Cache API GET publicos` creada en el dashboard (Caching → Cache
-Rules) para `api.buenchollotech.com`, método GET, rutas `/v1/deals`,
-`/v1/categories`, `/v1/stores`. Edge TTL fijo 30s (ignora `Cache-Control` del
-origen). Verificado: `curl -D - .../v1/deals` → 1ª petición `cf-cache-status: MISS`,
-2ª `HIT`. Documentado en [`docs/guides/Cloudflare.md`](docs/guides/Cloudflare.md) § T9.
+### 2. Cache en el borde (Cloudflare) — ⚠️ rehecha (v1 retirada el mismo día)
+La v1 de la Cache Rule `Cache API GET publicos` (Edge TTL fijo 30s ignorando
+al origen, matcheo por `starts_with`) cacheaba también endpoints autenticados
+(`/v1/deals/my-votes`, `/favorites` — fuga potencial entre usuarios) y causaba
+contadores obsoletos con F5 en la web. **v2**: la política la dicta el origen —
+middleware `app/core/cache_headers.py` (`no-store` en todo `/v1`;
+`public, max-age=0, s-maxage=30` solo en los 5 listados públicos exactos) y
+regla del panel con rutas exactas y Edge/Browser TTL "respect origin".
+Config completa, verificación y bitácora en
+[`docs/guides/Cloudflare.md`](docs/guides/Cloudflare.md) § T9.
+⚠️ Pendiente: aplicar v2 en el panel + reiniciar contenedor API en el NAS.
 
 ### 3. Medir el pool de conexiones SQLAlchemy vs PgBouncer — ✅ hecho
 `buenchollo-api/app/core/database.py`: pool acotado explícitamente

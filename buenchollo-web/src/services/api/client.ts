@@ -77,6 +77,10 @@ async function fetchWithAuth<T>(endpoint: string, options: RequestInit = {}): Pr
 
   const response = await fetch(url, {
     signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS),
+    // La API es siempre datos vivos: el navegador no debe servirlos de su
+    // caché HTTP aunque alguna capa intermedia (Cloudflare) devuelva
+    // cabeceras cacheables por error (ver docs/guides/Cloudflare.md § T9).
+    cache: "no-store",
     ...options,
     headers,
   });
