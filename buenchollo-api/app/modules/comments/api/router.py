@@ -96,6 +96,7 @@ async def create_comment(
         content=payload.content.strip(),
         parent_id=payload.parent_id,
     )
+    await repo.recalculate_comment_count(deal_id)
     profiles = await repo.get_profiles_for_users([str(current_user.id)])
     return _serialize_comment(comment, profiles, {})
 
@@ -111,7 +112,9 @@ async def delete_comment(
         raise CommentNotFound()
     if str(comment.user_id) != str(current_user.id):
         raise NotCommentOwner()
+    deal_id = str(comment.deal_id)
     await repo.delete(comment)
+    await repo.recalculate_comment_count(deal_id)
 
 
 @router.post("/deals/comments/{comment_id}/vote")
