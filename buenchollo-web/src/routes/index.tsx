@@ -10,6 +10,10 @@ import { dealsService, favoritesApi } from "@/services/api/deals";
 
 const SITE = "https://buenchollotech.com";
 const PAGE_SIZE = 12;
+// Tope de seguridad: el backend rechaza limit > 100 (422). Sin este tope, un
+// fetch fallido deja hasMore=true con el sentinel aún visible, y el
+// IntersectionObserver reintenta sin parar incrementando limit sin fin.
+const MAX_LIMIT = 96;
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -70,9 +74,12 @@ function HomePage() {
       .search({ limit })
       .then((data) => {
         setDeals(sortDeals(data, filter));
-        setHasMore(data.length >= limit);
+        setHasMore(data.length >= limit && limit < MAX_LIMIT);
       })
-      .catch((error) => logError("Error cargando chollos de portada", error))
+      .catch((error) => {
+        logError("Error cargando chollos de portada", error);
+        setHasMore(false);
+      })
       .finally(() => setLoading(false));
   }, [filter, limit]);
 
@@ -84,7 +91,7 @@ function HomePage() {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting && !loading && hasMore) {
-          setLimit((l) => l + PAGE_SIZE);
+          setLimit((l) => Math.min(l + PAGE_SIZE, MAX_LIMIT));
         }
       },
       { rootMargin: "300px" },
