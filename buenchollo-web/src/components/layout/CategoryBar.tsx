@@ -1,10 +1,13 @@
 import { Link } from "@tanstack/react-router";
+import { Send } from "lucide-react";
 
 const LINKS = [
   { label: "Categorías", to: "/categorias" as const },
   { label: "Ofertas", to: "/explorar" as const },
   { label: "Blog", to: "/blog" as const },
 ];
+
+const TELEGRAM_URL = "https://t.me/buenchollotech";
 
 export function CategoryBar() {
   return (
@@ -25,12 +28,15 @@ export function CategoryBar() {
             </Link>
           ))}
         </div>
-        <Link
-          to="/explorar"
-          className="font-mono text-xs uppercase tracking-wide text-cyan-glow hover:text-foreground py-2.5 transition-colors"
+        <a
+          href={TELEGRAM_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 my-2 rounded-full bg-[#229ED9] hover:bg-[#1c8bc0] text-white font-mono text-xs font-bold uppercase tracking-wide px-3.5 py-1.5 shadow-[0_0_12px_rgba(34,158,217,0.5)] transition-colors shrink-0"
         >
-          [ FILTRAR ]
-        </Link>
+          <Send className="size-3.5" />
+          Chollos en Telegram
+        </a>
       </div>
     </nav>
   );
