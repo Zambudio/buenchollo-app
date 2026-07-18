@@ -1,10 +1,10 @@
 # ⚡ Plan de optimización de rendimiento
 
-> Registro vivo, no urgente. **No se ejecuta todavía** — se retoma cuando haya
-> base de usuarios real que lo justifique. Mientras tanto queda aquí guardado
-> para no perder el hilo. Relacionado con [TD-11](docs/project/10-technical-debt.md).
+> Registro vivo. **Fase 1 ejecutada el 2026-07-18** (cierre de TD-11, antes de
+> abrir la web al público). Fase 2 y 3 siguen sin ejecutarse — se retoman cuando
+> haya base de usuarios real que lo justifique.
 
-Última actualización: 2026-07-09
+Última actualización: 2026-07-18
 
 ---
 
@@ -23,25 +23,28 @@ justifique. Este plan prioriza mejoras **gratuitas o de bajo coste** primero.
 
 ---
 
-## Fase 1 — Gratis, bajo riesgo (hacer primero)
+## Fase 1 — Gratis, bajo riesgo (hacer primero) — ✅ HECHA 2026-07-18
 
-### 1. `--workers` en uvicorn
-Hoy el contenedor corre un solo proceso uvicorn, así que las peticiones se
-sirven en serie. Pasar a 2-4 workers en `buenchollo-api/docker-compose.yml` /
-`Dockerfile` permite atender varias peticiones en paralelo con el mismo
-hardware del NAS. Sin coste, cambio acotado.
+### 1. `--workers` en uvicorn — ✅ hecho
+`buenchollo-api/docker-compose.yml`: `buenchollo-api` corre ahora con
+`--workers 2`. El scheduler se desacopló a un contenedor propio
+(`buenchollo-scheduler`, `python -m app.run_scheduler`) con
+`SCHEDULER_ENABLED=false` en la API para no duplicar jobs (M-07).
+⚠️ Requiere recrear el contenedor en el NAS para tomar el compose nuevo.
 
-### 2. Cache en el borde (Cloudflare)
-Los endpoints públicos de listado de chollos (GET, sin auth: home, explorar,
-categoría) son buenos candidatos para una regla de cache de unos segundos o
-minutos en Cloudflare (Cache Rules / Page Rules). Evita ida y vuelta al NAS en
-visitas repetidas al mismo contenido. Gratis en el plan actual.
+### 2. Cache en el borde (Cloudflare) — ⏳ documentado, pendiente de aplicar
+Cache Rule para GET públicos de `api.buenchollotech.com` (`/v1/deals`,
+`/v1/categories`, `/v1/stores`) documentada en
+[`docs/guides/Cloudflare.md`](docs/guides/Cloudflare.md) § T9. Es un paso de
+dashboard manual — no se aplica desde código, queda para cuando el usuario lo
+ejecute.
 
-### 3. Medir el pool de conexiones SQLAlchemy vs PgBouncer
-No se ha medido si el pool async de SQLAlchemy contra el pooler de Supabase
-(puerto 6543, modo transacción) añade latencia de conexión por request.
-Revisar tamaño de pool, timeouts, y si `statement_cache_size=0` (obligatorio
-para PgBouncer) tiene algún coste medible que se pueda mitigar.
+### 3. Medir el pool de conexiones SQLAlchemy vs PgBouncer — ✅ hecho
+`buenchollo-api/app/core/database.py`: pool acotado explícitamente
+(`pool_size=3, max_overflow=2, pool_recycle=300`) en vez de los defaults de
+SQLAlchemy sin límite documentado. Con `--workers 2`: máximo 10 conexiones
+simultáneas contra el pooler. Verificación de latencia vía
+`GET /health/ready` (ya expone `checks.db.latency_ms`).
 
 ---
 

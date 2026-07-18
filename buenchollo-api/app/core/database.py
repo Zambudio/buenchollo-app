@@ -23,6 +23,12 @@ if settings.database_url:
             echo=settings.log_level == "DEBUG",
             future=True,
             pool_pre_ping=True, # Verifica si la conexión sigue viva
+            # Acotado explícitamente (TD-11): con --workers N, cada worker es un
+            # proceso con su propio pool. 3+2 por proceso × 2 workers = máx. 10
+            # conexiones simultáneas contra el pooler PgBouncer de Supabase.
+            pool_size=3,
+            max_overflow=2,
+            pool_recycle=300,  # evita conexiones colgadas si PgBouncer cierra idles
             connect_args={"server_settings": {"jit": "off"}, "statement_cache_size": 0},
         )
         AsyncSessionLocal = async_sessionmaker(

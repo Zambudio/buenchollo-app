@@ -6,6 +6,10 @@ services:
       - "8001:8000"
     env_file:
       - .env
+    environment:
+      # El scheduler corre en su propio contenedor (buenchollo-scheduler, abajo)
+      # para no duplicar jobs entre los --workers de uvicorn (M-07/TD-11).
+      - SCHEDULER_ENABLED=false
     restart: always
     volumes:
       - .:/app
@@ -14,24 +18,25 @@ services:
     # 2) Si alembic falla (BD caída, migración rota), el contenedor NO arranca.
     #    Esto es intencional: mejor no arrancar que correr con esquema obsoleto.
     # 3) Si NO quieres este comportamiento (p. ej. en local sin permisos),
-    #    cambia a:  command: uvicorn app.main:app --host 0.0.0.0 --port 8000
-    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    #    cambia a:  command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2"
 
-  # ── Scheduler dedicado (OPCIONAL, ver M-07/TD-11) ───────────────────────────
-  # Descomentar SOLO al subir uvicorn a --workers N: entonces añadir
-  # SCHEDULER_ENABLED=false al .env de la API para que los jobs corran
-  # exactamente una vez (aquí) y no N veces (una por worker).
-  # buenchollo-scheduler:
-  #   build: .
-  #   container_name: buenchollo-scheduler
-  #   env_file:
-  #     - .env
-  #   environment:
-  #     - SCHEDULER_ENABLED=true
-  #   restart: always
-  #   volumes:
-  #     - .:/app
-  #   command: python -m app.run_scheduler
+  # ── Scheduler dedicado (TD-11 desbloqueado 2026-07-18) ──────────────────────
+  # Necesario porque buenchollo-api corre con --workers 2: sin esto, los jobs
+  # periódicos (mark_expired, clean) se ejecutarían una vez por worker (M-07).
+  buenchollo-scheduler:
+    build: .
+    container_name: buenchollo-scheduler
+    env_file:
+      - .env
+    environment:
+      - SCHEDULER_ENABLED=true
+    restart: always
+    depends_on:
+      - buenchollo-api
+    volumes:
+      - .:/app
+    command: python -m app.run_scheduler
 
   # Cloudflare Tunnel — expone la API en api.buenchollotech.com SIN abrir puertos
   # ni depender de la IP pública (conexión saliente). Por estar en este mismo

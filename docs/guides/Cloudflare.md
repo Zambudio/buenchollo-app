@@ -246,6 +246,31 @@ crear Cache Rules sobre `buenchollotech.com`. (Futuro: cachear solo `/assets/*`.
 
 ---
 
+### ⏳ T9 — Cache Rule para GET públicos de la API (TD-11 Fase 1) · 🟢 — PENDIENTE (manual, dashboard)
+
+**Por qué:** los listados públicos (`GET /v1/deals`, `/v1/categories`, `/v1/stores`
+sin auth) se piden repetidamente con el mismo resultado en ventanas cortas.
+Cachearlos unos segundos en el borde evita ida y vuelta al NAS. **No** afecta a
+`buenchollotech.com` (eso es T7, que se queda como está) — esto es solo sobre
+`api.buenchollotech.com`.
+
+**Pasos (Dashboard → Caching → Cache Rules → Create rule):**
+1. When incoming requests match: `Hostname eq "api.buenchollotech.com"` AND
+   `Request Method eq "GET"` AND URI Path empieza por `/v1/deals`, `/v1/categories`
+   o `/v1/stores` (una condición OR de paths, o 3 reglas separadas).
+2. Then: **Cache eligibility → Eligible for cache**. Edge TTL: **30-60 segundos**
+   (ajustable). Browser TTL: bypass o muy corto (los datos cambian).
+3. **No** cachear nada bajo `/v1/deals/admin/*`, `/v1/*/admin/*` ni ningún
+   endpoint con `Authorization` header — excluir explícitamente o limitar el
+   `When` a rutas públicas conocidas, nunca a un wildcard genérico.
+
+**Comprobación:** `curl -sI https://api.buenchollotech.com/v1/deals` dos veces
+seguidas → la segunda debe traer `cf-cache-status: HIT`.
+**Rollback:** desactivar/borrar la regla — el origen (NAS) sigue sirviendo todo
+igual sin ella.
+
+---
+
 ### ✅ T8 — Tokens / secretos · 🟢 — HECHO: TUNNEL_TOKEN solo en .env del NAS. ⚠️ PENDIENTE rotarlo (quedó en el chat)
 
 - `TUNNEL_TOKEN` → solo en el `.env` del NAS (gitignored). **No** a git.
