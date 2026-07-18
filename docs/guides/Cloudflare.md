@@ -246,7 +246,7 @@ crear Cache Rules sobre `buenchollotech.com`. (Futuro: cachear solo `/assets/*`.
 
 ---
 
-### ✅ T9 — Cache Rule para GET públicos de la API (TD-11 Fase 1) · 🟢 — HECHO (2026-07-18)
+### ⚠️ T9 — Cache Rule para GET públicos de la API (TD-11 Fase 1) · 🔴 v1 RETIRADA (bug + fuga) → v2 pendiente de aplicar en panel
 
 **Por qué:** los listados públicos (`GET /v1/deals`, `/v1/categories`, `/v1/stores`
 sin auth) se piden repetidamente con el mismo resultado en ventanas cortas.
@@ -254,21 +254,43 @@ Cachearlos unos segundos en el borde evita ida y vuelta al NAS. **No** afecta a
 `buenchollotech.com` (eso es T7, que se queda como está) — esto es solo sobre
 `api.buenchollotech.com`.
 
-**Regla creada** (Dashboard → Caching → Cache Rules → `Cache API GET publicos`):
-- Expresión: `(http.host eq "api.buenchollotech.com" and http.request.method eq "GET" and (starts_with(http.request.uri.path, "/v1/deals") or starts_with(http.request.uri.path, "/v1/categories") or starts_with(http.request.uri.path, "/v1/stores")))`
-- Then: **Eligible for cache**, Edge TTL fijo **30 segundos** (ignora `Cache-Control`
-  del origen).
-- **No** cachea `/v1/deals/admin/*` ni ningún otro `/v1/*/admin/*` — la expresión
-  solo matchea las 3 rutas públicas listadas, nunca un wildcard genérico.
+**Qué falló en la v1 (2026-07-18, misma fecha):**
+- La expresión usaba `starts_with("/v1/deals")` etc., que también matchea
+  endpoints **autenticados y por-usuario** (`/v1/deals/my-votes`,
+  `/v1/deals/favorites`, `/v1/deals/{id}/my-vote`, `/v1/deals/{id}/favorite`)
+  y los **admin** (`/v1/*/admin/*`). La clave de caché no incluye
+  `Authorization` → durante los 30s de TTL la respuesta de un usuario podía
+  servirse a otro (**fuga entre usuarios**).
+- Edge TTL "fijo 30s" **ignora el `Cache-Control` del origen**, y la API no
+  emitía ninguno; el navegador además podía guardar el JSON en disco →
+  **contadores de votos/comentarios obsoletos con F5** (solo Shift+F5 los
+  refrescaba). Detalle: el `no-store` que se creyó ver con `curl -I` era la
+  cabecera de la página 403 del WAF (HEAD bloqueado), no de la API.
+
+**v2 — configuración correcta (aplicar en Dashboard → Caching → Cache Rules):**
+El origen manda ahora `Cache-Control` explícito (middleware
+`app/core/cache_headers.py`): `no-store` en todo `/v1` salvo los listados
+públicos exactos (`/v1/deals`, `/v1/deals/latest`, `/v1/deals/popular`,
+`/v1/categories`, `/v1/stores`), que llevan `public, max-age=0, s-maxage=30`
+(el navegador siempre revalida; solo el borde cachea 30s). La regla debe
+limitarse a **respetar al origen**:
+- Expresión (rutas **exactas**, nunca `starts_with`):
+  `(http.host eq "api.buenchollotech.com" and http.request.method eq "GET" and http.request.uri.path in {"/v1/deals" "/v1/deals/latest" "/v1/deals/popular" "/v1/categories" "/v1/stores"})`
+- Then: **Eligible for cache** · Edge TTL: **Use cache-control header if present,
+  bypass cache if not** (respect origin) · Browser TTL: **Respect origin**.
+- Tras editar: **Purge Everything** (o por hostname `api.buenchollotech.com`)
+  para vaciar lo cacheado por la v1.
 
 **Comprobación** (usar `-D -` para forzar GET real; `curl -I` manda HEAD, que el
 WAF de T6.4 bloquea con 403 al no estar en la allowlist de métodos):
 ```bash
-curl -s -o /dev/null -D - https://api.buenchollotech.com/v1/deals | grep -i cf-cache-status
+# Listado público: public, max-age=0, s-maxage=30 · MISS → HIT
+curl -s -o /dev/null -D - https://api.buenchollotech.com/v1/deals | grep -iE "cf-cache-status|cache-control"
+# Endpoint por-usuario: no-store · nunca HIT
+curl -s -o /dev/null -D - -H "Authorization: Bearer <token>" "https://api.buenchollotech.com/v1/deals/my-votes?ids=<id>" | grep -iE "cf-cache-status|cache-control"
 ```
-Verificado: 1ª petición `MISS`, 2ª petición inmediata `HIT`.
 **Rollback:** desactivar/borrar la regla — el origen (NAS) sigue sirviendo todo
-igual sin ella.
+igual sin ella (el middleware de la API emite cabeceras correctas en cualquier caso).
 
 ---
 
@@ -361,3 +383,14 @@ curl -sI https://buenchollotech.com | findstr /I "strict-transport content-secur
   HEAD con 403, no está en la allowlist de métodos — confundió la primera
   comprobación). 1ª petición `cf-cache-status: MISS`, 2ª `HIT`. Plan de
   optimización Fase 1 completo al 100% (`OPTIMIZACION_PLAN.md`).
+- 2026-07-18 — 🔴 **T9 v1 retirada el mismo día**: causaba los contadores de
+  votos/comentarios obsoletos con F5 (solo Shift+F5 refrescaba) y una **fuga
+  potencial entre usuarios**: `starts_with("/v1/deals")` cacheaba también
+  `/my-votes` y `/favorites` (autenticados) con Edge TTL fijo que ignoraba al
+  origen, y la API no emitía `Cache-Control` alguno. Fix en tres partes:
+  (1) middleware `app/core/cache_headers.py` — `no-store` en todo `/v1`,
+  `public, max-age=0, s-maxage=30` solo en los 5 listados públicos exactos;
+  (2) `fetchWithAuth` del frontend con `cache: "no-store"`; (3) regla v2 en
+  panel con rutas exactas y Edge/Browser TTL "respect origin" + purga
+  (ver § T9). **Panel pendiente de aplicar por el usuario**: desactivar v1 →
+  desplegar API (reinicio contenedor NAS) → activar v2 → verificar.

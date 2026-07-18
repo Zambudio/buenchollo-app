@@ -43,6 +43,22 @@ class CommentRepository:
         await self.session.delete(comment)
         await self.session.flush()
 
+    async def recalculate_comment_count(self, deal_id: str) -> None:
+        """Recalcula deals.comment_count desde deal_comments. El contador de la
+        card/página de detalle lee este campo; sin este recálculo se queda
+        siempre en 0 porque create/delete no lo tocan."""
+        await self.session.execute(
+            text(
+                """
+                UPDATE deals SET
+                    comment_count = (SELECT COUNT(*) FROM deal_comments WHERE deal_id = CAST(:id AS uuid))
+                WHERE id = CAST(:id AS uuid)
+                """
+            ),
+            {"id": deal_id},
+        )
+        await self.session.flush()
+
     async def upsert_vote(self, comment_id: str, user_id: str, vote: int) -> None:
         stmt = pg_insert(CommentVote).values(
             comment_id=comment_id, user_id=user_id, vote=vote

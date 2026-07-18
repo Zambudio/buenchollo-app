@@ -37,6 +37,12 @@ services:
     volumes:
       - .:/app
     command: python -m app.run_scheduler
+    # El HEALTHCHECK del Dockerfile comprueba http://localhost:8000/health,
+    # pensado para buenchollo-api (uvicorn). Este contenedor no expone HTTP
+    # (solo corre el scheduler), así que ese check siempre falla y Docker lo
+    # marca "unhealthy" aunque el proceso esté bien. Lo desactivamos aquí.
+    healthcheck:
+      disable: true
 
   # Cloudflare Tunnel — expone la API en api.buenchollotech.com SIN abrir puertos
   # ni depender de la IP pública (conexión saliente). Por estar en este mismo

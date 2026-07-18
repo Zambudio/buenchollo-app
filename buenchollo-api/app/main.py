@@ -16,6 +16,7 @@ from app.core.exceptions import DomainError
 from app.core.health import router as health_router
 from app.core.logging import configure_logging
 from app.core.rate_limit import limiter, rate_limit_exceeded_handler
+from app.core.cache_headers import CacheHeadersMiddleware
 from app.core.request_id import REQUEST_ID_HEADER, RequestIdMiddleware, get_request_id
 from app.core.security_headers import SecurityHeadersMiddleware
 from app.core.sentry import init_sentry
@@ -106,6 +107,10 @@ app.add_middleware(
     SecurityHeadersMiddleware,
     enable_hsts=settings.app_env == "production",
 )
+# Cache-Control explícito en /v1: no-store por defecto, s-maxage=30 sólo en
+# listados públicos. Sin esto, Cloudflare/navegador deciden solos qué cachear
+# (causa de los contadores obsoletos con F5 — Cloudflare.md § T9).
+app.add_middleware(CacheHeadersMiddleware)
 app.add_middleware(RequestIdMiddleware)
 
 
