@@ -1,6 +1,6 @@
 import { logError } from "@/lib/logger";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { DealCard, type DealCardData } from "@/features/deals/components/DealCard";
 import { HomeFilterTabs, type HomeFilterKey } from "@/features/deals/components/HomeFilterTabs";
@@ -54,6 +54,7 @@ function HomePage() {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   // Cambiar de pestaña resetea la paginación
   const handleFilterChange = (next: HomeFilterKey) => {
@@ -72,6 +73,23 @@ function HomePage() {
       .catch((error) => logError("Error cargando chollos de portada", error))
       .finally(() => setLoading(false));
   }, [filter, limit]);
+
+  // Scroll infinito: al llegar cerca del final, pide un lote mayor
+  // (se refetch y reordena el conjunto completo, ver sortDeals)
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !loading && hasMore) {
+          setLimit((l) => l + PAGE_SIZE);
+        }
+      },
+      { rootMargin: "300px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [loading, hasMore]);
 
   // Favoritos del usuario
   useEffect(() => {
@@ -96,21 +114,11 @@ function HomePage() {
           ))}
         </div>
 
+        <div ref={sentinelRef} className="h-1" />
+
         {loading && (
           <div className="py-8 text-center font-mono text-xs text-muted-foreground animate-pulse">
             CARGANDO...
-          </div>
-        )}
-
-        {!loading && hasMore && deals.length > 0 && (
-          <div className="flex justify-center mt-8">
-            <button
-              type="button"
-              onClick={() => setLimit((l) => l + PAGE_SIZE)}
-              className="font-mono text-xs text-cyan-glow border border-surface-700 hover:border-cyan-glow px-4 py-2 transition-colors"
-            >
-              [ CARGAR MÁS ]
-            </button>
           </div>
         )}
 
