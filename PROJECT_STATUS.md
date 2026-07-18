@@ -217,18 +217,18 @@ abrir la web al público:
   `users/` ya tenía su capa completa desde antes (`user_service.py`), más aislada
   del SDK de auth incluso que `deals`. La sección de abajo (antes contradictoria)
   queda corregida para reflejar el estado real en vez de "pendiente".
-- **TD-11 cerrado (Fase 1 del plan de optimización)** — `docker-compose.yml`:
-  `buenchollo-api` sube a `--workers 2` con `SCHEDULER_ENABLED=false`; se
-  descomenta el contenedor dedicado `buenchollo-scheduler` (`python -m app.run_scheduler`,
-  ya existía como código desde el cierre de M-07). `database.py`: pool SQLAlchemy
-  acotado explícitamente (`pool_size=3, max_overflow=2, pool_recycle=300`) — con
-  2 workers, máximo 10 conexiones simultáneas contra el pooler de Supabase en vez
-  de los defaults sin límite documentado. Cache Rule de la API documentada como
-  paso manual en `docs/guides/Cloudflare.md` (§ T9) — no ejecutable desde código.
-  ⚠️ **Requiere recrear el contenedor `buenchollo-api` en el NAS** (no solo
-  reiniciar) para que tome el `docker-compose.yml` nuevo, y confirmar que
-  `buenchollo-scheduler` arranca correctamente. Fase 2/3 del plan siguen
-  aparcadas sin trigger (`OPTIMIZACION_PLAN.md`).
+- **TD-11 cerrado (Fase 1 del plan de optimización, 100% completa)** —
+  `docker-compose.yml`: `buenchollo-api` sube a `--workers 2` con
+  `SCHEDULER_ENABLED=false`; se descomenta el contenedor dedicado
+  `buenchollo-scheduler` (`python -m app.run_scheduler`, ya existía como código
+  desde el cierre de M-07). `database.py`: pool SQLAlchemy acotado
+  explícitamente (`pool_size=3, max_overflow=2, pool_recycle=300`) — con
+  2 workers, máximo 10 conexiones simultáneas contra el pooler de Supabase en
+  vez de los defaults sin límite documentado. Rebuild del contenedor en el NAS
+  hecho y verificado (2026-07-18): `buenchollo-scheduler` arrancando, API en
+  `--workers 2`. Cache Rule de Cloudflare (§ T9) creada y verificada el mismo
+  día: `cf-cache-status MISS → HIT` en `/v1/deals`. Fase 2/3 del plan siguen
+  aparcadas sin trigger, a propósito (`OPTIMIZACION_PLAN.md`).
 
 **Suite backend: 133 pytest** (124 no-integración + 9 integración; incluye los
 4 tests nuevos de `test_telegram_api.py`).

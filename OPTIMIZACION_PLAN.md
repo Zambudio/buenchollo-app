@@ -1,8 +1,8 @@
 # ⚡ Plan de optimización de rendimiento
 
-> Registro vivo. **Fase 1 ejecutada el 2026-07-18** (cierre de TD-11, antes de
-> abrir la web al público). Fase 2 y 3 siguen sin ejecutarse — se retoman cuando
-> haya base de usuarios real que lo justifique.
+> Registro vivo. **Fase 1 completada** (cierre de TD-11, antes de abrir la web
+> al público). Fase 2 y 3 siguen sin ejecutarse — se retoman cuando haya base
+> de usuarios real que lo justifique.
 
 Última actualización: 2026-07-18
 
@@ -32,12 +32,12 @@ justifique. Este plan prioriza mejoras **gratuitas o de bajo coste** primero.
 `SCHEDULER_ENABLED=false` en la API para no duplicar jobs (M-07).
 ⚠️ Requiere recrear el contenedor en el NAS para tomar el compose nuevo.
 
-### 2. Cache en el borde (Cloudflare) — ⏳ documentado, pendiente de aplicar
-Cache Rule para GET públicos de `api.buenchollotech.com` (`/v1/deals`,
-`/v1/categories`, `/v1/stores`) documentada en
-[`docs/guides/Cloudflare.md`](docs/guides/Cloudflare.md) § T9. Es un paso de
-dashboard manual — no se aplica desde código, queda para cuando el usuario lo
-ejecute.
+### 2. Cache en el borde (Cloudflare) — ✅ hecho
+Cache Rule `Cache API GET publicos` creada en el dashboard (Caching → Cache
+Rules) para `api.buenchollotech.com`, método GET, rutas `/v1/deals`,
+`/v1/categories`, `/v1/stores`. Edge TTL fijo 30s (ignora `Cache-Control` del
+origen). Verificado: `curl -D - .../v1/deals` → 1ª petición `cf-cache-status: MISS`,
+2ª `HIT`. Documentado en [`docs/guides/Cloudflare.md`](docs/guides/Cloudflare.md) § T9.
 
 ### 3. Medir el pool de conexiones SQLAlchemy vs PgBouncer — ✅ hecho
 `buenchollo-api/app/core/database.py`: pool acotado explícitamente
