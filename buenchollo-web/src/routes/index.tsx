@@ -1,14 +1,14 @@
 import { logError } from "@/lib/logger";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { DealCard, type DealCardData } from "@/features/deals/components/DealCard";
+import { HomeFilterTabs, type HomeFilterKey } from "@/features/deals/components/HomeFilterTabs";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowRight } from "lucide-react";
 import { dealsService, favoritesApi } from "@/services/api/deals";
 
 const SITE = "https://buenchollotech.com";
-const LIVE_LIMIT = 8;
+const PAGE_SIZE = 12;
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -36,62 +36,42 @@ export const Route = createFileRoute("/")({
   }),
 });
 
+function sortDeals(deals: DealCardData[], filter: HomeFilterKey): DealCardData[] {
+  const sorted = [...deals];
+  if (filter === "popular") sorted.sort((a, b) => b.temperature - a.temperature);
+  if (filter === "recent")
+    sorted.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
+  if (filter === "discount")
+    sorted.sort((a, b) => (b.discount_percentage ?? 0) - (a.discount_percentage ?? 0));
+  return sorted;
+}
+
 function HomePage() {
   const { user } = useAuth();
-  const [popular, setPopular] = useState<DealCardData[]>([]);
-  const [latest, setLatest] = useState<DealCardData[]>([]);
-  const [liveLoading, setLiveLoading] = useState(false);
-  const [liveHasMore, setLiveHasMore] = useState(true);
+  const [filter, setFilter] = useState<HomeFilterKey>("popular");
+  const [limit, setLimit] = useState(PAGE_SIZE);
+  const [deals, setDeals] = useState<DealCardData[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
 
-  // Refs para evitar stale closures en el IntersectionObserver
-  const offsetRef = useRef(0);
-  const loadingRef = useRef(false);
-  const hasMoreRef = useRef(true);
-  const sentinelRef = useRef<HTMLDivElement>(null);
+  // Cambiar de pestaña resetea la paginación
+  const handleFilterChange = (next: HomeFilterKey) => {
+    setFilter(next);
+    setLimit(PAGE_SIZE);
+  };
 
-  const loadLive = useCallback(async () => {
-    if (loadingRef.current || !hasMoreRef.current) return;
-    loadingRef.current = true;
-    setLiveLoading(true);
-    try {
-      const data = await dealsService.search({ limit: LIVE_LIMIT, offset: offsetRef.current });
-      setLatest((prev) => [...prev, ...data]);
-      offsetRef.current += data.length;
-      if (data.length < LIVE_LIMIT) {
-        hasMoreRef.current = false;
-        setLiveHasMore(false);
-      }
-    } catch {
-      // silent — no bloqueamos la UI por un fallo de paginación
-    } finally {
-      loadingRef.current = false;
-      setLiveLoading(false);
-    }
-  }, []);
-
-  // Carga inicial: populares + primera página de live
   useEffect(() => {
+    setLoading(true);
     dealsService
-      .getPopular(4)
-      .then(setPopular)
-      .catch((error) => logError("Error cargando chollos populares", error));
-    loadLive();
-  }, [loadLive]);
-
-  // IntersectionObserver para scroll infinito
-  useEffect(() => {
-    const el = sentinelRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) loadLive();
-      },
-      { rootMargin: "300px" },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [loadLive]);
+      .search({ limit })
+      .then((data) => {
+        setDeals(sortDeals(data, filter));
+        setHasMore(data.length >= limit);
+      })
+      .catch((error) => logError("Error cargando chollos de portada", error))
+      .finally(() => setLoading(false));
+  }, [filter, limit]);
 
   // Favoritos del usuario
   useEffect(() => {
@@ -101,87 +81,42 @@ function HomePage() {
     }
     favoritesApi
       .getFavorites()
-      .then((deals) => setFavIds(new Set(deals.map((d) => d.id))))
+      .then((favs) => setFavIds(new Set(favs.map((d) => d.id))))
       .catch(() => setFavIds(new Set()));
   }, [user]);
 
   return (
     <Layout>
-      {/* HERO */}
-      <section className="border-b border-surface-700 bg-surface-900 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-glow/5 blur-[120px] pointer-events-none" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-20 relative">
-          <div className="font-mono text-cyan-glow text-xs tracking-[0.2em] mb-5">
-            &gt; SELECCIÓN DIARIA DE OFERTAS
-          </div>
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold text-foreground tracking-tighter leading-[1.02] mb-6">
-            Chollos en <span className="text-cyan-glow text-glow">tecnología</span>
-          </h1>
-          <p className="text-muted-foreground text-base sm:text-xl max-w-2xl leading-relaxed">
-            Seleccionamos y comparamos ofertas para que encuentres el mejor precio.
-          </p>
-        </div>
-      </section>
-
-      {/* MÁS POPULARES */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        <div className="flex items-center justify-between border-b border-surface-700 pb-3 mb-6">
-          <div className="flex items-center gap-3">
-            <div className="size-2 bg-alert-red rounded-full animate-pulse" />
-            <h2 className="text-foreground font-bold text-lg tracking-tight font-mono">
-              MÁS_POPULARES
-            </h2>
-          </div>
-          <Link
-            to="/explorar"
-            search={{ sort: "popular" }}
-            className="font-mono text-xs text-cyan-glow hover:text-foreground"
-          >
-            [ VER MÁS ]
-          </Link>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {popular.map((d) => (
-            <DealCard key={d.id} deal={d} isFavorite={favIds.has(d.id)} />
-          ))}
-        </div>
-      </section>
+        <HomeFilterTabs value={filter} onChange={handleFilterChange} />
 
-      {/* TRANSMISIÓN EN VIVO — scroll infinito */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        <div className="flex items-center justify-between border-b border-surface-700 pb-3 mb-6">
-          <div className="flex items-center gap-3">
-            <div className="size-2 bg-cyan-glow rounded-full animate-pulse" />
-            <h2 className="text-foreground font-bold text-lg tracking-tight font-mono">
-              TRANSMISIÓN_EN_VIVO
-            </h2>
-          </div>
-          <Link
-            to="/explorar"
-            className="inline-flex items-center gap-2 bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-4 py-2 hover:bg-foreground transition-colors"
-          >
-            [ EXPLORAR CHOLLOS ] <ArrowRight className="size-3.5" />
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {latest.map((d) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-6">
+          {deals.map((d) => (
             <DealCard key={d.id} deal={d} isFavorite={favIds.has(d.id)} />
           ))}
         </div>
 
-        {/* Sentinel — dispara la carga del siguiente lote */}
-        <div ref={sentinelRef} className="h-1" />
-
-        {liveLoading && (
+        {loading && (
           <div className="py-8 text-center font-mono text-xs text-muted-foreground animate-pulse">
             CARGANDO...
           </div>
         )}
 
-        {!liveHasMore && latest.length > 0 && (
+        {!loading && hasMore && deals.length > 0 && (
+          <div className="flex justify-center mt-8">
+            <button
+              type="button"
+              onClick={() => setLimit((l) => l + PAGE_SIZE)}
+              className="font-mono text-xs text-cyan-glow border border-surface-700 hover:border-cyan-glow px-4 py-2 transition-colors"
+            >
+              [ CARGAR MÁS ]
+            </button>
+          </div>
+        )}
+
+        {!loading && !hasMore && deals.length > 0 && (
           <div className="py-8 text-center font-mono text-xs text-muted-foreground border-t border-surface-700 mt-6">
-            — FIN DE LA TRANSMISIÓN —
+            — FIN —
           </div>
         )}
       </section>
