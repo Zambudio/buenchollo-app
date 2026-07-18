@@ -4,8 +4,15 @@ import { useEffect, useState } from "react";
 import { dealsService, favoritesApi, type DealDetailData } from "@/services/api/deals";
 import { Layout } from "@/components/layout/Layout";
 import { DealCard, type DealCardData } from "@/features/deals/components/DealCard";
+import { useMyVotes } from "@/features/deals/hooks/useMyVotes";
 import { Comments } from "@/features/deals/components/Comments";
-import { ShareBox } from "@/features/deals/components/ShareBox";
+import { ShareDialog } from "@/features/deals/components/ShareBox";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  type CarouselApi,
+} from "@/components/ui/carousel";
 import { useAuth } from "@/hooks/useAuth";
 import { formatPrice, formatRelativeTime, calculateDiscount } from "@/lib/format";
 import { errorMessage } from "@/lib/errors";
@@ -15,6 +22,7 @@ import {
   ThumbsUp,
   ThumbsDown,
   MessageSquare,
+  Share2,
   AlertCircle,
   ChevronLeft,
   ChevronRight,
@@ -106,6 +114,24 @@ function DealDetail() {
   const [loading, setLoading] = useState(!loaderData?.meta);
   const [activeImg, setActiveImg] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [relatedApi, setRelatedApi] = useState<CarouselApi>();
+  const [relatedCanPrev, setRelatedCanPrev] = useState(false);
+  const [relatedCanNext, setRelatedCanNext] = useState(false);
+  const relatedVotes = useMyVotes(related.map((d) => d.id));
+
+  useEffect(() => {
+    if (!relatedApi) return;
+    const onSelect = () => {
+      setRelatedCanPrev(relatedApi.canScrollPrev());
+      setRelatedCanNext(relatedApi.canScrollNext());
+    };
+    onSelect();
+    relatedApi.on("select", onSelect);
+    relatedApi.on("reInit", onSelect);
+    return () => {
+      relatedApi.off("select", onSelect);
+    };
+  }, [relatedApi]);
 
   // Efecto 1: carga los datos públicos del deal (no necesita auth).
   // Si el loader del router ya trajo el deal para este slug (SSR), lo
@@ -122,13 +148,15 @@ function DealDetail() {
         setDeal(data);
         setCommentCount(data.comment_count ?? 0);
 
-        dealsService
-          .search({ category_id: data.category?.slug, limit: 5 })
-          .then((rel) => {
-            if (cancelled) return;
-            setRelated(rel.filter((d) => d.id !== data.id).slice(0, 4));
-          })
-          .catch((error) => logError("Error cargando chollos relacionados", error));
+        if (data.category_id) {
+          dealsService
+            .search({ category_id: data.category_id, limit: 13 })
+            .then((rel) => {
+              if (cancelled) return;
+              setRelated(rel.filter((d) => d.id !== data.id).slice(0, 12));
+            })
+            .catch((error) => logError("Error cargando chollos relacionados", error));
+        }
       } catch (error) {
         logError("Error cargando el detalle del chollo", error);
       } finally {
@@ -630,6 +658,20 @@ function DealDetail() {
               <div className="flex items-center gap-2 border border-surface-700 px-3 py-2 font-mono text-xs">
                 <MessageSquare className="size-4" /> {commentCount}
               </div>
+              <ShareDialog
+                url={`/chollo/${deal.slug}`}
+                title={deal.title}
+                price={deal.current_price}
+                trigger={
+                  <button
+                    type="button"
+                    aria-label="Compartir"
+                    className="flex items-center gap-2 border border-surface-700 px-3 py-2 font-mono text-xs hover:border-cyan-glow hover:text-cyan-glow transition-colors"
+                  >
+                    <Share2 className="size-4" />
+                  </button>
+                }
+              />
               {isAdmin && (
                 <Link
                   to="/admin/chollos"
@@ -652,7 +694,55 @@ function DealDetail() {
           </div>
         </div>
 
-        <ShareBox url={`/chollo/${deal.slug}`} title={deal.title} price={deal.current_price} />
+        {related.length > 0 && (
+          <section className="mt-8">
+            <div className="flex items-center justify-between mb-4 border-b border-surface-700 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="size-2 bg-cyan-glow rounded-full animate-pulse" />
+                <h2 className="text-foreground font-bold text-lg tracking-tight font-mono">
+                  CHOLLOS_RELACIONADOS
+                </h2>
+              </div>
+              {deal.category && (
+                <Link
+                  to="/categoria/$slug"
+                  params={{ slug: deal.category.slug }}
+                  className="font-mono text-xs text-cyan-glow hover:text-foreground shrink-0"
+                >
+                  [ VER MÁS DE {deal.category.name.toUpperCase()} ]
+                </Link>
+              )}
+            </div>
+
+            <Carousel setApi={setRelatedApi} opts={{ align: "start" }} className="px-1">
+              <CarouselContent>
+                {related.map((d) => (
+                  <CarouselItem key={d.id} className="basis-[85%] sm:basis-1/2 lg:basis-1/4">
+                    <DealCard deal={d} myVote={relatedVotes[d.id]} />
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <button
+                type="button"
+                onClick={() => relatedApi?.scrollPrev()}
+                disabled={!relatedCanPrev}
+                aria-label="Anteriores"
+                className="absolute -left-3 top-1/2 -translate-y-1/2 bg-surface-900/80 border border-surface-600 p-1.5 hover:border-cyan-glow disabled:opacity-20 transition z-10"
+              >
+                <ChevronLeft className="size-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => relatedApi?.scrollNext()}
+                disabled={!relatedCanNext}
+                aria-label="Siguientes"
+                className="absolute -right-3 top-1/2 -translate-y-1/2 bg-surface-900/80 border border-surface-600 p-1.5 hover:border-cyan-glow disabled:opacity-20 transition z-10"
+              >
+                <ChevronRight className="size-5" />
+              </button>
+            </Carousel>
+          </section>
+        )}
 
         <Comments
           dealId={deal.id}
@@ -665,19 +755,6 @@ function DealDetail() {
             }
           }}
         />
-
-        {related.length > 0 && (
-          <section className="mt-12">
-            <h2 className="font-mono text-sm uppercase text-cyan-glow mb-4 border-b border-surface-700 pb-2">
-              Chollos relacionados
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {related.map((d) => (
-                <DealCard key={d.id} deal={d} />
-              ))}
-            </div>
-          </section>
-        )}
       </div>
     </Layout>
   );

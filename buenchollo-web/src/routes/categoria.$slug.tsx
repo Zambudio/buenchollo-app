@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { DealCard, type DealCardData } from "@/features/deals/components/DealCard";
+import { useMyVotes } from "@/features/deals/hooks/useMyVotes";
 import { categoriesService, type Category } from "@/services/api/categories";
 import { dealsService } from "@/services/api/deals";
 
@@ -53,6 +54,7 @@ function CategoryPage() {
   const { slug } = Route.useParams();
   const [cat, setCat] = useState<Category | null>(null);
   const [deals, setDeals] = useState<DealCardData[]>([]);
+  const myVotes = useMyVotes(deals.map((d) => d.id));
 
   useEffect(() => {
     (async () => {
@@ -87,7 +89,7 @@ function CategoryPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {deals.map((d) => (
-              <DealCard key={d.id} deal={d} />
+              <DealCard key={d.id} deal={d} myVote={myVotes[d.id]} />
             ))}
           </div>
         )}

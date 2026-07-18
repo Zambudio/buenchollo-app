@@ -67,8 +67,9 @@ function buildDeal(overrides: Partial<DealCardData> = {}): DealCardData {
     previous_price: 299.99,
     discount_percentage: null,
     temperature: 120,
+    affiliate_url: "https://amazon.es/dp/example",
     published_at: "2026-05-30T11:00:00Z",
-    store: { name: "Amazon", slug: "amazon" },
+    store: { id: "s-1", name: "Amazon", slug: "amazon" },
     category: { name: "Monitores", slug: "monitores" },
     ...overrides,
   };
@@ -99,10 +100,17 @@ describe("DealCard", () => {
     expect(screen.getByText(/sin_imagen/i)).toBeInTheDocument();
   });
 
-  it("el enlace apunta a la ruta de detalle del chollo", () => {
+  it("el título enlaza a la ruta de detalle del chollo", () => {
     renderWithProviders(<DealCard deal={buildDeal()} />);
-    const link = screen.getByRole("link");
-    expect(link).toHaveAttribute("href", "/chollo/monitor-27-pulgadas-4k");
+    const heading = screen.getByRole("heading", { name: /monitor 27 pulgadas 4k/i });
+    expect(heading.closest("a")).toHaveAttribute("href", "/chollo/monitor-27-pulgadas-4k");
+  });
+
+  it("el botón 'ir al chollo' enlaza a la URL de afiliado", () => {
+    renderWithProviders(<DealCard deal={buildDeal()} />);
+    const link = screen.getByRole("link", { name: /ir al chollo/i });
+    expect(link).toHaveAttribute("href", "https://amazon.es/dp/example");
+    expect(link).toHaveAttribute("target", "_blank");
   });
 
   it("click en favorito sin usuario logueado muestra toast de error", async () => {

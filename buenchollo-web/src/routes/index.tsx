@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { DealCard, type DealCardData } from "@/features/deals/components/DealCard";
 import { HomeFilterTabs, type HomeFilterKey } from "@/features/deals/components/HomeFilterTabs";
+import { useMyVotes } from "@/features/deals/hooks/useMyVotes";
 import { useAuth } from "@/hooks/useAuth";
 import { dealsService, favoritesApi } from "@/services/api/deals";
 
@@ -55,6 +56,7 @@ function HomePage() {
   const [hasMore, setHasMore] = useState(true);
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const myVotes = useMyVotes(deals.map((d) => d.id));
 
   // Cambiar de pestaña resetea la paginación
   const handleFilterChange = (next: HomeFilterKey) => {
@@ -110,7 +112,7 @@ function HomePage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-6">
           {deals.map((d) => (
-            <DealCard key={d.id} deal={d} isFavorite={favIds.has(d.id)} />
+            <DealCard key={d.id} deal={d} isFavorite={favIds.has(d.id)} myVote={myVotes[d.id]} />
           ))}
         </div>
 

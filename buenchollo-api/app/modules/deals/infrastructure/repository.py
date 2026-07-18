@@ -114,6 +114,18 @@ class DealRepository:
         )
         return result.scalar()
 
+    async def get_user_votes_bulk(self, deal_ids: list[str], user_id: str) -> dict[str, int]:
+        """Votos del usuario para un lote de chollos (p.ej. los de una grid),
+        en una sola query en vez de una petición por tarjeta."""
+        if not deal_ids:
+            return {}
+        result = await self.session.execute(
+            select(DealVote.deal_id, DealVote.vote).where(
+                DealVote.deal_id.in_(deal_ids), DealVote.user_id == user_id
+            )
+        )
+        return {str(deal_id): vote for deal_id, vote in result.all()}
+
     async def upsert_vote(self, deal_id: str, user_id: str, vote: int) -> None:
         stmt = pg_insert(DealVote).values(
             deal_id=deal_id, user_id=user_id, vote=vote
