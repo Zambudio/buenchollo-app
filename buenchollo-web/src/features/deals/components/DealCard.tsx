@@ -1,10 +1,12 @@
 import { Link } from "@tanstack/react-router";
-import { Heart, Flame } from "lucide-react";
-import { formatPrice, formatRelativeTime, calculateDiscount, temperatureColor } from "@/lib/format";
+import { Heart, ThumbsUp, ThumbsDown, ExternalLink, MessageSquare, Share2 } from "lucide-react";
+import { formatPrice, formatRelativeTime, calculateDiscount } from "@/lib/format";
 import { useAuth } from "@/hooks/useAuth";
-import { favoritesApi } from "@/services/api/deals";
+import { favoritesApi, dealsService } from "@/services/api/deals";
+import { errorMessage } from "@/lib/errors";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { ShareDialog } from "@/features/deals/components/ShareBox";
 
 export interface DealCardData {
   id: string;
@@ -16,27 +18,35 @@ export interface DealCardData {
   previous_price: number | null;
   discount_percentage: number | null;
   temperature: number;
+  affiliate_url?: string | null;
+  comment_count?: number;
   published_at: string;
   created_at?: string | null;
   status?: string;
   expires_at?: string | null;
   scheduled_for?: string | null;
-  store?: { name: string; slug: string } | null;
+  store?: { id: string; name: string; slug: string } | null;
   category?: { name: string; slug: string } | null;
 }
 
 export function DealCard({
   deal,
   isFavorite: initialFav = false,
+  myVote: initialVote = 0,
 }: {
   deal: DealCardData;
   isFavorite?: boolean;
+  myVote?: number;
 }) {
   const { user } = useAuth();
   const [fav, setFav] = useState(initialFav);
-  const [loading, setLoading] = useState(false);
+  const [favLoading, setFavLoading] = useState(false);
   const [imgIdx, setImgIdx] = useState(0);
   const [hover, setHover] = useState(false);
+
+  const [temperature, setTemperature] = useState(deal.temperature);
+  const [myVote, setMyVote] = useState(initialVote);
+  const [voting, setVoting] = useState(false);
 
   const gallery = (
     deal.images && deal.images.length > 0 ? deal.images : deal.image_url ? [deal.image_url] : []
@@ -46,6 +56,14 @@ export function DealCard({
   useEffect(() => {
     setFav(initialFav);
   }, [initialFav]);
+
+  useEffect(() => {
+    setMyVote(initialVote);
+  }, [initialVote]);
+
+  useEffect(() => {
+    setTemperature(deal.temperature);
+  }, [deal.temperature]);
 
   useEffect(() => {
     if (!hover || !hasMultiple) return;
@@ -60,34 +78,59 @@ export function DealCard({
       toast.error("Inicia sesión para guardar favoritos");
       return;
     }
-    setLoading(true);
+    setFavLoading(true);
     try {
       const { is_favorited } = await favoritesApi.toggle(deal.id);
       setFav(is_favorited);
     } catch {
       toast.error("No se pudo actualizar el favorito");
     } finally {
-      setLoading(false);
+      setFavLoading(false);
     }
   };
 
-  const tempColor = temperatureColor(deal.temperature);
+  const vote = async (v: 1 | -1) => {
+    if (!user) {
+      toast.error("Inicia sesión para votar");
+      return;
+    }
+    if (voting) return;
+    setVoting(true);
+    try {
+      const result = await dealsService.vote(deal.id, v);
+      setTemperature(result.temperature);
+      setMyVote(result.my_vote);
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "Error al votar"));
+    } finally {
+      setVoting(false);
+    }
+  };
+
+  const trackClick = () => {
+    dealsService.trackClick(deal.id).catch(() => {
+      /* no crítico */
+    });
+  };
+
   const discount =
     deal.discount_percentage ?? calculateDiscount(deal.current_price, deal.previous_price);
   const isExpired = deal.status === "expired";
 
   return (
-    <Link
-      to="/chollo/$slug"
-      params={{ slug: deal.slug }}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => {
-        setHover(false);
-        setImgIdx(0);
-      }}
-      className={`group bg-surface-800 border border-surface-700 transition-all duration-300 flex flex-col h-full ${isExpired ? "opacity-70" : "hover:border-cyan-glow hover:glow-cyan"}`}
+    <article
+      className={`bg-surface-800 border border-surface-700 transition-all duration-300 flex flex-col h-full ${isExpired ? "opacity-70" : "hover:border-cyan-glow hover:glow-cyan"}`}
     >
-      <div className="relative aspect-[4/3] bg-white overflow-hidden border-b border-surface-700">
+      <Link
+        to="/chollo/$slug"
+        params={{ slug: deal.slug }}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => {
+          setHover(false);
+          setImgIdx(0);
+        }}
+        className="relative aspect-[4/3] bg-white overflow-hidden border-b border-surface-700 block group"
+      >
         {gallery.length > 0 ? (
           <>
             {gallery.map((src, i) => (
@@ -128,8 +171,9 @@ export function DealCard({
           </div>
         )}
         <button
+          type="button"
           onClick={toggleFav}
-          disabled={loading}
+          disabled={favLoading}
           aria-label={fav ? "Quitar de favoritos" : "Guardar"}
           className="absolute top-3 left-3 size-9 bg-surface-900/80 backdrop-blur border border-surface-600 flex items-center justify-center hover:border-cyan-glow transition-colors z-10"
         >
@@ -137,21 +181,62 @@ export function DealCard({
             className={`size-4 transition-colors ${fav ? "fill-cyan-glow text-cyan-glow" : "text-foreground"}`}
           />
         </button>
-      </div>
+      </Link>
 
       <div className="p-4 sm:p-5 flex flex-col flex-1">
-        <div className="flex justify-between items-center mb-3 font-mono text-xs">
-          <span className="text-cyan-glow truncate">
-            @{deal.store?.slug?.toUpperCase() ?? "STORE"}
-          </span>
-          <span className={`flex items-center gap-1 font-bold ${tempColor}`}>
-            <Flame className="size-3" /> {deal.temperature}°
-          </span>
+        <div className="flex justify-between items-center mb-3">
+          <div className="flex items-center gap-3 font-mono text-xs text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <MessageSquare className="size-3.5" /> {deal.comment_count ?? 0}
+            </span>
+            <ShareDialog
+              url={`/chollo/${deal.slug}`}
+              title={deal.title}
+              price={deal.current_price}
+              trigger={
+                <button
+                  type="button"
+                  aria-label="Compartir"
+                  className="flex items-center hover:text-cyan-glow transition-colors"
+                >
+                  <Share2 className="size-3.5" />
+                </button>
+              }
+            />
+          </div>
+
+          <div className="flex items-center gap-1 font-mono text-xs shrink-0">
+            <button
+              type="button"
+              onClick={() => vote(1)}
+              disabled={voting}
+              aria-label="Votar arriba"
+              className={`p-1 rounded transition-colors disabled:opacity-50 ${myVote === 1 ? "text-cyan-glow" : "text-muted-foreground hover:text-cyan-glow"}`}
+            >
+              <ThumbsUp className="size-3.5" />
+            </button>
+            <span className="font-bold tabular-nums min-w-[2.5em] text-center">{temperature}°</span>
+            <button
+              type="button"
+              onClick={() => vote(-1)}
+              disabled={voting}
+              aria-label="Votar abajo"
+              className={`p-1 rounded transition-colors disabled:opacity-50 ${myVote === -1 ? "text-alert-red" : "text-muted-foreground hover:text-alert-red"}`}
+            >
+              <ThumbsDown className="size-3.5" />
+            </button>
+          </div>
         </div>
 
-        <h3 className="text-foreground font-bold text-base sm:text-lg leading-tight mb-4 line-clamp-2 flex-1 group-hover:text-cyan-glow transition-colors">
-          {deal.title}
-        </h3>
+        <Link
+          to="/chollo/$slug"
+          params={{ slug: deal.slug }}
+          className="mb-4 flex-1 hover:text-cyan-glow transition-colors"
+        >
+          <h3 className="text-foreground font-bold text-base sm:text-lg leading-tight line-clamp-2">
+            {deal.title}
+          </h3>
+        </Link>
 
         <div className="flex items-end gap-3 mb-3">
           <span className="font-mono text-2xl sm:text-3xl font-extrabold text-cyan-glow tabular-nums leading-none">
@@ -164,11 +249,35 @@ export function DealCard({
           )}
         </div>
 
-        <div className="font-mono text-[10px] uppercase text-muted-foreground tracking-wider">
-          {formatRelativeTime(deal.published_at)}
-          {deal.category && <> · {deal.category.name}</>}
+        {deal.store && (
+          <div className="font-mono text-[11px] text-muted-foreground mb-3">
+            Disponible en{" "}
+            <Link
+              to="/explorar"
+              search={{ store: deal.store.id }}
+              className="text-foreground hover:text-cyan-glow transition-colors"
+            >
+              {deal.store.name}
+            </Link>
+          </div>
+        )}
+
+        <div className="mt-auto flex items-center justify-between gap-3">
+          <span className="font-mono text-[10px] uppercase text-muted-foreground tracking-wider">
+            {formatRelativeTime(deal.published_at)}
+          </span>
+          <a
+            href={deal.affiliate_url ?? undefined}
+            target="_blank"
+            rel="noopener noreferrer sponsored"
+            onClick={trackClick}
+            aria-disabled={!deal.affiliate_url}
+            className="inline-flex items-center gap-1.5 bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-3 py-2 hover:bg-foreground transition-colors shrink-0"
+          >
+            IR AL CHOLLO <ExternalLink className="size-3.5" />
+          </a>
         </div>
       </div>
-    </Link>
+    </article>
   );
 }

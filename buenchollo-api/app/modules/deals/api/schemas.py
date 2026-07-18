@@ -15,6 +15,7 @@ _SLUG_MAX = 200
 _EXTERNAL_ID_MAX = 64
 
 class StoreBasic(BaseModel):
+    id: str
     name: str
     slug: str
     model_config = ConfigDict(from_attributes=True)
@@ -34,24 +35,24 @@ class DealCardResponse(BaseModel):
     previous_price: float | None = None
     discount_percentage: int | None = None
     temperature: int
+    affiliate_url: str | None = None
+    comment_count: int = 0
     published_at: datetime | None = None
     created_at: datetime | None = None
-    
+
     store: StoreBasic | None = None
     category: CategoryBasic | None = None
     subcategory: CategoryBasic | None = None
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 class DealDetailResponse(DealCardResponse):
     description: str | None = None
     short_description: str | None = None
-    affiliate_url: str | None = None
     status: str
     expires_at: datetime | None = None
     scheduled_for: datetime | None = None
     shipping_info: str | None = None
-    comment_count: int = 0
     favorite_count: int = 0
     votes_up: int = 0
     votes_down: int = 0

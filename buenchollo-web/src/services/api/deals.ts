@@ -144,6 +144,15 @@ export const dealsService = {
   getMyVote: (dealId: string): Promise<number> =>
     apiClient.get<{ my_vote: number }>(`/deals/${dealId}/my-vote`).then((r) => r.my_vote),
 
+  /** Votos del usuario para un lote de chollos (grid de portada/explorar),
+   *  en una sola petición en vez de una por tarjeta. */
+  getMyVotesBulk: (dealIds: string[]): Promise<Record<string, number>> => {
+    if (dealIds.length === 0) return Promise.resolve({});
+    return apiClient.get<Record<string, number>>(
+      `/deals/my-votes?ids=${dealIds.map(encodeURIComponent).join(",")}`,
+    );
+  },
+
   /** Incrementa el contador de clicks (público). Devuelve el nuevo total. */
   trackClick: (dealId: string): Promise<number> =>
     apiClient

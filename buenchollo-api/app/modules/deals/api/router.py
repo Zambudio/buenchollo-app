@@ -126,6 +126,18 @@ async def get_my_vote(
     return {"my_vote": my_vote or 0}
 
 
+@router.get("/my-votes")
+async def get_my_votes_bulk(
+    ids: str = Query(..., description="IDs de chollos separados por coma"),
+    repo: DealRepository = Depends(get_deal_repository),
+    current_user=Depends(get_current_user),
+) -> dict[str, int]:
+    """Votos del usuario actual para un lote de chollos (grid de portada/explorar),
+    evitando una petición por tarjeta."""
+    deal_ids = [d for d in ids.split(",") if d]
+    return await repo.get_user_votes_bulk(deal_ids, str(current_user.id))
+
+
 @router.post("/{deal_id}/click")
 @limiter.limit("60/minute")  # anti-spam de contadores; endpoint público sin auth
 async def track_click(

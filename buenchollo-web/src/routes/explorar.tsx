@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { DealCard, type DealCardData } from "@/features/deals/components/DealCard";
+import { useMyVotes } from "@/features/deals/hooks/useMyVotes";
 import { useAuth } from "@/hooks/useAuth";
 import { z } from "zod";
 import { dealsService, favoritesApi } from "@/services/api/deals";
@@ -60,6 +61,7 @@ function ExplorePage() {
   const [subs, setSubs] = useState<Category[]>([]);
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const myVotes = useMyVotes(deals.map((d) => d.id));
 
   useEffect(() => {
     Promise.all([storesService.getAll(), categoriesService.getAll()])
@@ -310,7 +312,12 @@ function ExplorePage() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
                 {deals.map((d) => (
-                  <DealCard key={d.id} deal={d} isFavorite={favIds.has(d.id)} />
+                  <DealCard
+                    key={d.id}
+                    deal={d}
+                    isFavorite={favIds.has(d.id)}
+                    myVote={myVotes[d.id]}
+                  />
                 ))}
               </div>
             )}
