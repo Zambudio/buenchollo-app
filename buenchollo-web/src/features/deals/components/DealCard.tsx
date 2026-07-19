@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Heart, ThumbsUp, ThumbsDown, ExternalLink, MessageSquare, Share2 } from "lucide-react";
+import { Heart, ExternalLink, MessageSquare, Share2 } from "lucide-react";
 import { formatPrice, formatRelativeTime, calculateDiscount } from "@/lib/format";
 import { useAuth } from "@/hooks/useAuth";
 import { favoritesApi, dealsService } from "@/services/api/deals";
@@ -7,6 +7,7 @@ import { errorMessage } from "@/lib/errors";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ShareDialog } from "@/features/deals/components/ShareBox";
+import { DealVoteControl } from "@/features/deals/components/DealVoteControl";
 
 export interface DealCardData {
   id: string;
@@ -119,7 +120,7 @@ export function DealCard({
 
   return (
     <article
-      className={`bg-surface-800 border border-surface-700 transition-all duration-300 flex flex-col h-full ${isExpired ? "opacity-70" : "hover:border-cyan-glow hover:glow-cyan"}`}
+      className={`bg-surface-800 border border-surface-700 rounded-xl overflow-hidden transition-all duration-300 flex flex-col h-full ${isExpired ? "opacity-70" : "hover:border-cyan-glow hover:glow-cyan"}`}
     >
       <Link
         to="/chollo/$slug"
@@ -205,27 +206,12 @@ export function DealCard({
             />
           </div>
 
-          <div className="flex items-center gap-1 font-mono text-xs shrink-0">
-            <button
-              type="button"
-              onClick={() => vote(1)}
-              disabled={voting}
-              aria-label="Votar arriba"
-              className={`p-1 rounded transition-colors disabled:opacity-50 ${myVote === 1 ? "text-cyan-glow" : "text-muted-foreground hover:text-cyan-glow"}`}
-            >
-              <ThumbsUp className="size-3.5" />
-            </button>
-            <span className="font-bold tabular-nums min-w-[2.5em] text-center">{temperature}°</span>
-            <button
-              type="button"
-              onClick={() => vote(-1)}
-              disabled={voting}
-              aria-label="Votar abajo"
-              className={`p-1 rounded transition-colors disabled:opacity-50 ${myVote === -1 ? "text-alert-red" : "text-muted-foreground hover:text-alert-red"}`}
-            >
-              <ThumbsDown className="size-3.5" />
-            </button>
-          </div>
+          <DealVoteControl
+            temperature={temperature}
+            myVote={myVote}
+            disabled={voting}
+            onVote={vote}
+          />
         </div>
 
         <Link
@@ -272,7 +258,7 @@ export function DealCard({
             rel="noopener noreferrer sponsored"
             onClick={trackClick}
             aria-disabled={!deal.affiliate_url}
-            className="inline-flex items-center gap-1.5 bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-3 py-2 hover:bg-foreground transition-colors shrink-0"
+            className="inline-flex items-center gap-1.5 rounded-full bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-4 py-2 hover:bg-foreground transition-colors shrink-0"
           >
             IR AL CHOLLO <ExternalLink className="size-3.5" />
           </a>

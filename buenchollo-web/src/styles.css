@@ -14,10 +14,10 @@
   --font-sans: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
-  --radius-sm: 2px;
-  --radius-md: 4px;
-  --radius-lg: 6px;
-  --radius-xl: 8px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -64,7 +64,7 @@
 }
 
 :root {
-  --radius: 4px;
+  --radius: 12px;
 
   --surface-900: oklch(0.13 0.04 260);
   --surface-800: oklch(0.18 0.05 260);
@@ -106,6 +106,22 @@
   html, body { background-color: var(--color-background); color: var(--color-foreground); }
   body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
   ::selection { background-color: var(--color-cyan-glow); color: var(--color-surface-900); }
+
+  /* Lenguaje visual global: cualquier control o superficie acotada utiliza
+     esquinas redondeadas. Se excluyen las barras que ocupan todo el ancho
+     (header, footer y nav) y las líneas divisorias sin marco completo. */
+  :where(button, input, select, textarea, article, aside, [role="dialog"]) {
+    border-radius: var(--radius-md);
+  }
+
+  :where(div, form, section, span, a)[class~="border"],
+  :where(div, form, section, span, a):not(header *, footer *, nav *)[class*="bg-surface-"],
+  :where(div, form, section, span, a)[class*="bg-cyan-glow"],
+  :where(div, form, section, span, a)[class*="bg-alert-red"],
+  :where(div, form, section, span, a)[class*="bg-amber-"],
+  :where(div, form, section, span, a)[class*="bg-pink-"] {
+    border-radius: var(--radius-lg);
+  }
 }
 
 @layer utilities {

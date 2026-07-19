@@ -116,7 +116,7 @@ export function WelcomeProfileDialog() {
         if (!nextOpen && !saving) setDismissed(true);
       }}
     >
-      <DialogContent className="max-w-md border-cyan-glow/60 bg-surface-800 p-0 text-foreground shadow-[0_0_28px_rgba(34,211,238,0.18)] sm:rounded-none">
+      <DialogContent className="max-w-md rounded-xl border-cyan-glow/60 bg-surface-800 p-0 text-foreground shadow-[0_0_28px_rgba(34,211,238,0.18)]">
         <div className="border-b border-surface-700 px-6 py-5 text-center">
           <div className="mx-auto mb-4 flex size-16 items-center justify-center overflow-hidden rounded-full border border-cyan-glow/50 bg-surface-900">
             {avatarUrl ? (
