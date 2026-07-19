@@ -131,7 +131,7 @@ function ExplorePage() {
 
         <div className="grid lg:grid-cols-[260px_1fr] gap-8">
           {/* Filtros */}
-          <aside className="bg-surface-800 border border-surface-700 p-5 h-fit space-y-5">
+          <aside className="rounded-xl bg-surface-800 border border-surface-700 p-5 h-fit space-y-5">
             <div>
               <label
                 htmlFor="filter-cat"
@@ -143,7 +143,7 @@ function ExplorePage() {
                 id="filter-cat"
                 value={params.cat ?? ""}
                 onChange={(e) => update({ cat: e.target.value || undefined, sub: undefined })}
-                className="w-full bg-surface-900 border border-surface-700 px-2 py-2 text-sm font-mono"
+                className="w-full rounded-lg bg-surface-900 border border-surface-700 px-2 py-2 text-sm font-mono"
               >
                 <option value="">Todas</option>
                 {cats.map((c) => (
@@ -165,7 +165,7 @@ function ExplorePage() {
                   id="filter-sub"
                   value={params.sub ?? ""}
                   onChange={(e) => update({ sub: e.target.value || undefined })}
-                  className="w-full bg-surface-900 border border-surface-700 px-2 py-2 text-sm font-mono"
+                  className="w-full rounded-lg bg-surface-900 border border-surface-700 px-2 py-2 text-sm font-mono"
                 >
                   <option value="">Todas</option>
                   {filteredSubs.map((s) => (
@@ -187,7 +187,7 @@ function ExplorePage() {
                 id="filter-store"
                 value={params.store ?? ""}
                 onChange={(e) => update({ store: e.target.value || undefined })}
-                className="w-full bg-surface-900 border border-surface-700 px-2 py-2 text-sm font-mono"
+                className="w-full rounded-lg bg-surface-900 border border-surface-700 px-2 py-2 text-sm font-mono"
               >
                 <option value="">Todas</option>
                 {stores.map((s) => (
@@ -219,7 +219,7 @@ function ExplorePage() {
                     if (e.key === "-" || e.key === "e" || e.key === "+") e.preventDefault();
                   }}
                   onChange={(e) => update({ min: parseNonNeg(e.target.value) })}
-                  className="w-full bg-surface-900 border border-surface-700 px-2 py-2 text-sm font-mono"
+                  className="w-full rounded-lg bg-surface-900 border border-surface-700 px-2 py-2 text-sm font-mono"
                 />
                 <input
                   id="filter-max"
@@ -235,7 +235,7 @@ function ExplorePage() {
                     if (e.key === "-" || e.key === "e" || e.key === "+") e.preventDefault();
                   }}
                   onChange={(e) => update({ max: parseNonNeg(e.target.value) })}
-                  className="w-full bg-surface-900 border border-surface-700 px-2 py-2 text-sm font-mono"
+                  className="w-full rounded-lg bg-surface-900 border border-surface-700 px-2 py-2 text-sm font-mono"
                 />
               </div>
               {params.min != null && params.max != null && params.max < params.min && (
@@ -262,12 +262,12 @@ function ExplorePage() {
                   if (e.key === "-" || e.key === "e" || e.key === "+") e.preventDefault();
                 }}
                 onChange={(e) => update({ disc: parseNonNeg(e.target.value, 99) })}
-                className="w-full bg-surface-900 border border-surface-700 px-2 py-2 text-sm font-mono"
+                className="w-full rounded-lg bg-surface-900 border border-surface-700 px-2 py-2 text-sm font-mono"
               />
             </div>
             <button
               onClick={() => nav({ search: {} })}
-              className="w-full font-mono text-xs border border-surface-700 py-2 hover:border-alert-red hover:text-alert-red transition-colors"
+              className="w-full rounded-lg font-mono text-xs border border-surface-700 py-2 hover:border-alert-red hover:text-alert-red transition-colors"
             >
               LIMPIAR FILTROS
             </button>
@@ -282,7 +282,7 @@ function ExplorePage() {
               <select
                 value={params.sort ?? "recent"}
                 onChange={(e) => update({ sort: e.target.value as ExplorarSearch["sort"] })}
-                className="bg-surface-900 border border-surface-700 px-2 py-2 text-sm font-mono"
+                className="rounded-lg bg-surface-900 border border-surface-700 px-2 py-2 text-sm font-mono"
               >
                 <option value="recent">Más recientes</option>
                 <option value="popular">Más populares</option>

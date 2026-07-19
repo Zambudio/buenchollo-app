@@ -7,6 +7,7 @@ import { DealCard, type DealCardData } from "@/features/deals/components/DealCar
 import { useMyVotes } from "@/features/deals/hooks/useMyVotes";
 import { Comments } from "@/features/deals/components/Comments";
 import { ShareDialog } from "@/features/deals/components/ShareBox";
+import { DealVoteControl } from "@/features/deals/components/DealVoteControl";
 import {
   Carousel,
   CarouselContent,
@@ -19,8 +20,6 @@ import { errorMessage } from "@/lib/errors";
 import {
   Heart,
   ExternalLink,
-  ThumbsUp,
-  ThumbsDown,
   MessageSquare,
   Share2,
   AlertCircle,
@@ -459,7 +458,7 @@ function DealDetail() {
                       <img
                         src={`https://graph.keepa.com/pricehistory.png?asin=${deal.external_id}&domain=es`}
                         alt="Histórico de precios en Amazon"
-                        className="w-full"
+                        className="w-full rounded-xl"
                         loading="lazy"
                         referrerPolicy="no-referrer"
                       />
@@ -554,9 +553,8 @@ function DealDetail() {
           </div>
 
           <div>
-            <div className="flex items-center gap-3 mb-3 font-mono text-xs">
-              <span className="text-cyan-glow">@{deal.store?.slug?.toUpperCase()}</span>
-              <span className="text-muted-foreground">{formatRelativeTime(deal.published_at)}</span>
+            <div className="mb-3 font-mono text-xs text-muted-foreground">
+              Publicado {formatRelativeTime(deal.published_at)}
             </div>
             <h1
               className={`text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-4 ${isExpired ? "text-muted-foreground" : ""}`}
@@ -589,6 +587,18 @@ function DealDetail() {
                   </>
                 )}
               </div>
+              {deal.store && (
+                <p className="mb-3 font-mono text-[11px] text-muted-foreground">
+                  Disponible en{" "}
+                  <Link
+                    to="/explorar"
+                    search={{ store: deal.store.id }}
+                    className="font-bold text-foreground transition-colors hover:text-cyan-glow"
+                  >
+                    {deal.store.name}
+                  </Link>
+                </p>
+              )}
               {deal.shipping_info && (
                 <p className="text-xs font-mono text-muted-foreground mb-3">
                   📦 {deal.shipping_info}
@@ -608,7 +618,7 @@ function DealDetail() {
                 target="_blank"
                 rel="noopener nofollow"
                 onClick={trackClick}
-                className={`w-full inline-flex items-center justify-center gap-2 font-mono text-sm font-bold py-4 transition-colors ${
+                className={`w-full inline-flex items-center justify-center gap-2 rounded-full font-mono text-sm font-bold py-4 transition-colors ${
                   isExpired
                     ? "bg-surface-700 text-muted-foreground border border-alert-red/30 hover:bg-surface-600"
                     : "bg-cyan-glow text-surface-900 hover:bg-foreground"
@@ -624,29 +634,16 @@ function DealDetail() {
                   </>
                 )}
               </a>
-              <p className="flex items-start gap-2 text-[10px] font-mono text-muted-foreground mt-3 leading-relaxed">
-                <AlertCircle className="size-3 shrink-0 mt-0.5" /> Enlace de afiliado. Si compras a
-                través de él, recibimos una pequeña comisión sin coste para ti.
-              </p>
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => vote(1)}
+              <DealVoteControl
+                temperature={deal.temperature}
+                myVote={myVote}
                 disabled={votingLoading}
-                className={`flex items-center gap-2 border px-3 py-2 font-mono text-xs disabled:opacity-50 ${myVote === 1 ? "border-cyan-glow text-cyan-glow bg-cyan-glow/10" : "border-surface-700 hover:border-cyan-glow"}`}
-              >
-                <ThumbsUp className="size-4" /> {deal.votes_up}
-              </button>
-              <button
-                type="button"
-                onClick={() => vote(-1)}
-                disabled={votingLoading}
-                className={`flex items-center gap-2 border px-3 py-2 font-mono text-xs disabled:opacity-50 ${myVote === -1 ? "border-alert-red text-alert-red bg-alert-red/10" : "border-surface-700 hover:border-alert-red"}`}
-              >
-                <ThumbsDown className="size-4" /> {deal.votes_down}
-              </button>
+                size="detail"
+                onVote={vote}
+              />
               <button
                 type="button"
                 onClick={toggleFav}

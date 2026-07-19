@@ -235,14 +235,14 @@ export function Comments({ dealId, onCountChange }: Props) {
           }
           disabled={!user}
           rows={3}
-          className="w-full bg-surface-800 border border-surface-700 px-3 py-2 text-sm outline-none focus:border-cyan-glow disabled:opacity-50"
+          className="w-full rounded-xl bg-surface-800 border border-surface-700 px-3 py-2 text-sm outline-none focus:border-cyan-glow disabled:opacity-50"
         />
         <div className="flex justify-between items-center mt-2">
           <span className="font-mono text-[10px] text-muted-foreground">{text.length}/1000</span>
           <button
             type="submit"
             disabled={!user || text.trim().length < 2}
-            className="bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-4 py-2 hover:bg-foreground disabled:opacity-50"
+            className="rounded-full bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-5 py-2 hover:bg-foreground disabled:opacity-50"
           >
             ENVIAR
           </button>
