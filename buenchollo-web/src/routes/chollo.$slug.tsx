@@ -648,7 +648,7 @@ function DealDetail() {
                 type="button"
                 onClick={toggleFav}
                 aria-label={fav ? "Quitar de favoritos" : "Guardar en favoritos"}
-                className={`flex items-center gap-2 border px-3 py-2 font-mono text-xs ${fav ? "border-pink-500 text-pink-500 bg-pink-500/10" : "border-surface-700 hover:border-pink-500"}`}
+                className={`flex items-center gap-2 border border-surface-700 px-3 py-2 font-mono text-xs ${fav ? "text-pink-500" : "hover:border-pink-500"}`}
               >
                 <Heart className={`size-4 ${fav ? "fill-current" : ""}`} />
               </button>
