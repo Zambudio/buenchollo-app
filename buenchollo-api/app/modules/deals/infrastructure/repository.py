@@ -67,19 +67,39 @@ class DealRepository:
     async def search_active(
         self,
         category_id: str | None = None,
+        subcategory_id: str | None = None,
         store_id: str | None = None,
         search: str | None = None,
+        min_price: float | None = None,
+        max_price: float | None = None,
+        min_discount: int | None = None,
+        sort: str = "recent",
         limit: int = 20,
         offset: int = 0,
     ) -> list[Deal]:
         query = self._base_deal_query().where(Deal.status == "active")
         if category_id:
             query = query.where(Deal.category_id == category_id)
+        if subcategory_id:
+            query = query.where(Deal.subcategory_id == subcategory_id)
         if store_id:
             query = query.where(Deal.store_id == store_id)
         if search:
             query = query.where(Deal.title.ilike(f"%{search}%"))
-        query = query.order_by(Deal.published_at.desc()).offset(offset).limit(limit)
+        if min_price is not None:
+            query = query.where(Deal.current_price >= min_price)
+        if max_price is not None:
+            query = query.where(Deal.current_price <= max_price)
+        if min_discount is not None:
+            query = query.where(Deal.discount_percentage >= min_discount)
+
+        order_by = {
+            "recent": Deal.published_at.desc(),
+            "popular": Deal.temperature.desc(),
+            "discount": Deal.discount_percentage.desc(),
+            "price_asc": Deal.current_price.asc(),
+        }[sort]
+        query = query.order_by(order_by).offset(offset).limit(limit)
         result = await self.session.execute(query)
         return list(result.scalars().all())
 

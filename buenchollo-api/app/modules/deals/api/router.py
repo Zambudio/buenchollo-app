@@ -1,4 +1,5 @@
 import logging
+from typing import Literal
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.audit import audit_log
@@ -52,14 +53,28 @@ async def get_popular_deals(
 @router.get("", response_model=list[DealCardResponse])
 async def search_deals(
     category_id: str | None = None,
+    subcategory_id: str | None = None,
     store_id: str | None = None,
     search: str | None = None,
+    min_price: float | None = Query(None, ge=0),
+    max_price: float | None = Query(None, ge=0),
+    min_discount: int | None = Query(None, ge=0, le=100),
+    sort: Literal["recent", "popular", "discount", "price_asc"] = "recent",
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     repo: DealRepository = Depends(get_deal_repository)
 ):
     return await repo.search_active(
-        category_id=category_id, store_id=store_id, search=search, limit=limit, offset=offset
+        category_id=category_id,
+        subcategory_id=subcategory_id,
+        store_id=store_id,
+        search=search,
+        min_price=min_price,
+        max_price=max_price,
+        min_discount=min_discount,
+        sort=sort,
+        limit=limit,
+        offset=offset,
     )
 
 
@@ -236,5 +251,4 @@ async def delete_deal(
         target_type="deal",
         target_id=deal_id,
     )
-
 
