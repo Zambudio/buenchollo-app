@@ -95,6 +95,7 @@ El dominio no depende de FastAPI, SQLAlchemy, ni ningún framework externo.
 - Toda llamada HTTP pasa por `src/services/api/client.ts` (apiClient).
 - El token Bearer se adjunta automáticamente desde `supabase.auth.getSession()`.
 - No hacer llamadas directas a `supabase.from()` salvo Storage (excepción aprobada).
+- Todo cambio visual debe diseñarse, implementarse y verificarse con enfoque mobile-first. La interfaz debe ser totalmente responsive, sin desbordamiento horizontal ni contenido inaccesible, y validarse al menos en anchos móviles y de escritorio antes de cerrarlo.
 
 ### 6. Seguridad
 - Sin secretos hardcodeados. Todo en `.env`.

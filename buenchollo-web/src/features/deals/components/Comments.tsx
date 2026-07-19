@@ -195,7 +195,7 @@ export function Comments({ dealId, onCountChange }: Props) {
                   disabled={!user || replyText.trim().length < 2}
                   className="bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-3 py-1.5 hover:bg-foreground disabled:opacity-50"
                 >
-                  [ RESPONDER ]
+                  RESPONDER
                 </button>
                 <button
                   type="button"
@@ -244,7 +244,7 @@ export function Comments({ dealId, onCountChange }: Props) {
             disabled={!user || text.trim().length < 2}
             className="bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-4 py-2 hover:bg-foreground disabled:opacity-50"
           >
-            [ ENVIAR ]
+            ENVIAR
           </button>
         </div>
       </form>

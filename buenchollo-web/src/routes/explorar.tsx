@@ -139,7 +139,7 @@ function ExplorePage() {
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        <div className="font-mono text-cyan-glow text-xs mb-2">&gt; EXPLORAR_CHOLLOS</div>
+        <div className="font-mono text-cyan-glow text-xs mb-2">&gt; EXPLORAR CHOLLOS</div>
         <h1 className="text-3xl sm:text-4xl font-bold tracking-tighter mb-6">
           Todos los chollos {params.q && <span className="text-cyan-glow">/ "{params.q}"</span>}
         </h1>
@@ -284,7 +284,7 @@ function ExplorePage() {
               onClick={() => nav({ search: {} })}
               className="w-full font-mono text-xs border border-surface-700 py-2 hover:border-alert-red hover:text-alert-red transition-colors"
             >
-              [ LIMPIAR FILTROS ]
+              LIMPIAR FILTROS
             </button>
           </aside>
 
@@ -307,7 +307,7 @@ function ExplorePage() {
             </div>
             {deals.length === 0 && !loading ? (
               <div className="text-center py-16 text-muted-foreground font-mono text-sm">
-                NO_RESULTS · prueba con otros filtros
+                SIN RESULTADOS · prueba con otros filtros
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
