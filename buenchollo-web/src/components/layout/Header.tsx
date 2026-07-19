@@ -163,7 +163,7 @@ export function Header() {
                 to="/login"
                 className="font-mono text-xs sm:text-sm hover:text-cyan-glow transition-colors whitespace-nowrap"
               >
-                [ ACCEDER ]
+                ACCEDER
               </Link>
             )}
             <button
@@ -201,14 +201,14 @@ export function Header() {
               className="block font-mono text-sm hover:text-cyan-glow"
               onClick={() => setMobileOpen(false)}
             >
-              [ EXPLORAR ]
+              EXPLORAR
             </Link>
             <Link
               to="/categorias"
               className="block font-mono text-sm hover:text-cyan-glow"
               onClick={() => setMobileOpen(false)}
             >
-              [ CATEGORÍAS ]
+              CATEGORÍAS
             </Link>
             {user && (
               <Link
@@ -216,7 +216,7 @@ export function Header() {
                 className="block font-mono text-sm hover:text-cyan-glow"
                 onClick={() => setMobileOpen(false)}
               >
-                [ ALERTAS ]
+                ALERTAS
               </Link>
             )}
           </div>

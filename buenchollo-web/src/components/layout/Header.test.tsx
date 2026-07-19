@@ -51,7 +51,7 @@ beforeEach(() => {
 });
 
 describe("Header", () => {
-  it("usuario anónimo: muestra el CTA [ ACCEDER ]", () => {
+  it("usuario anónimo: muestra el CTA ACCEDER", () => {
     renderWithProviders(<Header />);
     expect(screen.getByRole("link", { name: /acceder/i })).toBeInTheDocument();
   });

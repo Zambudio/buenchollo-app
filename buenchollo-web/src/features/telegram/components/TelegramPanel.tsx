@@ -317,7 +317,7 @@ export function TelegramPanel({ dealData, onClose }: TelegramPanelProps) {
                 onClick={() => appendCategory(selectedCat)}
                 className="border border-surface-700 px-3 font-mono text-xs hover:border-cyan-glow whitespace-nowrap"
               >
-                [ Añadir ]
+                Añadir
               </button>
             </div>
 
