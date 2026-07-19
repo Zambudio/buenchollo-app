@@ -226,12 +226,13 @@ abrir la web al público:
   2 workers, máximo 10 conexiones simultáneas contra el pooler de Supabase en
   vez de los defaults sin límite documentado. Rebuild del contenedor en el NAS
   hecho y verificado (2026-07-18): `buenchollo-scheduler` arrancando, API en
-  `--workers 2`. Cache Rule de Cloudflare (§ T9) creada y verificada el mismo
-  día: `cf-cache-status MISS → HIT` en `/v1/deals`. Fase 2/3 del plan siguen
+  `--workers 2`. Cache Rule v2 de Cloudflare (§ T9), limitada a cinco rutas
+  públicas exactas y respetando `Cache-Control`, verificada con `MISS → HIT`
+  en `/v1/deals`; autenticados en `no-store` y nunca `HIT`. Validación funcional
+  de votos/comentarios con F5 normal superada el 2026-07-19. Fase 2/3 siguen
   aparcadas sin trigger, a propósito (`OPTIMIZACION_PLAN.md`).
 
-**Suite backend: 133 pytest** (124 no-integración + 9 integración; incluye los
-4 tests nuevos de `test_telegram_api.py`).
+**Suite backend: 141 pytest** en verde (unitarios + integración).
 
 ---
 

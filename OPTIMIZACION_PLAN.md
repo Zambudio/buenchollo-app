@@ -30,9 +30,9 @@ justifique. Este plan prioriza mejoras **gratuitas o de bajo coste** primero.
 `--workers 2`. El scheduler se desacopló a un contenedor propio
 (`buenchollo-scheduler`, `python -m app.run_scheduler`) con
 `SCHEDULER_ENABLED=false` en la API para no duplicar jobs (M-07).
-⚠️ Requiere recrear el contenedor en el NAS para tomar el compose nuevo.
+Contenedores recreados y verificados en el NAS el 2026-07-18.
 
-### 2. Cache en el borde (Cloudflare) — ⚠️ rehecha (v1 retirada el mismo día)
+### 2. Cache en el borde (Cloudflare) — ✅ rehecha y verificada
 La v1 de la Cache Rule `Cache API GET publicos` (Edge TTL fijo 30s ignorando
 al origen, matcheo por `starts_with`) cacheaba también endpoints autenticados
 (`/v1/deals/my-votes`, `/favorites` — fuga potencial entre usuarios) y causaba
@@ -42,7 +42,10 @@ middleware `app/core/cache_headers.py` (`no-store` en todo `/v1`;
 regla del panel con rutas exactas y Edge/Browser TTL "respect origin".
 Config completa, verificación y bitácora en
 [`docs/guides/Cloudflare.md`](docs/guides/Cloudflare.md) § T9.
-⚠️ Pendiente: aplicar v2 en el panel + reiniciar contenedor API en el NAS.
+Aplicada y verificada en producción: API y scheduler recreados en el NAS;
+`/v1/deals` responde `MISS → HIT`, los endpoints autenticados responden
+`Cache-Control: no-store` y nunca `HIT`, y votos/comentarios se actualizan
+correctamente tras un F5 normal.
 
 ### 3. Medir el pool de conexiones SQLAlchemy vs PgBouncer — ✅ hecho
 `buenchollo-api/app/core/database.py`: pool acotado explícitamente

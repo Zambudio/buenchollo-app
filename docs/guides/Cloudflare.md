@@ -246,7 +246,7 @@ crear Cache Rules sobre `buenchollotech.com`. (Futuro: cachear solo `/assets/*`.
 
 ---
 
-### ⚠️ T9 — Cache Rule para GET públicos de la API (TD-11 Fase 1) · 🔴 v1 RETIRADA (bug + fuga) → v2 pendiente de aplicar en panel
+### ✅ T9 — Cache Rule para GET públicos de la API (TD-11 Fase 1) · v2 activa y verificada
 
 **Por qué:** los listados públicos (`GET /v1/deals`, `/v1/categories`, `/v1/stores`
 sin auth) se piden repetidamente con el mismo resultado en ventanas cortas.
@@ -267,7 +267,7 @@ Cachearlos unos segundos en el borde evita ida y vuelta al NAS. **No** afecta a
   refrescaba). Detalle: el `no-store` que se creyó ver con `curl -I` era la
   cabecera de la página 403 del WAF (HEAD bloqueado), no de la API.
 
-**v2 — configuración correcta (aplicar en Dashboard → Caching → Cache Rules):**
+**v2 — configuración aplicada en Dashboard → Caching → Cache Rules:**
 El origen manda ahora `Cache-Control` explícito (middleware
 `app/core/cache_headers.py`): `no-store` en todo `/v1` salvo los listados
 públicos exactos (`/v1/deals`, `/v1/deals/latest`, `/v1/deals/popular`,
@@ -289,6 +289,11 @@ curl -s -o /dev/null -D - https://api.buenchollotech.com/v1/deals | grep -iE "cf
 # Endpoint por-usuario: no-store · nunca HIT
 curl -s -o /dev/null -D - -H "Authorization: Bearer <token>" "https://api.buenchollotech.com/v1/deals/my-votes?ids=<id>" | grep -iE "cf-cache-status|cache-control"
 ```
+Verificado en producción el 2026-07-18: `/v1/deals` devuelve
+`Cache-Control: public, max-age=0, s-maxage=30` y `MISS → HIT`; `my-votes`
+autenticado devuelve `Cache-Control: no-store` y `cf-cache-status: DYNAMIC`.
+Verificación funcional completada el 2026-07-19: votos y comentarios se
+actualizan correctamente tras F5 normal.
 **Rollback:** desactivar/borrar la regla — el origen (NAS) sigue sirviendo todo
 igual sin ella (el middleware de la API emite cabeceras correctas en cualquier caso).
 
@@ -392,5 +397,8 @@ curl -sI https://buenchollotech.com | findstr /I "strict-transport content-secur
   `public, max-age=0, s-maxage=30` solo en los 5 listados públicos exactos;
   (2) `fetchWithAuth` del frontend con `cache: "no-store"`; (3) regla v2 en
   panel con rutas exactas y Edge/Browser TTL "respect origin" + purga
-  (ver § T9). **Panel pendiente de aplicar por el usuario**: desactivar v1 →
-  desplegar API (reinicio contenedor NAS) → activar v2 → verificar.
+  (ver § T9). Completado: v1 desactivada y purgada, API/scheduler recreados en
+  el NAS, v2 activada y verificada (`MISS → HIT` público; `no-store` y nunca
+  `HIT` en autenticados).
+- 2026-07-19 — ✅ **T9 validación funcional cerrada**: votos y comentarios se
+  actualizan correctamente con F5 normal. Se confirma resuelto el bug original.
