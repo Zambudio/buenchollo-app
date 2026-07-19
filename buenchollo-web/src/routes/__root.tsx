@@ -26,7 +26,7 @@ function NotFoundComponent() {
             to="/"
             className="inline-flex items-center justify-center bg-cyan-glow text-surface-900 px-6 py-3 font-mono text-xs font-bold hover:bg-foreground transition-colors"
           >
-            [ VOLVER AL INICIO ]
+            VOLVER AL INICIO
           </Link>
         </div>
       </div>

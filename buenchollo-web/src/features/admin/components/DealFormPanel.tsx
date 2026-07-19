@@ -92,7 +92,7 @@ export function DealFormPanel({
             onClick={addImageUrl}
             className="border border-surface-700 px-3 font-mono text-xs hover:border-cyan-glow"
           >
-            [ AÑADIR URL ]
+            AÑADIR URL
           </button>
         </div>
         <div className="flex items-center gap-2">
@@ -110,7 +110,7 @@ export function DealFormPanel({
             disabled={uploading}
             className="border border-surface-700 px-3 py-2 font-mono text-xs hover:border-cyan-glow flex items-center gap-2 disabled:opacity-50"
           >
-            <Upload className="size-3" /> {uploading ? "SUBIENDO..." : "[ SUBIR ARCHIVOS ]"}
+            <Upload className="size-3" /> {uploading ? "SUBIENDO..." : "SUBIR ARCHIVOS"}
           </button>
           <span className="font-mono text-[10px] text-muted-foreground">
             JPG/PNG/WEBP · máx 5MB
@@ -325,14 +325,14 @@ export function DealFormPanel({
           type="submit"
           className="bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-4 py-2"
         >
-          [ GUARDAR ]
+          GUARDAR
         </button>
         <button
           type="button"
           onClick={onCancel}
           className="border border-surface-700 font-mono text-xs px-4 py-2"
         >
-          [ CANCELAR ]
+          CANCELAR
         </button>
       </div>
     </form>

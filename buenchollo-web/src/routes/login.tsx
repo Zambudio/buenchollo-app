@@ -159,7 +159,7 @@ function LoginPage() {
               disabled={loading}
               className="w-full bg-cyan-glow text-surface-900 font-mono text-xs font-bold py-3 hover:bg-foreground transition-colors disabled:opacity-50"
             >
-              {loading ? "[ CONECTANDO... ]" : "[ INICIAR SESIÓN ]"}
+              {loading ? "CONECTANDO..." : "INICIAR SESIÓN"}
             </button>
           </form>
 

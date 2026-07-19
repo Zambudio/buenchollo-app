@@ -616,7 +616,7 @@ function DealDetail() {
               >
                 {isExpired ? (
                   <>
-                    [ VER OFERTA — PUEDE HABER CADUCADO ] <ExternalLink className="size-4" />
+                    VER OFERTA — PUEDE HABER CADUCADO <ExternalLink className="size-4" />
                   </>
                 ) : (
                   <>

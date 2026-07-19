@@ -178,7 +178,7 @@ export function WelcomeProfileDialog() {
               disabled={saving}
               className="bg-cyan-glow px-4 py-3 font-mono text-xs font-bold text-surface-900 transition-colors hover:bg-foreground disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {saving ? "[ GUARDANDO... ]" : "[ CONFIRMAR NOMBRE ]"}
+              {saving ? "GUARDANDO..." : "CONFIRMAR NOMBRE"}
             </button>
           </div>
 

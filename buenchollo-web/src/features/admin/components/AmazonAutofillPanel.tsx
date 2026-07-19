@@ -35,7 +35,7 @@ export function AmazonAutofillPanel({ url, busy, onUrlChange, onAutofill }: Prop
           className="bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-4 py-2 flex items-center justify-center gap-2 hover:bg-foreground disabled:opacity-50"
         >
           {busy ? <Loader2 className="size-4 animate-spin" /> : <Wand2 className="size-4" />}
-          {busy ? "PROCESANDO..." : "[ AUTOCOMPLETAR ]"}
+          {busy ? "PROCESANDO..." : "AUTOCOMPLETAR"}
         </button>
       </div>
     </div>
