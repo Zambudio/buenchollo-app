@@ -253,7 +253,7 @@ function DealDetail() {
         <div className="max-w-7xl mx-auto p-8 text-center">
           <h1 className="text-2xl font-bold mb-2">Chollo no encontrado</h1>
           <Link to="/explorar" className="text-cyan-glow font-mono text-xs">
-            [ EXPLORAR CHOLLOS ]
+            EXPLORAR CHOLLOS
           </Link>
         </div>
       </Layout>
@@ -269,7 +269,7 @@ function DealDetail() {
         <div className="max-w-7xl mx-auto p-8 text-center">
           <h1 className="text-2xl font-bold mb-2">Este chollo no está disponible</h1>
           <Link to="/explorar" className="text-cyan-glow font-mono text-xs">
-            [ EXPLORAR CHOLLOS ]
+            EXPLORAR CHOLLOS
           </Link>
         </div>
       </Layout>
@@ -620,7 +620,7 @@ function DealDetail() {
                   </>
                 ) : (
                   <>
-                    [ IR A LA OFERTA ] <ExternalLink className="size-4" />
+                    IR A LA OFERTA <ExternalLink className="size-4" />
                   </>
                 )}
               </a>
@@ -700,7 +700,7 @@ function DealDetail() {
               <div className="flex items-center gap-3">
                 <div className="size-2 bg-cyan-glow rounded-full animate-pulse" />
                 <h2 className="text-foreground font-bold text-lg tracking-tight font-mono">
-                  CHOLLOS_RELACIONADOS
+                  CHOLLOS RELACIONADOS
                 </h2>
               </div>
               {deal.category && (
@@ -709,7 +709,7 @@ function DealDetail() {
                   params={{ slug: deal.category.slug }}
                   className="font-mono text-xs text-cyan-glow hover:text-foreground shrink-0"
                 >
-                  [ VER MÁS DE {deal.category.name.toUpperCase()} ]
+                  VER MÁS DE {deal.category.name.toUpperCase()}
                 </Link>
               )}
             </div>
