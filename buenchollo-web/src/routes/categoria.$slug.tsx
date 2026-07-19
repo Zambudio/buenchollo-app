@@ -62,7 +62,10 @@ function CategoryPage() {
         const c = await categoriesService.getBySlug(slug);
         setCat(c);
         if (!c) return;
-        const data = await dealsService.search({ category_id: c.id, limit: 48 });
+        const data = await dealsService.search({
+          ...(c.parent_id ? { subcategory_id: c.id } : { category_id: c.id }),
+          limit: 48,
+        });
         setDeals(data);
       } catch (error) {
         logError("Error cargando la categoría o sus chollos", error);

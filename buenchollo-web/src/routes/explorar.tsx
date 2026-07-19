@@ -81,32 +81,17 @@ function ExplorePage() {
     dealsService
       .search({
         category_id: params.cat,
+        subcategory_id: params.sub,
         store_id: params.store,
         search: params.q,
+        min_price: params.min,
+        max_price: params.max,
+        min_discount: params.disc,
+        sort: params.sort,
         limit: 48,
-        // Note: price and discount filters are not fully implemented in the backend search_active yet,
-        // but we send what's supported. We'll add them to the backend next.
       })
       .then((data) => {
-        // Temporary client-side filtering for properties not yet in the backend
-        let filtered = data;
-        if (params.sub) filtered = filtered.filter((d) => d.category?.slug === params.sub);
-        if (params.min != null) filtered = filtered.filter((d) => d.current_price >= params.min!);
-        if (params.max != null) filtered = filtered.filter((d) => d.current_price <= params.max!);
-        if (params.disc != null)
-          filtered = filtered.filter((d) => (d.discount_percentage ?? 0) >= params.disc!);
-
-        const sort = params.sort ?? "recent";
-        if (sort === "recent")
-          filtered.sort(
-            (a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime(),
-          );
-        if (sort === "popular") filtered.sort((a, b) => b.temperature - a.temperature);
-        if (sort === "discount")
-          filtered.sort((a, b) => (b.discount_percentage ?? 0) - (a.discount_percentage ?? 0));
-        if (sort === "price_asc") filtered.sort((a, b) => a.current_price - b.current_price);
-
-        setDeals(filtered);
+        setDeals(data);
         setLoading(false);
       })
       .catch((error) => {

@@ -96,15 +96,26 @@ export const dealsService = {
   /** Busca chollos con paginación opcional */
   search: (params?: {
     category_id?: string;
+    subcategory_id?: string;
     store_id?: string;
     search?: string;
+    min_price?: number;
+    max_price?: number;
+    min_discount?: number;
+    sort?: "recent" | "popular" | "discount" | "price_asc";
     limit?: number;
     offset?: number;
   }): Promise<DealCardData[]> => {
     const queryParams = new URLSearchParams();
     if (params?.category_id) queryParams.append("category_id", params.category_id);
+    if (params?.subcategory_id) queryParams.append("subcategory_id", params.subcategory_id);
     if (params?.store_id) queryParams.append("store_id", params.store_id);
     if (params?.search) queryParams.append("search", params.search);
+    if (params?.min_price != null) queryParams.append("min_price", params.min_price.toString());
+    if (params?.max_price != null) queryParams.append("max_price", params.max_price.toString());
+    if (params?.min_discount != null)
+      queryParams.append("min_discount", params.min_discount.toString());
+    if (params?.sort) queryParams.append("sort", params.sort);
     if (params?.limit != null) queryParams.append("limit", params.limit.toString());
     if (params?.offset != null && params.offset > 0)
       queryParams.append("offset", params.offset.toString());
