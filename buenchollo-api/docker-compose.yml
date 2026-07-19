@@ -62,3 +62,4 @@ services:
       - .env
     depends_on:
       - buenchollo-api
+      
