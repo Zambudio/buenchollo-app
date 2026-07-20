@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, text
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import selectinload
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from app.modules.deals.domain.models import Deal, DealVote, Favorite
@@ -59,13 +59,14 @@ class DealRepository:
         result = await self.session.execute(
             self._base_deal_query()
             .where(Deal.status == "active")
-            .order_by(Deal.temperature.desc())
+            .order_by(Deal.temperature.desc(), Deal.published_at.desc(), Deal.id.desc())
             .limit(limit)
         )
         return list(result.scalars().all())
 
-    async def search_active(
-        self,
+    @staticmethod
+    def _apply_active_filters(
+        query,
         category_id: str | None = None,
         subcategory_id: str | None = None,
         store_id: str | None = None,
@@ -73,11 +74,8 @@ class DealRepository:
         min_price: float | None = None,
         max_price: float | None = None,
         min_discount: int | None = None,
-        sort: str = "recent",
-        limit: int = 20,
-        offset: int = 0,
-    ) -> list[Deal]:
-        query = self._base_deal_query().where(Deal.status == "active")
+    ):
+        query = query.where(Deal.status == "active")
         if category_id:
             query = query.where(Deal.category_id == category_id)
         if subcategory_id:
@@ -92,14 +90,69 @@ class DealRepository:
             query = query.where(Deal.current_price <= max_price)
         if min_discount is not None:
             query = query.where(Deal.discount_percentage >= min_discount)
+        return query
 
+    async def count_active(
+        self,
+        category_id: str | None = None,
+        subcategory_id: str | None = None,
+        store_id: str | None = None,
+        search: str | None = None,
+        min_price: float | None = None,
+        max_price: float | None = None,
+        min_discount: int | None = None,
+    ) -> int:
+        query = self._apply_active_filters(
+            select(func.count(Deal.id)),
+            category_id=category_id,
+            subcategory_id=subcategory_id,
+            store_id=store_id,
+            search=search,
+            min_price=min_price,
+            max_price=max_price,
+            min_discount=min_discount,
+        )
+        result = await self.session.execute(query)
+        return int(result.scalar_one())
+
+    async def search_active(
+        self,
+        category_id: str | None = None,
+        subcategory_id: str | None = None,
+        store_id: str | None = None,
+        search: str | None = None,
+        min_price: float | None = None,
+        max_price: float | None = None,
+        min_discount: int | None = None,
+        sort: str = "recent",
+        limit: int = 20,
+        offset: int = 0,
+    ) -> list[Deal]:
+        query = self._apply_active_filters(
+            self._base_deal_query(),
+            category_id=category_id,
+            subcategory_id=subcategory_id,
+            store_id=store_id,
+            search=search,
+            min_price=min_price,
+            max_price=max_price,
+            min_discount=min_discount,
+        )
+
+        # Cada orden incluye desempates estables. Sin ellos, PostgreSQL puede
+        # devolver en distinto orden dos filas con la misma temperatura (muy
+        # habitual con 0 votos), haciendo que se repitan o salten entre paginas.
         order_by = {
-            "recent": Deal.published_at.desc(),
-            "popular": Deal.temperature.desc(),
-            "discount": Deal.discount_percentage.desc(),
-            "price_asc": Deal.current_price.asc(),
+            "recent": (Deal.published_at.desc(), Deal.id.desc()),
+            "popular": (Deal.temperature.desc(), Deal.published_at.desc(), Deal.id.desc()),
+            "discount": (
+                Deal.discount_percentage.desc().nullslast(),
+                Deal.published_at.desc(),
+                Deal.id.desc(),
+            ),
+            "price_asc": (Deal.current_price.asc(), Deal.published_at.desc(), Deal.id.desc()),
         }[sort]
-        query = query.order_by(order_by).offset(offset).limit(limit)
+        query = query.order_by(*order_by).offset(offset).limit(limit)
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
