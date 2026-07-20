@@ -8,7 +8,15 @@ from app.core.rate_limit import limiter
 from app.modules.deals.infrastructure.repository import DealRepository
 from app.modules.deals.application.deal_service import DealService
 from app.modules.deals.domain.exceptions import DealNotFound
-from app.modules.deals.api.schemas import DealCardResponse, DealDetailResponse, DealCreate, DealUpdate, VoteRequest, VoteResponse
+from app.modules.deals.api.schemas import (
+    DealCardResponse,
+    DealCreate,
+    DealDetailResponse,
+    DealPageResponse,
+    DealUpdate,
+    VoteRequest,
+    VoteResponse,
+)
 from app.core.security import require_admin, get_current_user
 from app.modules.alerts.infrastructure.repository import AlertRepository
 from app.modules.alerts.application.alert_matcher import AlertMatcher
@@ -75,6 +83,48 @@ async def search_deals(
         sort=sort,
         limit=limit,
         offset=offset,
+    )
+
+
+@router.get("/page", response_model=DealPageResponse)
+async def get_deals_page(
+    category_id: str | None = None,
+    subcategory_id: str | None = None,
+    store_id: str | None = None,
+    search: str | None = None,
+    min_price: float | None = Query(None, ge=0),
+    max_price: float | None = Query(None, ge=0),
+    min_discount: int | None = Query(None, ge=0, le=100),
+    sort: Literal["recent", "popular", "discount", "price_asc"] = "popular",
+    page: int = Query(1, ge=1),
+    page_size: int = Query(30, ge=1, le=48),
+    repo: DealRepository = Depends(get_deal_repository),
+):
+    """Pagina estable de chollos filtrados, con total para el paginador."""
+    filters = {
+        "category_id": category_id,
+        "subcategory_id": subcategory_id,
+        "store_id": store_id,
+        "search": search,
+        "min_price": min_price,
+        "max_price": max_price,
+        "min_discount": min_discount,
+    }
+    total = await repo.count_active(**filters)
+    total_pages = max(1, (total + page_size - 1) // page_size)
+    current_page = min(page, total_pages)
+    items = await repo.search_active(
+        **filters,
+        sort=sort,
+        limit=page_size,
+        offset=(current_page - 1) * page_size,
+    )
+    return DealPageResponse(
+        items=items,
+        page=current_page,
+        page_size=page_size,
+        total=total,
+        total_pages=total_pages,
     )
 
 
@@ -251,4 +301,3 @@ async def delete_deal(
         target_type="deal",
         target_id=deal_id,
     )
-

@@ -1,8 +1,9 @@
 import { logError } from "@/lib/logger";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { DealCard, type DealCardData } from "@/features/deals/components/DealCard";
+import { DealPagination } from "@/features/deals/components/DealPagination";
 import { useMyVotes } from "@/features/deals/hooks/useMyVotes";
 import { useAuth } from "@/hooks/useAuth";
 import { z } from "zod";
@@ -19,6 +20,7 @@ const search = z.object({
   max: z.number().min(0).optional(),
   disc: z.number().min(0).max(99).optional(),
   sort: z.enum(["recent", "popular", "discount", "price_asc"]).optional(),
+  page: z.number().int().min(1).optional(),
 });
 
 /** Shape de los search params de /explorar. Compartido para que otros
@@ -26,6 +28,7 @@ const search = z.object({
 export type ExplorarSearch = z.infer<typeof search>;
 
 const SITE = "https://buenchollotech.com";
+const PAGE_SIZE = 30;
 
 export const Route = createFileRoute("/explorar")({
   component: ExplorePage,
@@ -63,6 +66,11 @@ function ExplorePage() {
   const [filtersReady, setFiltersReady] = useState(false);
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const requestedPage = params.page ?? 1;
+  const currentPage = Math.min(requestedPage, totalPages);
+  const resultsRef = useRef<HTMLDivElement>(null);
   const myVotes = useMyVotes(deals.map((d) => d.id));
 
   useEffect(() => {
@@ -95,9 +103,10 @@ function ExplorePage() {
 
   useEffect(() => {
     if (!filtersReady) return;
+    let cancelled = false;
     setLoading(true);
     dealsService
-      .search({
+      .getPage({
         category_id: selectedCat?.id,
         subcategory_id: selectedSub?.id,
         store_id: params.store,
@@ -105,18 +114,36 @@ function ExplorePage() {
         min_price: params.min,
         max_price: params.max,
         min_discount: params.disc,
-        sort: params.sort,
-        limit: 48,
+        sort: params.sort ?? "recent",
+        page: requestedPage,
+        page_size: PAGE_SIZE,
       })
       .then((data) => {
-        setDeals(data);
-        setLoading(false);
+        if (cancelled) return;
+        setDeals(data.items);
+        setTotal(data.total);
+        setTotalPages(data.total_pages);
+        if (data.page !== requestedPage) {
+          void nav({
+            search: { ...params, page: data.page === 1 ? undefined : data.page },
+            replace: true,
+          });
+        }
       })
       .catch((error) => {
+        if (cancelled) return;
         logError("Error buscando chollos en explorar", error);
-        setLoading(false);
+        setDeals([]);
+        setTotal(0);
+        setTotalPages(1);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
       });
-  }, [filtersReady, params, selectedCat?.id, selectedSub?.id]);
+    return () => {
+      cancelled = true;
+    };
+  }, [filtersReady, nav, params, requestedPage, selectedCat?.id, selectedSub?.id]);
 
   useEffect(() => {
     if (!user) {
@@ -129,7 +156,17 @@ function ExplorePage() {
       .catch(() => setFavIds(new Set()));
   }, [user]);
 
-  const update = (patch: Partial<ExplorarSearch>) => nav({ search: { ...params, ...patch } });
+  const update = (patch: Partial<ExplorarSearch>) =>
+    nav({ search: { ...params, ...patch, page: undefined } });
+
+  const changePage = (nextPage: number) => {
+    if (loading || nextPage < 1 || nextPage > totalPages || nextPage === currentPage) return;
+    void nav({ search: { ...params, page: nextPage === 1 ? undefined : nextPage } });
+    const resultsTop = resultsRef.current?.getBoundingClientRect().top;
+    if (resultsTop != null) {
+      window.scrollTo({ top: Math.max(0, window.scrollY + resultsTop - 96), behavior: "smooth" });
+    }
+  };
 
   // Sanitiza enteros >= 0 (acepta vacío => undefined). Limita opcionalmente con max.
   const parseNonNeg = (v: string, max?: number): number | undefined => {
@@ -292,10 +329,10 @@ function ExplorePage() {
           </aside>
 
           {/* Resultados */}
-          <div>
+          <div ref={resultsRef}>
             <div className="flex items-center justify-between mb-4">
               <span className="font-mono text-xs text-muted-foreground">
-                {loading ? "CARGANDO..." : `${deals.length} RESULTADOS`}
+                {loading ? "CARGANDO..." : `${total} RESULTADOS`}
               </span>
               <select
                 value={params.sort ?? "recent"}
@@ -313,16 +350,26 @@ function ExplorePage() {
                 SIN RESULTADOS · prueba con otros filtros
               </div>
             ) : (
-              <div className="deal-feed-grid">
-                {deals.map((d) => (
-                  <DealCard
-                    key={d.id}
-                    deal={d}
-                    isFavorite={favIds.has(d.id)}
-                    myVote={myVotes[d.id]}
+              <>
+                <div className={`deal-feed-grid transition-opacity ${loading ? "opacity-60" : ""}`}>
+                  {deals.map((d) => (
+                    <DealCard
+                      key={d.id}
+                      deal={d}
+                      isFavorite={favIds.has(d.id)}
+                      myVote={myVotes[d.id]}
+                    />
+                  ))}
+                </div>
+                <div className="mt-8 border-t border-surface-700 pt-6">
+                  <DealPagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    loading={loading}
+                    onPageChange={changePage}
                   />
-                ))}
-              </div>
+                </div>
+              </>
             )}
           </div>
         </div>
