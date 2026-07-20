@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Layout } from "./Layout";
@@ -11,50 +11,54 @@ vi.mock("./ScrollNav", () => ({
   ScrollNav: ({
     footerVisible,
     onToggleFooter,
+    showFooterToggle = true,
   }: {
     footerVisible: boolean;
     onToggleFooter: () => void;
+    showFooterToggle?: boolean;
   }) => (
-    <button type="button" onClick={onToggleFooter}>
-      {footerVisible ? "Ocultar pie de página" : "Mostrar pie de página"}
-    </button>
+    <nav>
+      <button type="button">Ir arriba</button>
+      {showFooterToggle && (
+        <button type="button" onClick={onToggleFooter}>
+          {footerVisible ? "Ocultar pie de página" : "Mostrar pie de página"}
+        </button>
+      )}
+    </nav>
   ),
 }));
 
 beforeEach(() => {
   Object.defineProperty(window, "scrollY", { configurable: true, value: 0 });
-  vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
-    callback(0);
-    return 1;
+  Object.defineProperty(window, "innerHeight", { configurable: true, value: 800 });
+  Object.defineProperty(document.documentElement, "scrollHeight", {
+    configurable: true,
+    value: 1600,
   });
-  vi.spyOn(window, "cancelAnimationFrame").mockImplementation(() => undefined);
 });
 
 describe("Layout footer", () => {
-  it("muestra y oculta el pie sin desplazar la página", async () => {
+  it("abre el pie como panel sin desplazar la página", async () => {
     const user = userEvent.setup();
-    const scrollTo = vi.spyOn(window, "scrollTo");
     render(<Layout>Contenido</Layout>);
 
     expect(screen.queryByRole("contentinfo")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Mostrar pie de página" }));
     expect(screen.getByRole("contentinfo")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Mostrar pie de página" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Ocultar pie de página" })).toBeInTheDocument();
-    expect(scrollTo).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole("button", { name: "Ocultar pie de página" }));
     expect(screen.queryByRole("contentinfo")).not.toBeInTheDocument();
   });
 
-  it("oculta el pie cuando el usuario hace scroll", async () => {
-    const user = userEvent.setup();
+  it("al llegar al pie muestra solamente la acción de volver arriba", () => {
     render(<Layout>Contenido</Layout>);
-    await user.click(screen.getByRole("button", { name: "Mostrar pie de página" }));
-
-    Object.defineProperty(window, "scrollY", { configurable: true, value: 40 });
+    Object.defineProperty(window, "scrollY", { configurable: true, value: 800 });
     fireEvent.scroll(window);
 
-    await waitFor(() => expect(screen.queryByRole("contentinfo")).not.toBeInTheDocument());
-    expect(screen.getByRole("button", { name: "Mostrar pie de página" })).toBeInTheDocument();
+    expect(screen.getByRole("contentinfo")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Mostrar pie de página" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ir arriba" })).toBeInTheDocument();
   });
 });

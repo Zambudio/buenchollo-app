@@ -7,10 +7,12 @@ export function ScrollNav({
   footerVisible,
   onToggleFooter,
   docked = false,
+  showFooterToggle = true,
 }: {
   footerVisible: boolean;
   onToggleFooter: () => void;
   docked?: boolean;
+  showFooterToggle?: boolean;
 }) {
   const [visible, setVisible] = useState(false);
 
@@ -38,16 +40,18 @@ export function ScrollNav({
           <ChevronUp className="size-5" />
           Ir arriba
         </button>
-        <button
-          type="button"
-          onClick={onToggleFooter}
-          aria-expanded={footerVisible}
-          aria-controls="site-footer"
-          className="inline-flex items-center gap-2 font-mono text-sm font-bold uppercase tracking-wide text-foreground px-3 py-2 hover:bg-surface-700 hover:text-cyan-glow transition-colors"
-        >
-          {footerVisible ? "Ocultar pie de página" : "Mostrar pie de página"}
-          {footerVisible ? <ChevronUp className="size-5" /> : <ChevronDown className="size-5" />}
-        </button>
+        {showFooterToggle && (
+          <button
+            type="button"
+            onClick={onToggleFooter}
+            aria-expanded={footerVisible}
+            aria-controls="site-footer"
+            className="inline-flex items-center gap-2 font-mono text-sm font-bold uppercase tracking-wide text-foreground px-3 py-2 hover:bg-surface-700 hover:text-cyan-glow transition-colors"
+          >
+            {footerVisible ? "Ocultar pie de página" : "Mostrar pie de página"}
+            {footerVisible ? <ChevronUp className="size-5" /> : <ChevronDown className="size-5" />}
+          </button>
+        )}
       </div>
     </div>
   );
