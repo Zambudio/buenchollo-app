@@ -116,6 +116,9 @@ function DealDetail() {
   const [relatedApi, setRelatedApi] = useState<CarouselApi>();
   const [relatedCanPrev, setRelatedCanPrev] = useState(false);
   const [relatedCanNext, setRelatedCanNext] = useState(false);
+  const [thumbApi, setThumbApi] = useState<CarouselApi>();
+  const [thumbCanPrev, setThumbCanPrev] = useState(false);
+  const [thumbCanNext, setThumbCanNext] = useState(false);
   const relatedVotes = useMyVotes(related.map((d) => d.id));
 
   useEffect(() => {
@@ -131,6 +134,24 @@ function DealDetail() {
       relatedApi.off("select", onSelect);
     };
   }, [relatedApi]);
+
+  useEffect(() => {
+    if (!thumbApi) return;
+    const onSelect = () => {
+      setThumbCanPrev(thumbApi.canScrollPrev());
+      setThumbCanNext(thumbApi.canScrollNext());
+    };
+    onSelect();
+    thumbApi.on("select", onSelect);
+    thumbApi.on("reInit", onSelect);
+    return () => {
+      thumbApi.off("select", onSelect);
+    };
+  }, [thumbApi]);
+
+  useEffect(() => {
+    thumbApi?.scrollTo(activeImg);
+  }, [thumbApi, activeImg]);
 
   // Efecto 1: carga los datos públicos del deal (no necesita auth).
   // Si el loader del router ya trajo el deal para este slug (SSR), lo
@@ -215,6 +236,10 @@ function DealDetail() {
     } finally {
       setVotingLoading(false);
     }
+  };
+
+  const scrollToComments = () => {
+    document.getElementById("comentarios")?.scrollIntoView({ behavior: "smooth" });
   };
 
   const toggleFav = async () => {
@@ -381,7 +406,7 @@ function DealDetail() {
               return (
                 <>
                   {/* Imagen principal con flechas y botón agrandar */}
-                  <div className="relative bg-white border border-surface-700 aspect-[4/3] overflow-hidden flex items-center justify-center group/img">
+                  <div className="relative bg-white border border-surface-700 rounded-xl aspect-[4/3] overflow-hidden flex items-center justify-center group/img">
                     {current && (
                       <img
                         src={current}
@@ -434,19 +459,43 @@ function DealDetail() {
 
                   {/* Miniaturas */}
                   {gallery.length > 1 && (
-                    <div className="grid grid-cols-6 gap-1.5 mt-2">
-                      {gallery.map((src, i) => (
-                        <button
-                          key={src + i}
-                          type="button"
-                          onClick={() => setActiveImg(i)}
-                          aria-label={`Ver foto ${i + 1}`}
-                          className={`aspect-square bg-white border overflow-hidden transition ${i === activeImg ? "border-cyan-glow" : "border-surface-700 hover:border-surface-500"}`}
-                        >
-                          <img src={src} alt="" className="w-full h-full object-contain p-1" />
-                        </button>
-                      ))}
-                    </div>
+                    <Carousel setApi={setThumbApi} opts={{ align: "start" }} className="mt-2 px-1">
+                      <CarouselContent>
+                        {gallery.map((src, i) => (
+                          <CarouselItem
+                            key={src + i}
+                            className="basis-1/4 sm:basis-1/5 lg:basis-1/6"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => setActiveImg(i)}
+                              aria-label={`Ver foto ${i + 1}`}
+                              className={`aspect-square w-full bg-white border rounded-lg overflow-hidden transition ${i === activeImg ? "border-cyan-glow" : "border-surface-700 hover:border-surface-500"}`}
+                            >
+                              <img src={src} alt="" className="w-full h-full object-contain p-1" />
+                            </button>
+                          </CarouselItem>
+                        ))}
+                      </CarouselContent>
+                      <button
+                        type="button"
+                        onClick={() => thumbApi?.scrollPrev()}
+                        disabled={!thumbCanPrev}
+                        aria-label="Miniaturas anteriores"
+                        className="absolute -left-3 top-1/2 -translate-y-1/2 bg-surface-900/80 border border-surface-600 p-1 hover:border-cyan-glow disabled:opacity-20 transition z-10"
+                      >
+                        <ChevronLeft className="size-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => thumbApi?.scrollNext()}
+                        disabled={!thumbCanNext}
+                        aria-label="Miniaturas siguientes"
+                        className="absolute -right-3 top-1/2 -translate-y-1/2 bg-surface-900/80 border border-surface-600 p-1 hover:border-cyan-glow disabled:opacity-20 transition z-10"
+                      >
+                        <ChevronRight className="size-4" />
+                      </button>
+                    </Carousel>
                   )}
 
                   {/* Gráfica Keepa — histórico de precios */}
@@ -477,7 +526,7 @@ function DealDetail() {
                     >
                       <div
                         role="document"
-                        className="bg-surface-900 border border-surface-700 flex w-full max-w-5xl h-[88vh] shadow-2xl"
+                        className="bg-surface-900 border border-surface-700 rounded-xl overflow-hidden flex w-full max-w-5xl h-[88vh] shadow-2xl"
                         onClick={(e) => e.stopPropagation()}
                       >
                         {/* Imagen principal */}
@@ -533,7 +582,7 @@ function DealDetail() {
                                 type="button"
                                 onClick={() => setActiveImg(i)}
                                 aria-label={`Ver foto ${i + 1}`}
-                                className={`aspect-square bg-white border overflow-hidden transition ${i === activeImg ? "border-cyan-glow ring-1 ring-cyan-glow/30" : "border-surface-700 hover:border-surface-500"}`}
+                                className={`aspect-square bg-white border rounded-lg overflow-hidden transition ${i === activeImg ? "border-cyan-glow ring-1 ring-cyan-glow/30" : "border-surface-700 hover:border-surface-500"}`}
                               >
                                 <img
                                   src={src}
@@ -553,21 +602,65 @@ function DealDetail() {
           </div>
 
           <div>
-            <div className="mb-3 font-mono text-xs text-muted-foreground">
-              Publicado {formatRelativeTime(deal.published_at)}
-            </div>
-            <h1
-              className={`text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-4 ${isExpired ? "text-muted-foreground" : ""}`}
-            >
-              {deal.title}
-            </h1>
-            {deal.short_description && (
-              <p className="text-muted-foreground mb-6">{deal.short_description}</p>
-            )}
-
             <div
-              className={`bg-surface-800 border p-5 mb-5 ${isExpired ? "border-alert-red/30" : "border-surface-700"}`}
+              className={`bg-surface-800 border rounded-xl p-5 mb-5 ${isExpired ? "border-alert-red/30" : "border-surface-700"}`}
             >
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <DealVoteControl
+                  temperature={deal.temperature}
+                  myVote={myVote}
+                  disabled={votingLoading}
+                  size="detail"
+                  onVote={vote}
+                />
+                <div className="flex items-center gap-4">
+                  <button
+                    type="button"
+                    onClick={toggleFav}
+                    aria-label={fav ? "Quitar de favoritos" : "Guardar en favoritos"}
+                    className={`group transition-colors ${fav ? "text-pink-500" : "text-muted-foreground hover:text-pink-500"}`}
+                  >
+                    <Heart
+                      className={`size-5 ${fav ? "fill-current" : "group-hover:fill-current"}`}
+                    />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={scrollToComments}
+                    aria-label="Ver comentarios"
+                    className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground hover:text-cyan-glow transition-colors"
+                  >
+                    <MessageSquare className="size-5" /> {commentCount}
+                  </button>
+                  <ShareDialog
+                    url={`/chollo/${deal.slug}`}
+                    title={deal.title}
+                    price={deal.current_price}
+                    trigger={
+                      <button
+                        type="button"
+                        aria-label="Compartir"
+                        className="text-muted-foreground hover:text-cyan-glow transition-colors"
+                      >
+                        <Share2 className="size-5" />
+                      </button>
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="mb-3 font-mono text-xs text-muted-foreground">
+                Publicado {formatRelativeTime(deal.published_at)}
+              </div>
+              <h1
+                className={`text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-3 ${isExpired ? "text-muted-foreground" : ""}`}
+              >
+                {deal.title}
+              </h1>
+              {deal.short_description && (
+                <p className="text-muted-foreground mb-5">{deal.short_description}</p>
+              )}
+
               <div className="flex items-end gap-3 mb-3">
                 <span
                   className={`font-mono text-4xl sm:text-5xl font-extrabold tabular-nums leading-none ${isExpired ? "text-muted-foreground line-through" : "text-cyan-glow"}`}
@@ -636,40 +729,8 @@ function DealDetail() {
               </a>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              <DealVoteControl
-                temperature={deal.temperature}
-                myVote={myVote}
-                disabled={votingLoading}
-                size="detail"
-                onVote={vote}
-              />
-              <button
-                type="button"
-                onClick={toggleFav}
-                aria-label={fav ? "Quitar de favoritos" : "Guardar en favoritos"}
-                className={`flex items-center gap-2 border border-surface-700 px-3 py-2 font-mono text-xs ${fav ? "text-pink-500" : "hover:border-pink-500"}`}
-              >
-                <Heart className={`size-4 ${fav ? "fill-current" : ""}`} />
-              </button>
-              <div className="flex items-center gap-2 border border-surface-700 px-3 py-2 font-mono text-xs">
-                <MessageSquare className="size-4" /> {commentCount}
-              </div>
-              <ShareDialog
-                url={`/chollo/${deal.slug}`}
-                title={deal.title}
-                price={deal.current_price}
-                trigger={
-                  <button
-                    type="button"
-                    aria-label="Compartir"
-                    className="flex items-center gap-2 border border-surface-700 px-3 py-2 font-mono text-xs hover:border-cyan-glow hover:text-cyan-glow transition-colors"
-                  >
-                    <Share2 className="size-4" />
-                  </button>
-                }
-              />
-              {isAdmin && (
+            {isAdmin && (
+              <div className="flex flex-wrap gap-2 mb-5">
                 <Link
                   to="/admin/chollos"
                   search={{ edit: deal.id }}
@@ -677,8 +738,8 @@ function DealDetail() {
                 >
                   <Pencil className="size-4" /> EDITAR
                 </Link>
-              )}
-            </div>
+              </div>
+            )}
 
             {deal.description && (
               <div className="mt-6 bg-surface-800 border border-surface-700 p-5">
@@ -741,17 +802,19 @@ function DealDetail() {
           </section>
         )}
 
-        <Comments
-          dealId={deal.id}
-          onCountChange={async () => {
-            try {
-              const fresh = await dealsService.getBySlug(deal.slug);
-              setCommentCount(fresh.comment_count ?? 0);
-            } catch {
-              /* no crítico */
-            }
-          }}
-        />
+        <div id="comentarios" className="scroll-mt-20">
+          <Comments
+            dealId={deal.id}
+            onCountChange={async () => {
+              try {
+                const fresh = await dealsService.getBySlug(deal.slug);
+                setCommentCount(fresh.comment_count ?? 0);
+              } catch {
+                /* no crítico */
+              }
+            }}
+          />
+        </div>
       </div>
     </Layout>
   );
