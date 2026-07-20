@@ -46,6 +46,7 @@ export const Route = createRootRoute({
           "Portal de ofertas y chollos de tecnología y electrónica. Descuentos curados, alertas personalizadas y comunidad.",
       },
       { name: "author", content: "BuenChollo Tech" },
+      { name: "theme-color", content: "#0b1120" },
       { property: "og:title", content: "BuenChollo Tech — Las mejores ofertas de tecnología" },
       {
         property: "og:description",
@@ -69,41 +70,6 @@ export const Route = createRootRoute({
       {
         name: "twitter:image",
         content: `${SITE_URL}/og-image.png`,
-      },
-    ],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@graph": [
-            {
-              "@type": "Organization",
-              "@id": "https://buenchollotech.com/#org",
-              name: "BuenChollo Tech",
-              description:
-                "BuenChollo Tech es una web de ofertas y chollos de tecnología: buscamos, seleccionamos y comparamos ofertas de productos tecnológicos y electrónica para que encuentres el mejor precio.",
-              url: "https://buenchollotech.com/",
-              logo: "https://buenchollotech.com/favicon.png",
-              sameAs: ["https://t.me/buenchollotech"],
-            },
-            {
-              "@type": "WebSite",
-              "@id": "https://buenchollotech.com/#site",
-              url: "https://buenchollotech.com/",
-              name: "BuenChollo Tech",
-              description:
-                "BuenChollo Tech es una web de ofertas y chollos de tecnología: buscamos, seleccionamos y comparamos ofertas de productos tecnológicos y electrónica para que encuentres el mejor precio.",
-              publisher: { "@id": "https://buenchollotech.com/#org" },
-              inLanguage: "es-ES",
-              potentialAction: {
-                "@type": "SearchAction",
-                target: "https://buenchollotech.com/explorar?q={search_term_string}",
-                "query-input": "required name=search_term_string",
-              },
-            },
-          ],
-        }),
       },
     ],
     links: [

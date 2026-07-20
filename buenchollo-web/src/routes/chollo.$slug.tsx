@@ -58,7 +58,63 @@ export const Route = createFileRoute("/chollo/$slug")({
       (m.short_description || (m.description ? String(m.description).slice(0, 200) : "")) +
       (m.current_price ? ` · ${m.current_price}€` : "");
     const img = (m.images && m.images[0]) || m.image_url || undefined;
-    const title = `${m.title} — ${m.current_price ? `${m.current_price}€` : "Chollo"} · BuenChollo Tech`;
+    const discount = m.discount_percentage ?? calculateDiscount(m.current_price, m.previous_price);
+    const title = `${m.title} — ${m.current_price} €${discount ? ` (-${discount}%)` : ""} | Opiniones y Precio`;
+    const breadcrumbItems = [
+      { "@type": "ListItem", position: 1, name: "Inicio", item: `${SITE}/` },
+      { "@type": "ListItem", position: 2, name: "Explorar", item: `${SITE}/explorar` },
+      ...(m.category
+        ? [
+            {
+              "@type": "ListItem",
+              position: 3,
+              name: m.category.name,
+              item: `${SITE}/categoria/${m.category.slug}`,
+            },
+          ]
+        : []),
+      ...(m.subcategory
+        ? [
+            {
+              "@type": "ListItem",
+              position: m.category ? 4 : 3,
+              name: m.subcategory.name,
+              item: `${SITE}/explorar?cat=${encodeURIComponent(m.category?.slug ?? "")}&sub=${encodeURIComponent(m.subcategory.slug)}`,
+            },
+          ]
+        : []),
+    ];
+    const productSchema = {
+      "@type": "Product",
+      "@id": `${url}#product`,
+      name: m.title,
+      description: m.description || m.short_description || m.title,
+      image: img ? [img] : undefined,
+      brand: m.brand ? { "@type": "Brand", name: m.brand } : undefined,
+      sku: m.external_id || m.id,
+      offers: {
+        "@type": "Offer",
+        price: m.current_price,
+        priceCurrency: "EUR",
+        priceValidUntil: m.expires_at?.slice(0, 10),
+        availability:
+          m.status === "expired" ? "https://schema.org/OutOfStock" : "https://schema.org/InStock",
+        itemCondition: "https://schema.org/NewCondition",
+        url,
+        seller: m.store?.name ? { "@type": "Organization", name: m.store.name } : undefined,
+      },
+      ...(m.aggregate_rating != null && m.review_count != null && m.review_count > 0
+        ? {
+            aggregateRating: {
+              "@type": "AggregateRating",
+              ratingValue: m.aggregate_rating,
+              reviewCount: m.review_count,
+              bestRating: 5,
+              worstRating: 1,
+            },
+          }
+        : {}),
+    };
     return {
       meta: [
         { title },
@@ -67,6 +123,12 @@ export const Route = createFileRoute("/chollo/$slug")({
         { property: "og:description", content: desc.slice(0, 200) },
         { property: "og:url", content: url },
         { property: "og:type", content: "product" },
+        { property: "product:price:amount", content: String(m.current_price) },
+        { property: "product:price:currency", content: "EUR" },
+        {
+          property: "product:availability",
+          content: m.status === "expired" ? "out of stock" : "in stock",
+        },
         ...(img
           ? [
               { property: "og:image", content: img },
@@ -80,18 +142,13 @@ export const Route = createFileRoute("/chollo/$slug")({
           type: "application/ld+json",
           children: JSON.stringify({
             "@context": "https://schema.org",
-            "@type": "Product",
-            name: m.title,
-            description: m.short_description || m.description || undefined,
-            image: img,
-            offers: {
-              "@type": "Offer",
-              price: m.current_price,
-              priceCurrency: "EUR",
-              availability: "https://schema.org/InStock",
-              url,
-              seller: m.store?.name ? { "@type": "Organization", name: m.store.name } : undefined,
-            },
+            "@graph": [
+              productSchema,
+              {
+                "@type": "BreadcrumbList",
+                itemListElement: breadcrumbItems,
+              },
+            ],
           }),
         },
       ],
@@ -316,40 +373,47 @@ function DealDetail() {
   return (
     <Layout>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-        <nav className="font-mono text-xs text-muted-foreground mb-4 flex flex-wrap gap-x-1 gap-y-1">
-          <Link to="/" className="hover:text-cyan-glow">
-            INICIO
-          </Link>{" "}
-          /{" "}
-          <Link to="/explorar" className="hover:text-cyan-glow">
-            EXPLORAR
-          </Link>
-          {deal.category && (
-            <>
-              {" "}
-              /{" "}
-              <Link
-                to="/categoria/$slug"
-                params={{ slug: deal.category.slug }}
-                className="hover:text-cyan-glow"
-              >
-                {deal.category.name.toUpperCase()}
+        <nav
+          aria-label="Ruta de navegación"
+          className="breadcrumbs font-mono text-xs text-muted-foreground mb-4"
+        >
+          <ol className="flex flex-wrap gap-x-1 gap-y-1">
+            <li>
+              <Link to="/" className="hover:text-cyan-glow">
+                INICIO
+              </Link>{" "}
+              /
+            </li>
+            <li>
+              <Link to="/explorar" className="hover:text-cyan-glow">
+                EXPLORAR
               </Link>
-            </>
-          )}
-          {deal.subcategory && (
-            <>
-              {" "}
-              /{" "}
-              <Link
-                to="/explorar"
-                search={{ cat: deal.category?.slug, sub: deal.subcategory.slug }}
-                className="hover:text-cyan-glow"
-              >
-                {deal.subcategory.name.toUpperCase()}
-              </Link>
-            </>
-          )}
+              {(deal.category || deal.subcategory) && " /"}
+            </li>
+            {deal.category && (
+              <li>
+                <Link
+                  to="/categoria/$slug"
+                  params={{ slug: deal.category.slug }}
+                  className="hover:text-cyan-glow"
+                >
+                  {deal.category.name.toUpperCase()}
+                </Link>
+                {deal.subcategory && " /"}
+              </li>
+            )}
+            {deal.subcategory && (
+              <li aria-current="page">
+                <Link
+                  to="/explorar"
+                  search={{ cat: deal.category?.slug, sub: deal.subcategory.slug }}
+                  className="text-foreground hover:text-cyan-glow"
+                >
+                  {deal.subcategory.name.toUpperCase()}
+                </Link>
+              </li>
+            )}
+          </ol>
         </nav>
 
         {/* Avisos de estado */}
@@ -412,6 +476,10 @@ function DealDetail() {
                       <img
                         src={current}
                         alt={deal.title}
+                        width="600"
+                        height="450"
+                        loading="eager"
+                        decoding="async"
                         className="w-full h-full object-contain p-4"
                       />
                     )}
@@ -473,7 +541,15 @@ function DealDetail() {
                               aria-label={`Ver foto ${i + 1}`}
                               className={`aspect-square w-full bg-white border rounded-lg overflow-hidden transition ${i === activeImg ? "border-cyan-glow" : "border-surface-700 hover:border-surface-500"}`}
                             >
-                              <img src={src} alt="" className="w-full h-full object-contain p-1" />
+                              <img
+                                src={src}
+                                alt=""
+                                width="120"
+                                height="120"
+                                loading="lazy"
+                                decoding="async"
+                                className="w-full h-full object-contain p-1"
+                              />
                             </button>
                           </CarouselItem>
                         ))}
@@ -508,8 +584,11 @@ function DealDetail() {
                       <img
                         src={`https://graph.keepa.com/pricehistory.png?asin=${deal.external_id}&domain=es`}
                         alt="Histórico de precios en Amazon"
+                        width="600"
+                        height="300"
                         className="w-full rounded-xl mt-3"
                         loading="lazy"
+                        decoding="async"
                         referrerPolicy="no-referrer"
                       />
                     </details>
@@ -535,6 +614,9 @@ function DealDetail() {
                           <img
                             src={current}
                             alt={deal.title}
+                            width="900"
+                            height="675"
+                            decoding="async"
                             className="w-full h-full object-contain p-8"
                           />
                           {gallery.length > 1 && (
@@ -588,6 +670,10 @@ function DealDetail() {
                                 <img
                                   src={src}
                                   alt=""
+                                  width="80"
+                                  height="80"
+                                  loading="lazy"
+                                  decoding="async"
                                   className="w-full h-full object-contain p-0.5"
                                 />
                               </button>
@@ -657,7 +743,8 @@ function DealDetail() {
               <a
                 href={deal.affiliate_url ?? undefined}
                 target="_blank"
-                rel="noopener nofollow"
+                rel="noopener noreferrer nofollow sponsored"
+                aria-label={`Ver oferta de ${deal.title} en ${deal.store?.name ?? "la tienda"}`}
                 onClick={trackClick}
                 className={`product-cta w-full inline-flex items-center justify-center gap-2 font-mono text-sm py-4 transition-colors ${
                   isExpired
@@ -684,32 +771,34 @@ function DealDetail() {
                   size="detail"
                   onVote={vote}
                 />
-                <button
-                  type="button"
-                  onClick={toggleFav}
-                  aria-label={fav ? "Quitar de favoritos" : "Guardar en favoritos"}
-                  className={fav ? "is-active" : ""}
-                >
-                  <Heart className={fav ? "fill-current" : ""} />
-                </button>
-                <button
-                  type="button"
-                  onClick={scrollToComments}
-                  aria-label="Ver comentarios"
-                  className="social-count"
-                >
-                  <MessageSquare /> {commentCount}
-                </button>
-                <ShareDialog
-                  url={`/chollo/${deal.slug}`}
-                  title={deal.title}
-                  price={deal.current_price}
-                  trigger={
-                    <button type="button" aria-label="Compartir">
-                      <Share2 />
-                    </button>
-                  }
-                />
+                <div className="social-actions">
+                  <button
+                    type="button"
+                    onClick={toggleFav}
+                    aria-label={fav ? "Quitar de favoritos" : "Guardar en favoritos"}
+                    className={fav ? "is-active" : ""}
+                  >
+                    <Heart className={fav ? "fill-current" : ""} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={scrollToComments}
+                    aria-label="Ver comentarios"
+                    className="social-count"
+                  >
+                    <MessageSquare /> {commentCount}
+                  </button>
+                  <ShareDialog
+                    url={`/chollo/${deal.slug}`}
+                    title={deal.title}
+                    price={deal.current_price}
+                    trigger={
+                      <button type="button" aria-label="Compartir">
+                        <Share2 />
+                      </button>
+                    }
+                  />
+                </div>
               </div>
             </div>
 

@@ -49,6 +49,8 @@ export interface DealDetailData extends DealCardData {
   brand?: string | null;
   external_id?: string | null;
   show_keepa_chart?: boolean;
+  aggregate_rating?: number | null;
+  review_count?: number | null;
 }
 
 /** Payload aceptado por POST /deals/admin. Coincide con el schema DealCreate del backend. */

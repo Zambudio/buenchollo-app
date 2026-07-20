@@ -103,14 +103,28 @@ describe("DealCard", () => {
   it("el título enlaza a la ruta de detalle del chollo", () => {
     renderWithProviders(<DealCard deal={buildDeal()} />);
     const heading = screen.getByRole("heading", { name: /monitor 27 pulgadas 4k/i });
-    expect(heading.closest("a")).toHaveAttribute("href", "/chollo/monitor-27-pulgadas-4k");
+    expect(heading.querySelector("a")).toHaveAttribute("href", "/chollo/monitor-27-pulgadas-4k");
   });
 
   it("el botón 'ir al chollo' enlaza a la URL de afiliado", () => {
     renderWithProviders(<DealCard deal={buildDeal()} />);
-    const link = screen.getByRole("link", { name: /ir al chollo/i });
+    const link = screen.getByRole("link", {
+      name: /ver oferta de monitor 27 pulgadas 4k en amazon/i,
+    });
     expect(link).toHaveAttribute("href", "https://amazon.es/dp/example");
     expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", expect.stringContaining("nofollow"));
+    expect(link).toHaveAttribute("rel", expect.stringContaining("sponsored"));
+  });
+
+  it("reserva espacio y difiere la decodificación de la imagen", () => {
+    renderWithProviders(<DealCard deal={buildDeal()} />);
+    const image = screen.getByRole("img", { name: /monitor 27 pulgadas 4k/i });
+
+    expect(image).toHaveAttribute("width", "300");
+    expect(image).toHaveAttribute("height", "300");
+    expect(image).toHaveAttribute("loading", "lazy");
+    expect(image).toHaveAttribute("decoding", "async");
   });
 
   it("click en favorito sin usuario logueado muestra toast de error", async () => {

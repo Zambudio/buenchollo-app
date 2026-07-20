@@ -36,8 +36,46 @@ export const Route = createFileRoute("/")({
       },
       { property: "og:url", content: `${SITE}/` },
       { property: "og:type", content: "website" },
+      { name: "robots", content: "index, follow, max-image-preview:large" },
+      { name: "theme-color", content: "#0b1120" },
     ],
     links: [{ rel: "canonical", href: `${SITE}/` }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "@id": `${SITE}/#organization`,
+              name: "BuenChollo Tech",
+              url: `${SITE}/`,
+              logo: {
+                "@type": "ImageObject",
+                url: `${SITE}/logo-512.png`,
+                width: 512,
+                height: 512,
+              },
+              sameAs: ["https://t.me/buenchollotech"],
+            },
+            {
+              "@type": "WebSite",
+              "@id": `${SITE}/#website`,
+              url: `${SITE}/`,
+              name: "BuenChollo Tech",
+              publisher: { "@id": `${SITE}/#organization` },
+              inLanguage: "es-ES",
+              potentialAction: {
+                "@type": "SearchAction",
+                target: `${SITE}/explorar?q={search_term_string}`,
+                "query-input": "required name=search_term_string",
+              },
+            },
+          ],
+        }),
+      },
+    ],
   }),
 });
 
@@ -114,14 +152,47 @@ function HomePage() {
 
   return (
     <Layout>
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground mb-6">
+          Chollos y Ofertas de Tecnología Verificadas
+        </h1>
+        <details className="seo-accordion group mb-6 border-b border-surface-700 pb-3 text-sm text-muted-foreground">
+          <summary className="cursor-pointer list-none font-mono text-xs text-cyan-glow hover:text-foreground transition-colors marker:content-none">
+            <span className="group-open:hidden">
+              + Más información sobre los chollos de tecnología...
+            </span>
+            <span className="hidden group-open:inline">− Menos información</span>
+          </summary>
+          <p className="mt-3 max-w-3xl leading-relaxed">
+            En BuenChollo Tech somos especialistas en rastrear, verificar y seleccionar diariamente
+            las mejores ofertas y descuentos en tecnología. Monitorizamos los precios de Amazon y
+            principales tiendas para traerte chollos en informática, telefonía, consolas, gaming, TV,
+            audio, domótica y cualquier dispositivo electrónico al precio mínimo histórico. Compara
+            ofertas verificadas y ahorra tiempo y dinero en tus compras tech.
+          </p>
+        </details>
         <HomeFilterTabs value={filter} onChange={handleFilterChange} />
 
-        <div className="deal-feed-grid mt-6">
-          {deals.map((d) => (
-            <DealCard key={d.id} deal={d} isFavorite={favIds.has(d.id)} myVote={myVotes[d.id]} />
-          ))}
-        </div>
+        <section aria-labelledby="home-deals-heading" className="mt-6">
+          <h2 id="home-deals-heading" className="sr-only">
+            {filter === "popular"
+              ? "Chollos más populares"
+              : filter === "recent"
+                ? "Nuevos chollos"
+                : "Chollos con mayor descuento"}
+          </h2>
+          <div className="deal-feed-grid">
+            {deals.map((d, index) => (
+              <DealCard
+                key={d.id}
+                deal={d}
+                isFavorite={favIds.has(d.id)}
+                myVote={myVotes[d.id]}
+                imageLoading={index < 3 ? "eager" : "lazy"}
+              />
+            ))}
+          </div>
+        </section>
 
         <div ref={sentinelRef} className="h-1" />
 
@@ -136,7 +207,7 @@ function HomePage() {
             — FIN —
           </div>
         )}
-      </section>
+      </div>
     </Layout>
   );
 }
