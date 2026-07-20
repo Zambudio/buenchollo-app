@@ -35,10 +35,12 @@ export function DealCard({
   deal,
   isFavorite: initialFav = false,
   myVote: initialVote = 0,
+  imageLoading = "lazy",
 }: {
   deal: DealCardData;
   isFavorite?: boolean;
   myVote?: number;
+  imageLoading?: "eager" | "lazy";
 }) {
   const { user } = useAuth();
   const [fav, setFav] = useState(initialFav);
@@ -132,6 +134,7 @@ export function DealCard({
           setImgIdx(0);
         }}
         className="relative aspect-[4/3] bg-white overflow-hidden border-b border-surface-700 block group"
+        aria-label={`Ver oferta: ${deal.title} por ${deal.current_price} euros`}
       >
         {gallery.length > 0 ? (
           <>
@@ -140,7 +143,10 @@ export function DealCard({
                 key={src + i}
                 src={src}
                 alt={deal.title}
-                loading="lazy"
+                width="300"
+                height="300"
+                loading={imageLoading}
+                decoding="async"
                 className={`absolute inset-0 w-full h-full object-contain p-3 transition-opacity duration-500 ${isExpired ? "grayscale" : ""} ${i === imgIdx ? "opacity-100" : "opacity-0"} ${i === imgIdx && !isExpired ? "group-hover:scale-105 transition-transform duration-500" : ""}`}
               />
             ))}
@@ -173,21 +179,23 @@ export function DealCard({
       </Link>
 
       <div className="deal-card-body flex flex-col flex-1">
-        <Link
-          to="/chollo/$slug"
-          params={{ slug: deal.slug }}
-          className="mb-4 flex-1 hover:text-cyan-glow transition-colors"
-        >
-          <h3 className="card-title text-foreground text-base sm:text-lg">{deal.title}</h3>
-        </Link>
+        <h3 className="deal-title card-title text-foreground text-base sm:text-lg mb-4 flex-1">
+          <Link
+            to="/chollo/$slug"
+            params={{ slug: deal.slug }}
+            className="hover:text-cyan-glow transition-colors"
+          >
+            {deal.title}
+          </Link>
+        </h3>
 
-        <div className="flex items-end gap-3 mb-3">
-          <span className="product-price card-price font-mono tabular-nums leading-none">
+        <div className="deal-price flex items-end gap-3 mb-3">
+          <span className="price-now product-price card-price font-mono tabular-nums leading-none">
             {formatPrice(deal.current_price)}
           </span>
           {deal.previous_price && deal.previous_price > deal.current_price && (
-            <span className="previous-price font-mono tabular-nums pb-1">
-              {formatPrice(deal.previous_price)}
+            <span className="price-old previous-price font-mono tabular-nums pb-1">
+              <del>{formatPrice(deal.previous_price)}</del>
             </span>
           )}
         </div>
@@ -201,10 +209,11 @@ export function DealCard({
           <a
             href={deal.affiliate_url ?? undefined}
             target="_blank"
-            rel="noopener noreferrer sponsored"
+            rel="noopener noreferrer nofollow sponsored"
             onClick={trackClick}
             aria-disabled={!deal.affiliate_url}
-            className="btn-cta inline-flex items-center gap-1.5 font-mono text-xs px-4 py-2 transition-colors shrink-0"
+            aria-label={`Ver oferta de ${deal.title} en ${deal.store?.name ?? "la tienda"}`}
+            className="deal-cta btn-cta inline-flex items-center gap-1.5 font-mono text-xs px-4 py-2 transition-colors shrink-0"
           >
             IR AL CHOLLO <ExternalLink className="size-3.5" />
           </a>
@@ -217,28 +226,30 @@ export function DealCard({
             disabled={voting}
             onVote={vote}
           />
-          <button
-            type="button"
-            onClick={toggleFav}
-            disabled={favLoading}
-            aria-label={fav ? "Quitar de favoritos" : "Guardar"}
-            className={fav ? "is-active" : ""}
-          >
-            <Heart className={fav ? "fill-current" : ""} />
-          </button>
-          <button type="button" aria-label="Ver comentarios" className="social-count">
-            <MessageSquare /> {deal.comment_count ?? 0}
-          </button>
-          <ShareDialog
-            url={`/chollo/${deal.slug}`}
-            title={deal.title}
-            price={deal.current_price}
-            trigger={
-              <button type="button" aria-label="Compartir">
-                <Share2 />
-              </button>
-            }
-          />
+          <div className="social-actions">
+            <button
+              type="button"
+              onClick={toggleFav}
+              disabled={favLoading}
+              aria-label={fav ? "Quitar de favoritos" : "Guardar"}
+              className={fav ? "is-active" : ""}
+            >
+              <Heart className={fav ? "fill-current" : ""} />
+            </button>
+            <button type="button" aria-label="Ver comentarios" className="social-count">
+              <MessageSquare /> {deal.comment_count ?? 0}
+            </button>
+            <ShareDialog
+              url={`/chollo/${deal.slug}`}
+              title={deal.title}
+              price={deal.current_price}
+              trigger={
+                <button type="button" aria-label="Compartir">
+                  <Share2 />
+                </button>
+              }
+            />
+          </div>
         </div>
       </div>
     </article>

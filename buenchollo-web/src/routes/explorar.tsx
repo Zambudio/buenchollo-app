@@ -46,6 +46,7 @@ export const Route = createFileRoute("/explorar")({
       },
       { property: "og:url", content: `${SITE}/explorar` },
       { property: "og:type", content: "website" },
+      { name: "robots", content: "noindex, follow" },
     ],
     links: [{ rel: "canonical", href: `${SITE}/explorar` }],
   }),
