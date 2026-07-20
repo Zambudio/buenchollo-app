@@ -3,20 +3,39 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { DealCard, type DealCardData } from "@/features/deals/components/DealCard";
+import { DealPagination } from "@/features/deals/components/DealPagination";
 import { HomeFilterTabs, type HomeFilterKey } from "@/features/deals/components/HomeFilterTabs";
 import { useMyVotes } from "@/features/deals/hooks/useMyVotes";
 import { useAuth } from "@/hooks/useAuth";
 import { dealsService, favoritesApi } from "@/services/api/deals";
 
 const SITE = "https://buenchollotech.com";
-const PAGE_SIZE = 12;
-// Tope de seguridad: el backend rechaza limit > 100 (422). Sin este tope, un
-// fetch fallido deja hasMore=true con el sentinel aún visible, y el
-// IntersectionObserver reintenta sin parar incrementando limit sin fin.
-const MAX_LIMIT = 96;
+const PAGE_SIZE = 30;
+
+interface HomeSearch {
+  sort?: HomeFilterKey;
+  page?: number;
+}
+
+function parseHomeSearch(search: Record<string, unknown>): HomeSearch {
+  const sort = ["popular", "recent", "discount"].includes(String(search.sort))
+    ? (search.sort as HomeFilterKey)
+    : undefined;
+  const parsedPage = Number(search.page);
+  const page = Number.isSafeInteger(parsedPage) && parsedPage >= 2 ? parsedPage : undefined;
+  return { sort, page };
+}
+
+function toHomeSearch(filter: HomeFilterKey, page: number): HomeSearch {
+  return {
+    sort: filter === "popular" ? undefined : filter,
+    page: page === 1 ? undefined : page,
+  };
+}
 
 export const Route = createFileRoute("/")({
   component: HomePage,
+  validateSearch: parseHomeSearch,
   head: () => ({
     meta: [
       { title: "BuenChollo Tech — Chollos y ofertas de tecnología en España" },
@@ -79,64 +98,59 @@ export const Route = createFileRoute("/")({
   }),
 });
 
-function sortDeals(deals: DealCardData[], filter: HomeFilterKey): DealCardData[] {
-  const sorted = [...deals];
-  if (filter === "popular") sorted.sort((a, b) => b.temperature - a.temperature);
-  if (filter === "recent")
-    sorted.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
-  if (filter === "discount")
-    sorted.sort((a, b) => (b.discount_percentage ?? 0) - (a.discount_percentage ?? 0));
-  return sorted;
-}
-
 function HomePage() {
   const { user } = useAuth();
-  const [filter, setFilter] = useState<HomeFilterKey>("popular");
-  const [limit, setLimit] = useState(PAGE_SIZE);
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const filter = search.sort ?? "popular";
+  const page = search.page ?? 1;
   const [deals, setDeals] = useState<DealCardData[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [totalPages, setTotalPages] = useState(1);
+  const currentPage = Math.min(page, totalPages);
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
-  const sentinelRef = useRef<HTMLDivElement>(null);
+  const dealsHeadingRef = useRef<HTMLHeadingElement>(null);
   const myVotes = useMyVotes(deals.map((d) => d.id));
 
-  // Cambiar de pestaña resetea la paginación
   const handleFilterChange = (next: HomeFilterKey) => {
-    setFilter(next);
-    setLimit(PAGE_SIZE);
+    void navigate({ search: toHomeSearch(next, 1) });
   };
 
   useEffect(() => {
+    let cancelled = false;
     setLoading(true);
     dealsService
-      .search({ limit })
+      .getPage({ sort: filter, page, page_size: PAGE_SIZE })
       .then((data) => {
-        setDeals(sortDeals(data, filter));
-        setHasMore(data.length >= limit && limit < MAX_LIMIT);
+        if (cancelled) return;
+        setDeals(data.items);
+        setTotalPages(data.total_pages);
+        if (data.page !== page) {
+          void navigate({ search: toHomeSearch(filter, data.page), replace: true });
+        }
       })
       .catch((error) => {
+        if (cancelled) return;
         logError("Error cargando chollos de portada", error);
-        setHasMore(false);
+        setDeals([]);
+        setTotalPages(1);
       })
-      .finally(() => setLoading(false));
-  }, [filter, limit]);
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [filter, navigate, page]);
 
-  // Scroll infinito: al llegar cerca del final, pide un lote mayor
-  // (se refetch y reordena el conjunto completo, ver sortDeals)
-  useEffect(() => {
-    const el = sentinelRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting && !loading && hasMore) {
-          setLimit((l) => Math.min(l + PAGE_SIZE, MAX_LIMIT));
-        }
-      },
-      { rootMargin: "300px" },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [loading, hasMore]);
+  const changePage = (nextPage: number) => {
+    if (loading || nextPage < 1 || nextPage > totalPages || nextPage === currentPage) return;
+    void navigate({ search: toHomeSearch(filter, nextPage) });
+    const headingTop = dealsHeadingRef.current?.getBoundingClientRect().top;
+    if (headingTop != null) {
+      window.scrollTo({ top: Math.max(0, window.scrollY + headingTop - 96), behavior: "smooth" });
+    }
+  };
 
   // Favoritos del usuario
   useEffect(() => {
@@ -173,15 +187,15 @@ function HomePage() {
         </details>
         <HomeFilterTabs value={filter} onChange={handleFilterChange} />
 
-        <section aria-labelledby="home-deals-heading" className="mt-6">
-          <h2 id="home-deals-heading" className="sr-only">
+        <section aria-labelledby="home-deals-heading" className="mt-6" aria-busy={loading}>
+          <h2 ref={dealsHeadingRef} id="home-deals-heading" className="sr-only">
             {filter === "popular"
               ? "Chollos más populares"
               : filter === "recent"
                 ? "Nuevos chollos"
                 : "Chollos con mayor descuento"}
           </h2>
-          <div className="deal-feed-grid">
+          <div className={`deal-feed-grid transition-opacity ${loading ? "opacity-60" : ""}`}>
             {deals.map((d, index) => (
               <DealCard
                 key={d.id}
@@ -194,17 +208,26 @@ function HomePage() {
           </div>
         </section>
 
-        <div ref={sentinelRef} className="h-1" />
-
         {loading && (
           <div className="py-8 text-center font-mono text-xs text-muted-foreground animate-pulse">
             CARGANDO...
           </div>
         )}
 
-        {!loading && !hasMore && deals.length > 0 && (
-          <div className="py-8 text-center font-mono text-xs text-muted-foreground border-t border-surface-700 mt-6">
-            — FIN —
+        {!loading && deals.length === 0 && (
+          <p className="py-10 text-center font-mono text-sm text-muted-foreground">
+            No hay chollos disponibles en este momento.
+          </p>
+        )}
+
+        {deals.length > 0 && (
+          <div className="mt-8 border-t border-surface-700 pt-6">
+            <DealPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              loading={loading}
+              onPageChange={changePage}
+            />
           </div>
         )}
       </div>

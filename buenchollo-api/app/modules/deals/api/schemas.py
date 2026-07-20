@@ -46,6 +46,15 @@ class DealCardResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
+class DealPageResponse(BaseModel):
+    items: list[DealCardResponse]
+    page: int
+    page_size: int
+    total: int
+    total_pages: int
+
+
 class DealDetailResponse(DealCardResponse):
     description: str | None = None
     short_description: str | None = None

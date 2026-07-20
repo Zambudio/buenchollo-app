@@ -29,6 +29,97 @@ export interface VoteResponse {
   my_vote: number;
 }
 
+export interface DealPageResponse {
+  items: DealCardData[];
+  page: number;
+  page_size: number;
+  total: number;
+  total_pages: number;
+}
+
+export interface DealSearchParams {
+  category_id?: string;
+  subcategory_id?: string;
+  store_id?: string;
+  search?: string;
+  min_price?: number;
+  max_price?: number;
+  min_discount?: number;
+  sort?: "recent" | "popular" | "discount" | "price_asc";
+  limit?: number;
+  offset?: number;
+}
+
+function appendDealFilters(queryParams: URLSearchParams, params?: DealSearchParams) {
+  if (params?.category_id) queryParams.append("category_id", params.category_id);
+  if (params?.subcategory_id) queryParams.append("subcategory_id", params.subcategory_id);
+  if (params?.store_id) queryParams.append("store_id", params.store_id);
+  if (params?.search) queryParams.append("search", params.search);
+  if (params?.min_price != null) queryParams.append("min_price", params.min_price.toString());
+  if (params?.max_price != null) queryParams.append("max_price", params.max_price.toString());
+  if (params?.min_discount != null)
+    queryParams.append("min_discount", params.min_discount.toString());
+  if (params?.sort) queryParams.append("sort", params.sort);
+  if (params?.limit != null) queryParams.append("limit", params.limit.toString());
+  if (params?.offset != null && params.offset > 0)
+    queryParams.append("offset", params.offset.toString());
+}
+
+function searchDealsRequest(params?: DealSearchParams): Promise<DealCardData[]> {
+  const queryParams = new URLSearchParams();
+  appendDealFilters(queryParams, params);
+  const qs = queryParams.toString();
+  return apiClient.get<DealCardData[]>(qs ? `/deals?${qs}` : "/deals");
+}
+
+type DealPageParams = Omit<DealSearchParams, "limit" | "offset"> & {
+  sort: "recent" | "popular" | "discount" | "price_asc";
+  page: number;
+  page_size?: number;
+};
+
+function sortDealsStable(deals: DealCardData[], sort: DealPageParams["sort"]): DealCardData[] {
+  const byPublishedAndId = (a: DealCardData, b: DealCardData) =>
+    new Date(b.published_at).getTime() - new Date(a.published_at).getTime() ||
+    b.id.localeCompare(a.id);
+
+  return [...deals].sort((a, b) => {
+    if (sort === "popular") return b.temperature - a.temperature || byPublishedAndId(a, b);
+    if (sort === "discount")
+      return (
+        (b.discount_percentage ?? -1) - (a.discount_percentage ?? -1) || byPublishedAndId(a, b)
+      );
+    if (sort === "price_asc") return a.current_price - b.current_price || byPublishedAndId(a, b);
+    return byPublishedAndId(a, b);
+  });
+}
+
+async function getLegacyDealPage(params: DealPageParams): Promise<DealPageResponse> {
+  const { page, page_size: requestedPageSize, ...filters } = params;
+  const pageSize = requestedPageSize ?? 30;
+  const batchSize = 100;
+  const allDeals: DealCardData[] = [];
+
+  for (let offset = 0; ; offset += batchSize) {
+    const batch = await searchDealsRequest({ ...filters, limit: batchSize, offset });
+    allDeals.push(...batch);
+    if (batch.length < batchSize) break;
+  }
+
+  const sorted = sortDealsStable(allDeals, params.sort);
+  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+  const currentPage = Math.min(Math.max(page, 1), totalPages);
+  const start = (currentPage - 1) * pageSize;
+
+  return {
+    items: sorted.slice(start, start + pageSize),
+    page: currentPage,
+    page_size: pageSize,
+    total: sorted.length,
+    total_pages: totalPages,
+  };
+}
+
 export interface DealDetailData extends DealCardData {
   description: string | null;
   short_description: string | null;
@@ -91,40 +182,29 @@ export const dealsService = {
   getPopular: (limit = 4): Promise<DealCardData[]> =>
     apiClient.get<DealCardData[]>(`/deals/popular?limit=${limit}`),
 
+  /** Pagina estable del feed principal, ya ordenada en el servidor. */
+  getPage: (params: DealPageParams): Promise<DealPageResponse> => {
+    const queryParams = new URLSearchParams();
+    appendDealFilters(queryParams, params);
+    queryParams.set("page", params.page.toString());
+    queryParams.set("page_size", (params.page_size ?? 30).toString());
+    return apiClient
+      .get<DealPageResponse>(`/deals/page?${queryParams.toString()}`)
+      .catch((error: unknown) => {
+        // Compatibilidad durante el despliegue independiente de la API del NAS.
+        // Cuando el endpoint paginado aún no existe, compone la página usando
+        // el endpoint antiguo sin volver a limitar el resultado a 48/100 filas.
+        if (error instanceof ApiError && error.status === 404) return getLegacyDealPage(params);
+        throw error;
+      });
+  },
+
   /** Obtiene un chollo por su slug */
   getBySlug: (slug: string): Promise<DealDetailData> =>
     apiClient.get<DealDetailData>(`/deals/${slug}`),
 
   /** Busca chollos con paginación opcional */
-  search: (params?: {
-    category_id?: string;
-    subcategory_id?: string;
-    store_id?: string;
-    search?: string;
-    min_price?: number;
-    max_price?: number;
-    min_discount?: number;
-    sort?: "recent" | "popular" | "discount" | "price_asc";
-    limit?: number;
-    offset?: number;
-  }): Promise<DealCardData[]> => {
-    const queryParams = new URLSearchParams();
-    if (params?.category_id) queryParams.append("category_id", params.category_id);
-    if (params?.subcategory_id) queryParams.append("subcategory_id", params.subcategory_id);
-    if (params?.store_id) queryParams.append("store_id", params.store_id);
-    if (params?.search) queryParams.append("search", params.search);
-    if (params?.min_price != null) queryParams.append("min_price", params.min_price.toString());
-    if (params?.max_price != null) queryParams.append("max_price", params.max_price.toString());
-    if (params?.min_discount != null)
-      queryParams.append("min_discount", params.min_discount.toString());
-    if (params?.sort) queryParams.append("sort", params.sort);
-    if (params?.limit != null) queryParams.append("limit", params.limit.toString());
-    if (params?.offset != null && params.offset > 0)
-      queryParams.append("offset", params.offset.toString());
-    const qs = queryParams.toString();
-    const url = qs ? `/deals?${qs}` : "/deals";
-    return apiClient.get<DealCardData[]>(url);
-  },
+  search: searchDealsRequest,
 
   // --- ADMIN ENDPOINTS ---
 

@@ -1,10 +1,10 @@
 import { Link } from "@tanstack/react-router";
-import { Send } from "lucide-react";
+import { FolderTree, ListFilter, Newspaper, Send } from "lucide-react";
 
 const LINKS = [
-  { label: "Categorías", to: "/categorias" as const },
-  { label: "Ofertas", to: "/explorar" as const },
-  { label: "Blog", to: "/blog" as const },
+  { label: "Filtros", to: "/explorar" as const, icon: ListFilter },
+  { label: "Categorías", to: "/categorias" as const, icon: FolderTree },
+  { label: "Blog", to: "/blog" as const, icon: Newspaper },
 ];
 
 const TELEGRAM_URL = "https://t.me/buenchollotech";
@@ -12,19 +12,20 @@ const TELEGRAM_URL = "https://t.me/buenchollotech";
 export function CategoryBar() {
   return (
     <nav
-      aria-label="Categorías"
+      aria-label="Navegación de chollos"
       className="bg-surface-800 border-b border-surface-700 overflow-x-auto"
     >
       <div className="max-w-7xl mx-auto px-2 sm:px-6 flex items-center justify-between gap-2 sm:gap-6 whitespace-nowrap">
         <div className="flex items-center gap-3 sm:gap-6">
-          {LINKS.map((l) => (
+          {LINKS.map(({ label, to, icon: Icon }) => (
             <Link
-              key={l.to}
-              to={l.to}
-              className="font-mono text-[11px] sm:text-xs uppercase tracking-wide text-muted-foreground hover:text-cyan-glow py-2.5 transition-colors"
+              key={to}
+              to={to}
+              className="flex items-center gap-1.5 font-mono text-[11px] sm:text-xs uppercase tracking-wide text-muted-foreground hover:text-cyan-glow py-2.5 transition-colors"
               activeProps={{ className: "text-cyan-glow" }}
             >
-              {l.label}
+              {Icon && <Icon className="size-3.5" aria-hidden="true" />}
+              {label}
             </Link>
           ))}
         </div>
