@@ -84,7 +84,7 @@ export function Header() {
             </div>
           </form>
 
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-4 text-[#8A93A6]">
             {user ? (
               <>
                 <Link
@@ -116,13 +116,13 @@ export function Header() {
                 <DropdownMenu>
                   <DropdownMenuTrigger
                     aria-label="Menú de perfil"
-                    className="size-9 overflow-hidden rounded-full bg-surface-700 border border-surface-600 flex items-center justify-center hover:border-cyan-glow transition-colors"
+                    className="size-8 overflow-hidden rounded-full bg-surface-700 border border-surface-600 flex items-center justify-center hover:border-cyan-glow transition-colors"
                   >
                     {avatarUrl ? (
                       <img
                         src={avatarUrl}
                         alt=""
-                        className="size-full object-cover"
+                        className="size-8 rounded-full object-cover"
                         referrerPolicy="no-referrer"
                       />
                     ) : (
