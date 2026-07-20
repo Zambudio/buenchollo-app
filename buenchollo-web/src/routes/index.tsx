@@ -117,7 +117,7 @@ function HomePage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <HomeFilterTabs value={filter} onChange={handleFilterChange} />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-6">
+        <div className="deal-feed-grid mt-6">
           {deals.map((d) => (
             <DealCard key={d.id} deal={d} isFavorite={favIds.has(d.id)} myVote={myVotes[d.id]} />
           ))}

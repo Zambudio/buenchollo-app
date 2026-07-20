@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ShareDialog } from "@/features/deals/components/ShareBox";
 import { DealVoteControl } from "@/features/deals/components/DealVoteControl";
+import { StoreAvailability } from "@/features/deals/components/StoreAvailability";
 
 export interface DealCardData {
   id: string;
@@ -120,7 +121,7 @@ export function DealCard({
 
   return (
     <article
-      className={`bg-surface-800 border border-surface-700 rounded-xl overflow-hidden transition-all duration-300 flex flex-col h-full ${isExpired ? "opacity-70" : "hover:border-cyan-glow hover:glow-cyan"}`}
+      className={`deal-card bg-surface-800 border border-surface-700 rounded-xl overflow-hidden transition-all duration-300 flex flex-col h-full ${isExpired ? "opacity-70" : "hover:border-cyan-glow hover:glow-cyan"}`}
     >
       <Link
         to="/chollo/$slug"
@@ -167,89 +168,34 @@ export function DealCard({
           </div>
         )}
         {discount != null && discount > 0 && !isExpired && (
-          <div className="absolute top-3 right-3 bg-alert-red text-white font-mono font-bold text-xs px-2 py-1 z-10">
-            -{discount}%
-          </div>
+          <div className="badge-discount absolute top-3 right-3 z-10">-{discount}%</div>
         )}
-        <button
-          type="button"
-          onClick={toggleFav}
-          disabled={favLoading}
-          aria-label={fav ? "Quitar de favoritos" : "Guardar"}
-          className="absolute top-3 left-3 size-9 bg-surface-900/80 backdrop-blur border border-surface-600 flex items-center justify-center hover:border-cyan-glow transition-colors z-10"
-        >
-          <Heart
-            className={`size-4 transition-colors ${fav ? "fill-cyan-glow text-cyan-glow" : "text-foreground"}`}
-          />
-        </button>
       </Link>
 
-      <div className="p-4 sm:p-5 flex flex-col flex-1">
-        <div className="flex justify-between items-center mb-3">
-          <div className="flex items-center gap-3 font-mono text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <MessageSquare className="size-3.5" /> {deal.comment_count ?? 0}
-            </span>
-            <ShareDialog
-              url={`/chollo/${deal.slug}`}
-              title={deal.title}
-              price={deal.current_price}
-              trigger={
-                <button
-                  type="button"
-                  aria-label="Compartir"
-                  className="flex items-center hover:text-cyan-glow transition-colors"
-                >
-                  <Share2 className="size-3.5" />
-                </button>
-              }
-            />
-          </div>
-
-          <DealVoteControl
-            temperature={temperature}
-            myVote={myVote}
-            disabled={voting}
-            onVote={vote}
-          />
-        </div>
-
+      <div className="deal-card-body flex flex-col flex-1">
         <Link
           to="/chollo/$slug"
           params={{ slug: deal.slug }}
           className="mb-4 flex-1 hover:text-cyan-glow transition-colors"
         >
-          <h3 className="text-foreground font-bold text-base sm:text-lg leading-tight line-clamp-2">
-            {deal.title}
-          </h3>
+          <h3 className="card-title text-foreground text-base sm:text-lg">{deal.title}</h3>
         </Link>
 
         <div className="flex items-end gap-3 mb-3">
-          <span className="font-mono text-2xl sm:text-3xl font-extrabold text-cyan-glow tabular-nums leading-none">
+          <span className="product-price card-price font-mono tabular-nums leading-none">
             {formatPrice(deal.current_price)}
           </span>
           {deal.previous_price && deal.previous_price > deal.current_price && (
-            <span className="font-mono text-xs sm:text-sm text-muted-foreground line-through tabular-nums pb-1">
+            <span className="previous-price font-mono tabular-nums pb-1">
               {formatPrice(deal.previous_price)}
             </span>
           )}
         </div>
 
-        {deal.store && (
-          <div className="font-mono text-[11px] text-muted-foreground mb-3">
-            Disponible en{" "}
-            <Link
-              to="/explorar"
-              search={{ store: deal.store.id }}
-              className="text-foreground hover:text-cyan-glow transition-colors"
-            >
-              {deal.store.name}
-            </Link>
-          </div>
-        )}
+        {deal.store && <StoreAvailability store={deal.store} />}
 
         <div className="mt-auto flex items-center justify-between gap-3">
-          <span className="font-mono text-[10px] uppercase text-muted-foreground tracking-wider">
+          <span className="posted-date font-mono uppercase tracking-wider">
             {formatRelativeTime(deal.published_at)}
           </span>
           <a
@@ -258,10 +204,41 @@ export function DealCard({
             rel="noopener noreferrer sponsored"
             onClick={trackClick}
             aria-disabled={!deal.affiliate_url}
-            className="inline-flex items-center gap-1.5 rounded-full bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-4 py-2 hover:bg-foreground transition-colors shrink-0"
+            className="btn-cta inline-flex items-center gap-1.5 font-mono text-xs px-4 py-2 transition-colors shrink-0"
           >
             IR AL CHOLLO <ExternalLink className="size-3.5" />
           </a>
+        </div>
+
+        <div className="product-social-row card-social-row">
+          <DealVoteControl
+            temperature={temperature}
+            myVote={myVote}
+            disabled={voting}
+            onVote={vote}
+          />
+          <button
+            type="button"
+            onClick={toggleFav}
+            disabled={favLoading}
+            aria-label={fav ? "Quitar de favoritos" : "Guardar"}
+            className={fav ? "is-active" : ""}
+          >
+            <Heart className={fav ? "fill-current" : ""} />
+          </button>
+          <button type="button" aria-label="Ver comentarios" className="social-count">
+            <MessageSquare /> {deal.comment_count ?? 0}
+          </button>
+          <ShareDialog
+            url={`/chollo/${deal.slug}`}
+            title={deal.title}
+            price={deal.current_price}
+            trigger={
+              <button type="button" aria-label="Compartir">
+                <Share2 />
+              </button>
+            }
+          />
         </div>
       </div>
     </article>

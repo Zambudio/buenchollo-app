@@ -8,6 +8,7 @@ import { useMyVotes } from "@/features/deals/hooks/useMyVotes";
 import { Comments } from "@/features/deals/components/Comments";
 import { ShareDialog } from "@/features/deals/components/ShareBox";
 import { DealVoteControl } from "@/features/deals/components/DealVoteControl";
+import { StoreAvailability } from "@/features/deals/components/StoreAvailability";
 import {
   Carousel,
   CarouselContent,
@@ -390,8 +391,8 @@ function DealDetail() {
           </div>
         )}
 
-        <div className="grid lg:grid-cols-2 gap-8">
-          <div>
+        <div className="product-layout grid lg:grid-cols-2 gap-8">
+          <div className="product-gallery">
             {(() => {
               const gallery: string[] = (
                 deal.images && deal.images.length > 0
@@ -500,18 +501,18 @@ function DealDetail() {
 
                   {/* Gráfica Keepa — histórico de precios */}
                   {deal.show_keepa_chart && deal.external_id && (
-                    <div className="mt-3 border border-surface-700 bg-surface-900 p-3">
-                      <p className="font-mono text-[10px] uppercase text-muted-foreground mb-2">
-                        Histórico de precios
-                      </p>
+                    <details className="product-price-history mt-3 border border-surface-700 bg-surface-900 p-3">
+                      <summary className="font-mono text-sm text-[#C2C9D6] cursor-pointer">
+                        Ver histórico de precios
+                      </summary>
                       <img
                         src={`https://graph.keepa.com/pricehistory.png?asin=${deal.external_id}&domain=es`}
                         alt="Histórico de precios en Amazon"
-                        className="w-full rounded-xl"
+                        className="w-full rounded-xl mt-3"
                         loading="lazy"
                         referrerPolicy="no-referrer"
                       />
-                    </div>
+                    </details>
                   )}
 
                   {/* Lightbox — estilo Amazon */}
@@ -601,108 +602,55 @@ function DealDetail() {
             })()}
           </div>
 
-          <div>
+          <div className="product-info">
             <div
-              className={`bg-surface-800 border rounded-xl p-5 mb-5 ${isExpired ? "border-alert-red/30" : "border-surface-700"}`}
+              className={`product-summary bg-surface-800 border rounded-xl p-5 mb-5 ${isExpired ? "border-alert-red/30" : "border-surface-700"}`}
             >
-              <div className="flex items-center justify-between gap-3 mb-4">
-                <DealVoteControl
-                  temperature={deal.temperature}
-                  myVote={myVote}
-                  disabled={votingLoading}
-                  size="detail"
-                  onVote={vote}
-                />
-                <div className="flex items-center gap-4">
-                  <button
-                    type="button"
-                    onClick={toggleFav}
-                    aria-label={fav ? "Quitar de favoritos" : "Guardar en favoritos"}
-                    className={`group transition-colors ${fav ? "text-pink-500" : "text-muted-foreground hover:text-pink-500"}`}
-                  >
-                    <Heart
-                      className={`size-5 ${fav ? "fill-current" : "group-hover:fill-current"}`}
-                    />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={scrollToComments}
-                    aria-label="Ver comentarios"
-                    className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground hover:text-cyan-glow transition-colors"
-                  >
-                    <MessageSquare className="size-5" /> {commentCount}
-                  </button>
-                  <ShareDialog
-                    url={`/chollo/${deal.slug}`}
-                    title={deal.title}
-                    price={deal.current_price}
-                    trigger={
-                      <button
-                        type="button"
-                        aria-label="Compartir"
-                        className="text-muted-foreground hover:text-cyan-glow transition-colors"
-                      >
-                        <Share2 className="size-5" />
-                      </button>
-                    }
-                  />
-                </div>
-              </div>
-
-              <div className="mb-3 font-mono text-xs text-muted-foreground">
+              <div className="posted-date mb-3 font-mono">
                 Publicado {formatRelativeTime(deal.published_at)}
               </div>
               <h1
-                className={`text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-3 ${isExpired ? "text-muted-foreground" : ""}`}
+                className={`product-title text-2xl sm:text-3xl lg:text-4xl tracking-tight mb-3 ${isExpired ? "text-muted-foreground" : ""}`}
               >
                 {deal.title}
               </h1>
               {deal.short_description && (
-                <p className="text-muted-foreground mb-5">{deal.short_description}</p>
+                <p className="product-description text-muted-foreground mb-5">
+                  {deal.short_description}
+                </p>
               )}
 
-              <div className="flex items-end gap-3 mb-3">
+              <div className="product-price-block flex items-end gap-3 mb-3">
                 <span
-                  className={`font-mono text-4xl sm:text-5xl font-extrabold tabular-nums leading-none ${isExpired ? "text-muted-foreground line-through" : "text-cyan-glow"}`}
+                  className={`product-price font-mono tabular-nums leading-none ${isExpired ? "text-muted-foreground line-through" : ""}`}
                 >
                   {formatPrice(deal.current_price)}
                 </span>
                 {deal.previous_price && (
                   <>
-                    <span className="font-mono text-sm text-muted-foreground line-through pb-1">
+                    <span className="previous-price font-mono pb-1">
                       {formatPrice(deal.previous_price)}
                     </span>
                     {discount && (
-                      <span className="bg-alert-red text-white font-mono font-bold text-xs px-2 py-1 mb-1">
-                        -{discount}%
-                      </span>
+                      <span className="badge-discount font-mono mb-1">-{discount}%</span>
                     )}
                   </>
                 )}
               </div>
               {deal.store && (
-                <p className="mb-3 font-mono text-[11px] text-muted-foreground">
-                  Disponible en{" "}
-                  <Link
-                    to="/explorar"
-                    search={{ store: deal.store.id }}
-                    className="font-bold text-foreground transition-colors hover:text-cyan-glow"
-                  >
-                    {deal.store.name}
-                  </Link>
-                </p>
+                <div className="product-availability">
+                  <StoreAvailability store={deal.store} />
+                </div>
               )}
               {deal.shipping_info && (
-                <p className="text-xs font-mono text-muted-foreground mb-3">
-                  📦 {deal.shipping_info}
-                </p>
+                <p className="product-availability meta font-mono mb-3">📦 {deal.shipping_info}</p>
               )}
 
               {/* Fecha de fin de oferta destacada */}
               {deal.expires_at && !isExpired && (
-                <div className="mb-4 bg-surface-900 border-l-2 border-amber-400 px-3 py-2 font-mono text-xs">
-                  <span className="text-amber-400 uppercase">⏱ Termina:</span>{" "}
-                  <span className="text-foreground font-bold">{fmtDateTime(deal.expires_at)}</span>
+                <div className="product-countdown countdown mb-4 px-3 py-2 font-mono text-sm">
+                  <span className="uppercase">⏱ Termina:</span>{" "}
+                  <span>{fmtDateTime(deal.expires_at)}</span>
                 </div>
               )}
 
@@ -711,10 +659,10 @@ function DealDetail() {
                 target="_blank"
                 rel="noopener nofollow"
                 onClick={trackClick}
-                className={`w-full inline-flex items-center justify-center gap-2 rounded-full font-mono text-sm font-bold py-4 transition-colors ${
+                className={`product-cta w-full inline-flex items-center justify-center gap-2 font-mono text-sm py-4 transition-colors ${
                   isExpired
                     ? "bg-surface-700 text-muted-foreground border border-alert-red/30 hover:bg-surface-600"
-                    : "bg-cyan-glow text-surface-900 hover:bg-foreground"
+                    : "btn-cta"
                 }`}
               >
                 {isExpired ? (
@@ -727,10 +675,46 @@ function DealDetail() {
                   </>
                 )}
               </a>
+
+              <div className="product-social-row mt-4 border-t border-surface-700 pt-4">
+                <DealVoteControl
+                  temperature={deal.temperature}
+                  myVote={myVote}
+                  disabled={votingLoading}
+                  size="detail"
+                  onVote={vote}
+                />
+                <button
+                  type="button"
+                  onClick={toggleFav}
+                  aria-label={fav ? "Quitar de favoritos" : "Guardar en favoritos"}
+                  className={fav ? "is-active" : ""}
+                >
+                  <Heart className={fav ? "fill-current" : ""} />
+                </button>
+                <button
+                  type="button"
+                  onClick={scrollToComments}
+                  aria-label="Ver comentarios"
+                  className="social-count"
+                >
+                  <MessageSquare /> {commentCount}
+                </button>
+                <ShareDialog
+                  url={`/chollo/${deal.slug}`}
+                  title={deal.title}
+                  price={deal.current_price}
+                  trigger={
+                    <button type="button" aria-label="Compartir">
+                      <Share2 />
+                    </button>
+                  }
+                />
+              </div>
             </div>
 
             {isAdmin && (
-              <div className="flex flex-wrap gap-2 mb-5">
+              <div className="product-admin-actions flex flex-wrap gap-2 mb-5">
                 <Link
                   to="/admin/chollos"
                   search={{ edit: deal.id }}
@@ -742,7 +726,7 @@ function DealDetail() {
             )}
 
             {deal.description && (
-              <div className="mt-6 bg-surface-800 border border-surface-700 p-5">
+              <div className="product-description mt-6 bg-surface-800 border border-surface-700 p-5">
                 <h2 className="font-mono text-xs uppercase text-cyan-glow mb-4">Descripción</h2>
                 <div className="prose prose-invert prose-sm max-w-none prose-p:leading-relaxed prose-p:text-foreground/90 prose-li:text-foreground/90">
                   <ReactMarkdown>{deal.description}</ReactMarkdown>
