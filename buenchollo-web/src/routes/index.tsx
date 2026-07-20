@@ -166,9 +166,9 @@ function HomePage() {
           <p className="mt-3 max-w-3xl leading-relaxed">
             En BuenChollo Tech somos especialistas en rastrear, verificar y seleccionar diariamente
             las mejores ofertas y descuentos en tecnología. Monitorizamos los precios de Amazon y
-            principales tiendas para traerte chollos en informática, telefonía, consolas, gaming, TV,
-            audio, domótica y cualquier dispositivo electrónico al precio mínimo histórico. Compara
-            ofertas verificadas y ahorra tiempo y dinero en tus compras tech.
+            principales tiendas para traerte chollos en informática, telefonía, consolas, gaming,
+            TV, audio, domótica y cualquier dispositivo electrónico al precio mínimo histórico.
+            Compara ofertas verificadas y ahorra tiempo y dinero en tus compras tech.
           </p>
         </details>
         <HomeFilterTabs value={filter} onChange={handleFilterChange} />
