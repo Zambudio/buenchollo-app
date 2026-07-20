@@ -59,6 +59,7 @@ function ExplorePage() {
   const [stores, setStores] = useState<Store[]>([]);
   const [cats, setCats] = useState<Category[]>([]);
   const [subs, setSubs] = useState<Category[]>([]);
+  const [filtersReady, setFiltersReady] = useState(false);
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const myVotes = useMyVotes(deals.map((d) => d.id));
@@ -69,19 +70,35 @@ function ExplorePage() {
         setStores(s);
         setCats(c.filter((x) => !x.parent_id));
         setSubs(c.filter((x) => !!x.parent_id));
+        setFiltersReady(true);
       })
-      .catch((error) => logError("Error cargando filtros de explorar", error));
+      .catch((error) => {
+        logError("Error cargando filtros de explorar", error);
+        setFiltersReady(true);
+      });
   }, []);
 
-  // Subcategorías filtradas según la categoría elegida
-  const filteredSubs = params.cat ? subs.filter((s) => s.parent_id === params.cat) : [];
+  // Los enlaces compartibles usan slugs legibles, pero la API filtra por UUID.
+  // También aceptamos UUIDs para no romper URLs antiguas.
+  const selectedCat = params.cat
+    ? cats.find((category) => category.slug === params.cat || category.id === params.cat)
+    : undefined;
+  const filteredSubs = selectedCat
+    ? subs.filter((subcategory) => subcategory.parent_id === selectedCat.id)
+    : [];
+  const selectedSub = params.sub
+    ? filteredSubs.find(
+        (subcategory) => subcategory.slug === params.sub || subcategory.id === params.sub,
+      )
+    : undefined;
 
   useEffect(() => {
+    if (!filtersReady) return;
     setLoading(true);
     dealsService
       .search({
-        category_id: params.cat,
-        subcategory_id: params.sub,
+        category_id: selectedCat?.id,
+        subcategory_id: selectedSub?.id,
         store_id: params.store,
         search: params.q,
         min_price: params.min,
@@ -98,7 +115,7 @@ function ExplorePage() {
         logError("Error buscando chollos en explorar", error);
         setLoading(false);
       });
-  }, [params]);
+  }, [filtersReady, params, selectedCat?.id, selectedSub?.id]);
 
   useEffect(() => {
     if (!user) {
@@ -141,19 +158,19 @@ function ExplorePage() {
               </label>
               <select
                 id="filter-cat"
-                value={params.cat ?? ""}
+                value={selectedCat?.slug ?? ""}
                 onChange={(e) => update({ cat: e.target.value || undefined, sub: undefined })}
                 className="w-full rounded-lg bg-surface-900 border border-surface-700 px-2 py-2 text-sm font-mono"
               >
                 <option value="">Todas</option>
                 {cats.map((c) => (
-                  <option key={c.id} value={c.id}>
+                  <option key={c.id} value={c.slug}>
                     {c.name}
                   </option>
                 ))}
               </select>
             </div>
-            {params.cat && filteredSubs.length > 0 && (
+            {selectedCat && filteredSubs.length > 0 && (
               <div>
                 <label
                   htmlFor="filter-sub"
@@ -163,13 +180,13 @@ function ExplorePage() {
                 </label>
                 <select
                   id="filter-sub"
-                  value={params.sub ?? ""}
+                  value={selectedSub?.slug ?? ""}
                   onChange={(e) => update({ sub: e.target.value || undefined })}
                   className="w-full rounded-lg bg-surface-900 border border-surface-700 px-2 py-2 text-sm font-mono"
                 >
                   <option value="">Todas</option>
                   {filteredSubs.map((s) => (
-                    <option key={s.id} value={s.id}>
+                    <option key={s.id} value={s.slug}>
                       {s.name}
                     </option>
                   ))}
