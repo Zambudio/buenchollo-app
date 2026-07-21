@@ -79,8 +79,13 @@ describe("slugify", () => {
 });
 
 describe("toDatetimeLocal", () => {
-  it("recorta un ISO 8601 al formato de <input type=datetime-local>", () => {
-    expect(toDatetimeLocal("2026-05-30T14:30:00.000Z")).toBe("2026-05-30T14:30");
+  it("convierte un ISO 8601 a hora local para <input type=datetime-local>", () => {
+    const date = new Date("2026-05-30T14:30:00.000Z");
+    const pad = (part: number) => String(part).padStart(2, "0");
+    const expected = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+      date.getDate(),
+    )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    expect(toDatetimeLocal(date.toISOString())).toBe(expected);
   });
 
   it("devuelve string vacío cuando el valor es null", () => {

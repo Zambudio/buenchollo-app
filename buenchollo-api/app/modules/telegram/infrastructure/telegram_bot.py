@@ -115,6 +115,20 @@ class TelegramBot:
             logger.exception("Telegram send_deal falló")
             return False
 
+    def send_admin_notification(self, text: str, chat_id: str | None = None) -> bool:
+        chat = self._resolve_chat(chat_id)
+        try:
+            resp = requests.post(
+                self._url("sendMessage"),
+                json={"chat_id": chat, "text": text, "disable_web_page_preview": True},
+                timeout=10,
+            )
+            resp.raise_for_status()
+            return True
+        except Exception:
+            logger.exception("Telegram send_admin_notification fallo")
+            return False
+
     @staticmethod
     def _escape(text: str) -> str:
         """Escapa caracteres reservados de MarkdownV2."""

@@ -294,6 +294,7 @@ export function DealFormPanel({
             </span>
             <input
               type="datetime-local"
+              step={300}
               required
               value={form.scheduled_for}
               onChange={(e) => setForm({ ...form, scheduled_for: e.target.value })}
@@ -312,13 +313,15 @@ export function DealFormPanel({
           ⛔ CADUCADO · Aparecerá en gris con aviso de oferta finalizada.
         </p>
       )}
-      <button
-        type="button"
-        onClick={onOpenTelegram}
-        className="w-full border border-cyan-glow/50 text-cyan-glow font-mono text-xs py-2 flex items-center justify-center gap-2 hover:bg-cyan-glow/10"
-      >
-        <Send className="size-3.5" /> 🚀 Publicar en Telegram
-      </button>
+      {form.status !== "scheduled" && (
+        <button
+          type="button"
+          onClick={onOpenTelegram}
+          className="w-full border border-cyan-glow/50 text-cyan-glow font-mono text-xs py-2 flex items-center justify-center gap-2 hover:bg-cyan-glow/10"
+        >
+          <Send className="size-3.5" /> 🚀 Publicar en Telegram
+        </button>
+      )}
 
       <div className="flex gap-2">
         <button

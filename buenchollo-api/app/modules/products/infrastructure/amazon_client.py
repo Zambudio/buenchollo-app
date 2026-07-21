@@ -282,7 +282,33 @@ class AmazonProductClient:
 
         self._fill_price_data(product, item)
         self._fill_deal_data(product, item)
+        self._fill_availability_data(product, item)
         return product
+
+    @staticmethod
+    def _fill_availability_data(product: ProductPreview, item: dict) -> None:
+        listings = _j(item, "offersV2", "listings", default=[]) or []
+        if not listings:
+            product.in_stock = False
+            return
+        listing = next((entry for entry in listings if entry.get("isBuyBoxWinner")), listings[0])
+        availability = listing.get("availability") or {}
+        availability_type = str(availability.get("type") or "").upper()
+        availability_message = str(availability.get("message") or "").lower()
+        unavailable = availability_type in {"OUT_OF_STOCK", "UNAVAILABLE"} or any(
+            phrase in availability_message
+            for phrase in ("agotado", "no disponible", "out of stock", "unavailable")
+        )
+        product.in_stock = not unavailable
+
+        delivery = listing.get("deliveryInfo") or {}
+        if delivery.get("isAmazonFulfilled") is True:
+            product.shipping_type = "Gestionado por Amazon"
+        elif delivery.get("isAmazonFulfilled") is False:
+            product.shipping_type = "Envio del vendedor"
+        else:
+            merchant = _j(listing, "merchantInfo", "name")
+            product.shipping_type = str(merchant) if merchant else None
 
     @staticmethod
     def _fill_deal_data(product: ProductPreview, item: dict) -> None:

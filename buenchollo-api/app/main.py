@@ -29,6 +29,7 @@ from app.modules.telegram.api.router import router as telegram_router
 from app.modules.alerts.api.router import router as alerts_router
 from app.modules.notifications.api.router import router as notifications_router
 from app.modules.comments.api.router import router as comments_router
+from app.modules.scheduled_deals.api.router import router as scheduled_deals_router
 
 settings = get_settings()
 configure_logging(settings.log_level, fmt=settings.log_format)
@@ -56,7 +57,7 @@ async def lifespan(app: FastAPI):
             cleaner.clean_expired_deals()
             logger.info(
                 "Background scheduler iniciado: "
-                "mark_expired + activate_scheduled (cada 5 min) | clean (03:00 diario)"
+                "mark_expired + verify/publish scheduled (cada 5 min) | clean (03:00 diario)"
             )
         except Exception as exc:
             logger.warning("Scheduler no disponible, la API arranca sin él: %s", exc)
@@ -194,6 +195,7 @@ v1.include_router(telegram_router)
 v1.include_router(alerts_router)
 v1.include_router(notifications_router)
 v1.include_router(comments_router)
+v1.include_router(scheduled_deals_router)
 
 app.include_router(v1)
 app.include_router(health_router)  # /health y /health/ready — sin /v1

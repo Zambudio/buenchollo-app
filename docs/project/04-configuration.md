@@ -27,6 +27,7 @@
 | `LOG_LEVEL` | `INFO` | `DEBUG` · `INFO` · `WARNING` · `ERROR`. ⚠️ Nunca DEBUG en prod |
 | `LOG_FORMAT` | `json` | `json` (Loki/ELK) o `text` (legible local) |
 | `RATE_LIMIT_ENABLED` | `true` | Desactiva todos los `@limiter.limit` sin tocar código |
+| `SCHEDULER_ENABLED` | `true` | Ejecuta mantenimiento y publicación programada en la API; en Docker la API usa `false` porque `buenchollo-scheduler` lo ejecuta una sola vez |
 | `CLOUDFLARE_DDNS_TOKEN` | (vacío) | Token "Edit zone DNS" de Cloudflare. Lo usa el contenedor `cloudflare-ddns` para mantener `api.<dominio>` apuntando a la IP pública del NAS (IP dinámica) |
 
 ### 🐛 Sentry (opcional)
@@ -61,7 +62,12 @@
 |---|---|
 | `TELEGRAM_BOT_TOKEN` | Token del bot (BotFather) |
 | `TELEGRAM_MAIN_CHANNEL_ID` | ID del canal público (`-100…`) |
-| `TELEGRAM_ADMIN_CHANNEL_ID` | Canal de pruebas/admin |
+| `TELEGRAM_ADMIN_CHANNEL_ID` | ID de chat privado del admin o canal de pruebas; recibe cancelaciones automáticas |
+
+El worker se ejecuta en marcas exactas de cinco minutos. Precomprueba las ofertas
+del siguiente intervalo y vuelve a verificarlas en la hora programada antes de
+publicar. Requiere también `DATABASE_URL`, las credenciales de Amazon y los tres
+valores de Telegram; sin ellos la programación queda en `error` y no se activa.
 
 > **Leyenda**: ✅ = la app no arranca sin ella · ⚠️ = la app arranca
 > pero el endpoint concreto falla cuando se invoca.

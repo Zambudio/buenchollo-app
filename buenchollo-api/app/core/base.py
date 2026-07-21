@@ -25,6 +25,7 @@ from app.modules.deals.domain.models import Deal, DealVote, Favorite  # noqa: F4
 from app.modules.alerts.domain.models import Alert  # noqa: F401
 from app.modules.notifications.domain.models import Notification  # noqa: F401
 from app.modules.comments.domain.models import DealComment, CommentVote  # noqa: F401
+from app.modules.scheduled_deals.domain.models import ScheduledDeal  # noqa: F401
 
 # Audit log (vive en core/ porque cualquier módulo puede escribir en él)
 from app.core.audit.models import AuditLog  # noqa: F401

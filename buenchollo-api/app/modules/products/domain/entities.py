@@ -28,4 +28,5 @@ class ProductPreview:
     features: list[str] = field(default_factory=list)
     images: list[str] = field(default_factory=list)
     currency: str = "EUR"
-
+    in_stock: bool = False
+    shipping_type: str | None = None

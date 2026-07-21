@@ -74,6 +74,11 @@ command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --po
 > ✅ Cada vez que el contenedor reinicia, se aplican las migraciones
 > pendientes **automáticamente** (sin SSH al NAS).
 
+El Compose de producción incluye además `buenchollo-scheduler`, con el mismo
+código e `.env`, ejecutando `python -m app.run_scheduler`. La API usa
+`SCHEDULER_ENABLED=false` para que los jobs —incluida la verificación de precio,
+stock y publicación— no se dupliquen entre los dos workers de uvicorn.
+
 ### 🛠️ Migraciones (Alembic)
 
 Convive con SQL histórico pre-2026-05-27 y nuevas migraciones Alembic
