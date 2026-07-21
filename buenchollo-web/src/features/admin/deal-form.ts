@@ -4,6 +4,7 @@
  * unitariamente sin montar la ruta.
  */
 import { calculateDiscount, slugify, toDatetimeLocal } from "@/lib/format";
+import type { Category } from "@/services/api/categories";
 import type { DealCreatePayload, DealDetailData } from "@/services/api/deals";
 
 export type DealStatus = "active" | "expired" | "scheduled" | "draft";
@@ -80,6 +81,32 @@ export function dealToForm(d: DealDetailData): DealForm {
     external_id: d.external_id ?? "",
     show_keepa_chart: d.show_keepa_chart ?? false,
   };
+}
+
+export function resolveCategorySelection(
+  categoryId: string,
+  subcategoryId: string,
+  categories: Category[],
+  subcategories: Category[],
+): { category_id: string; subcategory_id: string } | null {
+  if (categoryId && subcategoryId) {
+    return { category_id: categoryId, subcategory_id: subcategoryId };
+  }
+
+  const fallbackCategory = categories.find(
+    (category) => category.name.trim().toLocaleLowerCase("es") === "varios",
+  );
+  const fallbackSubcategory = fallbackCategory
+    ? subcategories.find(
+        (subcategory) =>
+          subcategory.parent_id === fallbackCategory.id &&
+          subcategory.name.trim().toLocaleLowerCase("es") === "varios",
+      )
+    : undefined;
+
+  return fallbackCategory && fallbackSubcategory
+    ? { category_id: fallbackCategory.id, subcategory_id: fallbackSubcategory.id }
+    : null;
 }
 
 /** Construye el payload de creación/actualización desde el formulario.

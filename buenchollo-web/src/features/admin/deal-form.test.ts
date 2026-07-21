@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildDealPayload, dealToForm, emptyForm } from "./deal-form";
+import { buildDealPayload, dealToForm, emptyForm, resolveCategorySelection } from "./deal-form";
+import type { Category } from "@/services/api/categories";
 import type { DealDetailData } from "@/services/api/deals";
 
 function formWith(overrides: Partial<ReturnType<typeof emptyForm>>) {
@@ -93,5 +94,40 @@ describe("buildDealPayload", () => {
     const p = buildDealPayload(form, null);
     expect(p.title).toHaveLength(200);
     expect(p.short_description).toHaveLength(300);
+  });
+});
+
+describe("resolveCategorySelection", () => {
+  const category = {
+    id: "category-varios",
+    name: "Varios",
+    slug: "varios-xly2",
+    icon: null,
+    display_order: 99,
+    parent_id: null,
+  } satisfies Category;
+  const subcategory = {
+    id: "subcategory-varios",
+    name: "Varios",
+    slug: "varios-y175",
+    icon: null,
+    display_order: 99,
+    parent_id: category.id,
+  } satisfies Category;
+
+  it("usa Varios/Varios cuando Amazon no devuelve clasificación", () => {
+    expect(resolveCategorySelection("", "", [category], [subcategory])).toEqual({
+      category_id: category.id,
+      subcategory_id: subcategory.id,
+    });
+  });
+
+  it("conserva una clasificación completa", () => {
+    expect(
+      resolveCategorySelection("category-a", "subcategory-a", [category], [subcategory]),
+    ).toEqual({
+      category_id: "category-a",
+      subcategory_id: "subcategory-a",
+    });
   });
 });

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -38,6 +38,14 @@ class ScheduledDealRepository:
         )
         return result.scalars().first()
 
+    async def get_latest_pending_scheduled_at(self) -> datetime | None:
+        result = await self.session.execute(
+            select(func.max(ScheduledDeal.scheduled_at)).where(
+                ScheduledDeal.status == ScheduledDealStatus.SCHEDULED
+            )
+        )
+        return result.scalar_one_or_none()
+
     async def get_pending_until_for_update(self, horizon: datetime) -> list[ScheduledDeal]:
         result = await self.session.execute(
             self._base_query()
@@ -57,6 +65,10 @@ class ScheduledDealRepository:
 
     async def update(self, scheduled: ScheduledDeal) -> ScheduledDeal:
         await self.session.flush()
+        # ``updated_at`` usa ``onupdate=func.now()``. SQLAlchemy expira ese
+        # atributo tras el flush y Pydantic intentaba recargarlo de forma
+        # síncrona al construir la respuesta, provocando MissingGreenlet/500.
+        await self.session.refresh(scheduled, attribute_names=["updated_at"])
         return scheduled
 
     async def delete(self, scheduled: ScheduledDeal) -> None:

@@ -23,6 +23,7 @@ export interface ScheduledDealData {
   store_name: string;
   category_id: string;
   scheduled_at: string;
+  expires_at: string | null;
   status: ScheduledDealStatus;
   cancellation_reason: string | null;
   created_at: string;
@@ -67,6 +68,12 @@ export const scheduledDealsService = {
 
   create: (data: ScheduledDealCreatePayload): Promise<ScheduledDealData> =>
     apiClient.post<ScheduledDealData>("/scheduled-deals/admin", data),
+
+  getNextSlot: (): Promise<{ scheduled_at: string }> =>
+    apiClient.get<{ scheduled_at: string }>("/scheduled-deals/admin/next-slot"),
+
+  getByDealId: (dealId: string): Promise<ScheduledDealData> =>
+    apiClient.get<ScheduledDealData>(`/scheduled-deals/admin/by-deal/${dealId}`),
 
   update: (id: string, data: ScheduledDealUpdatePayload): Promise<ScheduledDealData> =>
     apiClient.put<ScheduledDealData>(`/scheduled-deals/admin/${id}`, data),

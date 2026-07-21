@@ -70,6 +70,10 @@ class ScheduledDateUpdate(BaseModel):
     scheduled_at: datetime
 
 
+class NextScheduleResponse(BaseModel):
+    scheduled_at: datetime
+
+
 class ScheduledDealResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -88,6 +92,7 @@ class ScheduledDealResponse(BaseModel):
     store_name: str
     category_id: str
     scheduled_at: datetime
+    expires_at: datetime | None = None
     status: ScheduledDealStatus
     cancellation_reason: str | None = None
     created_at: datetime
