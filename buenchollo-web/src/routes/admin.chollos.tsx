@@ -24,7 +24,10 @@ import { dealFormSchema } from "@/lib/validation/deals";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { TelegramPanel } from "@/features/telegram/components/TelegramPanel";
+import {
+  TelegramPanel,
+  type TelegramScheduleRequest,
+} from "@/features/telegram/components/TelegramPanel";
 import type { TelegramGenerateRequest } from "@/services/api/telegram";
 import { buildDealPayload, dealToForm, emptyForm, type DealForm } from "@/features/admin/deal-form";
 import { useAdminDeals } from "@/features/admin/hooks/useAdminDeals";
@@ -33,6 +36,12 @@ import { AmazonAutofillPanel } from "@/features/admin/components/AmazonAutofillP
 import { DealFormPanel } from "@/features/admin/components/DealFormPanel";
 import { AdminDealsTable } from "@/features/admin/components/AdminDealsTable";
 import { DuplicateDealDialog } from "@/features/admin/components/DuplicateDealDialog";
+import { ScheduledDealsCalendar } from "@/features/admin/components/ScheduledDealsCalendar";
+import {
+  scheduledDealsService,
+  type ScheduledDealCreatePayload,
+} from "@/services/api/scheduled-deals";
+import { ApiError } from "@/services/api/client";
 
 export const Route = createFileRoute("/admin/chollos")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -57,6 +66,8 @@ function AdminDeals() {
   const [autofilling, setAutofilling] = useState(false);
   const [showTelegramPanel, setShowTelegramPanel] = useState(false);
   const [telegramDealData, setTelegramDealData] = useState<TelegramPanelData | null>(null);
+  const [telegramCanSchedule, setTelegramCanSchedule] = useState(false);
+  const [calendarRefresh, setCalendarRefresh] = useState(0);
   const images = useDealImages(form, setForm, user?.id);
   const nav = useNavigate();
 
@@ -82,6 +93,10 @@ function AdminDeals() {
     setShowForm(true);
   };
   const startEdit = (d: DealDetailData) => {
+    if (d.status === "scheduled") {
+      toast.info("Los chollos programados se editan desde su bloque en el calendario");
+      return;
+    }
     setEditing(d);
     setForm(dealToForm(d));
     setShowForm(true);
@@ -129,17 +144,20 @@ function AdminDeals() {
       toast.success("Datos importados desde tu NAS");
 
       const allImages = d.images.length > 0 ? d.images : d.image_url ? [d.image_url] : [];
-      openTelegramPanelWith({
-        title: d.title || "",
-        current_price: d.current_price || 0,
-        previous_price: d.original_price || null,
-        discount_percentage: d.discount_percentage || null,
-        description: d.telegram_text || d.short_description || null,
-        affiliate_url: url,
-        expires_at: d.expires_at,
-        images: allImages,
-        image_url: allImages[0] ?? null,
-      });
+      openTelegramPanelWith(
+        {
+          title: d.title || "",
+          current_price: d.current_price || 0,
+          previous_price: d.original_price || null,
+          discount_percentage: d.discount_percentage || null,
+          description: d.telegram_text || d.short_description || null,
+          affiliate_url: url,
+          expires_at: d.expires_at,
+          images: allImages,
+          image_url: allImages[0] ?? null,
+        },
+        true,
+      );
     } catch (e: unknown) {
       toast.error("Error desde el NAS: " + errorMessage(e));
     } finally {
@@ -148,8 +166,9 @@ function AdminDeals() {
   };
 
   /** Abre el panel Telegram con datos ya normalizados. */
-  const openTelegramPanelWith = (data: TelegramPanelData) => {
+  const openTelegramPanelWith = (data: TelegramPanelData, canSchedule = false) => {
     setTelegramDealData(data);
+    setTelegramCanSchedule(canSchedule);
     setShowTelegramPanel(true);
   };
 
@@ -159,17 +178,20 @@ function AdminDeals() {
     if (form.image_url && !allImages.includes(form.image_url)) allImages.unshift(form.image_url);
     const current = parseFloat(form.current_price) || 0;
     const previous = form.previous_price ? parseFloat(form.previous_price) : null;
-    openTelegramPanelWith({
-      title: form.title,
-      current_price: current,
-      previous_price: previous,
-      discount_percentage: calculateDiscount(current, previous),
-      description: form.telegram_text || form.short_description || null,
-      affiliate_url: form.affiliate_url,
-      expires_at: form.expires_at ? new Date(form.expires_at).toISOString() : null,
-      images: allImages,
-      image_url: allImages[0] ?? null,
-    });
+    openTelegramPanelWith(
+      {
+        title: form.title,
+        current_price: current,
+        previous_price: previous,
+        discount_percentage: calculateDiscount(current, previous),
+        description: form.telegram_text || form.short_description || null,
+        affiliate_url: form.affiliate_url,
+        expires_at: form.expires_at ? new Date(form.expires_at).toISOString() : null,
+        images: allImages,
+        image_url: allImages[0] ?? null,
+      },
+      !editing,
+    );
   };
 
   /** Abre el panel a partir de un deal ya guardado. */
@@ -187,6 +209,91 @@ function AdminDeals() {
       images: allImages,
       image_url: allImages[0] ?? null,
     });
+  };
+
+  const scheduleFromTelegram = async (request: TelegramScheduleRequest): Promise<boolean> => {
+    if (!user) return false;
+
+    const parsed = dealFormSchema.safeParse({
+      title: form.title,
+      affiliate_url: form.affiliate_url,
+      current_price: form.current_price,
+      previous_price: form.previous_price,
+      short_description: form.short_description,
+      description: form.description,
+    });
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Datos inválidos");
+      return false;
+    }
+    if (!form.category_id || !form.subcategory_id) {
+      toast.error("Selecciona categoría y subcategoría antes de programar");
+      return false;
+    }
+    const asin = form.external_id.trim().toUpperCase();
+    if (!/^[A-Z0-9]{10}$/.test(asin)) {
+      toast.error("Para programar se necesita un ASIN de Amazon válido (10 caracteres)");
+      return false;
+    }
+
+    const selectedImages = form.images.filter(Boolean);
+    if (request.image_url) {
+      const existingIndex = selectedImages.indexOf(request.image_url);
+      if (existingIndex >= 0) selectedImages.splice(existingIndex, 1);
+      selectedImages.unshift(request.image_url);
+    }
+    const scheduledForm: DealForm = {
+      ...form,
+      status: "scheduled",
+      scheduled_for: toDatetimeLocal(request.scheduled_at),
+      telegram_text: request.text,
+      image_url: request.image_url ?? form.image_url,
+      images: selectedImages,
+    };
+    const payload = buildDealPayload(scheduledForm, null);
+    const storeName = stores.find((store) => store.id === form.store_id)?.name ?? "Amazon";
+    const scheduledPayload: ScheduledDealCreatePayload = {
+      asin,
+      title: payload.title,
+      slug: payload.slug,
+      description_web: payload.description ?? "",
+      short_description: payload.short_description,
+      telegram_text: request.text,
+      telegram_channel_id: request.telegram_channel_id,
+      offer_price: payload.current_price,
+      regular_price: payload.previous_price,
+      discount_percentage: payload.discount_percentage ?? 0,
+      image_url: payload.image_url,
+      images: payload.images,
+      affiliate_url: payload.affiliate_url,
+      store_name: storeName,
+      store_id: payload.store_id,
+      category_id: form.category_id,
+      subcategory_id: payload.subcategory_id,
+      brand: payload.brand,
+      shipping_info: payload.shipping_info,
+      expires_at: payload.expires_at,
+      scheduled_at: request.scheduled_at,
+      source: "manual",
+      show_keepa_chart: payload.show_keepa_chart,
+    };
+
+    try {
+      await scheduledDealsService.create(scheduledPayload);
+      setForm(scheduledForm);
+      setShowForm(false);
+      setCalendarRefresh((value) => value + 1);
+      load();
+      toast.success("Telegram y web programados correctamente");
+      return true;
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) {
+        toast.error("No se puede programar: falta actualizar o reiniciar la API");
+        return false;
+      }
+      toast.error(errorMessage(error));
+      return false;
+    }
   };
 
   const save = async (e: React.FormEvent) => {
@@ -216,7 +323,45 @@ function AdminDeals() {
 
     const payload = buildDealPayload(form, editing);
     try {
-      if (editing) {
+      if (!editing && form.status === "scheduled") {
+        if (!form.scheduled_for) {
+          toast.error("Indica la fecha y hora de publicación");
+          return;
+        }
+        const asin = form.external_id.trim().toUpperCase();
+        if (!/^[A-Z0-9]{10}$/.test(asin)) {
+          toast.error("Para programar se necesita un ASIN de Amazon válido (10 caracteres)");
+          return;
+        }
+        const storeName = stores.find((store) => store.id === form.store_id)?.name ?? "Amazon";
+        const scheduledPayload: ScheduledDealCreatePayload = {
+          asin,
+          title: payload.title,
+          slug: payload.slug,
+          description_web: payload.description ?? "",
+          short_description: payload.short_description,
+          telegram_text: form.telegram_text ?? "",
+          offer_price: payload.current_price,
+          regular_price: payload.previous_price,
+          discount_percentage: payload.discount_percentage ?? 0,
+          image_url: payload.image_url,
+          images: payload.images,
+          affiliate_url: payload.affiliate_url,
+          store_name: storeName,
+          store_id: payload.store_id,
+          category_id: form.category_id,
+          subcategory_id: payload.subcategory_id,
+          brand: payload.brand,
+          shipping_info: payload.shipping_info,
+          expires_at: payload.expires_at,
+          scheduled_at: new Date(form.scheduled_for).toISOString(),
+          source: "manual",
+          show_keepa_chart: payload.show_keepa_chart,
+        };
+        await scheduledDealsService.create(scheduledPayload);
+        toast.success("Chollo programado");
+        setCalendarRefresh((value) => value + 1);
+      } else if (editing) {
         const update: DealUpdatePayload = { ...payload };
         await dealsService.update(editing.id, update);
         toast.success("Chollo actualizado");
@@ -277,7 +422,11 @@ function AdminDeals() {
   return (
     <div>
       {showTelegramPanel && telegramDealData && (
-        <TelegramPanel dealData={telegramDealData} onClose={() => setShowTelegramPanel(false)} />
+        <TelegramPanel
+          dealData={telegramDealData}
+          onClose={() => setShowTelegramPanel(false)}
+          onSchedule={telegramCanSchedule ? scheduleFromTelegram : undefined}
+        />
       )}
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <h2 className="font-mono text-sm uppercase text-cyan-glow">Gestión de chollos</h2>
@@ -308,6 +457,14 @@ function AdminDeals() {
         busy={autofilling}
         onUrlChange={setAmazonUrl}
         onAutofill={autofillFromAmazon}
+      />
+
+      <ScheduledDealsCalendar
+        refreshToken={calendarRefresh}
+        onChanged={() => {
+          load();
+          setCalendarRefresh((value) => value + 1);
+        }}
       />
 
       {showForm && (

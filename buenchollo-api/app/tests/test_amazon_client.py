@@ -8,6 +8,7 @@ del Creators API.
 from app.core.config import Settings
 from app.modules.products.infrastructure.amazon_client import (
     AmazonProductClient,
+    RESOURCES,
     extract_asin_from_url,
 )
 
@@ -62,6 +63,8 @@ def test_amazon_client_maps_creators_api_payload(monkeypatch) -> None:
             "listings": [
                 {
                     "isBuyBoxWinner": True,
+                    "availability": {"type": "NOW", "message": "En stock"},
+                    "deliveryInfo": {"isAmazonFulfilled": True},
                     "price": {
                         "money": {"amount": 10.0, "currency": "EUR"},
                         "savingBasis": {"money": {"amount": 20.0}},
@@ -85,6 +88,8 @@ def test_amazon_client_maps_creators_api_payload(monkeypatch) -> None:
     assert product.current_price == 10.0
     assert product.original_price == 20.0
     assert product.discount_percentage == 50
+    assert product.in_stock is True
+    assert product.shipping_type == "Gestionado por Amazon"
     # telegram_text no se rellena aquí: lo genera la IA en el enriquecimiento
     # posterior (preview_product_from_url.py). Si queda vacío, el generador
     # de posts de Telegram simplemente omite la sección de descripción en
@@ -96,3 +101,9 @@ def test_amazon_client_returns_none_when_asin_missing() -> None:
     settings = Settings(amazon_client_id="client", amazon_client_secret="secret", amazon_affiliate_tag="tag-21")
     client = AmazonProductClient(settings)
     assert client.get_product_preview("https://no-es-una-url-amazon.com") is None
+
+
+def test_creators_api_request_uses_only_supported_offer_resources() -> None:
+    assert "offersV2.listings.availability" in RESOURCES
+    assert "offersV2.listings.merchantInfo" in RESOURCES
+    assert "offersV2.listings.deliveryInfo" not in RESOURCES

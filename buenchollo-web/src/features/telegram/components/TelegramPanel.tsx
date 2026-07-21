@@ -5,13 +5,21 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Loader2, Plus, Send, X } from "lucide-react";
+import { CalendarClock, ChevronLeft, ChevronRight, Loader2, Plus, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   telegramApi,
   type TelegramChannel,
   type TelegramGenerateRequest,
 } from "@/services/api/telegram";
+import { toDatetimeLocal } from "@/lib/format";
+
+export interface TelegramScheduleRequest {
+  text: string;
+  image_url: string | null;
+  scheduled_at: string;
+  telegram_channel_id: string;
+}
 
 interface TelegramPanelProps {
   /** Datos del deal con los que generar el post */
@@ -20,12 +28,23 @@ interface TelegramPanelProps {
     image_url?: string | null;
   };
   onClose: () => void;
+  onSchedule?: (request: TelegramScheduleRequest) => Promise<boolean>;
 }
 
-export function TelegramPanel({ dealData, onClose }: TelegramPanelProps) {
+function defaultScheduleDate(): string {
+  const next = new Date();
+  next.setSeconds(0, 0);
+  next.setMinutes(next.getMinutes() + 10);
+  next.setMinutes(Math.ceil(next.getMinutes() / 5) * 5);
+  return toDatetimeLocal(next.toISOString());
+}
+
+export function TelegramPanel({ dealData, onClose, onSchedule }: TelegramPanelProps) {
   const [text, setText] = useState("");
   const [generating, setGenerating] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [scheduling, setScheduling] = useState(false);
+  const [scheduledAt, setScheduledAt] = useState(defaultScheduleDate);
 
   // Imágenes
   const images: string[] = dealData.images?.length
@@ -149,6 +168,36 @@ export function TelegramPanel({ dealData, onClose }: TelegramPanelProps) {
     }
   };
 
+  const handleSchedule = async () => {
+    if (!onSchedule || !text.trim()) return;
+    if (!channelId) {
+      toast.error("Selecciona un canal");
+      return;
+    }
+    if (!scheduledAt) {
+      toast.error("Selecciona la fecha y hora de publicación");
+      return;
+    }
+    const date = new Date(scheduledAt);
+    if (Number.isNaN(date.getTime()) || date <= new Date()) {
+      toast.error("La fecha programada debe estar en el futuro");
+      return;
+    }
+
+    setScheduling(true);
+    try {
+      const saved = await onSchedule({
+        text,
+        image_url: images[imageIdx] ?? null,
+        scheduled_at: date.toISOString(),
+        telegram_channel_id: channelId,
+      });
+      if (saved) onClose();
+    } finally {
+      setScheduling(false);
+    }
+  };
+
   const inputCls =
     "w-full bg-surface-900 border border-surface-700 px-3 py-2 font-mono text-sm outline-none focus:border-cyan-glow";
 
@@ -165,7 +214,7 @@ export function TelegramPanel({ dealData, onClose }: TelegramPanelProps) {
           <div className="flex items-center gap-2">
             <Send className="size-4 text-cyan-glow" />
             <span className="font-mono text-sm uppercase text-cyan-glow font-bold">
-              Publicar en Telegram
+              Publicar o programar Telegram
             </span>
           </div>
           <button onClick={onClose} className="p-1 hover:text-alert-red">
@@ -354,11 +403,53 @@ export function TelegramPanel({ dealData, onClose }: TelegramPanelProps) {
         </div>
 
         {/* Footer fijo */}
-        <div className="shrink-0 px-5 py-4 border-t border-surface-700">
+        <div className="shrink-0 px-5 py-4 border-t border-surface-700 space-y-3">
+          {onSchedule && (
+            <div className="border border-cyan-glow/40 bg-cyan-glow/5 p-3 space-y-2">
+              <label className="font-mono text-[10px] uppercase text-cyan-glow block">
+                Fecha y hora programada
+              </label>
+              <input
+                type="datetime-local"
+                aria-label="Fecha y hora programada"
+                step={300}
+                min={toDatetimeLocal(new Date().toISOString())}
+                value={scheduledAt}
+                onChange={(event) => setScheduledAt(event.target.value)}
+                className={inputCls}
+              />
+              <p className="font-mono text-[10px] text-muted-foreground">
+                Se publicará en{" "}
+                {channels.find((channel) => channel.id === channelId)?.name ??
+                  "el canal seleccionado"}{" "}
+                y en la web tras verificar precio y stock.
+              </p>
+              <button
+                type="button"
+                onClick={handleSchedule}
+                disabled={
+                  scheduling ||
+                  publishing ||
+                  generating ||
+                  !text.trim() ||
+                  !scheduledAt ||
+                  !channelId
+                }
+                className="w-full border border-cyan-glow text-cyan-glow font-mono text-sm font-bold py-3 flex items-center justify-center gap-2 hover:bg-cyan-glow/10 disabled:opacity-50"
+              >
+                {scheduling ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <CalendarClock className="size-4" />
+                )}
+                {scheduling ? "PROGRAMANDO..." : "PROGRAMAR Y GUARDAR"}
+              </button>
+            </div>
+          )}
           <button
             type="button"
             onClick={handlePublish}
-            disabled={publishing || !text.trim() || !channelId}
+            disabled={publishing || scheduling || !text.trim() || !channelId}
             className="w-full bg-cyan-glow text-surface-900 font-mono text-sm font-bold py-3 flex items-center justify-center gap-2 hover:bg-foreground disabled:opacity-50"
           >
             {publishing ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}

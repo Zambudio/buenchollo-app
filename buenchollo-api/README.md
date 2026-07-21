@@ -151,6 +151,10 @@ Todos los routers de negocio cuelgan de **`/v1/`**. Sólo `/health` y
 | `POST` | `/v1/deals/admin` | Crear |
 | `PUT` | `/v1/deals/admin/{id}` | Actualizar (detecta duplicados ASIN) |
 | `DELETE` | `/v1/deals/admin/{id}` | Eliminar |
+| `GET/POST` | `/v1/scheduled-deals/admin` | Calendario y alta de programaciones |
+| `PUT` | `/v1/scheduled-deals/admin/{id}` | Editar contenido programado |
+| `PATCH` | `/v1/scheduled-deals/admin/{id}/schedule` | Reprogramar por drag & drop |
+| `DELETE` | `/v1/scheduled-deals/admin/{id}` | Borrar programación y conservar el borrador |
 | `POST` | `/v1/products/preview` | Preview desde URL Amazon |
 | `POST` | `/v1/telegram/publish` | Publicar al canal |
 | `GET` | `/v1/admin/stats` | 6 KPIs en una query |
@@ -181,6 +185,11 @@ Alembic.
 > automáticamente antes de uvicorn.
 
 📚 Setup: [`MIGRATIONS.md`](../docs/guides/MIGRATIONS.md).
+
+El contenedor `buenchollo-scheduler` precomprueba precio y stock cinco minutos
+antes y vuelve a validarlos en la hora programada (marcas `*/5`). Solo después
+de publicar en Telegram activa el `deal` asociado en la web. Las cancelaciones
+siguen visibles en rojo y se notifican a `TELEGRAM_ADMIN_CHANNEL_ID`.
 
 ---
 

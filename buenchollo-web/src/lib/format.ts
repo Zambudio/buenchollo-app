@@ -50,7 +50,12 @@ export function calculateDiscount(
  *  <input type="datetime-local"> (YYYY-MM-DDTHH:mm, sin zona). */
 export function toDatetimeLocal(value: string | null | undefined): string {
   if (!value) return "";
-  return value.slice(0, 16);
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (part: number) => String(part).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(
+    date.getHours(),
+  )}:${pad(date.getMinutes())}`;
 }
 
 import { TEMPERATURE_HOT_THRESHOLD, TEMPERATURE_WARM_THRESHOLD } from "@/lib/constants";

@@ -1,0 +1,1 @@
+"""Scheduled deal publication module."""
