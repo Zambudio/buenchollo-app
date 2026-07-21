@@ -29,7 +29,7 @@ import { adminInputCls as inputCls } from "../deal-form";
 
 const STATUS_COLORS: Record<ScheduledDealStatus, string> = {
   programado: "#22D3EE",
-  publicado: "#22C55E",
+  publicado: "#FACC15",
   cancelado_precio: "#EF4444",
   cancelado_stock: "#EF4444",
   error: "#EF4444",
@@ -46,6 +46,8 @@ const STATUS_LABELS: Record<ScheduledDealStatus, string> = {
 interface Props {
   readonly refreshToken: number;
   readonly onChanged: () => void;
+  readonly openDealId?: string | null;
+  readonly onOpenHandled?: () => void;
 }
 
 interface EditorState {
@@ -78,7 +80,12 @@ function localDayKey(date: Date): string {
   return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
 }
 
-export function ScheduledDealsCalendar({ refreshToken, onChanged }: Props) {
+export function ScheduledDealsCalendar({
+  refreshToken,
+  onChanged,
+  openDealId,
+  onOpenHandled,
+}: Props) {
   const [deals, setDeals] = useState<ScheduledDealData[]>([]);
   const [channels, setChannels] = useState<TelegramChannel[]>([]);
   const rangeRef = useRef<{ start: string; end: string } | null>(null);
@@ -116,6 +123,27 @@ export function ScheduledDealsCalendar({ refreshToken, onChanged }: Props) {
       .catch(() => toast.error("No se pudieron cargar los canales de Telegram"));
   }, []);
 
+  useEffect(() => {
+    if (!openDealId) return;
+    let active = true;
+    void scheduledDealsService
+      .getByDealId(openDealId)
+      .then((deal) => {
+        if (!active) return;
+        setSelected(deal);
+        setEditor(editorFromDeal(deal));
+      })
+      .catch((error) => {
+        if (active) toast.error(errorMessage(error, "No se pudo abrir la programación"));
+      })
+      .finally(() => {
+        if (active) onOpenHandled?.();
+      });
+    return () => {
+      active = false;
+    };
+  }, [onOpenHandled, openDealId]);
+
   const density = useMemo(() => {
     const counts = new Map<string, number>();
     for (const deal of deals) {
@@ -133,7 +161,8 @@ export function ScheduledDealsCalendar({ refreshToken, onChanged }: Props) {
         start: deal.scheduled_at,
         backgroundColor: STATUS_COLORS[deal.status],
         borderColor: STATUS_COLORS[deal.status],
-        textColor: deal.status === "programado" ? "#07131a" : "#ffffff",
+        textColor:
+          deal.status === "programado" || deal.status === "publicado" ? "#07131a" : "#ffffff",
         editable: deal.status === "programado",
         extendedProps: { deal },
       })),
@@ -200,9 +229,19 @@ export function ScheduledDealsCalendar({ refreshToken, onChanged }: Props) {
     if (!selected || !editor) return;
     const current = Number(editor.offer_price);
     const regular = editor.regular_price ? Number(editor.regular_price) : null;
+    const scheduledAt = new Date(editor.scheduled_at);
+    const expiresAt = selected.expires_at ? new Date(selected.expires_at) : null;
+    if (Number.isNaN(scheduledAt.getTime()) || scheduledAt <= new Date()) {
+      toast.error("La fecha programada debe estar en el futuro");
+      return;
+    }
+    if (expiresAt && !Number.isNaN(expiresAt.getTime()) && scheduledAt >= expiresAt) {
+      toast.error("La publicación debe programarse antes de que caduque el chollo");
+      return;
+    }
     setSaving(true);
     try {
-      const updated = await scheduledDealsService.update(selected.id, {
+      await scheduledDealsService.update(selected.id, {
         title: editor.title,
         description_web: editor.description_web,
         telegram_text: editor.telegram_text,
@@ -212,10 +251,9 @@ export function ScheduledDealsCalendar({ refreshToken, onChanged }: Props) {
         discount_percentage: calculateDiscount(current, regular) ?? 0,
         image_url: editor.image_url || null,
         affiliate_url: editor.affiliate_url,
-        scheduled_at: new Date(editor.scheduled_at).toISOString(),
+        scheduled_at: scheduledAt.toISOString(),
       });
-      setSelected(updated);
-      setEditor(editorFromDeal(updated));
+      closeModal();
       toast.success("Programación actualizada");
       await load();
       onChanged();
@@ -254,7 +292,7 @@ export function ScheduledDealsCalendar({ refreshToken, onChanged }: Props) {
         </div>
         <div className="flex flex-wrap gap-x-3 gap-y-1 font-mono text-[10px] uppercase">
           <span className="text-cyan-glow">● Programado</span>
-          <span className="text-green-500">● Publicado</span>
+          <span className="text-yellow-400">● Publicado</span>
           <span className="text-red-500">● Cancelado / error</span>
         </div>
       </div>
@@ -281,6 +319,8 @@ export function ScheduledDealsCalendar({ refreshToken, onChanged }: Props) {
         dayMaxEvents={3}
         multiMonthMaxColumns={3}
         snapDuration="00:05:00"
+        slotMinTime="08:00:00"
+        slotMaxTime="24:00:00"
         nowIndicator
         height="auto"
       />
@@ -373,6 +413,8 @@ export function ScheduledDealsCalendar({ refreshToken, onChanged }: Props) {
                   disabled={!editable}
                   type="datetime-local"
                   step={300}
+                  min={toDatetimeLocal(new Date().toISOString())}
+                  max={selected.expires_at ? toDatetimeLocal(selected.expires_at) : undefined}
                   value={editor.scheduled_at}
                   onChange={(e) => setEditor({ ...editor, scheduled_at: e.target.value })}
                   className={inputCls}

@@ -1,4 +1,5 @@
-from datetime import datetime, timezone
+from datetime import datetime, time, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from app.modules.deals.application.deal_service import DealService
 from app.modules.scheduled_deals.domain.exceptions import (
@@ -12,6 +13,9 @@ from app.modules.telegram.application.post_generator import TelegramPostGenerato
 
 
 class ScheduleService:
+    PUBLICATION_TIMEZONE = ZoneInfo("Europe/Madrid")
+    PUBLICATION_HOURS = range(8, 23, 2)
+
     def __init__(self, repo: ScheduledDealRepository, deal_service: DealService):
         self.repo = repo
         self.deal_service = deal_service
@@ -30,6 +34,14 @@ class ScheduleService:
             raise InvalidSchedule("La fecha programada debe ajustarse a intervalos de 5 minutos")
         return scheduled_at
 
+    def _validate_before_expiry(
+        self, scheduled_at: datetime, expires_at: datetime | None
+    ) -> None:
+        if expires_at and scheduled_at >= self._as_utc(expires_at):
+            raise InvalidSchedule(
+                "La fecha programada debe ser anterior a la caducidad del chollo"
+            )
+
     @staticmethod
     def _telegram_text(data: dict) -> str:
         if data.get("telegram_text"):
@@ -47,6 +59,7 @@ class ScheduleService:
     async def create(self, data: dict, user_id: str) -> ScheduledDeal:
         data = dict(data)
         data["scheduled_at"] = self._validate_future(data["scheduled_at"])
+        self._validate_before_expiry(data["scheduled_at"], data.get("expires_at"))
         data["telegram_text"] = self._telegram_text(data)
 
         deal_data = {
@@ -74,6 +87,7 @@ class ScheduleService:
         }
         deal = await self.deal_service.create_deal(deal_data, user_id)
         scheduled = ScheduledDeal(
+            deal=deal,
             deal_id=deal.id,
             asin=data["asin"],
             title=data["title"],
@@ -91,6 +105,38 @@ class ScheduleService:
         )
         return await self.repo.create(scheduled)
 
+    async def get_by_deal_id(self, deal_id: str) -> ScheduledDeal:
+        scheduled = await self.repo.get_by_deal_id(deal_id)
+        if not scheduled:
+            raise ScheduledDealNotFound(deal_id)
+        return scheduled
+
+    @classmethod
+    def calculate_next_slot(
+        cls, latest_scheduled_at: datetime | None, now: datetime | None = None
+    ) -> datetime:
+        current = cls._as_utc(now or datetime.now(timezone.utc))
+        reference = current + timedelta(minutes=10)
+        if latest_scheduled_at:
+            reference = max(reference, cls._as_utc(latest_scheduled_at))
+
+        local_reference = reference.astimezone(cls.PUBLICATION_TIMEZONE)
+        for hour in cls.PUBLICATION_HOURS:
+            candidate = datetime.combine(
+                local_reference.date(), time(hour=hour), cls.PUBLICATION_TIMEZONE
+            )
+            if candidate > local_reference:
+                return candidate.astimezone(timezone.utc)
+
+        next_day = local_reference.date() + timedelta(days=1)
+        return datetime.combine(
+            next_day, time(hour=cls.PUBLICATION_HOURS.start), cls.PUBLICATION_TIMEZONE
+        ).astimezone(timezone.utc)
+
+    async def get_next_slot(self) -> datetime:
+        latest = await self.repo.get_latest_pending_scheduled_at()
+        return self.calculate_next_slot(latest)
+
     async def update(self, scheduled_id: str, changes: dict) -> ScheduledDeal:
         scheduled = await self.repo.get_by_id(scheduled_id)
         if not scheduled:
@@ -101,6 +147,10 @@ class ScheduleService:
         changes = dict(changes)
         if "scheduled_at" in changes:
             changes["scheduled_at"] = self._validate_future(changes["scheduled_at"])
+
+        candidate_scheduled_at = changes.get("scheduled_at", scheduled.scheduled_at)
+        candidate_expires_at = changes.get("expires_at", scheduled.deal.expires_at)
+        self._validate_before_expiry(candidate_scheduled_at, candidate_expires_at)
 
         schedule_fields = {
             "asin",

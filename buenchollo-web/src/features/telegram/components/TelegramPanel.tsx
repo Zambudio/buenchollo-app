@@ -29,22 +29,32 @@ interface TelegramPanelProps {
   };
   onClose: () => void;
   onSchedule?: (request: TelegramScheduleRequest) => Promise<boolean>;
+  defaultScheduledAt?: string | null;
 }
 
 function defaultScheduleDate(): string {
   const next = new Date();
   next.setSeconds(0, 0);
   next.setMinutes(next.getMinutes() + 10);
-  next.setMinutes(Math.ceil(next.getMinutes() / 5) * 5);
+  if (next.getMinutes() !== 0) {
+    next.setHours(next.getHours() + 1, 0, 0, 0);
+  }
   return toDatetimeLocal(next.toISOString());
 }
 
-export function TelegramPanel({ dealData, onClose, onSchedule }: TelegramPanelProps) {
+export function TelegramPanel({
+  dealData,
+  onClose,
+  onSchedule,
+  defaultScheduledAt,
+}: TelegramPanelProps) {
   const [text, setText] = useState("");
   const [generating, setGenerating] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [scheduling, setScheduling] = useState(false);
-  const [scheduledAt, setScheduledAt] = useState(defaultScheduleDate);
+  const [scheduledAt, setScheduledAt] = useState(() =>
+    defaultScheduledAt ? toDatetimeLocal(defaultScheduledAt) : defaultScheduleDate(),
+  );
 
   // Imágenes
   const images: string[] = dealData.images?.length
@@ -181,6 +191,11 @@ export function TelegramPanel({ dealData, onClose, onSchedule }: TelegramPanelPr
     const date = new Date(scheduledAt);
     if (Number.isNaN(date.getTime()) || date <= new Date()) {
       toast.error("La fecha programada debe estar en el futuro");
+      return;
+    }
+    const expiresAt = dealData.expires_at ? new Date(dealData.expires_at) : null;
+    if (expiresAt && !Number.isNaN(expiresAt.getTime()) && date >= expiresAt) {
+      toast.error("La publicación debe programarse antes de que caduque el chollo");
       return;
     }
 
@@ -414,6 +429,7 @@ export function TelegramPanel({ dealData, onClose, onSchedule }: TelegramPanelPr
                 aria-label="Fecha y hora programada"
                 step={300}
                 min={toDatetimeLocal(new Date().toISOString())}
+                max={dealData.expires_at ? toDatetimeLocal(dealData.expires_at) : undefined}
                 value={scheduledAt}
                 onChange={(event) => setScheduledAt(event.target.value)}
                 className={inputCls}

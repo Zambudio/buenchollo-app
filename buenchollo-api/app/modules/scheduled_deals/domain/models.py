@@ -76,3 +76,7 @@ class ScheduledDeal(Base):
 
     deal = relationship("Deal")
     category = relationship("Category")
+
+    @property
+    def expires_at(self) -> datetime | None:
+        return self.deal.expires_at if self.deal else None

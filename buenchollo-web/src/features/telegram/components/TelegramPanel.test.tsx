@@ -29,6 +29,32 @@ beforeEach(() => {
 });
 
 describe("TelegramPanel", () => {
+  it("usa la siguiente franja calculada como valor inicial", async () => {
+    const nextSlot = new Date(Date.now() + 24 * 60 * 60_000);
+    nextSlot.setMinutes(0, 0, 0);
+
+    renderWithProviders(
+      <TelegramPanel
+        dealData={{
+          title: "Chollo de prueba",
+          current_price: 99,
+          affiliate_url: "https://amazon.es/dp/B0D9WH9WLD",
+        }}
+        defaultScheduledAt={nextSlot.toISOString()}
+        onClose={vi.fn()}
+        onSchedule={vi.fn().mockResolvedValue(true)}
+      />,
+    );
+
+    await screen.findByDisplayValue(/Chollo de prueba/);
+    expect((screen.getByLabelText(/fecha y hora programada/i) as HTMLInputElement).value).toMatch(
+      /:00$/,
+    );
+    expect(
+      new Date((screen.getByLabelText(/fecha y hora programada/i) as HTMLInputElement).value),
+    ).toEqual(nextSlot);
+  });
+
   it("permite programar y guardar el post generado", async () => {
     const user = userEvent.setup();
     const onSchedule = vi.fn().mockResolvedValue(true);
@@ -48,7 +74,9 @@ describe("TelegramPanel", () => {
     );
 
     await screen.findByDisplayValue(/Chollo de prueba/);
-    expect(screen.getByLabelText(/fecha y hora programada/i)).toHaveValue();
+    const scheduleInput = screen.getByLabelText(/fecha y hora programada/i);
+    expect(scheduleInput).toHaveValue();
+    expect((scheduleInput as HTMLInputElement).value).toMatch(/:00$/);
 
     await user.click(screen.getByRole("button", { name: /programar y guardar/i }));
 
@@ -60,5 +88,32 @@ describe("TelegramPanel", () => {
       telegram_channel_id: "main",
     });
     expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("no permite programar después de la caducidad", async () => {
+    const user = userEvent.setup();
+    const onSchedule = vi.fn().mockResolvedValue(true);
+    const expiresAt = new Date(Date.now() + 60 * 60_000);
+    const scheduledAt = new Date(Date.now() + 2 * 60 * 60_000);
+    scheduledAt.setMinutes(0, 0, 0);
+
+    renderWithProviders(
+      <TelegramPanel
+        dealData={{
+          title: "Chollo de prueba",
+          current_price: 99,
+          affiliate_url: "https://amazon.es/dp/B0D9WH9WLD",
+          expires_at: expiresAt.toISOString(),
+        }}
+        defaultScheduledAt={scheduledAt.toISOString()}
+        onClose={vi.fn()}
+        onSchedule={onSchedule}
+      />,
+    );
+
+    await screen.findByDisplayValue(/Chollo de prueba/);
+    await user.click(screen.getByRole("button", { name: /programar y guardar/i }));
+
+    expect(onSchedule).not.toHaveBeenCalled();
   });
 });

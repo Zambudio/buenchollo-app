@@ -9,6 +9,7 @@ from app.core.security import require_admin
 from app.modules.deals.application.deal_service import DealService
 from app.modules.deals.infrastructure.repository import DealRepository
 from app.modules.scheduled_deals.api.schemas import (
+    NextScheduleResponse,
     ScheduledDateUpdate,
     ScheduledDealCreate,
     ScheduledDealResponse,
@@ -35,6 +36,23 @@ async def list_scheduled_deals(
     _auth=Depends(require_admin),
 ):
     return await service.repo.list_between(start, end)
+
+
+@router.get("/admin/next-slot", response_model=NextScheduleResponse)
+async def get_next_schedule_slot(
+    service: ScheduleService = Depends(get_schedule_service),
+    _auth=Depends(require_admin),
+):
+    return {"scheduled_at": await service.get_next_slot()}
+
+
+@router.get("/admin/by-deal/{deal_id}", response_model=ScheduledDealResponse)
+async def get_scheduled_deal_by_deal_id(
+    deal_id: str,
+    service: ScheduleService = Depends(get_schedule_service),
+    _auth=Depends(require_admin),
+):
+    return await service.get_by_deal_id(deal_id)
 
 
 @router.post("/admin", response_model=ScheduledDealResponse, status_code=201)
