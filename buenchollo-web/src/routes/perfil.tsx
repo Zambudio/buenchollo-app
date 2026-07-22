@@ -359,8 +359,8 @@ function ProfilePage() {
             <div className="space-y-3">
               {isGoogleAccount && (
                 <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-                  Accedes con Google. Si quieres, establece una contraseña para poder
-                  iniciar sesión también con tu email.
+                  Accedes con Google. Si quieres, establece una contraseña para poder iniciar sesión
+                  también con tu email.
                 </p>
               )}
               <p className="flex items-center gap-2 font-mono text-sm text-cyan-glow">
@@ -405,14 +405,13 @@ function ProfilePage() {
             <h2 className="text-lg font-bold">Eliminar cuenta</h2>
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">
-                Se eliminarán tu perfil, comentarios, votos y favoritos. Los chollos que
-                hayas publicado se mantendrán, pero sin autor.
+                Se eliminarán tu perfil, comentarios, votos y favoritos. Los chollos que hayas
+                publicado se mantendrán, pero sin autor.
               </p>
               {confirmingDelete && (
                 <p className="flex items-start gap-2 rounded-lg border border-alert-red/40 bg-alert-red/10 px-4 py-3 text-sm text-alert-red">
                   <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-                  Esta acción no se puede deshacer. ¿Seguro que quieres eliminar tu
-                  cuenta?
+                  Esta acción no se puede deshacer. ¿Seguro que quieres eliminar tu cuenta?
                 </p>
               )}
               <div className="grid gap-3 sm:grid-cols-2">
@@ -428,7 +427,9 @@ function ProfilePage() {
                 )}
                 <button
                   type="button"
-                  onClick={() => (confirmingDelete ? void deleteAccount() : setConfirmingDelete(true))}
+                  onClick={() =>
+                    confirmingDelete ? void deleteAccount() : setConfirmingDelete(true)
+                  }
                   disabled={deleting}
                   className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-alert-red px-5 py-3 font-mono text-xs font-bold text-alert-red transition-colors hover:bg-alert-red/10 disabled:cursor-not-allowed disabled:opacity-60 sm:order-2"
                 >
