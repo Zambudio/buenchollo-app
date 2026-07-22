@@ -55,6 +55,9 @@ export const authApi = {
 
   /** Estadísticas agregadas del usuario (comentarios, votos, favoritos…). */
   getMyStats: (): Promise<MyStats> => apiClient.get<MyStats>("/users/me/stats"),
+
+  /** Elimina la cuenta autenticada (Supabase Auth + cascada en BD). */
+  deleteMyAccount: (): Promise<void> => apiClient.delete<void>("/auth/me"),
 };
 
 export interface AdminStats {

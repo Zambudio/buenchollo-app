@@ -47,3 +47,12 @@ export function googleAvatarUrl(user: User | null, fallback = ""): string {
     fallback
   );
 }
+
+/** True si el usuario entró (al menos una vez) con Google. Estas cuentas no
+ * pueden cambiar su email desde aquí (lo gestiona Google). */
+export function isGoogleLinkedAccount(user: User | null): boolean {
+  return (
+    user?.app_metadata?.provider === "google" ||
+    (user?.identities ?? []).some((identity) => identity.provider === "google")
+  );
+}

@@ -1,13 +1,24 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { removeStoredAvatar, uploadAvatar } from "@/lib/avatar-upload";
-import { googleAvatarUrl, googleDisplayName } from "@/lib/google-profile";
+import { googleAvatarUrl, googleDisplayName, isGoogleLinkedAccount } from "@/lib/google-profile";
 import { authApi } from "@/services/api/auth";
 import { errorMessage } from "@/lib/errors";
 import { toast } from "sonner";
-import { Camera, Download, Lock, LogOut, Mail, Save, Trash2, User as UserIcon } from "lucide-react";
+import {
+  AlertTriangle,
+  Camera,
+  Lock,
+  LogOut,
+  Mail,
+  Save,
+  Trash2,
+  User as UserIcon,
+} from "lucide-react";
 
 export const Route = createFileRoute("/perfil")({
   component: ProfilePage,
@@ -34,12 +45,24 @@ function ProfilePage() {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [email, setEmail] = useState("");
+  const [emailSaving, setEmailSaving] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
   const googleName = googleDisplayName(user);
   const googleAvatar = googleAvatarUrl(user) || null;
+  const isGoogleAccount = isGoogleLinkedAccount(user);
 
   useEffect(() => {
     if (!authLoading && !user) nav({ to: "/login" });
   }, [authLoading, user, nav]);
+
+  useEffect(() => {
+    setEmail(user?.email ?? "");
+  }, [user?.email]);
 
   useEffect(() => {
     // Esperamos a que authLoading sea false: `user` se setea antes de que
@@ -132,8 +155,56 @@ function ProfilePage() {
     }
   };
 
-  const pendingAction = () => {
-    toast.info("Esta opción se conectará en una siguiente iteración");
+  const updateEmail = async () => {
+    const trimmed = email.trim();
+    if (!trimmed || !trimmed.includes("@")) {
+      toast.error("Introduce un email válido");
+      return;
+    }
+    if (trimmed === user?.email) return;
+
+    setEmailSaving(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ email: trimmed });
+      if (error) throw error;
+      toast.success("Revisa tu bandeja de entrada para confirmar el nuevo email");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "Error al cambiar el email"));
+    } finally {
+      setEmailSaving(false);
+    }
+  };
+
+  const updatePassword = async () => {
+    if (newPassword.length < 6) {
+      toast.error("La contraseña debe tener al menos 6 caracteres");
+      return;
+    }
+
+    setPasswordSaving(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      setNewPassword("");
+      toast.success("Contraseña actualizada");
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "Error al actualizar la contraseña"));
+    } finally {
+      setPasswordSaving(false);
+    }
+  };
+
+  const deleteAccount = async () => {
+    setDeleting(true);
+    try {
+      await authApi.deleteMyAccount();
+      await signOut();
+      toast.success("Tu cuenta ha sido eliminada");
+      nav({ to: "/" });
+    } catch (e: unknown) {
+      toast.error(errorMessage(e, "Error al eliminar la cuenta"));
+      setDeleting(false);
+    }
   };
 
   return (
@@ -249,47 +320,73 @@ function ProfilePage() {
           <div className="grid gap-4 py-7 md:grid-cols-[220px_1fr]">
             <h2 className="text-lg font-bold">Tu email</h2>
             <div className="space-y-3">
-              <p className="flex items-center gap-2 font-mono text-sm text-cyan-glow">
-                <Mail className="size-4" />
-                {user?.email}
-              </p>
-              <button
-                type="button"
-                onClick={pendingAction}
-                className="inline-flex w-full items-center justify-center rounded-full border border-surface-600 px-5 py-3 font-mono text-xs font-bold transition-colors hover:border-cyan-glow hover:text-cyan-glow"
-              >
-                CAMBIAR EMAIL
-              </button>
+              {isGoogleAccount ? (
+                <>
+                  <p className="flex items-center gap-2 font-mono text-sm text-cyan-glow">
+                    <Mail className="size-4" />
+                    {user?.email}
+                  </p>
+                  <p className="inline-flex items-center gap-2 rounded-full border border-surface-600 px-4 py-2 text-xs text-muted-foreground">
+                    Conectado con Google — el email lo gestiona tu cuenta de Google
+                  </p>
+                </>
+              ) : (
+                <>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full border border-surface-600 bg-surface-900 px-4 py-3 font-mono text-sm text-cyan-glow outline-none transition-colors focus:border-cyan-glow"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void updateEmail()}
+                    disabled={emailSaving || email.trim() === user?.email}
+                    className="inline-flex w-full items-center justify-center rounded-full border border-surface-600 px-5 py-3 font-mono text-xs font-bold transition-colors hover:border-cyan-glow hover:text-cyan-glow disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {emailSaving ? "GUARDANDO..." : "CAMBIAR EMAIL"}
+                  </button>
+                  <p className="text-sm text-muted-foreground">
+                    Te enviaremos un enlace de confirmación al nuevo email.
+                  </p>
+                </>
+              )}
             </div>
           </div>
 
           <div className="grid gap-4 py-7 md:grid-cols-[220px_1fr]">
             <h2 className="text-lg font-bold">Tu contraseña</h2>
             <div className="space-y-3">
+              {isGoogleAccount && (
+                <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+                  Accedes con Google. Si quieres, establece una contraseña para poder
+                  iniciar sesión también con tu email.
+                </p>
+              )}
               <p className="flex items-center gap-2 font-mono text-sm text-cyan-glow">
                 <Lock className="size-4" />
                 ••••••••
               </p>
+              <PasswordInput
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Nueva contraseña"
+                minLength={6}
+                className="border border-surface-600 bg-surface-900 px-4 py-3 font-mono text-sm text-cyan-glow outline-none transition-colors focus:border-cyan-glow"
+              />
               <button
                 type="button"
-                onClick={pendingAction}
-                className="inline-flex w-full items-center justify-center rounded-full border border-surface-600 px-5 py-3 font-mono text-xs font-bold transition-colors hover:border-cyan-glow hover:text-cyan-glow"
+                onClick={() => void updatePassword()}
+                disabled={passwordSaving || newPassword.length < 6}
+                className="inline-flex w-full items-center justify-center rounded-full border border-surface-600 px-5 py-3 font-mono text-xs font-bold transition-colors hover:border-cyan-glow hover:text-cyan-glow disabled:cursor-not-allowed disabled:opacity-60"
               >
-                CAMBIAR CONTRASEÑA
+                {passwordSaving
+                  ? "GUARDANDO..."
+                  : isGoogleAccount
+                    ? "ESTABLECER CONTRASEÑA"
+                    : "CAMBIAR CONTRASEÑA"}
               </button>
             </div>
-          </div>
-
-          <div className="grid gap-4 py-7 md:grid-cols-[220px_1fr]">
-            <h2 className="text-lg font-bold">Datos de la cuenta</h2>
-            <button
-              type="button"
-              onClick={pendingAction}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-surface-600 px-5 py-3 font-mono text-xs font-bold transition-colors hover:border-cyan-glow hover:text-cyan-glow"
-            >
-              <Download className="size-4" />
-              GENERAR DATOS
-            </button>
           </div>
 
           <div className="grid gap-4 py-7 md:grid-cols-[220px_1fr]">
@@ -306,14 +403,44 @@ function ProfilePage() {
 
           <div className="grid gap-4 py-7 md:grid-cols-[220px_1fr]">
             <h2 className="text-lg font-bold">Eliminar cuenta</h2>
-            <button
-              type="button"
-              onClick={pendingAction}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-alert-red px-5 py-3 font-mono text-xs font-bold text-alert-red transition-colors hover:bg-alert-red/10"
-            >
-              <Trash2 className="size-4" />
-              ELIMINAR CUENTA
-            </button>
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Se eliminarán tu perfil, comentarios, votos y favoritos. Los chollos que
+                hayas publicado se mantendrán, pero sin autor.
+              </p>
+              {confirmingDelete && (
+                <p className="flex items-start gap-2 rounded-lg border border-alert-red/40 bg-alert-red/10 px-4 py-3 text-sm text-alert-red">
+                  <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+                  Esta acción no se puede deshacer. ¿Seguro que quieres eliminar tu
+                  cuenta?
+                </p>
+              )}
+              <div className="grid gap-3 sm:grid-cols-2">
+                {confirmingDelete && (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingDelete(false)}
+                    disabled={deleting}
+                    className="inline-flex w-full items-center justify-center rounded-full border border-surface-600 px-5 py-3 font-mono text-xs font-bold transition-colors hover:border-cyan-glow hover:text-cyan-glow disabled:cursor-not-allowed disabled:opacity-60 sm:order-1"
+                  >
+                    CANCELAR
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => (confirmingDelete ? void deleteAccount() : setConfirmingDelete(true))}
+                  disabled={deleting}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-alert-red px-5 py-3 font-mono text-xs font-bold text-alert-red transition-colors hover:bg-alert-red/10 disabled:cursor-not-allowed disabled:opacity-60 sm:order-2"
+                >
+                  <Trash2 className="size-4" />
+                  {deleting
+                    ? "ELIMINANDO..."
+                    : confirmingDelete
+                      ? "SÍ, ELIMINAR CUENTA"
+                      : "ELIMINAR CUENTA"}
+                </button>
+              </div>
+            </div>
           </div>
         </section>
       </div>

@@ -4,14 +4,15 @@ El router se limita a hablar HTTP: recibe la petición, resuelve auth,
 delega al `UserService` y devuelve la respuesta. Toda la lógica vive en
 la capa de aplicación.
 """
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.security import get_current_user, require_admin
+from app.core.security import get_current_user, get_supabase_client, require_admin
 from app.modules.users.application.user_service import CurrentUser, UserService
 from app.modules.users.infrastructure.repository import ProfileRepository
+from supabase import Client
 
 router = APIRouter(tags=["auth"])
 
@@ -22,10 +23,13 @@ class ProfileUpdate(BaseModel):
     avatar_url: str | None = Field(default=None, max_length=2048)
 
 
-def get_user_service(db: AsyncSession = Depends(get_db)) -> UserService:
+def get_user_service(
+    db: AsyncSession = Depends(get_db),
+    supabase: Client = Depends(get_supabase_client),
+) -> UserService:
     """Ensambla UserService con su repositorio (composition root distribuido,
     ADR-007)."""
-    return UserService(ProfileRepository(db))
+    return UserService(ProfileRepository(db), supabase)
 
 
 @router.get("/auth/me")
@@ -67,6 +71,15 @@ async def get_my_stats(
     service: UserService = Depends(get_user_service),
 ) -> dict:
     return await service.get_my_stats(str(current_user.id))
+
+
+@router.delete("/auth/me", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_my_account(
+    current_user=Depends(get_current_user),
+    service: UserService = Depends(get_user_service),
+) -> None:
+    """Elimina la cuenta del usuario autenticado en Supabase Auth."""
+    await service.delete_my_account(str(current_user.id))
 
 
 @router.get("/admin/stats")
