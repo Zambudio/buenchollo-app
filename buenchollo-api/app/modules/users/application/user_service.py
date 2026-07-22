@@ -9,6 +9,8 @@ handler global en `main.py` las traduce al status HTTP.
 """
 from dataclasses import dataclass
 
+from supabase import Client
+
 from app.modules.users.domain.exceptions import ProfileNotFound
 from app.modules.users.infrastructure.repository import ProfileRepository
 
@@ -27,8 +29,9 @@ class CurrentUser:
 class UserService:
     """Casos de uso del dominio users."""
 
-    def __init__(self, repo: ProfileRepository) -> None:
+    def __init__(self, repo: ProfileRepository, supabase: Client | None = None) -> None:
         self.repo = repo
+        self.supabase = supabase
 
     # ── /auth/me ─────────────────────────────────────────────────────────────
 
@@ -111,6 +114,13 @@ class UserService:
 
     async def get_my_stats(self, user_id: str) -> dict:
         return await self.repo.get_user_stats(user_id)
+
+    async def delete_my_account(self, user_id: str) -> None:
+        """Borra al usuario de Supabase Auth. Las tablas dependientes se
+        limpian vía los ON DELETE CASCADE/SET NULL ya definidos en la BD
+        (perfil, comentarios, votos y favoritos se eliminan en cascada; los
+        chollos publicados sobreviven sin autor)."""
+        self.supabase.auth.admin.delete_user(user_id)
 
     # ── Admin ────────────────────────────────────────────────────────────────
 

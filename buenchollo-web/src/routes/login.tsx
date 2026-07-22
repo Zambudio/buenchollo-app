@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { signInWithGoogle } from "@/lib/auth";
 import { useAuth } from "@/hooks/useAuth";
 import { Logo } from "@/components/layout/Logo";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { toast } from "sonner";
 import { z } from "zod";
 import { SITE_URL } from "@/lib/site";
@@ -146,12 +147,11 @@ function LoginPage() {
               <label className="block text-xs font-mono uppercase text-muted-foreground mb-1">
                 Contraseña
               </label>
-              <input
-                type="password"
+              <PasswordInput
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full bg-surface-900 border border-surface-700 px-3 py-2.5 font-mono text-sm outline-none focus:border-cyan-glow text-foreground"
+                className="bg-surface-900 border border-surface-700 px-3 py-2.5 font-mono text-sm outline-none focus:border-cyan-glow text-foreground"
               />
             </div>
             <button
