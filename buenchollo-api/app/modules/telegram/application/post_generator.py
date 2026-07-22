@@ -14,7 +14,11 @@ CUSTOM_EMOJI_MAP: dict[str, str] = {
     "🛒": "5346056560537779652",   # URL
     "✏️": "5395444784611480792",   # Descripción
     "⚠️": "5420323339723881652",   # Fin de oferta
+    "🔗": "5282843764451195532",   # Enlace web
 }
+
+LINK_TEXT = "Todos los chollos en nuestra web"
+LINK_URL = "https://buenchollotech.com"
 
 _MONTHS_ES = [
     "", "enero", "febrero", "marzo", "abril", "mayo", "junio",
@@ -36,6 +40,12 @@ def _strip_markdown(text: str) -> str:
     return text
 
 
+def _format_price_es(value: float) -> str:
+    """Formatea un importe en formato español: punto de millar, coma decimal."""
+    integer_part, _, decimal_part = f"{value:,.2f}".partition(".")
+    return f"{integer_part.replace(',', '.')},{decimal_part}"
+
+
 class TelegramPostGenerator:
     """Formatea el texto de un chollo para Telegram y sugiere categorías con GPT."""
 
@@ -55,19 +65,19 @@ class TelegramPostGenerator:
         expires_at: str | None = None,
     ) -> str:
         """Construye el texto del post con emojis en el formato estándar de BuenChollo."""
-        price_str = f"{current_price:.2f} €"
+        price_str = f"{_format_price_es(current_price)} €"
 
         msg = f"🍄 {title}\n\n"
 
         if previous_price:
-            msg += f"💶 Precio: {price_str} (antes {previous_price:.2f} €)\n"
+            msg += f"💶 Precio: {price_str} (antes {_format_price_es(previous_price)} €)\n"
         else:
             msg += f"💶 Precio: {price_str}\n"
 
         if previous_price and previous_price > current_price:
             savings = previous_price - current_price
             pct_str = f" | -{discount_pct} %" if discount_pct else ""
-            msg += f"💰 Ahorro: {savings:.2f} €{pct_str}\n\n"
+            msg += f"💰 Ahorro: {_format_price_es(savings)} €{pct_str}\n\n"
         else:
             msg += "\n"
 
@@ -80,9 +90,11 @@ class TelegramPostGenerator:
             try:
                 iso = expires_at.replace("Z", "+00:00")
                 dt = datetime.fromisoformat(iso)
-                msg += f"⚠️ Finaliza el {dt.day} de {_MONTHS_ES[dt.month]}\n"
+                msg += f"⚠️ Finaliza el {dt.day} de {_MONTHS_ES[dt.month]}\n\n"
             except Exception:
                 pass
+
+        msg += f"🔗 {LINK_TEXT}\n\n"
 
         return msg
 
@@ -111,6 +123,17 @@ class TelegramPostGenerator:
                     "custom_emoji_id": custom_id,
                 })
                 start = idx + len(emoji_char)
+
+        link_idx = text.find(LINK_TEXT)
+        if link_idx != -1:
+            offset = len(text[:link_idx].encode("utf-16-le")) // 2
+            length = len(LINK_TEXT.encode("utf-16-le")) // 2
+            entities.append({
+                "type": "text_link",
+                "offset": offset,
+                "length": length,
+                "url": LINK_URL,
+            })
 
         # Negrita sobre todo el mensaje
         total = len(text.encode("utf-16-le")) // 2
