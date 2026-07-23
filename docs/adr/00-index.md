@@ -1,6 +1,6 @@
 # 📋 Architecture Decision Records (ADRs)
 
-> **TL;DR** · Nueve decisiones arquitectónicas firmadas, datadas y
+> **TL;DR** · Once decisiones arquitectónicas firmadas, datadas y
 > justificadas con contexto + alternativas evaluadas + consecuencias.
 > Si quieres entender **por qué** se tomó una decisión técnica del
 > proyecto, está aquí.
@@ -73,6 +73,12 @@
   <td>🔑 Validación local de JWT con JWKS (sin round-trip a Supabase)</td>
   <td>✅ Aceptado</td>
   <td>2026-07-16</td>
+</tr>
+<tr>
+  <td><a href="ADR-011-blog-tiptap-editor.md">011</a></td>
+  <td>📝 Editor de blog con Tiptap y JSON como fuente de verdad</td>
+  <td>✅ Aceptado</td>
+  <td>2026-07-22</td>
 </tr>
 </tbody>
 </table>

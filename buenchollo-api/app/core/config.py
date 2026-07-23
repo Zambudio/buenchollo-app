@@ -123,6 +123,10 @@ class Settings(BaseSettings):
     telegram_main_channel_id: str = ""
     telegram_admin_channel_id: str = ""
 
+    # Dominios extra (CSV) permitidos para enlaces de afiliado manuales del
+    # blog, además de los ya soportados por defecto (ver domain/affiliate_domains.py).
+    blog_affiliate_domains: str = ""
+
     @property
     def amazon_effective_credential_version(self) -> str:
         """Return the configured Amazon credential version, accepting the legacy env name."""

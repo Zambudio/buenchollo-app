@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { blogService } from "@/services/api/blog";
 
 const BASE_URL = "https://buenchollotech.com";
 
@@ -19,6 +20,7 @@ export const Route = createFileRoute("/sitemap.xml")({
           { path: "/", changefreq: "hourly", priority: "1.0" },
           { path: "/explorar", changefreq: "hourly", priority: "0.9" },
           { path: "/categorias", changefreq: "weekly", priority: "0.7" },
+          { path: "/blog", changefreq: "daily", priority: "0.7" },
           { path: "/politica-de-privacidad", changefreq: "yearly", priority: "0.5" },
           { path: "/terminos-y-condiciones", changefreq: "yearly", priority: "0.5" },
           { path: "/politica-de-cookies", changefreq: "yearly", priority: "0.5" },
@@ -57,6 +59,22 @@ export const Route = createFileRoute("/sitemap.xml")({
                   : undefined,
               changefreq: "daily",
               priority: "0.8",
+            });
+          }
+        } catch {
+          // sitemap es best-effort: si una fuente falla seguimos con las demás
+        }
+
+        try {
+          // Los artículos del blog se obtienen vía el backend (no Supabase
+          // directo): endpoint público dedicado `GET /blog/sitemap`.
+          const posts = await blogService.getSitemap();
+          for (const p of posts) {
+            entries.push({
+              path: `/blog/${p.slug}`,
+              lastmod: new Date(p.updated_at ?? p.published_at ?? "").toISOString(),
+              changefreq: "weekly",
+              priority: "0.7",
             });
           }
         } catch {
