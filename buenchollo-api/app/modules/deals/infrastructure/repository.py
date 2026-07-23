@@ -233,6 +233,16 @@ class DealRepository:
         )).mappings().first()
         return dict(row) if row else {"temperature": 0, "votes_up": 0, "votes_down": 0}
 
+    async def get_many_by_ids(self, deal_ids: list[str]) -> list[Deal]:
+        """Resuelve varios deals por id en una sola query (p.ej. bloques de
+        producto recomendado del blog referenciando chollos existentes)."""
+        if not deal_ids:
+            return []
+        result = await self.session.execute(
+            self._base_deal_query().where(Deal.id.in_(deal_ids))
+        )
+        return list(result.scalars().all())
+
     async def get_due_scheduled(self) -> list[Deal]:
         """Devuelve los chollos con status='scheduled' cuyo scheduled_for ya ha llegado."""
         from datetime import datetime, timezone

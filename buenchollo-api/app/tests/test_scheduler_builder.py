@@ -1,6 +1,6 @@
-"""Tests del builder del scheduler de deals (M-07).
+"""Tests del builder del scheduler de deals (M-07) y del blog.
 
-Verifican que el scheduler se construye con los 3 jobs de mantenimiento sin
+Verifican que el scheduler se construye con los jobs de mantenimiento sin
 arrancarlo, y que el flag SCHEDULER_ENABLED existe con default seguro (true,
 comportamiento actual de un solo proceso).
 """
@@ -11,12 +11,17 @@ from app.core.config import Settings
 from app.modules.deals.application.scheduler import build_deals_scheduler
 
 
-def test_builder_registra_los_tres_jobs_sin_arrancar():
+def test_builder_registra_los_cuatro_jobs_sin_arrancar():
     scheduler, cleaner = build_deals_scheduler(Settings())
     jobs = scheduler.get_jobs()
-    assert len(jobs) == 3
+    assert len(jobs) == 4
     names = {job.func.__name__ for job in jobs}
-    assert names == {"mark_expired_deals", "run_due_scheduled_publications", "clean_expired_deals"}
+    assert names == {
+        "mark_expired_deals",
+        "run_due_scheduled_publications",
+        "clean_expired_deals",
+        "run_due_scheduled_posts",
+    }
     assert scheduler.running is False
     assert cleaner is not None
 

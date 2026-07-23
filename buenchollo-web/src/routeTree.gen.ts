@@ -28,11 +28,18 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as CholloSlugRouteImport } from './routes/chollo.$slug'
 import { Route as CategoriaSlugRouteImport } from './routes/categoria.$slug'
+import { Route as BlogSlugRouteImport } from './routes/blog_.$slug'
+import { Route as BlogRssDotxmlRouteImport } from './routes/blog.rss[.]xml'
 import { Route as AlertasNuevaRouteImport } from './routes/alertas_.nueva'
 import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
 import { Route as AdminTiendasRouteImport } from './routes/admin.tiendas'
 import { Route as AdminChollosRouteImport } from './routes/admin.chollos'
 import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
+import { Route as AdminBlogRouteImport } from './routes/admin.blog'
+import { Route as AdminBlogNuevoRouteImport } from './routes/admin.blog_.nuevo'
+import { Route as AdminBlogCategoriasRouteImport } from './routes/admin.blog_.categorias'
+import { Route as AdminBlogPostIdRouteImport } from './routes/admin.blog_.$postId'
+import { Route as AdminBlogPostIdPreviewRouteImport } from './routes/admin.blog_.$postId_.preview'
 
 const TerminosYCondicionesRoute = TerminosYCondicionesRouteImport.update({
   id: '/terminos-y-condiciones',
@@ -129,6 +136,16 @@ const CategoriaSlugRoute = CategoriaSlugRouteImport.update({
   path: '/categoria/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogSlugRoute = BlogSlugRouteImport.update({
+  id: '/blog_/$slug',
+  path: '/blog/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogRssDotxmlRoute = BlogRssDotxmlRouteImport.update({
+  id: '/rss.xml',
+  path: '/rss.xml',
+  getParentRoute: () => BlogRoute,
+} as any)
 const AlertasNuevaRoute = AlertasNuevaRouteImport.update({
   id: '/alertas_/nueva',
   path: '/alertas/nueva',
@@ -154,12 +171,37 @@ const AdminCategoriasRoute = AdminCategoriasRouteImport.update({
   path: '/categorias',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminBlogRoute = AdminBlogRouteImport.update({
+  id: '/blog',
+  path: '/blog',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBlogNuevoRoute = AdminBlogNuevoRouteImport.update({
+  id: '/blog_/nuevo',
+  path: '/blog/nuevo',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBlogCategoriasRoute = AdminBlogCategoriasRouteImport.update({
+  id: '/blog_/categorias',
+  path: '/blog/categorias',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBlogPostIdRoute = AdminBlogPostIdRouteImport.update({
+  id: '/blog_/$postId',
+  path: '/blog/$postId',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBlogPostIdPreviewRoute = AdminBlogPostIdPreviewRouteImport.update({
+  id: '/blog_/$postId_/preview',
+  path: '/blog/$postId/preview',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/alertas': typeof AlertasRoute
-  '/blog': typeof BlogRoute
+  '/blog': typeof BlogRouteWithChildren
   '/categorias': typeof CategoriasRoute
   '/contacto': typeof ContactoRoute
   '/explorar': typeof ExplorarRoute
@@ -172,19 +214,26 @@ export interface FileRoutesByFullPath {
   '/registro': typeof RegistroRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terminos-y-condiciones': typeof TerminosYCondicionesRoute
+  '/admin/blog': typeof AdminBlogRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/chollos': typeof AdminChollosRoute
   '/admin/tiendas': typeof AdminTiendasRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/alertas/nueva': typeof AlertasNuevaRoute
+  '/blog/rss.xml': typeof BlogRssDotxmlRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/categoria/$slug': typeof CategoriaSlugRoute
   '/chollo/$slug': typeof CholloSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/blog/$postId': typeof AdminBlogPostIdRoute
+  '/admin/blog/categorias': typeof AdminBlogCategoriasRoute
+  '/admin/blog/nuevo': typeof AdminBlogNuevoRoute
+  '/admin/blog/$postId/preview': typeof AdminBlogPostIdPreviewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/alertas': typeof AlertasRoute
-  '/blog': typeof BlogRoute
+  '/blog': typeof BlogRouteWithChildren
   '/categorias': typeof CategoriasRoute
   '/contacto': typeof ContactoRoute
   '/explorar': typeof ExplorarRoute
@@ -197,21 +246,28 @@ export interface FileRoutesByTo {
   '/registro': typeof RegistroRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terminos-y-condiciones': typeof TerminosYCondicionesRoute
+  '/admin/blog': typeof AdminBlogRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/chollos': typeof AdminChollosRoute
   '/admin/tiendas': typeof AdminTiendasRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/alertas/nueva': typeof AlertasNuevaRoute
+  '/blog/rss.xml': typeof BlogRssDotxmlRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/categoria/$slug': typeof CategoriaSlugRoute
   '/chollo/$slug': typeof CholloSlugRoute
   '/admin': typeof AdminIndexRoute
+  '/admin/blog/$postId': typeof AdminBlogPostIdRoute
+  '/admin/blog/categorias': typeof AdminBlogCategoriasRoute
+  '/admin/blog/nuevo': typeof AdminBlogNuevoRoute
+  '/admin/blog/$postId/preview': typeof AdminBlogPostIdPreviewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/alertas': typeof AlertasRoute
-  '/blog': typeof BlogRoute
+  '/blog': typeof BlogRouteWithChildren
   '/categorias': typeof CategoriasRoute
   '/contacto': typeof ContactoRoute
   '/explorar': typeof ExplorarRoute
@@ -224,14 +280,21 @@ export interface FileRoutesById {
   '/registro': typeof RegistroRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terminos-y-condiciones': typeof TerminosYCondicionesRoute
+  '/admin/blog': typeof AdminBlogRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/chollos': typeof AdminChollosRoute
   '/admin/tiendas': typeof AdminTiendasRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/alertas_/nueva': typeof AlertasNuevaRoute
+  '/blog/rss.xml': typeof BlogRssDotxmlRoute
+  '/blog_/$slug': typeof BlogSlugRoute
   '/categoria/$slug': typeof CategoriaSlugRoute
   '/chollo/$slug': typeof CholloSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/blog_/$postId': typeof AdminBlogPostIdRoute
+  '/admin/blog_/categorias': typeof AdminBlogCategoriasRoute
+  '/admin/blog_/nuevo': typeof AdminBlogNuevoRoute
+  '/admin/blog_/$postId_/preview': typeof AdminBlogPostIdPreviewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -252,14 +315,21 @@ export interface FileRouteTypes {
     | '/registro'
     | '/sitemap.xml'
     | '/terminos-y-condiciones'
+    | '/admin/blog'
     | '/admin/categorias'
     | '/admin/chollos'
     | '/admin/tiendas'
     | '/admin/usuarios'
     | '/alertas/nueva'
+    | '/blog/rss.xml'
+    | '/blog/$slug'
     | '/categoria/$slug'
     | '/chollo/$slug'
     | '/admin/'
+    | '/admin/blog/$postId'
+    | '/admin/blog/categorias'
+    | '/admin/blog/nuevo'
+    | '/admin/blog/$postId/preview'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -277,14 +347,21 @@ export interface FileRouteTypes {
     | '/registro'
     | '/sitemap.xml'
     | '/terminos-y-condiciones'
+    | '/admin/blog'
     | '/admin/categorias'
     | '/admin/chollos'
     | '/admin/tiendas'
     | '/admin/usuarios'
     | '/alertas/nueva'
+    | '/blog/rss.xml'
+    | '/blog/$slug'
     | '/categoria/$slug'
     | '/chollo/$slug'
     | '/admin'
+    | '/admin/blog/$postId'
+    | '/admin/blog/categorias'
+    | '/admin/blog/nuevo'
+    | '/admin/blog/$postId/preview'
   id:
     | '__root__'
     | '/'
@@ -303,21 +380,28 @@ export interface FileRouteTypes {
     | '/registro'
     | '/sitemap.xml'
     | '/terminos-y-condiciones'
+    | '/admin/blog'
     | '/admin/categorias'
     | '/admin/chollos'
     | '/admin/tiendas'
     | '/admin/usuarios'
     | '/alertas_/nueva'
+    | '/blog/rss.xml'
+    | '/blog_/$slug'
     | '/categoria/$slug'
     | '/chollo/$slug'
     | '/admin/'
+    | '/admin/blog_/$postId'
+    | '/admin/blog_/categorias'
+    | '/admin/blog_/nuevo'
+    | '/admin/blog_/$postId_/preview'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   AlertasRoute: typeof AlertasRoute
-  BlogRoute: typeof BlogRoute
+  BlogRoute: typeof BlogRouteWithChildren
   CategoriasRoute: typeof CategoriasRoute
   ContactoRoute: typeof ContactoRoute
   ExplorarRoute: typeof ExplorarRoute
@@ -331,6 +415,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TerminosYCondicionesRoute: typeof TerminosYCondicionesRoute
   AlertasNuevaRoute: typeof AlertasNuevaRoute
+  BlogSlugRoute: typeof BlogSlugRoute
   CategoriaSlugRoute: typeof CategoriaSlugRoute
   CholloSlugRoute: typeof CholloSlugRoute
 }
@@ -470,6 +555,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CategoriaSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blog_/$slug': {
+      id: '/blog_/$slug'
+      path: '/blog/$slug'
+      fullPath: '/blog/$slug'
+      preLoaderRoute: typeof BlogSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog/rss.xml': {
+      id: '/blog/rss.xml'
+      path: '/rss.xml'
+      fullPath: '/blog/rss.xml'
+      preLoaderRoute: typeof BlogRssDotxmlRouteImport
+      parentRoute: typeof BlogRoute
+    }
     '/alertas_/nueva': {
       id: '/alertas_/nueva'
       path: '/alertas/nueva'
@@ -505,32 +604,87 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCategoriasRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/blog': {
+      id: '/admin/blog'
+      path: '/blog'
+      fullPath: '/admin/blog'
+      preLoaderRoute: typeof AdminBlogRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/blog_/nuevo': {
+      id: '/admin/blog_/nuevo'
+      path: '/blog/nuevo'
+      fullPath: '/admin/blog/nuevo'
+      preLoaderRoute: typeof AdminBlogNuevoRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/blog_/categorias': {
+      id: '/admin/blog_/categorias'
+      path: '/blog/categorias'
+      fullPath: '/admin/blog/categorias'
+      preLoaderRoute: typeof AdminBlogCategoriasRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/blog_/$postId': {
+      id: '/admin/blog_/$postId'
+      path: '/blog/$postId'
+      fullPath: '/admin/blog/$postId'
+      preLoaderRoute: typeof AdminBlogPostIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/blog_/$postId_/preview': {
+      id: '/admin/blog_/$postId_/preview'
+      path: '/blog/$postId/preview'
+      fullPath: '/admin/blog/$postId/preview'
+      preLoaderRoute: typeof AdminBlogPostIdPreviewRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
 interface AdminRouteChildren {
+  AdminBlogRoute: typeof AdminBlogRoute
   AdminCategoriasRoute: typeof AdminCategoriasRoute
   AdminChollosRoute: typeof AdminChollosRoute
   AdminTiendasRoute: typeof AdminTiendasRoute
   AdminUsuariosRoute: typeof AdminUsuariosRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminBlogPostIdRoute: typeof AdminBlogPostIdRoute
+  AdminBlogCategoriasRoute: typeof AdminBlogCategoriasRoute
+  AdminBlogNuevoRoute: typeof AdminBlogNuevoRoute
+  AdminBlogPostIdPreviewRoute: typeof AdminBlogPostIdPreviewRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminBlogRoute: AdminBlogRoute,
   AdminCategoriasRoute: AdminCategoriasRoute,
   AdminChollosRoute: AdminChollosRoute,
   AdminTiendasRoute: AdminTiendasRoute,
   AdminUsuariosRoute: AdminUsuariosRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminBlogPostIdRoute: AdminBlogPostIdRoute,
+  AdminBlogCategoriasRoute: AdminBlogCategoriasRoute,
+  AdminBlogNuevoRoute: AdminBlogNuevoRoute,
+  AdminBlogPostIdPreviewRoute: AdminBlogPostIdPreviewRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
+interface BlogRouteChildren {
+  BlogRssDotxmlRoute: typeof BlogRssDotxmlRoute
+}
+
+const BlogRouteChildren: BlogRouteChildren = {
+  BlogRssDotxmlRoute: BlogRssDotxmlRoute,
+}
+
+const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   AlertasRoute: AlertasRoute,
-  BlogRoute: BlogRoute,
+  BlogRoute: BlogRouteWithChildren,
   CategoriasRoute: CategoriasRoute,
   ContactoRoute: ContactoRoute,
   ExplorarRoute: ExplorarRoute,
@@ -544,6 +698,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TerminosYCondicionesRoute: TerminosYCondicionesRoute,
   AlertasNuevaRoute: AlertasNuevaRoute,
+  BlogSlugRoute: BlogSlugRoute,
   CategoriaSlugRoute: CategoriaSlugRoute,
   CholloSlugRoute: CholloSlugRoute,
 }

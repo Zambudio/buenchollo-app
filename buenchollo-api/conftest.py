@@ -40,6 +40,8 @@ import app.modules.alerts.domain.models  # noqa: F401, E402
 import app.modules.notifications.domain.models  # noqa: F401, E402
 import app.modules.comments.domain.models  # noqa: F401, E402
 import app.modules.scheduled_deals.domain.models  # noqa: F401, E402
+import app.modules.blog.domain.models  # noqa: F401, E402
+import app.modules.blog_comments.domain.models  # noqa: F401, E402
 
 # ── Fixture de cliente compartido ────────────────────────────────────────────
 import pytest
