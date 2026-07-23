@@ -135,6 +135,9 @@ async def vote_comment(
     current = await repo.get_user_vote(comment_id, user_id)
     if current == payload.vote:
         await repo.delete_vote(comment_id, user_id)
-        return {"my_vote": 0}
-    await repo.upsert_vote(comment_id, user_id, payload.vote)
-    return {"my_vote": payload.vote}
+        my_vote = 0
+    else:
+        await repo.upsert_vote(comment_id, user_id, payload.vote)
+        my_vote = payload.vote
+    counters = await repo.recalculate_votes(comment_id)
+    return {**counters, "my_vote": my_vote}
