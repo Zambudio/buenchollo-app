@@ -26,6 +26,9 @@ import app.modules.deals.domain.models  # noqa: F401, E402
 import app.modules.alerts.domain.models  # noqa: F401, E402
 import app.modules.notifications.domain.models  # noqa: F401, E402
 import app.modules.comments.domain.models  # noqa: F401, E402
+import app.modules.scheduled_deals.domain.models  # noqa: F401, E402
+import app.modules.blog.domain.models  # noqa: F401, E402
+import app.modules.blog_comments.domain.models  # noqa: F401, E402
 import app.core.audit.models  # noqa: F401, E402
 
 from sqlalchemy.ext.asyncio import create_async_engine  # noqa: E402
