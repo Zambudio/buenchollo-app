@@ -28,6 +28,35 @@ def override_auth():
     app.dependency_overrides.clear()
 
 
+@pytest.fixture(autouse=True)
+def ensure_mock_profile():
+    """Igual que en test_blog_api.py: `blog_posts.author_id` tiene FK
+    obligatoria a `profiles`, que no existe en el Postgres efímero del CI."""
+    import asyncio
+
+    from sqlalchemy import text as sa_text
+    from sqlalchemy.ext.asyncio import create_async_engine
+
+    from app.core.config import get_settings
+
+    async def _seed():
+        settings = get_settings()
+        engine = create_async_engine(settings.database_url, connect_args={"statement_cache_size": 0})
+        async with engine.begin() as conn:
+            await conn.execute(
+                sa_text(
+                    "INSERT INTO profiles (id, user_id, display_name) "
+                    "VALUES (gen_random_uuid(), CAST(:uid AS uuid), 'Test Admin') "
+                    "ON CONFLICT (user_id) DO NOTHING"
+                ),
+                {"uid": MockUser.id},
+            )
+        await engine.dispose()
+
+    asyncio.run(_seed())
+    yield
+
+
 def _create_post(client) -> str:
     cat_slug = f"cat-{str(uuid.uuid4())[:8]}"
     category = client.post(
