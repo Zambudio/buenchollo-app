@@ -70,6 +70,35 @@ describe("ContentRenderer", () => {
     expect(screen.getByText("Cuidado")).toBeInTheDocument();
   });
 
+  it.each([
+    ["left", "0px", "auto"],
+    ["center", "auto", "auto"],
+    ["right", "auto", "0px"],
+  ])("respeta la alineación %s de las imágenes", (align, marginLeft, marginRight) => {
+    const doc: JSONContent = {
+      type: "doc",
+      content: [
+        {
+          type: "image",
+          attrs: {
+            src: "https://example.com/producto.webp",
+            alt: `Imagen ${align}`,
+            align,
+            width: "normal",
+          },
+        },
+      ],
+    };
+
+    render(<ContentRenderer doc={doc} />);
+
+    expect(screen.getByRole("img", { name: `Imagen ${align}` })).toHaveStyle({
+      display: "block",
+      marginLeft,
+      marginRight,
+    });
+  });
+
   it("resuelve un bloque de producto en modo chollo usando el mapa de products", () => {
     const doc: JSONContent = {
       type: "doc",

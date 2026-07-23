@@ -42,9 +42,17 @@ export function ImageDialog({
       toast.error("El texto alternativo es obligatorio");
       return;
     }
-    editor.chain().focus().setImage({ src: src.trim(), alt: alt.trim() }).run();
-    // setImage no admite atributos extra directamente; los añadimos tras insertar.
-    editor.chain().updateAttributes("image", { align, width }).run();
+    // Insertamos todos los atributos en la misma transacción. Tras `setImage`
+    // la selección ya puede haber avanzado fuera del nodo y un
+    // `updateAttributes` posterior no siempre actualiza la imagen insertada.
+    editor
+      .chain()
+      .focus()
+      .insertContent({
+        type: "image",
+        attrs: { src: src.trim(), alt: alt.trim(), align, width },
+      })
+      .run();
     reset();
     onOpenChange(false);
   };
