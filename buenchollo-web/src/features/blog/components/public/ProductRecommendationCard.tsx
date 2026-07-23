@@ -46,7 +46,7 @@ export function ProductRecommendationCard({
           src={image}
           alt={title}
           loading="lazy"
-          className="size-20 object-cover rounded shrink-0"
+          className="size-20 sm:size-24 object-cover rounded shrink-0"
         />
       )}
       <div className="flex-1 min-w-0">

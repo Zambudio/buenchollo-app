@@ -3,6 +3,31 @@
 @source "../src";
 @import "tw-animate-css";
 
+/* Las imágenes del editor anticipan la misma alineación que tendrán en la
+   publicación. Los márgenes verticales siguen perteneciendo a `prose`. */
+.blog-editor-content img[data-align="left"] {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.blog-editor-content img[data-align="center"] {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.blog-editor-content img[data-align="right"] {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+.blog-editor-content img[data-width="normal"] {
+  max-width: 28rem;
+}
+
+.blog-editor-content img[data-width="full"] {
+  width: 100%;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 /*

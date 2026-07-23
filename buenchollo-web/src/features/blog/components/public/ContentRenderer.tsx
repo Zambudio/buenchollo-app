@@ -142,6 +142,12 @@ function renderNode(node: JSONContent, ctx: RenderCtx): ReactNode {
     case "image": {
       const align = (node.attrs?.align as string) ?? "left";
       const width = (node.attrs?.width as string) ?? "normal";
+      const horizontalMargins =
+        align === "center"
+          ? { marginLeft: "auto", marginRight: "auto" }
+          : align === "right"
+            ? { marginLeft: "auto", marginRight: 0 }
+            : { marginLeft: 0, marginRight: "auto" };
       return (
         <img
           src={node.attrs?.src}
@@ -149,8 +155,7 @@ function renderNode(node: JSONContent, ctx: RenderCtx): ReactNode {
           loading="lazy"
           className={width === "full" ? "w-full" : "max-w-md"}
           style={{
-            marginLeft: align === "right" ? "auto" : undefined,
-            marginRight: align === "left" ? "auto" : undefined,
+            ...horizontalMargins,
             display: "block",
           }}
         />

@@ -56,6 +56,28 @@ describe("ProductRecommendationCard", () => {
     expect(screen.queryByText(/€/)).not.toBeInTheDocument();
   });
 
+  it("muestra la imagen a 80 px en móvil y 96 px desde pantallas pequeñas", () => {
+    renderWithProviders(
+      <ProductRecommendationCard
+        attrs={{
+          mode: "manual",
+          deal_id: null,
+          name: "Producto con imagen",
+          image_url: "https://example.com/producto.webp",
+          affiliate_url: "https://amazon.es/dp/X",
+          note: null,
+          button_text: null,
+          badge: null,
+        }}
+      />,
+    );
+
+    expect(screen.getByRole("img", { name: "Producto con imagen" })).toHaveClass(
+      "size-20",
+      "sm:size-24",
+    );
+  });
+
   it("un chollo existente registra el click antes de abrir el enlace", async () => {
     renderWithProviders(
       <ProductRecommendationCard
