@@ -23,8 +23,25 @@ export function Layout({ children }: { children: ReactNode }) {
       });
     };
 
+    // Comprobación inmediata: si la página ya es más corta que la pantalla
+    // (p. ej. /blog con pocos artículos), nunca se dispara un evento
+    // "scroll" y el footer se quedaría escondido para siempre sin esto.
+    updateFooterAtPageEnd();
+
+    // ResizeObserver: revalida cuando cambia la altura del documento (datos
+    // cargados de forma async, imágenes, cambio de tamaño de ventana) sin
+    // depender de que el usuario haga scroll. No disponible en jsdom (tests).
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(updateFooterAtPageEnd) : null;
+    resizeObserver?.observe(document.documentElement);
+
     window.addEventListener("scroll", updateFooterAtPageEnd, { passive: true });
-    return () => window.removeEventListener("scroll", updateFooterAtPageEnd);
+    window.addEventListener("resize", updateFooterAtPageEnd);
+    return () => {
+      resizeObserver?.disconnect();
+      window.removeEventListener("scroll", updateFooterAtPageEnd);
+      window.removeEventListener("resize", updateFooterAtPageEnd);
+    };
   }, []);
 
   return (
