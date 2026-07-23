@@ -28,6 +28,36 @@ def override_admin():
     app.dependency_overrides.clear()
 
 
+@pytest.fixture(autouse=True)
+def ensure_mock_profile():
+    """`author_id` tiene FK obligatoria a `profiles`. En la BD compartida de
+    dev ese perfil ya existe, pero el Postgres efímero del CI arranca vacío
+    — sin esto, publicar/programar falla con ForeignKeyViolationError."""
+    import asyncio
+
+    from sqlalchemy import text as sa_text
+    from sqlalchemy.ext.asyncio import create_async_engine
+
+    from app.core.config import get_settings
+
+    async def _seed():
+        settings = get_settings()
+        engine = create_async_engine(settings.database_url, connect_args={"statement_cache_size": 0})
+        async with engine.begin() as conn:
+            await conn.execute(
+                sa_text(
+                    "INSERT INTO profiles (id, user_id, display_name) "
+                    "VALUES (gen_random_uuid(), CAST(:uid AS uuid), 'Test Admin') "
+                    "ON CONFLICT (user_id) DO NOTHING"
+                ),
+                {"uid": MockUser.id},
+            )
+        await engine.dispose()
+
+    asyncio.run(_seed())
+    yield
+
+
 def _unique(prefix: str) -> str:
     return f"{prefix}-{str(uuid.uuid4())[:8]}"
 
