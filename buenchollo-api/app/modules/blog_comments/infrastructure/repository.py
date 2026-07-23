@@ -65,6 +65,24 @@ class BlogCommentRepository:
             await self.session.delete(vote_obj)
             await self.session.flush()
 
+    async def recalculate_votes(self, comment_id: str) -> dict:
+        """Recalcula votes_up/votes_down desde blog_comment_votes y actualiza
+        el comentario. Se llama explícitamente desde el router tras cada voto
+        (no depende del trigger `blog_comment_votes_recalc` de la migración,
+        que el esquema efímero de test del CI no crea al partir solo del
+        grafo ORM)."""
+        row = (await self.session.execute(
+            text("""
+                UPDATE blog_comments SET
+                    votes_up   = (SELECT COUNT(*) FROM blog_comment_votes WHERE comment_id = CAST(:id AS uuid) AND vote = 1),
+                    votes_down = (SELECT COUNT(*) FROM blog_comment_votes WHERE comment_id = CAST(:id AS uuid) AND vote = -1)
+                WHERE id = CAST(:id AS uuid)
+                RETURNING votes_up, votes_down
+            """),
+            {"id": comment_id},
+        )).mappings().first()
+        return dict(row) if row else {"votes_up": 0, "votes_down": 0}
+
     async def get_user_vote(self, comment_id: str, user_id: str) -> int | None:
         result = await self.session.execute(
             select(BlogCommentVote.vote).where(
