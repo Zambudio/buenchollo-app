@@ -12,6 +12,7 @@ import {
   BellPlus,
 } from "lucide-react";
 import { Logo } from "./Logo";
+import { ThemeToggle } from "./ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
 import { googleAvatarUrl } from "@/lib/google-profile";
 import { useUnreadNotifications } from "@/features/notifications/hooks/useNotifications";
@@ -84,7 +85,10 @@ export function Header() {
             </div>
           </form>
 
-          <div className="flex items-center gap-4 text-[#8A93A6]">
+          <div className="flex items-center gap-4 text-muted-foreground">
+            <span className="hidden sm:block">
+              <ThemeToggle />
+            </span>
             {user ? (
               <>
                 <Link

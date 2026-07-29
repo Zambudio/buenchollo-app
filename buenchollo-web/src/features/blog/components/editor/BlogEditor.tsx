@@ -161,7 +161,7 @@ export function BlogEditor({
       >
         <EditorContent
           editor={editor}
-          className="prose prose-invert max-w-none p-4 focus:outline-none blog-editor-content"
+          className="prose dark:prose-invert max-w-none p-4 focus:outline-none blog-editor-content"
         />
       </div>
       <div className="flex items-center justify-between text-xs font-mono text-muted-foreground px-2 py-1.5 border border-t-0 border-surface-700">

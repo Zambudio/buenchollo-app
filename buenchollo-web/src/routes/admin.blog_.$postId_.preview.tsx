@@ -46,7 +46,7 @@ function AdminBlogPreview() {
         )}
         {post.has_affiliate_links && <AffiliateDisclosure />}
         <TableOfContents toc={post.toc} />
-        <div className="prose prose-invert prose-cyan max-w-none">
+        <div className="prose dark:prose-invert prose-cyan max-w-none">
           <ContentRenderer doc={post.content} products={post.products} />
         </div>
       </article>

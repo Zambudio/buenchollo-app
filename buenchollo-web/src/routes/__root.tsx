@@ -2,6 +2,7 @@ import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/r
 import { useEffect } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/hooks/useAuth";
+import { ThemeProvider, THEME_INIT_SCRIPT } from "@/hooks/useTheme";
 import { initErrorTracking } from "@/lib/logger";
 import { Toaster } from "@/components/ui/sonner";
 import { WelcomeProfileDialog } from "@/features/auth/components/WelcomeProfileDialog";
@@ -92,8 +93,11 @@ export const Route = createRootRoute({
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className="dark">
+    <html lang="es" className="dark" suppressHydrationWarning>
       <head>
+        {/* Aplica la preferencia de tema guardada/del sistema antes del primer
+            pintado, para evitar un parpadeo de tema oscuro → claro (FOUC). */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <HeadContent />
       </head>
       <body>
@@ -113,11 +117,13 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Outlet />
-        <WelcomeProfileDialog />
-        <Toaster />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <Outlet />
+          <WelcomeProfileDialog />
+          <Toaster />
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

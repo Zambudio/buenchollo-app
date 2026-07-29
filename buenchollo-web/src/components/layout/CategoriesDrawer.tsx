@@ -21,10 +21,15 @@ import {
   Camera,
   Router,
   Zap,
+  User as UserIcon,
+  Heart,
+  BellPlus,
   type LucideIcon,
 } from "lucide-react";
 import { categoriesService, type Category } from "@/services/api/categories";
 import { storesService, type Store } from "@/services/api/stores";
+import { useAuth } from "@/hooks/useAuth";
+import { AppearanceToggle } from "./AppearanceToggle";
 
 const ICONS: Record<string, LucideIcon> = {
   smartphone: Smartphone,
@@ -50,6 +55,7 @@ interface Props {
 }
 
 export function CategoriesDrawer({ open, onClose }: Props) {
+  const { user } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -100,6 +106,50 @@ export function CategoriesDrawer({ open, onClose }: Props) {
 
         {/* Contenido scrollable */}
         <div className="flex-1 overflow-y-auto py-2">
+          {/* APARIENCIA */}
+          <div className="px-3 pt-1 pb-2">
+            <p className="px-3 font-mono text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">
+              Apariencia
+            </p>
+            <div className="px-3">
+              <AppearanceToggle />
+            </div>
+          </div>
+
+          <div className="mx-4 my-2 border-t border-surface-600" />
+
+          {/* CUENTA */}
+          <div className="px-3 pb-1">
+            <p className="px-3 font-mono text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-1">
+              Cuenta
+            </p>
+            <nav className="flex flex-col">
+              {user ? (
+                <>
+                  <Link to="/perfil" onClick={onClose} className={itemCls}>
+                    <UserIcon className="size-4 text-cyan-glow shrink-0" />
+                    <span>Mi perfil</span>
+                  </Link>
+                  <Link to="/favoritos" onClick={onClose} className={itemCls}>
+                    <Heart className="size-4 text-cyan-glow shrink-0" />
+                    <span>Favoritos</span>
+                  </Link>
+                  <Link to="/alertas" onClick={onClose} className={itemCls}>
+                    <BellPlus className="size-4 text-cyan-glow shrink-0" />
+                    <span>Alertas</span>
+                  </Link>
+                </>
+              ) : (
+                <Link to="/login" onClick={onClose} className={itemCls}>
+                  <UserIcon className="size-4 text-cyan-glow shrink-0" />
+                  <span>Acceder</span>
+                </Link>
+              )}
+            </nav>
+          </div>
+
+          <div className="mx-4 my-2 border-t border-surface-600" />
+
           {/* TENDENCIAS */}
           <div className="px-3 pt-3 pb-1">
             <p className="px-3 font-mono text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-1">

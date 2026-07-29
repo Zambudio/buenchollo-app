@@ -33,7 +33,7 @@ export function CategoryBar() {
           href={TELEGRAM_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1.5 my-2 rounded-full bg-[#229ED9] hover:bg-[#1c8bc0] text-white font-mono text-[11px] sm:text-xs font-bold uppercase tracking-wide px-3 sm:px-3.5 py-1.5 shadow-[0_0_12px_rgba(34,158,217,0.5)] transition-colors shrink-0"
+          className="flex items-center gap-1.5 my-2 rounded-full bg-[#156287] hover:bg-[#0f4d68] text-white font-mono text-[11px] sm:text-xs font-bold uppercase tracking-wide px-3 sm:px-3.5 py-1.5 shadow-[0_0_12px_rgba(21,98,135,0.5)] transition-colors shrink-0"
         >
           <Send className="size-3.5" />
           <span className="sm:hidden">Telegram</span>

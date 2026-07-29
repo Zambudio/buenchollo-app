@@ -19,7 +19,11 @@ export function DealVoteControl({
   const buttonSize = isDetail ? "size-8" : "size-7";
   const iconSize = isDetail ? "size-4" : "size-3.5";
   const temperatureColor =
-    temperature === 0 ? "text-[#E8EEF7]" : temperature > 0 ? "text-[#9FB3C8]" : "text-[#FF5C7A]";
+    temperature === 0
+      ? "text-slate-700 dark:text-[#E8EEF7]"
+      : temperature > 0
+        ? "text-sky-600 dark:text-[#9FB3C8]"
+        : "text-rose-600 dark:text-[#FF5C7A]";
 
   return (
     <div
@@ -59,8 +63,8 @@ export function DealVoteControl({
         aria-pressed={myVote === 1}
         className={`${buttonSize} inline-flex items-center justify-center rounded-full transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
           myVote === 1
-            ? "bg-sky-500/15 text-sky-400 ring-1 ring-inset ring-sky-400/50"
-            : "text-sky-400/80 hover:bg-sky-500/10 hover:text-sky-300"
+            ? "bg-sky-500/15 text-sky-700 ring-1 ring-inset ring-sky-600/50 dark:text-sky-400 dark:ring-sky-400/50"
+            : "text-sky-700/80 hover:bg-sky-500/10 hover:text-sky-800 dark:text-sky-400/80 dark:hover:text-sky-300"
         }`}
       >
         <ThumbsUp className={iconSize} strokeWidth={2.25} />
