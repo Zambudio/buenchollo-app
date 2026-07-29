@@ -358,7 +358,7 @@ function ProfilePage() {
             <h2 className="text-lg font-bold">Tu contraseña</h2>
             <div className="space-y-3">
               {isGoogleAccount && (
-                <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+                <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
                   Accedes con Google. Si quieres, establece una contraseña para poder iniciar sesión
                   también con tu email.
                 </p>

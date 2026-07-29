@@ -42,7 +42,7 @@ function TerminosYCondiciones() {
         </p>
 
         <div
-          className="prose prose-invert max-w-none
+          className="prose dark:prose-invert max-w-none
             prose-headings:font-mono prose-headings:uppercase prose-headings:tracking-tight
             prose-headings:text-foreground prose-h2:text-lg prose-h2:mt-10
             prose-a:text-cyan-glow prose-a:no-underline hover:prose-a:underline

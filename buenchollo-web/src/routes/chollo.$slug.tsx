@@ -578,7 +578,7 @@ function DealDetail() {
                   {/* Gráfica Keepa — histórico de precios */}
                   {deal.show_keepa_chart && deal.external_id && (
                     <details className="product-price-history mt-3 border border-surface-700 bg-surface-900 p-3">
-                      <summary className="font-mono text-sm text-[#C2C9D6] cursor-pointer">
+                      <summary className="font-mono text-sm text-slate-600 dark:text-[#C2C9D6] cursor-pointer">
                         Ver histórico de precios
                       </summary>
                       <img
@@ -817,7 +817,7 @@ function DealDetail() {
             {deal.description && (
               <div className="product-description mt-6 bg-surface-800 border border-surface-700 p-5">
                 <h2 className="font-mono text-xs uppercase text-cyan-glow mb-4">Descripción</h2>
-                <div className="prose prose-invert prose-sm max-w-none prose-p:leading-relaxed prose-p:text-foreground/90 prose-li:text-foreground/90">
+                <div className="prose dark:prose-invert prose-sm max-w-none prose-p:leading-relaxed prose-p:text-foreground/90 prose-li:text-foreground/90">
                   <ReactMarkdown>{deal.description}</ReactMarkdown>
                 </div>
               </div>

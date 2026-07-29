@@ -292,15 +292,15 @@ export function ScheduledDealsCalendar({
         </div>
         <div className="flex flex-wrap gap-x-3 gap-y-1 font-mono text-[10px] uppercase">
           <span className="text-cyan-glow">● Programado</span>
-          <span className="text-yellow-400">● Publicado</span>
-          <span className="text-red-500">● Cancelado / error</span>
+          <span className="text-yellow-600 dark:text-yellow-400">● Publicado</span>
+          <span className="text-alert-red">● Cancelado / error</span>
         </div>
       </div>
 
       <FullCalendar
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, multiMonthPlugin]}
         locale={esLocale}
-        initialView="dayGridMonth"
+        initialView="timeGridWeek"
         headerToolbar={{
           left: "prev,next today",
           center: "title",
@@ -349,7 +349,7 @@ export function ScheduledDealsCalendar({
             </div>
 
             {selected.cancellation_reason && (
-              <p className="mb-4 border border-red-500/40 bg-red-500/10 p-3 text-xs text-red-300">
+              <p className="mb-4 border border-red-500/40 bg-red-500/10 p-3 text-xs text-red-800 dark:text-red-300">
                 {selected.cancellation_reason}
               </p>
             )}
@@ -466,7 +466,7 @@ export function ScheduledDealsCalendar({
                 <button
                   disabled={saving}
                   onClick={remove}
-                  className="border border-red-500/60 text-red-400 px-4 py-2 font-mono text-xs flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="border border-red-500/60 text-red-700 dark:text-red-400 px-4 py-2 font-mono text-xs flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   <Trash2 className="size-3.5" /> BORRAR PROGRAMACIÓN
                 </button>

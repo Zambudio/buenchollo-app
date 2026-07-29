@@ -8,6 +8,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, type RenderOptions, type RenderResult } from "@testing-library/react";
 import type { ReactElement } from "react";
+import { ThemeProvider } from "@/hooks/useTheme";
 
 /** Crea un QueryClient con reintentos desactivados para tests deterministas. */
 export function buildTestQueryClient(): QueryClient {
@@ -30,7 +31,9 @@ export function renderWithProviders(
 ): RenderResult & { queryClient: QueryClient } {
   const result = render(ui, {
     wrapper: ({ children }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>{children}</ThemeProvider>
+      </QueryClientProvider>
     ),
     ...options,
   });

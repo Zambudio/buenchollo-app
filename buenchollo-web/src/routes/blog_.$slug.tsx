@@ -259,7 +259,7 @@ function BlogPostPage() {
 
         <TableOfContents toc={post.toc} />
 
-        <div className="prose prose-invert prose-cyan max-w-none prose-headings:scroll-mt-20 prose-img:rounded-lg">
+        <div className="prose dark:prose-invert prose-cyan max-w-none prose-headings:scroll-mt-20 prose-img:rounded-lg">
           <ContentRenderer doc={post.content} products={post.products} />
         </div>
 

@@ -71,6 +71,7 @@
   --color-cyan-glow: var(--cyan-glow);
   --color-alert-red: var(--alert-red);
   --color-success: var(--success);
+  --color-countdown: var(--countdown);
 
   --color-chart-1: var(--cyan-glow);
   --color-chart-2: oklch(0.7 0.18 200);
@@ -95,6 +96,7 @@
   --fc-neutral-bg-color: color-mix(in srgb, var(--color-surface-900) 75%, transparent);
   --fc-list-event-hover-bg-color: var(--color-surface-700);
   --fc-today-bg-color: rgb(34 211 238 / 0.08);
+  --fc-button-text-color: var(--color-foreground);
   --fc-button-bg-color: var(--color-surface-900);
   --fc-button-border-color: var(--color-surface-600);
   --fc-button-hover-bg-color: var(--color-surface-700);
@@ -198,6 +200,47 @@
 }
 
 :root {
+  /*
+   * Tema Claro — "Tech Premium". Fondo neutro suave, tarjetas blancas con
+   * bordes sutiles y acento azul/cian ajustado para contraste AA sobre
+   * fondo claro (en oscuro este mismo rol lo ocupa --cyan-glow puro).
+   */
+  --radius: 12px;
+
+  --surface-900: #f8fafc;
+  --surface-800: #ffffff;
+  --surface-700: #e2e8f0;
+  --surface-600: #cbd5e1;
+  --cyan-glow: #0369a1;
+  --alert-red: #dc2626;
+  --success: #15803d;
+  --countdown: #b45309;
+
+  --background: var(--surface-900);
+  --foreground: #0f172a;
+  --card: var(--surface-800);
+  --card-foreground: #0f172a;
+  --popover: var(--surface-800);
+  --popover-foreground: #0f172a;
+  --primary: var(--cyan-glow);
+  --primary-foreground: #f8fafc;
+  --secondary: var(--surface-700);
+  --secondary-foreground: #0f172a;
+  --muted: var(--surface-700);
+  --muted-foreground: #475569;
+  --accent: var(--surface-700);
+  --accent-foreground: var(--cyan-glow);
+  --destructive: var(--alert-red);
+  --destructive-foreground: #f8fafc;
+  --border: var(--surface-700);
+  --input: var(--surface-700);
+  --ring: var(--cyan-glow);
+}
+
+.dark {
+  /*
+   * Tema Oscuro — "Terminal Eléctrico" (el original, sin cambios).
+   */
   --radius: 12px;
 
   --surface-900: oklch(0.13 0.04 260);
@@ -207,6 +250,7 @@
   --cyan-glow: oklch(0.85 0.18 210);
   --alert-red: oklch(0.65 0.24 15);
   --success: oklch(0.75 0.18 150);
+  --countdown: #f5a623;
 
   --background: var(--surface-900);
   --foreground: oklch(0.95 0.005 240);
@@ -227,12 +271,6 @@
   --border: var(--surface-700);
   --input: var(--surface-700);
   --ring: var(--cyan-glow);
-}
-
-.dark {
-  /* Mismo tema (siempre oscuro) */
-  --background: var(--surface-900);
-  --foreground: oklch(0.95 0.005 240);
 }
 
 @layer base {
@@ -314,7 +352,7 @@
   }
 
   .product-price {
-    color: #22d3ee;
+    color: var(--color-cyan-glow);
     font-size: 2.25rem;
     font-weight: 700;
   }
@@ -322,7 +360,7 @@
     font-size: 1.875rem;
   }
   .previous-price {
-    color: #c2c9d6;
+    color: var(--color-muted-foreground);
     font-size: 0.9375rem;
     font-weight: 400;
     text-decoration: line-through;
@@ -330,7 +368,7 @@
   .meta,
   .availability,
   .posted-date {
-    color: #c2c9d6;
+    color: var(--color-muted-foreground);
     font-size: 0.875rem;
     line-height: 1.4;
     font-weight: 400;
@@ -344,7 +382,7 @@
     font-family: var(--font-mono);
   }
   .store a {
-    color: #22d3ee;
+    color: var(--color-cyan-glow);
     font-weight: 400;
   }
   .store a:hover {
@@ -361,12 +399,12 @@
     background: #12b074;
   }
   .countdown {
-    color: #f5a623;
-    border-left: 3px solid #f5a623;
+    color: var(--color-countdown);
+    border-left: 3px solid var(--color-countdown);
     background: rgba(245, 166, 35, 0.08);
   }
   .badge-discount {
-    background: #e23e57;
+    background: #c4364c;
     opacity: 1;
     color: #fff;
     font-weight: 700;
@@ -380,7 +418,7 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    color: #8a93a6;
+    color: var(--color-muted-foreground);
     font-weight: 400;
   }
   .product-social-row .social-actions {
@@ -403,7 +441,7 @@
   }
   .product-social-row button:hover,
   .product-social-row button.is-active {
-    color: #22d3ee;
+    color: var(--color-cyan-glow);
   }
   .product-social-row svg {
     width: 19px;

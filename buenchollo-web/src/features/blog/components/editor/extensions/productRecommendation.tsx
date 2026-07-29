@@ -93,7 +93,7 @@ function ProductBlockView({ node, updateAttributes, deleteNode, editor }: NodeVi
           type="button"
           aria-label="Eliminar bloque de producto"
           onClick={() => deleteNode()}
-          className="text-red-400 hover:text-red-300"
+          className="text-red-700 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
         >
           <Trash2 className="size-4" />
         </button>
