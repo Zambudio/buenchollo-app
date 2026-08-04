@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-23T00:00:00+00:00",
+  "updated_at": "2026-07-23T20:59:36.191446+00:00",
   "categories": [
     "#Accesorios",
     "#AcesoriosparaGoPro",
@@ -16,6 +16,7 @@
     "#BasesdeConexion",
     "#BrazosdeMonitor",
     "#CablesUSB",
+    "#CablesVideo",
     "#CajaPc",
     "#Camara",
     "#CamaraDeportiva",
@@ -83,6 +84,8 @@
     "#Router",
     "#Router4g",
     "#SAI",
+    "#SillaErgonómica",
+    "#SillaGaming",
     "#SmartHome",
     "#SmartPhones",
     "#SmartRing",
