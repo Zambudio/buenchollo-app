@@ -84,7 +84,7 @@ function AdminDeals() {
    *  UPDATE sobre el deal existente si el admin elige "Sobrescribir". */
   const [duplicateConflict, setDuplicateConflict] = useState<{
     existing_deal: { id: string; slug: string; title: string };
-    pendingPayload: DealCreatePayload;
+    pendingPayload?: DealCreatePayload;
   } | null>(null);
 
   const { edit: editId } = Route.useSearch();
@@ -123,7 +123,20 @@ function AdminDeals() {
     }
     setAutofilling(true);
     try {
-      const d: AmazonPreviewResponse = await productsApi.previewFromUrl(url);
+      let d: AmazonPreviewResponse;
+      try {
+        d = await productsApi.previewFromUrl(url);
+      } catch (e: unknown) {
+        // El backend corta antes de gastar en IA si el ASIN ya existe.
+        // Mostramos el mismo diálogo de duplicado que usa el guardado manual,
+        // sin pendingPayload (aún no hay formulario que sobrescribir) y sin
+        // abrir el panel de Telegram (evita la llamada a telegram/generate).
+        if (isDuplicateDealError(e)) {
+          setDuplicateConflict({ existing_deal: e.data.existing_deal });
+          return;
+        }
+        throw e;
+      }
       const amazonStore = stores.find((s) => s.name.toLowerCase().includes("amazon"));
       const categorySelection = resolveCategorySelection(
         d.category_id ?? "",
@@ -426,7 +439,7 @@ function AdminDeals() {
    *  deal que ya tiene ese ASIN. Conserva id, slug, comentarios, votos y
    *  favoritos del registro original. */
   const overwriteExisting = async () => {
-    if (!duplicateConflict) return;
+    if (!duplicateConflict?.pendingPayload) return;
     try {
       await dealsService.update(
         duplicateConflict.existing_deal.id,
@@ -531,7 +544,7 @@ function AdminDeals() {
         existingTitle={duplicateConflict?.existing_deal.title}
         onClose={() => setDuplicateConflict(null)}
         onGoExisting={goEditExisting}
-        onOverwrite={overwriteExisting}
+        onOverwrite={duplicateConflict?.pendingPayload ? overwriteExisting : undefined}
       />
     </div>
   );

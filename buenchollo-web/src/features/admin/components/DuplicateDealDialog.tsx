@@ -13,7 +13,7 @@ interface Props {
   readonly open: boolean;
   readonly onClose: () => void;
   readonly onGoExisting: () => void;
-  readonly onOverwrite: () => void;
+  readonly onOverwrite?: () => void;
 }
 
 export function DuplicateDealDialog({
@@ -52,13 +52,15 @@ export function DuplicateDealDialog({
           >
             Ir al chollo existente
           </button>
-          <button
-            type="button"
-            onClick={onOverwrite}
-            className="px-4 py-2 font-mono text-xs uppercase bg-alert-red text-white hover:opacity-90 transition-opacity"
-          >
-            Sobrescribir el existente
-          </button>
+          {onOverwrite && (
+            <button
+              type="button"
+              onClick={onOverwrite}
+              className="px-4 py-2 font-mono text-xs uppercase bg-alert-red text-white hover:opacity-90 transition-opacity"
+            >
+              Sobrescribir el existente
+            </button>
+          )}
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
