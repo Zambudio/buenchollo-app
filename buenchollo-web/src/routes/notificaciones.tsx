@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { CheckCheck } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { useAuth } from "@/hooks/useAuth";
 import { formatRelativeTime } from "@/lib/format";
@@ -41,21 +42,34 @@ function NotificationsPage() {
   }, [authLoading, user, nav]);
 
   useEffect(() => {
-    // Al entrar en la página: marcar como leídas (best-effort silencioso).
-    if (items.length > 0 && !markRead.isPending && !markRead.isSuccess) {
-      markRead.mutate();
-    }
-  }, [items.length, markRead]);
-
-  useEffect(() => {
     if (isError) toast.error("No se pudieron cargar las notificaciones");
   }, [isError]);
+
+  const hasUnread = items.some((n) => !n.is_read);
 
   return (
     <Layout>
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
         <div className="font-mono text-cyan-glow text-xs mb-2">&gt; NOTIFICACIONES</div>
-        <h1 className="text-3xl font-bold tracking-tighter mb-6">Tus notificaciones</h1>
+        <div className="flex items-center justify-between gap-4 mb-6">
+          <h1 className="text-3xl font-bold tracking-tighter">Tus notificaciones</h1>
+          {hasUnread && (
+            <button
+              type="button"
+              onClick={() => {
+                markRead.mutate(undefined, {
+                  onSuccess: () => toast.success("Notificaciones marcadas como leídas"),
+                  onError: () => toast.error("Error al marcar notificaciones como leídas"),
+                });
+              }}
+              disabled={markRead.isPending}
+              className="text-xs font-medium text-white bg-[#156287] hover:bg-[#0f4d68] active:scale-95 px-3 py-1.5 rounded-lg transition-all border border-sky-400/40 cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+            >
+              <CheckCheck className="size-4" />
+              <span>Marcar todas como leídas</span>
+            </button>
+          )}
+        </div>
         {isLoading ? (
           <div className="font-mono text-xs text-muted-foreground py-12 text-center">
             CARGANDO...

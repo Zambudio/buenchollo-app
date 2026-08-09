@@ -1,21 +1,11 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import {
-  Search,
-  Bell,
-  Heart,
-  User as UserIcon,
-  LogOut,
-  Shield,
-  Menu,
-  X,
-  BellPlus,
-} from "lucide-react";
+import { Search, Heart, User as UserIcon, LogOut, Shield, Menu, X, BellPlus } from "lucide-react";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
 import { googleAvatarUrl } from "@/lib/google-profile";
-import { useUnreadNotifications } from "@/features/notifications/hooks/useNotifications";
+import { NotificationsPopover } from "@/features/notifications/components/NotificationsPopover";
 import { CategoriesDrawer } from "./CategoriesDrawer";
 import {
   DropdownMenu,
@@ -31,7 +21,6 @@ export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const nav = useNavigate();
-  const { data: unread = 0 } = useUnreadNotifications();
   // Antes de que `me` termine de cargar (authLoading), `user` ya está
   // disponible: no caer al avatar de Google en ese hueco o parpadea.
   const avatarUrl = authLoading ? null : me?.avatar_url || googleAvatarUrl(user);
@@ -91,18 +80,7 @@ export function Header() {
             </span>
             {user ? (
               <>
-                <Link
-                  to="/notificaciones"
-                  className="relative p-2 hover:text-cyan-glow transition-colors"
-                  title="Notificaciones"
-                >
-                  <Bell className="size-5" />
-                  {unread > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 bg-alert-red text-white text-[10px] font-mono font-bold rounded-full size-4 flex items-center justify-center">
-                      {unread > 9 ? "9+" : unread}
-                    </span>
-                  )}
-                </Link>
+                <NotificationsPopover />
                 <Link
                   to="/favoritos"
                   className="hidden sm:block p-2 hover:text-cyan-glow transition-colors"
