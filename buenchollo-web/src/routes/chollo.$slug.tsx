@@ -6,6 +6,7 @@ import { Layout } from "@/components/layout/Layout";
 import { DealCard, type DealCardData } from "@/features/deals/components/DealCard";
 import { useMyVotes } from "@/features/deals/hooks/useMyVotes";
 import { Comments } from "@/features/deals/components/Comments";
+import { RecommendedAlertsBlock } from "@/features/alerts/components/RecommendedAlertsBlock";
 import { ShareDialog } from "@/features/deals/components/ShareBox";
 import { DealVoteControl } from "@/features/deals/components/DealVoteControl";
 import { StoreAvailability } from "@/features/deals/components/StoreAvailability";
@@ -874,6 +875,9 @@ function DealDetail() {
             </Carousel>
           </section>
         )}
+
+        {/* Alertas recomendadas contextuales */}
+        <RecommendedAlertsBlock deal={deal} />
 
         <div id="comentarios" className="scroll-mt-20">
           <Comments

@@ -123,7 +123,8 @@ src/
 ├── 🎨 features/                   Dominios funcionales
 │   ├── deals/components/          DealCard · Comments · ShareBox
 │   ├── admin/hooks/               useAdminStats
-│   ├── notifications/hooks/       useUnreadNotifications · …
+│   ├── alerts/components/         RecommendedAlertsBlock
+│   ├── notifications/             NotificationsPopover · useUnreadNotifications
 │   └── telegram/components/       TelegramPanel
 │
 ├── 🧩 components/

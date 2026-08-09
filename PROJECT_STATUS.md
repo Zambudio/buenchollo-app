@@ -236,6 +236,26 @@ abrir la web al público:
 
 ---
 
+### 3.decies  Rediseño de Notificaciones & Alertas Recomendadas — 2026-08-09
+
+Sprint enfocado en la experiencia de usuario para alertas y notificaciones in-app:
+
+- **Popover de Notificaciones flotante ([NotificationsPopover.tsx](buenchollo-web/src/features/notifications/components/NotificationsPopover.tsx))**:
+  - Reemplaza la redirección a página completa `/notificaciones` desde el icono de campana del Header.
+  - Cabecera en azul corporativo (`#156287` / `sky`) con botón **"Marcar todas como leídas"** que aparece cuando existen notificaciones sin leer (`unread > 0`), ejecutando `POST /notifications/mark-read` e invalidando reactivamente queries de React Query.
+  - Lista interactiva con scroll, icono circular `(i)`, título, fecha formateada (`d/m/yyyy`), descripción y navegación directa al chollo al hacer click.
+  - Test unitarios e integración añadidos en [NotificationsPopover.test.tsx](buenchollo-web/src/features/notifications/components/NotificationsPopover.test.tsx).
+
+- **Bloque de Alertas Recomendadas contextuales ([RecommendedAlertsBlock.tsx](buenchollo-web/src/features/alerts/components/RecommendedAlertsBlock.tsx))**:
+  - Ubicado entre los *Chollos relacionados* y la sección de *Comentarios* en [chollo.$slug.tsx](buenchollo-web/src/routes/chollo.$slug.tsx).
+  - Genera sugerencias contextuales automáticas basadas en el producto actual: modelo/término específico, marca, tienda, y categoría.
+  - Presentación visual rica con imágenes reales del producto (`deal.image_url`), logos oficiales de tiendas y marcas reconocidas, e iconos temáticos con colores vibrantes por categoría.
+  - Tarjeta especial `+ Otra alerta` con botón `Personalizar` que navega a `/alertas/nueva`.
+  - Suscripción y activación en un clic con estado sincronizado (`Activar alerta` ↔ `✓ Alerta activa`).
+  - Test unitarios e integración en [RecommendedAlertsBlock.test.tsx](buenchollo-web/src/features/alerts/components/RecommendedAlertsBlock.test.tsx).
+
+---
+
 ### 3.septies  Estabilización post-auditoría — 2026-07-16
 
 Auditoría técnica completa en [`docs/archive/AUDIT_REPORT-2026-07.md`](docs/archive/AUDIT_REPORT-2026-07.md) (veredicto:
