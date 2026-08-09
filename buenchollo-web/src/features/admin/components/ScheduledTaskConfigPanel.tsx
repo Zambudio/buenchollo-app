@@ -56,21 +56,35 @@ export function ScheduledTaskConfigPanel({ task }: { readonly task: ScheduledTas
   }, [tolerance]);
 
   const commitRunHour = () => {
+    if (runHourDraft.trim() === "") {
+      setRunHourDraft(String(task.run_hour));
+      return;
+    }
     const parsed = Number(runHourDraft);
     if (Number.isInteger(parsed) && parsed >= 0 && parsed <= 23 && parsed !== task.run_hour) {
-      update.mutate({ id: task.id, data: { run_hour: parsed } });
+      update.mutate(
+        { id: task.id, data: { run_hour: parsed } },
+        { onError: () => setRunHourDraft(String(task.run_hour)) },
+      );
     } else {
       setRunHourDraft(String(task.run_hour));
     }
   };
 
   const commitTolerance = () => {
+    if (toleranceDraft.trim() === "") {
+      setToleranceDraft(String(tolerance));
+      return;
+    }
     const parsed = Number(toleranceDraft);
     if (Number.isFinite(parsed) && parsed >= 0 && parsed <= 100 && parsed !== tolerance) {
-      update.mutate({
-        id: task.id,
-        data: { config: { ...task.config, price_tolerance_percent: parsed } },
-      });
+      update.mutate(
+        {
+          id: task.id,
+          data: { config: { ...task.config, price_tolerance_percent: parsed } },
+        },
+        { onError: () => setToleranceDraft(String(tolerance)) },
+      );
     } else {
       setToleranceDraft(String(tolerance));
     }
