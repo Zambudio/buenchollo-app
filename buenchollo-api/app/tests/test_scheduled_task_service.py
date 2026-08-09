@@ -128,6 +128,7 @@ async def test_confirm_borra_persiste_el_run_y_actualiza_last_run_at():
     candidate = _candidate()
     handler.execute = AsyncMock(return_value=[candidate])
     service, repo, _ = _build_service(task, handler)
+    session = service.session
 
     run = await service.confirm("task-1", total_checked=5, candidates=[candidate], triggered_by="admin-1")
 
@@ -143,6 +144,14 @@ async def test_confirm_borra_persiste_el_run_y_actualiza_last_run_at():
     assert task.last_run_at is not None
     repo.update_task.assert_awaited_once_with(task)
 
+    session.add.assert_called_once()
+    entry = session.add.call_args.args[0]
+    assert entry.user_id == "admin-1"
+    assert entry.action == "deal.auto_delete_price_check"
+    assert entry.target_type == "deal"
+    assert entry.target_id == "deal-1"
+    assert entry.payload == {"old_price": 100.0, "new_price": 115.0, "reason": "price_increase"}
+
 
 # --- run_automatic ---
 
@@ -154,6 +163,7 @@ async def test_run_automatic_ejecuta_preview_y_execute_y_marca_automatic():
     handler.evaluate = MagicMock(return_value=PreviewResult(total_checked=3, candidates=[candidate]))
     handler.execute = AsyncMock(return_value=[candidate])
     service, repo, deal_repo = _build_service(task, handler)
+    session = service.session
 
     run = await service.run_automatic("task-1")
 
@@ -163,6 +173,14 @@ async def test_run_automatic_ejecuta_preview_y_execute_y_marca_automatic():
     assert run.total_checked == 3
     assert run.total_affected == 1
     assert task.last_run_at is not None
+
+    session.add.assert_called_once()
+    entry = session.add.call_args.args[0]
+    assert entry.user_id is None
+    assert entry.action == "deal.auto_delete_price_check"
+    assert entry.target_type == "deal"
+    assert entry.target_id == "deal-1"
+    assert entry.payload == {"old_price": 100.0, "new_price": 115.0, "reason": "price_increase"}
 
 
 @pytest.mark.asyncio
