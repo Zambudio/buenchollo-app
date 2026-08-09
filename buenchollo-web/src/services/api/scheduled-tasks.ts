@@ -1,4 +1,5 @@
 import { apiClient } from "./client";
+import type { DealDetailData } from "./deals";
 
 export type FrequencyPreset = "daily" | "weekly" | "biweekly" | "monthly";
 export type PriceCheckReason = "price_increase" | "no_longer_deal" | "out_of_stock";
@@ -73,12 +74,6 @@ export interface ScheduledTaskRunDetail extends ScheduledTaskRun {
   items: ScheduledTaskRunItem[];
 }
 
-export interface RestoredDeal {
-  id: string;
-  title: string;
-  slug: string;
-}
-
 export const scheduledTasksService = {
   list: (): Promise<ScheduledTaskConfig[]> => apiClient.get("/admin/scheduled-tasks"),
 
@@ -103,6 +98,6 @@ export const scheduledTasksService = {
   bulkDeleteRuns: (runIds: string[]): Promise<{ deleted: number }> =>
     apiClient.post(`/admin/scheduled-tasks/runs/bulk-delete`, { run_ids: runIds }),
 
-  restoreItem: (itemId: string): Promise<RestoredDeal> =>
-    apiClient.post(`/admin/scheduled-tasks/runs/items/${itemId}/restore`, {}),
+  restoreItem: (itemId: string): Promise<DealDetailData> =>
+    apiClient.post<DealDetailData>(`/admin/scheduled-tasks/runs/items/${itemId}/restore`, {}),
 };
