@@ -12,6 +12,7 @@ from app.core.config import Settings
 from app.modules.deals.application.cleaner_service import DealCleanerService
 from app.modules.scheduled_deals.application.publication_worker import run_due_scheduled_publications
 from app.modules.blog.application.scheduler import run_due_scheduled_posts
+from app.modules.scheduled_tasks.application.scheduler import run_due_scheduled_tasks
 
 
 def build_deals_scheduler(settings: Settings) -> tuple[BackgroundScheduler, DealCleanerService]:
@@ -44,6 +45,15 @@ def build_deals_scheduler(settings: Settings) -> tuple[BackgroundScheduler, Deal
         minute="*/5",
         args=[settings],
         id="publish_scheduled_blog_posts",
+        max_instances=1,
+        coalesce=True,
+    )
+    scheduler.add_job(
+        run_due_scheduled_tasks,
+        "interval",
+        hours=1,
+        args=[settings],
+        id="run_scheduled_tasks",
         max_instances=1,
         coalesce=True,
     )
