@@ -2,7 +2,7 @@ import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-rout
 import { useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { useAuth } from "@/hooks/useAuth";
-import { Package, FolderTree, Users, BarChart3, ShoppingBag, FileText } from "lucide-react";
+import { Package, FolderTree, Users, BarChart3, ShoppingBag, FileText, Clock } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   component: AdminLayout,
@@ -68,6 +68,13 @@ function AdminLayout() {
               className="flex items-center gap-2 px-3 py-2 font-mono text-xs uppercase hover:bg-surface-700"
             >
               <FileText className="size-4" /> Blog
+            </Link>
+            <Link
+              to="/admin/tareas-programadas"
+              activeProps={{ className: "bg-surface-700 text-cyan-glow" }}
+              className="flex items-center gap-2 px-3 py-2 font-mono text-xs uppercase hover:bg-surface-700"
+            >
+              <Clock className="size-4" /> Tareas programadas
             </Link>
             <Link
               to="/admin/usuarios"
