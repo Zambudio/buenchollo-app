@@ -1,6 +1,6 @@
 /** Hooks de React Query para notificaciones del usuario. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { notificationsApi } from "@/services/api/notifications";
+import { notificationsApi, type Notification } from "@/services/api/notifications";
 import { useAuth } from "@/hooks/useAuth";
 
 const KEYS = {
@@ -41,9 +41,32 @@ export function useMarkNotificationsRead() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: () => notificationsApi.markRead(),
-    onSuccess: () => {
-      // Invalidamos las queries afectadas: el badge baja a 0 y la lista
-      // refleja todo leído sin escribir SQL en el cliente.
+    onMutate: async () => {
+      await qc.cancelQueries({ queryKey: KEYS.unreadCount });
+      await qc.cancelQueries({ queryKey: KEYS.list });
+
+      const prevCount = qc.getQueryData<number>(KEYS.unreadCount);
+      const prevList = qc.getQueryData<Notification[]>(KEYS.list);
+
+      qc.setQueryData<number>(KEYS.unreadCount, 0);
+      qc.setQueryData<Notification[]>(
+        KEYS.list,
+        (old) => old?.map((n) => ({ ...n, is_read: true })) ?? [],
+      );
+
+      return { prevCount, prevList };
+    },
+    onError: (_err, _vars, context) => {
+      if (context) {
+        if (context.prevCount !== undefined) {
+          qc.setQueryData(KEYS.unreadCount, context.prevCount);
+        }
+        if (context.prevList !== undefined) {
+          qc.setQueryData(KEYS.list, context.prevList);
+        }
+      }
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: KEYS.unreadCount });
       qc.invalidateQueries({ queryKey: KEYS.list });
     },
@@ -55,7 +78,37 @@ export function useMarkNotificationRead() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => notificationsApi.markOneRead(id),
-    onSuccess: () => {
+    onMutate: async (id: string) => {
+      await qc.cancelQueries({ queryKey: KEYS.unreadCount });
+      await qc.cancelQueries({ queryKey: KEYS.list });
+
+      const prevCount = qc.getQueryData<number>(KEYS.unreadCount);
+      const prevList = qc.getQueryData<Notification[]>(KEYS.list);
+
+      if (prevList) {
+        qc.setQueryData<Notification[]>(
+          KEYS.list,
+          (old) => old?.map((n) => (n.id === id ? { ...n, is_read: true } : n)) ?? [],
+        );
+      }
+
+      if (typeof prevCount === "number") {
+        qc.setQueryData<number>(KEYS.unreadCount, Math.max(0, prevCount - 1));
+      }
+
+      return { prevCount, prevList };
+    },
+    onError: (_err, _id, context) => {
+      if (context) {
+        if (context.prevCount !== undefined) {
+          qc.setQueryData(KEYS.unreadCount, context.prevCount);
+        }
+        if (context.prevList !== undefined) {
+          qc.setQueryData(KEYS.list, context.prevList);
+        }
+      }
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: KEYS.unreadCount });
       qc.invalidateQueries({ queryKey: KEYS.list });
     },

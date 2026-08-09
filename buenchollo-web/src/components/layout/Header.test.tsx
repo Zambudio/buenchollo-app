@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => ({
   useUnreadNotifications: vi.fn(),
   useNotificationsList: vi.fn(),
   useMarkNotificationsRead: vi.fn(),
+  useMarkNotificationRead: vi.fn(),
 }));
 
 vi.mock("@tanstack/react-router", () => ({
@@ -41,6 +42,7 @@ vi.mock("@/features/notifications/hooks/useNotifications", () => ({
   useUnreadNotifications: mocks.useUnreadNotifications,
   useNotificationsList: mocks.useNotificationsList,
   useMarkNotificationsRead: mocks.useMarkNotificationsRead,
+  useMarkNotificationRead: mocks.useMarkNotificationRead,
 }));
 
 // CategoriesDrawer monta lógica adicional irrelevante para los asserts de
@@ -54,6 +56,7 @@ beforeEach(() => {
   mocks.useUnreadNotifications.mockReturnValue({ data: 0 });
   mocks.useNotificationsList.mockReturnValue({ data: [], isLoading: false });
   mocks.useMarkNotificationsRead.mockReturnValue({ mutate: vi.fn(), isPending: false });
+  mocks.useMarkNotificationRead.mockReturnValue({ mutate: vi.fn(), isPending: false });
 });
 
 describe("Header", () => {
