@@ -6,7 +6,9 @@ import {
   useUnreadNotifications,
   useNotificationsList,
   useMarkNotificationsRead,
+  useMarkNotificationRead,
 } from "@/features/notifications/hooks/useNotifications";
+import type { Notification } from "@/services/api/notifications";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +25,7 @@ export function NotificationsPopover() {
   const { data: unread = 0 } = useUnreadNotifications();
   const { data: items = [], isLoading } = useNotificationsList();
   const markRead = useMarkNotificationsRead();
+  const markOneRead = useMarkNotificationRead();
 
   const handleMarkAllRead = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -38,12 +41,15 @@ export function NotificationsPopover() {
     });
   };
 
-  const handleItemClick = (linkUrl: string | null, dealId: string | null) => {
+  const handleItemClick = (n: Notification) => {
     setOpen(false);
-    if (linkUrl) {
-      nav({ to: linkUrl });
-    } else if (dealId) {
-      nav({ to: `/chollo/${dealId}` });
+    if (!n.is_read) {
+      markOneRead.mutate(n.id);
+    }
+    if (n.link_url) {
+      nav({ to: n.link_url });
+    } else if (n.deal_id) {
+      nav({ to: `/chollo/${n.deal_id}` });
     }
   };
 
@@ -121,7 +127,7 @@ export function NotificationsPopover() {
                 <button
                   key={n.id}
                   type="button"
-                  onClick={() => handleItemClick(n.link_url, n.deal_id)}
+                  onClick={() => handleItemClick(n)}
                   className={cn(
                     "w-full text-left p-3.5 sm:p-4 flex items-start gap-3 transition-colors hover:bg-surface-700/25 dark:hover:bg-surface-700/40 cursor-pointer group focus-visible:bg-surface-700/30 focus-visible:outline-none",
                     !n.is_read && "bg-cyan-glow/[0.03] dark:bg-cyan-glow/[0.05]",

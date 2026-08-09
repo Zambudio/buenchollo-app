@@ -49,3 +49,12 @@ async def mark_notifications_read(
     repo: NotificationRepository = Depends(_repo),
 ):
     await repo.mark_unread_as_read(str(current_user.id))
+
+
+@router.post("/{notification_id}/mark-read", status_code=status.HTTP_204_NO_CONTENT)
+async def mark_notification_read(
+    notification_id: str,
+    current_user=Depends(get_current_user),
+    repo: NotificationRepository = Depends(_repo),
+):
+    await repo.mark_one_as_read(str(current_user.id), notification_id)

@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   useUnreadNotifications: vi.fn(),
   useNotificationsList: vi.fn(),
   useMarkNotificationsRead: vi.fn(),
+  useMarkNotificationRead: vi.fn(),
   mockNavigate: vi.fn(),
 }));
 
@@ -19,10 +20,12 @@ vi.mock("@/features/notifications/hooks/useNotifications", () => ({
   useUnreadNotifications: mocks.useUnreadNotifications,
   useNotificationsList: mocks.useNotificationsList,
   useMarkNotificationsRead: mocks.useMarkNotificationsRead,
+  useMarkNotificationRead: mocks.useMarkNotificationRead,
 }));
 
 describe("NotificationsPopover", () => {
   const mockMutate = vi.fn();
+  const mockMutateOne = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -33,6 +36,10 @@ describe("NotificationsPopover", () => {
     });
     mocks.useMarkNotificationsRead.mockReturnValue({
       mutate: mockMutate,
+      isPending: false,
+    });
+    mocks.useMarkNotificationRead.mockReturnValue({
+      mutate: mockMutateOne,
       isPending: false,
     });
   });
@@ -119,7 +126,7 @@ describe("NotificationsPopover", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("al hacer click en una notificación navega al chollo y cierra el popup", async () => {
+  it("al hacer click en una notificación no leída navega al chollo, la marca como leída y cierra el popup", async () => {
     const user = userEvent.setup();
     mocks.useNotificationsList.mockReturnValue({
       data: [
@@ -143,5 +150,33 @@ describe("NotificationsPopover", () => {
     await user.click(itemBtn);
 
     expect(mocks.mockNavigate).toHaveBeenCalledWith({ to: "/chollo/cargador-samsung-30w" });
+    expect(mockMutateOne).toHaveBeenCalledWith("n-1");
+  });
+
+  it("al hacer click en una notificación ya leída navega pero no vuelve a marcarla", async () => {
+    const user = userEvent.setup();
+    mocks.useNotificationsList.mockReturnValue({
+      data: [
+        {
+          id: "n-2",
+          title: "Alerta: Polaroid",
+          body: "Nuevo chollo: Cámara instantánea",
+          link_url: "/chollo/polaroid",
+          deal_id: "d-3",
+          is_read: true,
+          created_at: "2026-08-06T08:00:00Z",
+        },
+      ],
+      isLoading: false,
+    });
+
+    renderWithProviders(<NotificationsPopover />);
+    await user.click(screen.getByRole("button", { name: /notificaciones/i }));
+
+    const itemBtn = screen.getByRole("button", { name: /alerta: polaroid/i });
+    await user.click(itemBtn);
+
+    expect(mocks.mockNavigate).toHaveBeenCalledWith({ to: "/chollo/polaroid" });
+    expect(mockMutateOne).not.toHaveBeenCalled();
   });
 });

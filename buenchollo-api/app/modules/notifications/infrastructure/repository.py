@@ -49,3 +49,12 @@ class NotificationRepository:
         )
         await self.db.flush()
         return result.rowcount or 0
+
+    async def mark_one_as_read(self, user_id: str, notification_id: str) -> int:
+        result = await self.db.execute(
+            update(Notification)
+            .where(Notification.user_id == user_id, Notification.id == notification_id)
+            .values(is_read=True)
+        )
+        await self.db.flush()
+        return result.rowcount or 0
