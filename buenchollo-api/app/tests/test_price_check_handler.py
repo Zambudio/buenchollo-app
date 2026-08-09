@@ -124,6 +124,32 @@ def test_evaluate_usa_tolerancia_por_defecto_diez_por_ciento_si_falta_config():
     assert result.candidates[0].reason == "price_increase"
 
 
+def test_evaluate_prioriza_out_of_stock_sobre_no_longer_deal_si_ambos_aplican():
+    deal = _deal()
+    verifier = FakeVerifier({"B0D9WH9WLD": ProductPreview(
+        current_price=100.0, original_price=None, discount_percentage=None, in_stock=False,
+    )})
+    handler = PriceCheckHandler(verifier, FakeDealRepo({}))
+
+    result = handler.evaluate([deal], {"price_tolerance_percent": 10})
+
+    assert len(result.candidates) == 1
+    assert result.candidates[0].reason == "out_of_stock"
+
+
+def test_evaluate_prioriza_no_longer_deal_sobre_price_increase_si_ambos_aplican():
+    deal = _deal()
+    verifier = FakeVerifier({"B0D9WH9WLD": ProductPreview(
+        current_price=150.0, original_price=None, discount_percentage=None, in_stock=True,
+    )})
+    handler = PriceCheckHandler(verifier, FakeDealRepo({}))
+
+    result = handler.evaluate([deal], {"price_tolerance_percent": 10})
+
+    assert len(result.candidates) == 1
+    assert result.candidates[0].reason == "no_longer_deal"
+
+
 @pytest.mark.asyncio
 async def test_execute_borra_los_deals_encontrados_y_omite_los_ya_borrados():
     from app.modules.scheduled_tasks.application.task_handler import Candidate
