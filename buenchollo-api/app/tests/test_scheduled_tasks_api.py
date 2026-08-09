@@ -135,3 +135,147 @@ def test_confirm_borra_el_deal_y_crea_el_registro(integration_client):
 
     get_deal_resp = integration_client.get(f"/v1/deals/{deal['slug']}")
     assert get_deal_resp.status_code == 404
+
+
+def _create_deal(client, *, asin: str, price: float = 50.0) -> dict:
+    resp = client.post(
+        "/v1/deals/admin",
+        json={
+            "title": f"Producto {asin}",
+            "current_price": price,
+            "affiliate_url": f"https://amazon.es/dp/{asin}",
+            "external_id": asin,
+            "status": "active",
+        },
+    )
+    assert resp.status_code == 200, resp.text
+    return resp.json()
+
+
+def _confirm_deletion(client, task_id: str, deal: dict, *, reason: str = "price_increase") -> dict:
+    payload = {
+        "total_checked": 1,
+        "candidates": [
+            {
+                "deal_id": deal["id"],
+                "title": deal["title"],
+                "slug": deal["slug"],
+                "image_url": None,
+                "description": None,
+                "store_id": None,
+                "store_name": None,
+                "category_id": None,
+                "subcategory_id": None,
+                "external_id": deal["external_id"],
+                "affiliate_url": deal["affiliate_url"],
+                "source_url": None,
+                "old_price": deal["current_price"],
+                "new_price": deal["current_price"] + 20,
+                "reason": reason,
+            }
+        ],
+    }
+    resp = client.post(f"/v1/admin/scheduled-tasks/{task_id}/confirm", json=payload)
+    assert resp.status_code == 200, resp.text
+    return resp.json()
+
+
+def test_list_runs_devuelve_el_run_recien_creado(integration_client):
+    task_id = _get_price_check_task_id(integration_client)
+    deal = _create_deal(integration_client, asin="B0RUNLIST01")
+    run = _confirm_deletion(integration_client, task_id, deal)
+
+    resp = integration_client.get(f"/v1/admin/scheduled-tasks/{task_id}/runs")
+
+    assert resp.status_code == 200, resp.text
+    run_ids = [r["id"] for r in resp.json()]
+    assert run["id"] in run_ids
+
+
+def test_get_run_detail_incluye_los_items(integration_client):
+    task_id = _get_price_check_task_id(integration_client)
+    deal = _create_deal(integration_client, asin="B0RUNDETAIL1")
+    run = _confirm_deletion(integration_client, task_id, deal)
+
+    resp = integration_client.get(f"/v1/admin/scheduled-tasks/runs/{run['id']}")
+
+    assert resp.status_code == 200, resp.text
+    detail = resp.json()
+    assert len(detail["items"]) == 1
+    assert detail["items"][0]["deal_id_snapshot"] == deal["id"]
+    assert detail["items"][0]["restored_at"] is None
+
+
+def test_restore_item_recrea_el_deal_activo(integration_client):
+    # `confirm` borra el deal original; `restore` crea uno NUEVO, activo y
+    # permanente (visible en buenchollotech.com). No hay BD de test separada
+    # (ver task-8-report.md / task-9-brief.md), así que hay que borrarlo
+    # explícitamente al terminar, incluso si una aserción posterior falla.
+    task_id = _get_price_check_task_id(integration_client)
+    deal = _create_deal(integration_client, asin="B0RESTORE001")
+    run = _confirm_deletion(integration_client, task_id, deal)
+    detail = integration_client.get(f"/v1/admin/scheduled-tasks/runs/{run['id']}").json()
+    item_id = detail["items"][0]["id"]
+
+    resp = integration_client.post(f"/v1/admin/scheduled-tasks/runs/items/{item_id}/restore")
+
+    assert resp.status_code == 200, resp.text
+    restored = resp.json()
+    try:
+        assert restored["status"] == "active"
+        assert restored["external_id"] == "B0RESTORE001"
+
+        detail_after = integration_client.get(f"/v1/admin/scheduled-tasks/runs/{run['id']}").json()
+        assert detail_after["items"][0]["restored_at"] is not None
+    finally:
+        integration_client.delete(f"/v1/deals/admin/{restored['id']}")
+
+
+def test_restore_item_ya_restaurado_devuelve_409(integration_client):
+    # La primera llamada a /restore SÍ crea un deal activo permanente (igual
+    # que en test_restore_item_recrea_el_deal_activo) aunque el objetivo del
+    # test sea la segunda llamada (409) — hay que limpiar el deal restaurado
+    # en la primera, no solo comprobar el 409 de la segunda.
+    task_id = _get_price_check_task_id(integration_client)
+    deal = _create_deal(integration_client, asin="B0RESTORE002")
+    run = _confirm_deletion(integration_client, task_id, deal)
+    detail = integration_client.get(f"/v1/admin/scheduled-tasks/runs/{run['id']}").json()
+    item_id = detail["items"][0]["id"]
+    first_restore = integration_client.post(f"/v1/admin/scheduled-tasks/runs/items/{item_id}/restore")
+    assert first_restore.status_code == 200, first_restore.text
+    restored = first_restore.json()
+
+    try:
+        resp = integration_client.post(f"/v1/admin/scheduled-tasks/runs/items/{item_id}/restore")
+
+        assert resp.status_code == 409
+    finally:
+        integration_client.delete(f"/v1/deals/admin/{restored['id']}")
+
+
+def test_delete_run_lo_elimina(integration_client):
+    task_id = _get_price_check_task_id(integration_client)
+    deal = _create_deal(integration_client, asin="B0DELETERUN1")
+    run = _confirm_deletion(integration_client, task_id, deal)
+
+    resp = integration_client.delete(f"/v1/admin/scheduled-tasks/runs/{run['id']}")
+    assert resp.status_code == 204
+
+    detail_resp = integration_client.get(f"/v1/admin/scheduled-tasks/runs/{run['id']}")
+    assert detail_resp.status_code == 404
+
+
+def test_bulk_delete_runs_borra_varios(integration_client):
+    task_id = _get_price_check_task_id(integration_client)
+    deal_a = _create_deal(integration_client, asin="B0BULK000001")
+    deal_b = _create_deal(integration_client, asin="B0BULK000002")
+    run_a = _confirm_deletion(integration_client, task_id, deal_a)
+    run_b = _confirm_deletion(integration_client, task_id, deal_b)
+
+    resp = integration_client.post(
+        "/v1/admin/scheduled-tasks/runs/bulk-delete",
+        json={"run_ids": [run_a["id"], run_b["id"]]},
+    )
+
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["deleted"] == 2

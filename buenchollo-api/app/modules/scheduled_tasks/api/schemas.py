@@ -65,3 +65,30 @@ class RunResponse(BaseModel):
     triggered_by: str | None
     error_message: str | None
     model_config = ConfigDict(from_attributes=True)
+
+
+class RunItemResponse(BaseModel):
+    id: str
+    deal_id_snapshot: str
+    title: str
+    slug: str
+    image_url: str | None
+    store_name: str | None
+    old_price: Decimal
+    new_price: Decimal | None
+    reason: str
+    restored_at: datetime | None
+    restored_deal_id: str | None
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RunDetailResponse(RunResponse):
+    items: list[RunItemResponse]
+
+
+class BulkDeleteRunsRequest(BaseModel):
+    run_ids: list[str]
+
+
+class BulkDeleteRunsResponse(BaseModel):
+    deleted: int
