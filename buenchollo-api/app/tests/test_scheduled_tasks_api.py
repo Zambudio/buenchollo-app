@@ -40,18 +40,36 @@ def test_list_scheduled_tasks_incluye_price_check_seed(integration_client):
 
 def test_update_scheduled_task_cambia_config(integration_client):
     task_id = _get_price_check_task_id(integration_client)
+    # `price_check` es una fila real única compartida (no hay BD de test
+    # separada, ver task-8-report.md) y ya está enganchada al scheduler real
+    # (Task 7) — este test no puede dejarla habilitada tras ejecutarse, así
+    # que capturamos su estado original y lo restauramos siempre, incluso si
+    # una aserción falla a mitad de camino.
+    original = integration_client.get("/v1/admin/scheduled-tasks").json()
+    original_task = next(t for t in original if t["id"] == task_id)
 
-    response = integration_client.put(
-        f"/v1/admin/scheduled-tasks/{task_id}",
-        json={"enabled": True, "frequency_preset": "daily", "run_hour": 6, "config": {"price_tolerance_percent": 15}},
-    )
+    try:
+        response = integration_client.put(
+            f"/v1/admin/scheduled-tasks/{task_id}",
+            json={"enabled": True, "frequency_preset": "daily", "run_hour": 6, "config": {"price_tolerance_percent": 15}},
+        )
 
-    assert response.status_code == 200, response.text
-    updated = response.json()
-    assert updated["enabled"] is True
-    assert updated["frequency_preset"] == "daily"
-    assert updated["run_hour"] == 6
-    assert updated["config"]["price_tolerance_percent"] == 15
+        assert response.status_code == 200, response.text
+        updated = response.json()
+        assert updated["enabled"] is True
+        assert updated["frequency_preset"] == "daily"
+        assert updated["run_hour"] == 6
+        assert updated["config"]["price_tolerance_percent"] == 15
+    finally:
+        integration_client.put(
+            f"/v1/admin/scheduled-tasks/{task_id}",
+            json={
+                "enabled": original_task["enabled"],
+                "frequency_preset": original_task["frequency_preset"],
+                "run_hour": original_task["run_hour"],
+                "config": original_task["config"],
+            },
+        )
 
 
 def test_preview_sin_candidatos_devuelve_lista_vacia(integration_client):
