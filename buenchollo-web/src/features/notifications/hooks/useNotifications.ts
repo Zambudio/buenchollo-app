@@ -49,3 +49,15 @@ export function useMarkNotificationsRead() {
     },
   });
 }
+
+/** Marca una única notificación como leída (p. ej. al pulsarla) y refresca el badge y la lista. */
+export function useMarkNotificationRead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => notificationsApi.markOneRead(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.unreadCount });
+      qc.invalidateQueries({ queryKey: KEYS.list });
+    },
+  });
+}

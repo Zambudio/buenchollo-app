@@ -20,4 +20,7 @@ export const notificationsApi = {
     apiClient.get<{ count: number }>("/notifications/unread-count"),
 
   markRead: (): Promise<void> => apiClient.post<void>("/notifications/mark-read", {}),
+
+  markOneRead: (id: string): Promise<void> =>
+    apiClient.post<void>(`/notifications/${id}/mark-read`, {}),
 };
