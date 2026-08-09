@@ -130,3 +130,26 @@ async def test_deals_page_returns_total_and_clamps_an_out_of_range_page():
         limit=12,
         offset=24,
     )
+
+
+@pytest.mark.asyncio
+async def test_get_active_without_expiry_with_asin_filters_correctly():
+    result = Mock()
+    result.scalars.return_value.all.return_value = []
+    session = Mock()
+    session.execute = AsyncMock(return_value=result)
+
+    repo = DealRepository(session)
+    await repo.get_active_without_expiry_with_asin()
+
+    statement = session.execute.await_args.args[0]
+    sql = str(
+        statement.compile(
+            dialect=postgresql.dialect(),
+            compile_kwargs={"literal_binds": True},
+        )
+    )
+
+    assert "deals.status = 'active'" in sql
+    assert "deals.expires_at IS NULL" in sql
+    assert "deals.external_id IS NOT NULL" in sql
