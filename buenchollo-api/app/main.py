@@ -30,6 +30,7 @@ from app.modules.alerts.api.router import router as alerts_router
 from app.modules.notifications.api.router import router as notifications_router
 from app.modules.comments.api.router import router as comments_router
 from app.modules.scheduled_deals.api.router import router as scheduled_deals_router
+from app.modules.scheduled_tasks.api.router import router as scheduled_tasks_router
 from app.modules.blog.api.router import router as blog_router
 from app.modules.blog_comments.api.router import router as blog_comments_router
 
@@ -198,6 +199,7 @@ v1.include_router(alerts_router)
 v1.include_router(notifications_router)
 v1.include_router(comments_router)
 v1.include_router(scheduled_deals_router)
+v1.include_router(scheduled_tasks_router)
 v1.include_router(blog_router)
 v1.include_router(blog_comments_router)
 
