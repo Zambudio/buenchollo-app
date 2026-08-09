@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { formatRelativeTime } from "@/lib/format";
 import {
   useMarkNotificationsRead,
+  useMarkNotificationRead,
   useNotificationsList,
 } from "@/features/notifications/hooks/useNotifications";
 import { toast } from "sonner";
@@ -36,6 +37,7 @@ function NotificationsPage() {
   const nav = useNavigate();
   const { data: items = [], isLoading, isError } = useNotificationsList();
   const markRead = useMarkNotificationsRead();
+  const markOneRead = useMarkNotificationRead();
 
   useEffect(() => {
     if (!authLoading && !user) nav({ to: "/login" });
@@ -82,12 +84,20 @@ function NotificationsPage() {
         ) : (
           <div className="space-y-2">
             {items.map((n) => (
-              <div key={n.id} className="bg-surface-800 border border-surface-700 p-4">
+              <div
+                key={n.id}
+                className={`bg-surface-800 border border-surface-700 p-4 transition-colors ${
+                  !n.is_read ? "border-l-4 border-l-[#156287]" : ""
+                }`}
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     {n.link_url ? (
                       <Link
                         to={n.link_url}
+                        onClick={() => {
+                          if (!n.is_read) markOneRead.mutate(n.id);
+                        }}
                         className="font-bold text-base hover:text-cyan-glow transition-colors"
                       >
                         {n.title}
