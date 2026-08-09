@@ -197,3 +197,140 @@ async def test_run_automatic_persiste_run_fallido_y_relanza_si_el_handler_explot
     assert created_run.status == "failed"
     assert "Amazon caído" in created_run.error_message
     assert task.last_run_at is None  # no se actualiza en fallo: reintenta en el próximo tick
+
+
+from app.modules.scheduled_tasks.domain.exceptions import (
+    ItemAlreadyRestoredError,
+    RestoreFailedError,
+    RunItemNotFound,
+)
+
+
+def _run_item(**overrides):
+    base = dict(
+        id="item-1",
+        title="Producto X",
+        slug="producto-x",
+        description="desc",
+        image_url="https://img/x.jpg",
+        affiliate_url="https://amazon.es/dp/B0D9WH9WLD",
+        source_url=None,
+        external_id="B0D9WH9WLD",
+        store_id="store-1",
+        category_id="cat-1",
+        subcategory_id=None,
+        old_price=Decimal("100.00"),
+        restored_at=None,
+        restored_deal_id=None,
+    )
+    base.update(overrides)
+    return SimpleNamespace(**base)
+
+
+def _build_service_for_history():
+    repo = MagicMock()
+    deal_repo = MagicMock()
+    session = MagicMock()
+    service = ScheduledTaskService(repo, deal_repo, {}, session)
+    return service, repo, deal_repo
+
+
+@pytest.mark.asyncio
+async def test_list_runs_delega_en_el_repositorio():
+    service, repo, _ = _build_service_for_history()
+    repo.list_runs = AsyncMock(return_value=["run-a"])
+
+    result = await service.list_runs("task-1", limit=10, offset=0)
+
+    repo.list_runs.assert_awaited_once_with("task-1", limit=10, offset=0)
+    assert result == ["run-a"]
+
+
+@pytest.mark.asyncio
+async def test_delete_run_true_si_existia():
+    service, repo, _ = _build_service_for_history()
+    run = SimpleNamespace(id="run-1")
+    repo.get_run_by_id = AsyncMock(return_value=run)
+    repo.delete_run = AsyncMock()
+
+    deleted = await service.delete_run("run-1")
+
+    assert deleted is True
+    repo.delete_run.assert_awaited_once_with(run)
+
+
+@pytest.mark.asyncio
+async def test_delete_run_false_si_no_existia():
+    service, repo, _ = _build_service_for_history()
+    repo.get_run_by_id = AsyncMock(return_value=None)
+
+    deleted = await service.delete_run("no-existe")
+
+    assert deleted is False
+
+
+@pytest.mark.asyncio
+async def test_bulk_delete_runs_delega_en_el_repositorio():
+    service, repo, _ = _build_service_for_history()
+    repo.delete_runs_by_ids = AsyncMock(return_value=3)
+
+    count = await service.bulk_delete_runs(["r1", "r2", "r3"])
+
+    assert count == 3
+    repo.delete_runs_by_ids.assert_awaited_once_with(["r1", "r2", "r3"])
+
+
+@pytest.mark.asyncio
+async def test_restore_item_crea_deal_activo_y_marca_restaurado():
+    service, repo, deal_repo = _build_service_for_history()
+    item = _run_item()
+    repo.get_run_item_by_id = AsyncMock(return_value=item)
+    repo.update_run_item = AsyncMock(side_effect=lambda i: i)
+    created = SimpleNamespace(id="new-deal-1")
+    reloaded = SimpleNamespace(id="new-deal-1", title="Producto X", store=None, category=None)
+    deal_repo.create = AsyncMock(return_value=created)
+    deal_repo.get_by_id = AsyncMock(return_value=reloaded)
+
+    result = await service.restore_item("item-1")
+
+    assert result is reloaded  # recargado con relaciones precargadas, no el objeto crudo de create()
+    deal_repo.get_by_id.assert_awaited_once_with("new-deal-1")
+    created_deal = deal_repo.create.call_args.args[0]
+    assert created_deal.title == "Producto X"
+    assert created_deal.status == "active"
+    assert created_deal.current_price == Decimal("100.00")
+    assert item.restored_at is not None
+    assert item.restored_deal_id == "new-deal-1"
+    repo.update_run_item.assert_awaited_once_with(item)
+
+
+@pytest.mark.asyncio
+async def test_restore_item_lanza_not_found_si_no_existe():
+    service, repo, _ = _build_service_for_history()
+    repo.get_run_item_by_id = AsyncMock(return_value=None)
+
+    with pytest.raises(RunItemNotFound):
+        await service.restore_item("no-existe")
+
+
+@pytest.mark.asyncio
+async def test_restore_item_lanza_conflict_si_ya_estaba_restaurado():
+    service, repo, _ = _build_service_for_history()
+    item = _run_item(restored_at=datetime(2026, 8, 1, tzinfo=timezone.utc), restored_deal_id="old-deal")
+    repo.get_run_item_by_id = AsyncMock(return_value=item)
+
+    with pytest.raises(ItemAlreadyRestoredError):
+        await service.restore_item("item-1")
+
+
+@pytest.mark.asyncio
+async def test_restore_item_traduce_integrity_error_a_restore_failed():
+    from sqlalchemy.exc import IntegrityError
+
+    service, repo, deal_repo = _build_service_for_history()
+    item = _run_item()
+    repo.get_run_item_by_id = AsyncMock(return_value=item)
+    deal_repo.create = AsyncMock(side_effect=IntegrityError("stmt", {}, Exception("fk violation")))
+
+    with pytest.raises(RestoreFailedError):
+        await service.restore_item("item-1")

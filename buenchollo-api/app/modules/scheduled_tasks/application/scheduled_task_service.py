@@ -1,11 +1,19 @@
 import logging
 from datetime import datetime, timedelta, timezone
 
+from sqlalchemy.exc import IntegrityError
 from starlette.concurrency import run_in_threadpool
 
 from app.core.audit import audit_log
+from app.modules.deals.domain.models import Deal
+from app.modules.deals.domain.utils import auto_slug
 from app.modules.scheduled_tasks.application.task_handler import Candidate, PreviewResult, TaskHandler
-from app.modules.scheduled_tasks.domain.exceptions import ScheduledTaskNotFound
+from app.modules.scheduled_tasks.domain.exceptions import (
+    ItemAlreadyRestoredError,
+    RestoreFailedError,
+    RunItemNotFound,
+    ScheduledTaskNotFound,
+)
 from app.modules.scheduled_tasks.domain.models import ScheduledTask, ScheduledTaskRun, ScheduledTaskRunItem
 
 logger = logging.getLogger(__name__)
@@ -94,6 +102,59 @@ class ScheduledTaskService:
             )
             await self.repo.create_run(failed_run)
             raise
+
+    async def list_runs(self, task_id: str, limit: int = 50, offset: int = 0) -> list[ScheduledTaskRun]:
+        return await self.repo.list_runs(task_id, limit=limit, offset=offset)
+
+    async def get_run_detail(self, run_id: str) -> ScheduledTaskRun | None:
+        return await self.repo.get_run_by_id(run_id)
+
+    async def delete_run(self, run_id: str) -> bool:
+        run = await self.repo.get_run_by_id(run_id)
+        if run is None:
+            return False
+        await self.repo.delete_run(run)
+        return True
+
+    async def bulk_delete_runs(self, run_ids: list[str]) -> int:
+        return await self.repo.delete_runs_by_ids(run_ids)
+
+    async def restore_item(self, item_id: str) -> Deal:
+        item = await self.repo.get_run_item_by_id(item_id)
+        if item is None:
+            raise RunItemNotFound(item_id)
+        if item.restored_at is not None:
+            raise ItemAlreadyRestoredError(item_id)
+
+        new_deal = Deal(
+            title=item.title,
+            slug=auto_slug(item.title),
+            description=item.description,
+            image_url=item.image_url,
+            current_price=item.old_price,
+            affiliate_url=item.affiliate_url,
+            source_url=item.source_url,
+            external_id=item.external_id,
+            store_id=item.store_id,
+            category_id=item.category_id,
+            subcategory_id=item.subcategory_id,
+            status="active",
+            source="manual",
+        )
+        try:
+            created = await self.deal_repo.create(new_deal)
+        except IntegrityError as exc:
+            raise RestoreFailedError(item_id) from exc
+
+        item.restored_at = datetime.now(timezone.utc)
+        item.restored_deal_id = created.id
+        await self.repo.update_run_item(item)
+        # Recargar con category/subcategory/store precargados (_base_deal_query):
+        # el objeto recién creado no las tiene cargadas, y DealDetailResponse
+        # las serializa — un lazy-load async no soportado (MissingGreenlet),
+        # el mismo problema que ScheduledDealRepository.update ya tuvo que
+        # resolver. Mismo patrón que DealService.create_deal.
+        return await self.deal_repo.get_by_id(created.id)
 
     async def _persist_run(self, task, *, trigger_type, status, total_checked, deleted, triggered_by):
         now = datetime.now(timezone.utc)
