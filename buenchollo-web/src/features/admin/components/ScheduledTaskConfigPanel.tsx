@@ -1,5 +1,5 @@
 /** Configuración + ejecución manual (con confirmación) de una tarea programada. */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Play } from "lucide-react";
 import {
   AlertDialog,
@@ -43,6 +43,38 @@ export function ScheduledTaskConfigPanel({ task }: { readonly task: ScheduledTas
   const confirm = useConfirmScheduledTask(task.id);
 
   const tolerance = task.config.price_tolerance_percent ?? 10;
+
+  const [runHourDraft, setRunHourDraft] = useState(String(task.run_hour));
+  const [toleranceDraft, setToleranceDraft] = useState(String(tolerance));
+
+  useEffect(() => {
+    setRunHourDraft(String(task.run_hour));
+  }, [task.run_hour]);
+
+  useEffect(() => {
+    setToleranceDraft(String(tolerance));
+  }, [tolerance]);
+
+  const commitRunHour = () => {
+    const parsed = Number(runHourDraft);
+    if (Number.isInteger(parsed) && parsed >= 0 && parsed <= 23 && parsed !== task.run_hour) {
+      update.mutate({ id: task.id, data: { run_hour: parsed } });
+    } else {
+      setRunHourDraft(String(task.run_hour));
+    }
+  };
+
+  const commitTolerance = () => {
+    const parsed = Number(toleranceDraft);
+    if (Number.isFinite(parsed) && parsed >= 0 && parsed <= 100 && parsed !== tolerance) {
+      update.mutate({
+        id: task.id,
+        data: { config: { ...task.config, price_tolerance_percent: parsed } },
+      });
+    } else {
+      setToleranceDraft(String(tolerance));
+    }
+  };
 
   const handleRunNow = async () => {
     const result = await preview.mutateAsync(task.id);
@@ -100,10 +132,9 @@ export function ScheduledTaskConfigPanel({ task }: { readonly task: ScheduledTas
             type="number"
             min={0}
             max={23}
-            value={task.run_hour}
-            onChange={(e) =>
-              update.mutate({ id: task.id, data: { run_hour: Number(e.target.value) } })
-            }
+            value={runHourDraft}
+            onChange={(e) => setRunHourDraft(e.target.value)}
+            onBlur={commitRunHour}
             className="mt-1 w-full bg-surface-900 border border-surface-700 px-3 py-2 text-sm outline-none focus:border-cyan-glow"
           />
         </label>
@@ -114,13 +145,9 @@ export function ScheduledTaskConfigPanel({ task }: { readonly task: ScheduledTas
             type="number"
             min={0}
             max={100}
-            value={tolerance}
-            onChange={(e) =>
-              update.mutate({
-                id: task.id,
-                data: { config: { ...task.config, price_tolerance_percent: Number(e.target.value) } },
-              })
-            }
+            value={toleranceDraft}
+            onChange={(e) => setToleranceDraft(e.target.value)}
+            onBlur={commitTolerance}
             className="mt-1 w-full bg-surface-900 border border-surface-700 px-3 py-2 text-sm outline-none focus:border-cyan-glow"
           />
         </label>
