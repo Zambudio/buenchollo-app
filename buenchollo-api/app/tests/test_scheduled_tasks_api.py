@@ -217,18 +217,26 @@ def test_restore_item_recrea_el_deal_activo(integration_client):
     detail = integration_client.get(f"/v1/admin/scheduled-tasks/runs/{run['id']}").json()
     item_id = detail["items"][0]["id"]
 
-    resp = integration_client.post(f"/v1/admin/scheduled-tasks/runs/items/{item_id}/restore")
-
-    assert resp.status_code == 200, resp.text
-    restored = resp.json()
+    # El id se captura DENTRO del try, junto con la propia llamada a
+    # /restore y su aserción de status — si cualquiera de ellas lanza
+    # después de que el deal ya se haya persistido, el finally debe seguir
+    # pudiendo limpiarlo. Se inicializa a None por si /restore ni siquiera
+    # llega a devolver un 200.
+    restored_id = None
     try:
+        resp = integration_client.post(f"/v1/admin/scheduled-tasks/runs/items/{item_id}/restore")
+        assert resp.status_code == 200, resp.text
+        restored = resp.json()
+        restored_id = restored["id"]
         assert restored["status"] == "active"
         assert restored["external_id"] == "B0RESTORE001"
 
         detail_after = integration_client.get(f"/v1/admin/scheduled-tasks/runs/{run['id']}").json()
         assert detail_after["items"][0]["restored_at"] is not None
     finally:
-        integration_client.delete(f"/v1/deals/admin/{restored['id']}")
+        if restored_id is not None:
+            cleanup_resp = integration_client.delete(f"/v1/deals/admin/{restored_id}")
+            assert cleanup_resp.status_code == 204, cleanup_resp.text
 
 
 def test_restore_item_ya_restaurado_devuelve_409(integration_client):
@@ -241,16 +249,25 @@ def test_restore_item_ya_restaurado_devuelve_409(integration_client):
     run = _confirm_deletion(integration_client, task_id, deal)
     detail = integration_client.get(f"/v1/admin/scheduled-tasks/runs/{run['id']}").json()
     item_id = detail["items"][0]["id"]
-    first_restore = integration_client.post(f"/v1/admin/scheduled-tasks/runs/items/{item_id}/restore")
-    assert first_restore.status_code == 200, first_restore.text
-    restored = first_restore.json()
 
+    # La primera llamada a /restore es la que crea el deal activo permanente
+    # (la segunda, bajo test para el 409, nunca llega a crear nada). Igual
+    # que en test_restore_item_recrea_el_deal_activo, la llamada y su
+    # aserción de status van DENTRO del try para que un fallo ahí no impida
+    # la limpieza si el deal ya quedó persistido.
+    restored_id = None
     try:
+        first_restore = integration_client.post(f"/v1/admin/scheduled-tasks/runs/items/{item_id}/restore")
+        assert first_restore.status_code == 200, first_restore.text
+        restored_id = first_restore.json()["id"]
+
         resp = integration_client.post(f"/v1/admin/scheduled-tasks/runs/items/{item_id}/restore")
 
         assert resp.status_code == 409
     finally:
-        integration_client.delete(f"/v1/deals/admin/{restored['id']}")
+        if restored_id is not None:
+            cleanup_resp = integration_client.delete(f"/v1/deals/admin/{restored_id}")
+            assert cleanup_resp.status_code == 204, cleanup_resp.text
 
 
 def test_delete_run_lo_elimina(integration_client):
@@ -279,3 +296,6 @@ def test_bulk_delete_runs_borra_varios(integration_client):
 
     assert resp.status_code == 200, resp.text
     assert resp.json()["deleted"] == 2
+
+    assert integration_client.get(f"/v1/admin/scheduled-tasks/runs/{run_a['id']}").status_code == 404
+    assert integration_client.get(f"/v1/admin/scheduled-tasks/runs/{run_b['id']}").status_code == 404
