@@ -254,6 +254,20 @@ class DealRepository:
         )
         return list(result.scalars().all())
 
+    async def get_active_without_expiry_with_asin(self) -> list[Deal]:
+        """Chollos activos sin fecha de expiración y con ASIN — candidatos de
+        la tarea programada de revisión de precios. Usa `_base_deal_query()`
+        (eager-loads category/subcategory/store) porque el caller evalúa
+        estos deals dentro de un threadpool y no puede lazy-load relaciones
+        ahí (el AsyncSession vive en el hilo del event loop, no en ese hilo)."""
+        result = await self.session.execute(
+            self._base_deal_query()
+            .where(Deal.status == "active")
+            .where(Deal.expires_at.is_(None))
+            .where(Deal.external_id.isnot(None))
+        )
+        return list(result.scalars().all())
+
     async def user_has_profile(self, user_id: str) -> bool:
         """Comprueba si existe un perfil en la tabla profiles para el user_id dado."""
         result = await self.session.execute(
