@@ -129,19 +129,35 @@ export function NotificationsPopover() {
                   type="button"
                   onClick={() => handleItemClick(n)}
                   className={cn(
-                    "w-full text-left p-3.5 sm:p-4 flex items-start gap-3 transition-colors hover:bg-surface-700/25 dark:hover:bg-surface-700/40 cursor-pointer group focus-visible:bg-surface-700/30 focus-visible:outline-none",
-                    !n.is_read && "bg-cyan-glow/[0.03] dark:bg-cyan-glow/[0.05]",
+                    "w-full text-left p-3.5 sm:p-4 flex items-start gap-3 border-l-2 transition-colors hover:bg-surface-700/25 dark:hover:bg-surface-700/40 cursor-pointer group focus-visible:bg-surface-700/30 focus-visible:outline-none",
+                    !n.is_read
+                      ? "border-cyan-glow bg-cyan-glow/10 dark:bg-cyan-glow/[0.08]"
+                      : "border-transparent",
                   )}
                 >
                   {/* Icono Info circular */}
-                  <div className="size-9 sm:size-10 rounded-full border border-surface-600/30 dark:border-surface-600/40 bg-surface-700/20 dark:bg-surface-800 flex items-center justify-center text-foreground/70 shrink-0 mt-0.5 group-hover:border-cyan-glow/50 group-hover:text-cyan-glow transition-colors">
+                  <div
+                    className={cn(
+                      "size-9 sm:size-10 rounded-full border flex items-center justify-center shrink-0 mt-0.5 transition-colors",
+                      !n.is_read
+                        ? "border-cyan-glow/50 bg-cyan-glow/15 text-cyan-glow"
+                        : "border-surface-600/30 dark:border-surface-600/40 bg-surface-700/20 dark:bg-surface-800 text-foreground/70 group-hover:border-cyan-glow/50 group-hover:text-cyan-glow",
+                    )}
+                  >
                     <Info className="size-4 sm:size-5" />
                   </div>
 
                   {/* Contenido */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline justify-between gap-2">
-                      <span className="font-semibold text-xs sm:text-sm text-foreground truncate group-hover:text-cyan-glow transition-colors">
+                      <span
+                        className={cn(
+                          "text-xs sm:text-sm truncate transition-colors",
+                          !n.is_read
+                            ? "font-bold text-foreground"
+                            : "font-normal text-muted-foreground group-hover:text-cyan-glow",
+                        )}
+                      >
                         {n.title}
                       </span>
                       {formattedDate && (
@@ -157,6 +173,14 @@ export function NotificationsPopover() {
                       </p>
                     )}
                   </div>
+
+                  {/* Punto indicador de no leída */}
+                  {!n.is_read && (
+                    <span
+                      className="size-2 rounded-full bg-cyan-glow shrink-0 mt-1.5"
+                      aria-hidden="true"
+                    />
+                  )}
                 </button>
               );
             })
