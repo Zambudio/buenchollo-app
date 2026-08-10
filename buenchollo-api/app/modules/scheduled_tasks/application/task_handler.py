@@ -32,6 +32,7 @@ class PreviewResult:
 
 class ProductVerifier(Protocol):
     def get_product_preview(self, asin: str) -> ProductPreview | None: ...
+    def get_product_previews(self, asins: list[str]) -> dict[str, ProductPreview | None]: ...
 
 
 class TaskHandler(Protocol):

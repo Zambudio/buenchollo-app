@@ -79,7 +79,9 @@ def test_preview_sin_candidatos_devuelve_lista_vacia(integration_client):
     with patch(
         "app.modules.scheduled_tasks.api.router.AmazonProductClient"
     ) as mock_client_cls:
-        mock_client_cls.return_value.get_product_preview.return_value = None
+        mock_client_cls.return_value.get_product_previews.side_effect = (
+            lambda asins: {asin: None for asin in asins}
+        )
         response = integration_client.post(f"/v1/admin/scheduled-tasks/{task_id}/preview")
 
     assert response.status_code == 200, response.text

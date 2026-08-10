@@ -97,6 +97,11 @@ _AUTH_ENDPOINTS: dict[str, str] = {
 
 ITEMS_ENDPOINT = "https://creatorsapi.amazon/catalog/v1/getItems"
 
+# Límite documentado de GetItems en PA-API 5 (este Creators API lo hereda):
+# máximo de ASIN por petición. El caller (p.ej. PriceCheckHandler) es quien
+# trocea listas más largas en lotes de este tamaño.
+MAX_ITEMS_PER_REQUEST = 10
+
 
 def _j(obj: Any, *keys: str, default: Any = None) -> Any:
     """Recorre dicts anidados de forma segura."""
@@ -178,6 +183,26 @@ class AmazonProductClient:
 
         return self._map_item(item, asin)
 
+    def get_product_previews(self, asins: list[str]) -> dict[str, ProductPreview | None]:
+        """Versión en lote de `get_product_preview`: una única petición HTTP
+        para varios ASIN en vez de una llamada por producto. El caller debe
+        respetar `MAX_ITEMS_PER_REQUEST` — aquí no se trocea, para que un
+        fallo de red en una llamada no oculte cuántos ASIN se pidieron a la
+        vez ni fuerce reintentar lotes ya resueltos."""
+        if not self.settings.amazon_client_id or not self.settings.amazon_client_secret:
+            raise ProductProviderUnavailableError("Faltan credenciales de Amazon en variables de entorno.")
+        if not asins:
+            return {}
+
+        token = self._get_token()
+        items = self._fetch_items(asins, token)
+        results: dict[str, ProductPreview | None] = {asin: None for asin in asins}
+        for item in items:
+            item_asin = item.get("asin")
+            if item_asin in results:
+                results[item_asin] = self._map_item(item, item_asin)
+        return results
+
     def _get_token(self) -> str:
         if self._token and time.time() < self._token_expires_at:
             return self._token
@@ -221,10 +246,13 @@ class AmazonProductClient:
         self._token_expires_at = time.time() + data.get("expires_in", 3600) - 30
         return self._token
 
-    def _fetch_item(self, asin: str, token: str) -> dict | None:
+    def _fetch_items(self, asins: list[str], token: str) -> list[dict]:
+        """Una única petición HTTP con hasta `MAX_ITEMS_PER_REQUEST` ASIN.
+        Compartida por `_fetch_item` (lookup individual) y
+        `get_product_previews` (lote)."""
         payload = {
             "partnerTag": self.settings.amazon_affiliate_tag,
-            "itemIds": [asin],
+            "itemIds": asins,
             "resources": RESOURCES,
         }
         headers = {
@@ -234,7 +262,7 @@ class AmazonProductClient:
         }
 
         try:
-            resp = requests.post(ITEMS_ENDPOINT, json=payload, headers=headers, timeout=15)
+            resp = requests.post(ITEMS_ENDPOINT, json=payload, headers=headers, timeout=20)
         except requests.RequestException as exc:
             raise ProductProviderUnavailableError(f"Error llamando Amazon API: {exc}") from exc
 
@@ -248,7 +276,10 @@ class AmazonProductClient:
             raise ProductProviderUnavailableError(f"Amazon rechazó la petición ({resp.status_code})")
 
         data = resp.json()
-        items = _j(data, "itemsResult", "items", default=[]) or []
+        return _j(data, "itemsResult", "items", default=[]) or []
+
+    def _fetch_item(self, asin: str, token: str) -> dict | None:
+        items = self._fetch_items([asin], token)
         if not items:
             logger.info("Amazon no encontró el ASIN %s", asin)
             return None
