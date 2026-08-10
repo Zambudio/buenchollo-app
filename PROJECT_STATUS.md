@@ -268,8 +268,29 @@ y [`docs/superpowers/plans/2026-08-09-tareas-programadas-revision-precios.md`](d
   (DB de test aislada, ajuste de la regla `no_longer_deal` antes de activar el modo
   automático, snapshot de restauración incompleto, y el registro `TASK_HANDLERS`
   hardcodeado en dos sitios en vez de una fábrica genérica real).
-- **Pendiente físico**: QA manual en navegador (checkboxes, diálogos, overflow a
-  375px) — ningún agente de esta sesión tenía herramienta de navegador disponible.
+
+**Deploy y validación en producción (mismo día)** — migración aplicada en la Supabase
+real (aditiva, sin incidentes), merge `develop → main` y reinicio del contenedor NAS.
+
+Al probar "Ejecutar ahora" por primera vez con datos reales apareció un bug: con
+**197 chollos candidatos** en producción, `PriceCheckHandler.evaluate()` consultaba
+Amazon **uno a uno** (197 llamadas HTTP secuenciales), agotando el timeout de 15 s del
+frontend ("signal timed out"). Fix aplicado el mismo día:
+
+- `AmazonProductClient.get_product_previews()` — una sola petición por lote de hasta
+  `MAX_ITEMS_PER_REQUEST=10` ASIN (límite documentado de `GetItems` en PA-API 5) en vez
+  de una llamada por producto. `PriceCheckHandler.evaluate()` trocea los deals en lotes
+  de ese tamaño; la resiliencia ante fallos de Amazon (try/except que no aborta el
+  ciclo) pasa a ser por lote en vez de por deal. Con 197 candidatos: ~20 llamadas en vez
+  de 197. +9 tests (244 unitarios + 37 integración en verde).
+- Toast añadido cuando "ejecutar ahora" no encuentra candidatos (antes no avisaba de
+  nada, contradiciendo el spec).
+
+**Validado en producción por el usuario**: ciclo completo probado con datos reales —
+ejecutar (89 candidatos) → revisar lista → eliminar → restaurar un elemento → volver a
+ejecutar → detecta correctamente el restaurado de nuevo. QA de navegador (antes
+pendiente) queda cubierto por esta validación manual real. Tarea dejada **activada**
+(`enabled=true`, frecuencia semanal) por el usuario al cierre de la sesión.
 
 ---
 
