@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from app.modules.products.domain.entities import ProductPreview
+from app.modules.products.infrastructure.amazon_client import MAX_ITEMS_PER_REQUEST
 from app.modules.scheduled_tasks.application.price_check_handler import PriceCheckHandler
 
 
@@ -30,9 +31,14 @@ def _deal(**overrides):
 class FakeVerifier:
     def __init__(self, products: dict[str, ProductPreview | None]):
         self.products = products
+        self.batch_calls: list[list[str]] = []
 
     def get_product_preview(self, asin: str):
         return self.products.get(asin)
+
+    def get_product_previews(self, asins: list[str]) -> dict[str, ProductPreview | None]:
+        self.batch_calls.append(list(asins))
+        return {asin: self.products.get(asin) for asin in asins}
 
 
 class FakeDealRepo:
@@ -150,27 +156,69 @@ def test_evaluate_prioriza_no_longer_deal_sobre_price_increase_si_ambos_aplican(
     assert result.candidates[0].reason == "no_longer_deal"
 
 
-def test_evaluate_omite_un_deal_si_amazon_falla_pero_sigue_con_el_resto():
-    """Un fallo transitorio de Amazon (red, rate-limit, 5xx, credenciales) en
-    un ASIN no debe abortar el resto del lote (finding 1)."""
-    deal_falla = _deal(id="deal-1", external_id="B0FAILASIN1")
-    deal_ok = _deal(id="deal-2", external_id="B0D9WH9WLD")
+def test_evaluate_agrupa_varios_deals_en_una_sola_llamada_a_amazon():
+    """El fix de rendimiento: evaluar N deals debe hacer 1 llamada en lote
+    a Amazon (hasta MAX_ITEMS_PER_REQUEST), no N llamadas individuales —
+    con cientos de candidatos, ir uno a uno agotaba el timeout del
+    navegador (197 deals reales en producción tardaban minutos)."""
+    deals = [_deal(id=f"deal-{i}", external_id=f"B0ASIN{i:04d}") for i in range(5)]
+    verifier = FakeVerifier({
+        d.external_id: ProductPreview(
+            current_price=100.0, original_price=120.0, discount_percentage=17, in_stock=True,
+        )
+        for d in deals
+    })
+    handler = PriceCheckHandler(verifier, FakeDealRepo({}))
 
-    class RaisingVerifier:
-        def get_product_preview(self, asin: str):
-            if asin == "B0FAILASIN1":
+    result = handler.evaluate(deals, {"price_tolerance_percent": 10})
+
+    assert verifier.batch_calls == [[d.external_id for d in deals]]
+    assert result.total_checked == 5
+
+
+def test_evaluate_trocea_mas_de_diez_deals_en_varios_lotes():
+    deals = [_deal(id=f"deal-{i}", external_id=f"B0ASIN{i:04d}") for i in range(MAX_ITEMS_PER_REQUEST + 5)]
+    verifier = FakeVerifier({})
+    handler = PriceCheckHandler(verifier, FakeDealRepo({}))
+
+    handler.evaluate(deals, {"price_tolerance_percent": 10})
+
+    assert len(verifier.batch_calls) == 2
+    assert len(verifier.batch_calls[0]) == MAX_ITEMS_PER_REQUEST
+    assert len(verifier.batch_calls[1]) == 5
+
+
+def test_evaluate_omite_un_lote_si_amazon_falla_pero_sigue_con_los_demas_lotes():
+    """Un fallo transitorio de Amazon (red, rate-limit, 5xx) en un lote
+    completo no debe abortar los demás lotes (finding 1, ahora a nivel de
+    lote tras introducir el batching de llamadas a Amazon)."""
+    primer_lote = [
+        _deal(id=f"deal-fail-{i}", external_id=f"B0FAIL{i:04d}")
+        for i in range(MAX_ITEMS_PER_REQUEST)
+    ]
+    deal_ok = _deal(id="deal-ok", external_id="B0D9WH9WLD")
+
+    class RaisingOnFirstBatchVerifier:
+        def __init__(self):
+            self.calls = 0
+
+        def get_product_previews(self, asins):
+            self.calls += 1
+            if self.calls == 1:
                 raise RuntimeError("Amazon no disponible")
-            return ProductPreview(
-                current_price=115.0, original_price=150.0, discount_percentage=23, in_stock=True,
-            )
+            return {
+                "B0D9WH9WLD": ProductPreview(
+                    current_price=115.0, original_price=150.0, discount_percentage=23, in_stock=True,
+                )
+            }
 
-    handler = PriceCheckHandler(RaisingVerifier(), FakeDealRepo({}))
+    handler = PriceCheckHandler(RaisingOnFirstBatchVerifier(), FakeDealRepo({}))
 
-    result = handler.evaluate([deal_falla, deal_ok], {"price_tolerance_percent": 10})
+    result = handler.evaluate(primer_lote + [deal_ok], {"price_tolerance_percent": 10})
 
-    assert result.total_checked == 2
+    assert result.total_checked == MAX_ITEMS_PER_REQUEST + 1
     assert len(result.candidates) == 1
-    assert result.candidates[0].deal_id == "deal-2"
+    assert result.candidates[0].deal_id == "deal-ok"
     assert result.candidates[0].reason == "price_increase"
 
 

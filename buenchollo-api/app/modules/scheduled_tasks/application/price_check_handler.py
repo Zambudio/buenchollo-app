@@ -1,6 +1,7 @@
 import logging
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
+from app.modules.products.infrastructure.amazon_client import MAX_ITEMS_PER_REQUEST
 from app.modules.scheduled_tasks.application.task_handler import (
     Candidate,
     PreviewResult,
@@ -25,22 +26,39 @@ class PriceCheckHandler:
                 tolerance = Decimal(str(_DEFAULT_TOLERANCE_PERCENT))
         except (InvalidOperation, ValueError):
             tolerance = Decimal(str(_DEFAULT_TOLERANCE_PERCENT))
+
         candidates: list[Candidate] = []
-        for deal in deals:
+        # Se consulta Amazon en lotes de MAX_ITEMS_PER_REQUEST en vez de una
+        # llamada HTTP por deal: con cientos de candidatos, ir uno a uno tarda
+        # minutos y agota el timeout del navegador/proxy. El try/except es
+        # por lote (no por deal) para que un fallo de red en un lote no
+        # aborte el resto — mismo criterio que antes, ahora a nivel de lote.
+        for i in range(0, len(deals), MAX_ITEMS_PER_REQUEST):
+            batch = deals[i : i + MAX_ITEMS_PER_REQUEST]
+            asins = [deal.external_id for deal in batch]
             try:
-                product = self.product_verifier.get_product_preview(deal.external_id)
-                if product is None:
-                    continue
-                reason = self._evaluate_one(deal, product, tolerance)
+                products = self.product_verifier.get_product_previews(asins)
             except Exception:
                 logger.warning(
-                    "Fallo consultando Amazon para el deal %s (asin=%s); se omite de este ciclo",
-                    deal.id, deal.external_id, exc_info=True,
+                    "Fallo consultando Amazon para el lote %s; se omite del ciclo",
+                    asins, exc_info=True,
                 )
                 continue
-            if reason is None:
-                continue
-            candidates.append(self._to_candidate(deal, product, reason))
+            for deal in batch:
+                product = products.get(deal.external_id)
+                if product is None:
+                    continue
+                try:
+                    reason = self._evaluate_one(deal, product, tolerance)
+                except Exception:
+                    logger.warning(
+                        "Fallo evaluando el deal %s (asin=%s); se omite de este ciclo",
+                        deal.id, deal.external_id, exc_info=True,
+                    )
+                    continue
+                if reason is None:
+                    continue
+                candidates.append(self._to_candidate(deal, product, reason))
         return PreviewResult(total_checked=len(deals), candidates=candidates)
 
     @staticmethod
