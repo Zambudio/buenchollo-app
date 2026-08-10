@@ -109,7 +109,14 @@ export function ScheduledTaskRunsPanel({ taskId }: { readonly taskId: string }) 
                 </button>
                 <button
                   type="button"
-                  onClick={() => deleteRun.mutate(run.id)}
+                  onClick={() => {
+                    deleteRun.mutate(run.id);
+                    setSelected((prev) => {
+                      const next = new Set(prev);
+                      next.delete(run.id);
+                      return next;
+                    });
+                  }}
                   className="p-1 hover:text-alert-red"
                   title="Eliminar registro"
                 >

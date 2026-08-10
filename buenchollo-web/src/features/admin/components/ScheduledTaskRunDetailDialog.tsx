@@ -37,7 +37,7 @@ export function ScheduledTaskRunDetailDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Chollos afectados en esta ejecución</AlertDialogTitle>
           <AlertDialogDescription asChild>
-            <div className="max-h-96 overflow-y-auto mt-2">
+            <div className="max-h-96 overflow-y-auto overflow-x-auto mt-2">
               {isLoading ? (
                 <p>Cargando...</p>
               ) : (
