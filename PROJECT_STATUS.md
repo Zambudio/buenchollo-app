@@ -448,6 +448,42 @@ Sprint final de hardening definido en [`docs/reference/PLAN_ARQUITECTURA.md`](do
 
 ---
 
+### 3.duodecies  Incidente: artículos de blog falsos publicados en producción — 2026-08-10
+
+El usuario detectó decenas de artículos de blog que no había creado, visibles en
+`buenchollotech.com`. Diagnóstico confirmado con consultas de solo lectura directas
+contra la Supabase real (mismo `.env` que usa el backend):
+
+- **Causa**: `buenchollo-api/.env` apunta a la Supabase de **producción** real
+  (`APP_ENV=production`), sin base de datos de test aislada (**TD-15**, ya conocida).
+  Entre el 2026-08-09 21:42 y el 2026-08-10 14:14 se ejecutó en local varias veces
+  (~7 corridas) `pytest -m integration` sobre `test_blog_api.py` y
+  `test_blog_comments_api.py`. A diferencia de `test_scheduled_tasks_api.py` (que sí
+  limpia con `try/finally` — ver § 3.undecies), estos dos módulos **no limpian los
+  datos que crean**, y varios tests dejan el post en `status=published`, visible
+  públicamente.
+- **Impacto real** (confirmado por consulta directa antes de borrar): de 135
+  `blog_posts` en producción, 126 eran de test (títulos fijos repetidos: *"Guía de
+  compra de auriculares 2026"*, *"Artículo con comentarios"*, *"Solo título"*; slugs
+  `<prefijo>-<8 hex>`); de 151 `blog_categories`, 144 eran de test (`cat-<8 hex>`);
+  27 `blog_comments` y su cascada de votos, todos sobre posts falsos. Los 9 posts y 7
+  categorías reales del usuario quedaron intactos y sin ningún comentario/voto
+  contaminado.
+- **No fue una cuenta comprometida ni generación por IA**: el `author_id` de los
+  posts de test coincide con el UUID real del admin porque el `MockUser` de los tests
+  lo hardcodea así para satisfacer la FK `blog_posts.author_id → profiles` contra la
+  BD compartida.
+- **Remediación aplicada**: backup JSON de las 126+144+27 filas antes de borrar,
+  borrado en una única transacción con guarda de recuento (aborta con rollback si no
+  quedan exactamente 9 posts / 7 categorías), verificado también contra la API
+  pública real (`GET /v1/blog/posts` → 9 resultados, los correctos).
+- **Deuda técnica reabierta**: TD-15 pasa a 🔴 Alta — el mismo riesgo puede repetirse
+  con cualquier módulo de tests de integración que no tenga limpieza `try/finally` (o,
+  mejor, con una BD de test aislada de verdad). Pendiente: aislar la BD de test o, como
+  mínimo, añadir limpieza defensiva a `test_blog_api.py` y `test_blog_comments_api.py`.
+
+---
+
 ## 4. Deuda técnica — Auditoría Mayo 2026 (revisada 2026-05-26)
 
 ### 🟢 ADR-002 — **CUMPLIDO AL 100%**
