@@ -1,6 +1,7 @@
 /** Configuración + ejecución manual (con confirmación) de una tarea programada. */
 import { useEffect, useState } from "react";
 import { Play } from "lucide-react";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -94,6 +95,9 @@ export function ScheduledTaskConfigPanel({ task }: { readonly task: ScheduledTas
     try {
       const result = await preview.mutateAsync(task.id);
       if (result.candidates.length === 0) {
+        toast.success(
+          `${result.total_checked} chollo(s) analizado(s), ninguno requiere cambios`,
+        );
         setPendingPreview(null);
         return;
       }
