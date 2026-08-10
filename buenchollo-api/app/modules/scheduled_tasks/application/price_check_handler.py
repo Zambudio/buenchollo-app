@@ -1,5 +1,5 @@
 import logging
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 from app.modules.scheduled_tasks.application.task_handler import (
     Candidate,
@@ -18,13 +18,26 @@ class PriceCheckHandler:
         self.deal_repo = deal_repo
 
     def evaluate(self, deals: list, config: dict) -> PreviewResult:
-        tolerance = Decimal(str(config.get("price_tolerance_percent", _DEFAULT_TOLERANCE_PERCENT)))
+        raw_tolerance = config.get("price_tolerance_percent", _DEFAULT_TOLERANCE_PERCENT)
+        try:
+            tolerance = Decimal(str(raw_tolerance))
+            if tolerance < 0 or tolerance > 100:
+                tolerance = Decimal(str(_DEFAULT_TOLERANCE_PERCENT))
+        except (InvalidOperation, ValueError):
+            tolerance = Decimal(str(_DEFAULT_TOLERANCE_PERCENT))
         candidates: list[Candidate] = []
         for deal in deals:
-            product = self.product_verifier.get_product_preview(deal.external_id)
-            if product is None:
+            try:
+                product = self.product_verifier.get_product_preview(deal.external_id)
+                if product is None:
+                    continue
+                reason = self._evaluate_one(deal, product, tolerance)
+            except Exception:
+                logger.warning(
+                    "Fallo consultando Amazon para el deal %s (asin=%s); se omite de este ciclo",
+                    deal.id, deal.external_id, exc_info=True,
+                )
                 continue
-            reason = self._evaluate_one(deal, product, tolerance)
             if reason is None:
                 continue
             candidates.append(self._to_candidate(deal, product, reason))

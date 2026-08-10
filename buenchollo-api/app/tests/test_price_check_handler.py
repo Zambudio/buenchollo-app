@@ -150,6 +150,72 @@ def test_evaluate_prioriza_no_longer_deal_sobre_price_increase_si_ambos_aplican(
     assert result.candidates[0].reason == "no_longer_deal"
 
 
+def test_evaluate_omite_un_deal_si_amazon_falla_pero_sigue_con_el_resto():
+    """Un fallo transitorio de Amazon (red, rate-limit, 5xx, credenciales) en
+    un ASIN no debe abortar el resto del lote (finding 1)."""
+    deal_falla = _deal(id="deal-1", external_id="B0FAILASIN1")
+    deal_ok = _deal(id="deal-2", external_id="B0D9WH9WLD")
+
+    class RaisingVerifier:
+        def get_product_preview(self, asin: str):
+            if asin == "B0FAILASIN1":
+                raise RuntimeError("Amazon no disponible")
+            return ProductPreview(
+                current_price=115.0, original_price=150.0, discount_percentage=23, in_stock=True,
+            )
+
+    handler = PriceCheckHandler(RaisingVerifier(), FakeDealRepo({}))
+
+    result = handler.evaluate([deal_falla, deal_ok], {"price_tolerance_percent": 10})
+
+    assert result.total_checked == 2
+    assert len(result.candidates) == 1
+    assert result.candidates[0].deal_id == "deal-2"
+    assert result.candidates[0].reason == "price_increase"
+
+
+def test_evaluate_tolerancia_negativa_cae_al_valor_por_defecto():
+    deal = _deal()
+    verifier = FakeVerifier({"B0D9WH9WLD": ProductPreview(
+        current_price=105.0, original_price=150.0, discount_percentage=30, in_stock=True,
+    )})
+    handler = PriceCheckHandler(verifier, FakeDealRepo({}))
+
+    result = handler.evaluate([deal], {"price_tolerance_percent": -50})
+
+    # Con la tolerancia negativa tratada literalmente, el umbral sería
+    # menor que el precio antiguo (falso positivo masivo). Con el fallback
+    # al 10% por defecto, 105 esta dentro de tolerancia y no hay candidato.
+    assert result.candidates == []
+
+
+def test_evaluate_tolerancia_no_numerica_cae_al_valor_por_defecto():
+    deal = _deal()
+    verifier = FakeVerifier({"B0D9WH9WLD": ProductPreview(
+        current_price=105.0, original_price=150.0, discount_percentage=30, in_stock=True,
+    )})
+    handler = PriceCheckHandler(verifier, FakeDealRepo({}))
+
+    result = handler.evaluate([deal], {"price_tolerance_percent": "no-es-un-numero"})
+
+    assert result.candidates == []
+
+
+def test_evaluate_tolerancia_fuera_de_rango_cae_al_valor_por_defecto():
+    deal = _deal()
+    verifier = FakeVerifier({"B0D9WH9WLD": ProductPreview(
+        current_price=115.0, original_price=150.0, discount_percentage=23, in_stock=True,
+    )})
+    handler = PriceCheckHandler(verifier, FakeDealRepo({}))
+
+    result = handler.evaluate([deal], {"price_tolerance_percent": 500})
+
+    # Con 500% tomado literalmente, 115 quedaria dentro de tolerancia (sin
+    # candidato). Con el fallback al 10% por defecto, 115 > 110 sí dispara.
+    assert len(result.candidates) == 1
+    assert result.candidates[0].reason == "price_increase"
+
+
 @pytest.mark.asyncio
 async def test_execute_borra_los_deals_encontrados_y_omite_los_ya_borrados():
     from app.modules.scheduled_tasks.application.task_handler import Candidate

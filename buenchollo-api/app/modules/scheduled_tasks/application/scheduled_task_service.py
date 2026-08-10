@@ -81,9 +81,11 @@ class ScheduledTaskService:
     async def run_automatic(self, task_id: str) -> ScheduledTaskRun:
         task = await self._get_task_or_404(task_id)
         handler = self.handlers[task.task_type]
+        total_checked = 0
         try:
             deals = await self.deal_repo.get_active_without_expiry_with_asin()
             result: PreviewResult = await run_in_threadpool(handler.evaluate, deals, task.config)
+            total_checked = result.total_checked
             deleted = await handler.execute(result.candidates)
             run = await self._persist_run(
                 task, trigger_type="automatic", status="completed",
@@ -94,10 +96,16 @@ class ScheduledTaskService:
             return run
         except Exception as exc:
             logger.exception("Fallo ejecutando la tarea programada %s", task_id)
+            # Si la excepción vino de una operación SQLAlchemy (p.ej. a
+            # mitad de `handler.execute`), la sesión queda en estado
+            # rollback-required: sin este rollback, el `create_run` de abajo
+            # explotaría con PendingRollbackError y se perdería el registro
+            # de fallo (ver finding 8).
+            await self.session.rollback()
             now = datetime.now(timezone.utc)
             failed_run = ScheduledTaskRun(
                 task_id=task.id, trigger_type="automatic", status="failed",
-                started_at=now, finished_at=now, total_checked=0, total_affected=0,
+                started_at=now, finished_at=now, total_checked=total_checked, total_affected=0,
                 triggered_by=None, error_message=str(exc)[:500],
             )
             await self.repo.create_run(failed_run)

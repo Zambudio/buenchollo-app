@@ -118,21 +118,38 @@ async def get_scheduled_task_run_detail(
 @router.delete("/runs/{run_id}", status_code=204)
 async def delete_scheduled_task_run(
     run_id: str,
+    db: AsyncSession = Depends(get_db),
     service: ScheduledTaskService = Depends(get_scheduled_task_service),
-    _auth=Depends(require_admin),
+    current_user=Depends(require_admin),
 ):
     deleted = await service.delete_run(run_id)
     if not deleted:
         raise ScheduledTaskRunNotFound(run_id)
+    await audit_log(
+        db,
+        user_id=str(current_user.id),
+        action="scheduled_task_run.delete",
+        target_type="scheduled_task_run",
+        target_id=run_id,
+    )
 
 
 @router.post("/runs/bulk-delete", response_model=BulkDeleteRunsResponse)
 async def bulk_delete_scheduled_task_runs(
     payload: BulkDeleteRunsRequest,
+    db: AsyncSession = Depends(get_db),
     service: ScheduledTaskService = Depends(get_scheduled_task_service),
-    _auth=Depends(require_admin),
+    current_user=Depends(require_admin),
 ):
     count = await service.bulk_delete_runs(payload.run_ids)
+    await audit_log(
+        db,
+        user_id=str(current_user.id),
+        action="scheduled_task_run.bulk_delete",
+        target_type="scheduled_task_run",
+        target_id=None,
+        payload={"run_ids": payload.run_ids},
+    )
     return BulkDeleteRunsResponse(deleted=count)
 
 

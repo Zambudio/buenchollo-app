@@ -28,7 +28,11 @@ from app.modules.scheduled_tasks.infrastructure.repository import ScheduledTaskR
 logger = logging.getLogger(__name__)
 
 
-async def _execute_due_tasks(repo, service, now_local: datetime) -> int:
+async def _execute_due_tasks(repo, service, session, now_local: datetime) -> int:
+    """Comitea tras cada tarea (éxito o fallo ya capturado) en vez de una
+    única vez al final: si la tarea A deja la sesión en estado
+    rollback-required y eso no se recupera limpiamente, un solo commit final
+    podría tirar también el trabajo ya bueno de la tarea B (ver finding 8)."""
     executed = 0
     tasks = await repo.get_enabled_tasks()
     for task in tasks:
@@ -39,6 +43,7 @@ async def _execute_due_tasks(repo, service, now_local: datetime) -> int:
             executed += 1
         except Exception:
             logger.exception("Fallo al ejecutar la tarea programada %s", task.id)
+        await session.commit()
     return executed
 
 
@@ -62,8 +67,7 @@ async def _run(settings: Settings) -> int:
                 service = ScheduledTaskService(repo, deal_repo, {"price_check": handler}, session)
 
                 now_local = datetime.now(timezone.utc).astimezone()
-                executed = await _execute_due_tasks(repo, service, now_local)
-                await session.commit()
+                executed = await _execute_due_tasks(repo, service, session, now_local)
                 return executed
             except Exception:
                 await session.rollback()

@@ -50,6 +50,7 @@ def _build_service(task, handler):
     session.begin_nested = MagicMock(return_value=_NoopAsyncCtx())
     session.add = MagicMock()
     session.flush = AsyncMock()
+    session.rollback = AsyncMock()
     service = ScheduledTaskService(repo, deal_repo, {"price_check": handler}, session)
     return service, repo, deal_repo
 
@@ -197,6 +198,55 @@ async def test_run_automatic_persiste_run_fallido_y_relanza_si_el_handler_explot
     assert created_run.status == "failed"
     assert "Amazon caído" in created_run.error_message
     assert task.last_run_at is None  # no se actualiza en fallo: reintenta en el próximo tick
+
+
+@pytest.mark.asyncio
+async def test_run_automatic_hace_rollback_de_la_sesion_antes_de_persistir_el_run_fallido():
+    """Si la excepción viene de una operación SQLAlchemy, la sesión queda en
+    estado rollback-required; sin un rollback previo, `create_run` fallaría
+    con PendingRollbackError y se perdería el registro de fallo. Se
+    verifica el orden real de las llamadas, no solo que ambas ocurran
+    (ver finding 8)."""
+    task = _task(last_run_at=None)
+    handler = MagicMock()
+    handler.evaluate = MagicMock(side_effect=RuntimeError("Amazon caído"))
+    service, repo, _ = _build_service(task, handler)
+    session = service.session
+
+    call_order: list[str] = []
+    session.rollback = AsyncMock(side_effect=lambda: call_order.append("rollback"))
+    original_create_run = repo.create_run
+
+    async def _tracking_create_run(run):
+        call_order.append("create_run")
+        return await original_create_run(run)
+
+    repo.create_run = AsyncMock(side_effect=_tracking_create_run)
+
+    with pytest.raises(RuntimeError):
+        await service.run_automatic("task-1")
+
+    assert call_order == ["rollback", "create_run"]
+
+
+@pytest.mark.asyncio
+async def test_run_automatic_preserva_total_checked_real_si_evaluate_ok_pero_execute_falla():
+    """Si `evaluate()` tuvo éxito y solo `execute()` falla a mitad de
+    camino, el run fallido debe guardar el total_checked real de evaluate(),
+    no un 0 hardcodeado (ver finding 8)."""
+    task = _task(last_run_at=None)
+    handler = MagicMock()
+    candidate = _candidate()
+    handler.evaluate = MagicMock(return_value=PreviewResult(total_checked=7, candidates=[candidate]))
+    handler.execute = AsyncMock(side_effect=RuntimeError("fallo borrando el deal"))
+    service, repo, _ = _build_service(task, handler)
+
+    with pytest.raises(RuntimeError):
+        await service.run_automatic("task-1")
+
+    created_run = repo.create_run.await_args.args[0]
+    assert created_run.status == "failed"
+    assert created_run.total_checked == 7
 
 
 from app.modules.scheduled_tasks.domain.exceptions import (
