@@ -104,7 +104,7 @@ class ScheduledTaskService:
             await self.session.rollback()
             now = datetime.now(timezone.utc)
             failed_run = ScheduledTaskRun(
-                task_id=task.id, trigger_type="automatic", status="failed",
+                task_id=task_id, trigger_type="automatic", status="failed",
                 started_at=now, finished_at=now, total_checked=total_checked, total_affected=0,
                 triggered_by=None, error_message=str(exc)[:500],
             )

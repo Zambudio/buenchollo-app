@@ -32,17 +32,25 @@ async def _execute_due_tasks(repo, service, session, now_local: datetime) -> int
     """Comitea tras cada tarea (éxito o fallo ya capturado) en vez de una
     única vez al final: si la tarea A deja la sesión en estado
     rollback-required y eso no se recupera limpiamente, un solo commit final
-    podría tirar también el trabajo ya bueno de la tarea B (ver finding 8)."""
+    podría tirar también el trabajo ya bueno de la tarea B (ver finding 8).
+
+    Los ids de las tareas debidas se calculan todos de una vez, antes del
+    bucle que llama a `run_automatic`: si una tarea falla con un error
+    SQLAlchemy, `run_automatic` hace rollback de la sesión, lo que expira
+    TODOS los objetos ORM ya cargados (incluidas las demás tareas de
+    `tasks`). Si `is_task_due` se evaluara dentro del bucle, la siguiente
+    iteración leería atributos de una tarea ya expirada fuera de contexto
+    greenlet y reventaría con MissingGreenlet, fuera del try/except de
+    aislamiento por tarea."""
     executed = 0
     tasks = await repo.get_enabled_tasks()
-    for task in tasks:
-        if not is_task_due(task, now_local):
-            continue
+    due_task_ids = [task.id for task in tasks if is_task_due(task, now_local)]
+    for task_id in due_task_ids:
         try:
-            await service.run_automatic(task.id)
+            await service.run_automatic(task_id)
             executed += 1
         except Exception:
-            logger.exception("Fallo al ejecutar la tarea programada %s", task.id)
+            logger.exception("Fallo al ejecutar la tarea programada %s", task_id)
         await session.commit()
     return executed
 

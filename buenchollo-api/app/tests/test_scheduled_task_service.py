@@ -249,6 +249,62 @@ async def test_run_automatic_preserva_total_checked_real_si_evaluate_ok_pero_exe
     assert created_run.total_checked == 7
 
 
+class _ExpiringTask:
+    """Simula que `Session.rollback()` expira los atributos del objeto ORM
+    (incluida la PK): tras `expire()`, leer cualquier atributo explota, como
+    haría un lazy-refresh de SQLAlchemy fuera de contexto greenlet
+    (MissingGreenlet) cuando el rollback ocurre fuera de una request viva
+    (el scheduler corre bajo `asyncio.run` plano, no dentro de un endpoint).
+    `SimpleNamespace` no sirve para esto porque no tiene semántica de
+    expiración."""
+
+    def __init__(self, **attrs):
+        object.__setattr__(self, "_attrs", attrs)
+        object.__setattr__(self, "_expired", False)
+
+    def expire(self):
+        object.__setattr__(self, "_expired", True)
+
+    def __getattr__(self, name):
+        if object.__getattribute__(self, "_expired"):
+            raise RuntimeError(f"MissingGreenlet simulado: acceso a '{name}' tras expirar (rollback)")
+        try:
+            return object.__getattribute__(self, "_attrs")[name]
+        except KeyError:
+            raise AttributeError(name)
+
+    def __setattr__(self, name, value):
+        object.__getattribute__(self, "_attrs")[name] = value
+
+
+@pytest.mark.asyncio
+async def test_run_automatic_no_relee_task_id_del_orm_tras_el_rollback():
+    """`Session.rollback()` expira TODOS los objetos ORM del identity map,
+    incluida la PK: si el except leyera `task.id` DESPUÉS del rollback,
+    reventaría con MissingGreenlet (el scheduler corre bajo `asyncio.run`
+    plano, sin contexto greenlet vivo). Debe usar el `task_id` recibido
+    como parámetro del método, sin volver a tocar el ORM tras el rollback."""
+    task = _ExpiringTask(
+        id="task-1", task_type="price_check", config={"price_tolerance_percent": 10}, last_run_at=None,
+    )
+    handler = MagicMock()
+    handler.evaluate = MagicMock(side_effect=RuntimeError("Amazon caído"))
+    repo = MagicMock()
+    repo.get_by_id = AsyncMock(return_value=task)
+    repo.create_run = AsyncMock(side_effect=lambda run: run)
+    deal_repo = MagicMock()
+    deal_repo.get_active_without_expiry_with_asin = AsyncMock(return_value=["deal-obj"])
+    session = MagicMock()
+    session.rollback = AsyncMock(side_effect=task.expire)
+    service = ScheduledTaskService(repo, deal_repo, {"price_check": handler}, session)
+
+    with pytest.raises(RuntimeError, match="Amazon caído"):
+        await service.run_automatic("task-1")
+
+    created_run = repo.create_run.await_args.args[0]
+    assert created_run.task_id == "task-1"
+
+
 from app.modules.scheduled_tasks.domain.exceptions import (
     ItemAlreadyRestoredError,
     RestoreFailedError,
