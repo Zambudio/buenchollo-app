@@ -1,5 +1,5 @@
 # PROJECT_STATUS — BuenCholloTech
-*Última actualización: 2026-07-17 (auditoría 2026-07 cerrada al completo — ver § 3.octies)*
+*Última actualización: 2026-08-10 (motor de tareas programadas + revisión de precios — ver § 3.undecies)*
 
 > **⚠️ Revisar este documento antes de migrar a dominio web en producción.**
 > Contiene el estado real del proyecto, deuda técnica pendiente y la hoja de ruta completa.
@@ -233,6 +233,43 @@ abrir la web al público:
   aparcadas sin trigger, a propósito (`OPTIMIZACION_PLAN.md`).
 
 **Suite backend: 141 pytest** en verde (unitarios + integración).
+
+---
+
+### 3.undecies  Motor de tareas programadas + revisión de precios — 2026-08-10
+
+Feature nueva de punta a punta: primer motor genérico de **tareas programadas** en el
+backend, con la revisión periódica de precios de Amazon como primera tarea registrada.
+Spec y plan completos en [`docs/superpowers/specs/2026-08-09-tareas-programadas-revision-precios-design.md`](docs/superpowers/specs/2026-08-09-tareas-programadas-revision-precios-design.md)
+y [`docs/superpowers/plans/2026-08-09-tareas-programadas-revision-precios.md`](docs/superpowers/plans/2026-08-09-tareas-programadas-revision-precios.md)
+(13 tareas TDD + revisión final de rama con 2 rondas de arreglo).
+
+- **Qué hace**: detecta chollos `active` sin `expires_at` y con ASIN, consulta Amazon
+  (`AmazonProductClient`) y borra los que ya no son oferta válida (sin stock, ya no
+  tiene descuento, o precio subió más de una tolerancia % configurable). Cada borrado
+  queda en un registro con snapshot completo, restaurable desde el panel.
+- **Backend**: 3 tablas nuevas (`scheduled_tasks`, `scheduled_task_runs`,
+  `scheduled_task_run_items` — migración `20260809120000`, solo aditiva, RLS activado,
+  sin tocar `deals`), módulo `scheduled_tasks/` con handler registrable
+  (`PriceCheckHandler`), job horario de auto-chequeo en el scheduler existente
+  (`buenchollo-scheduler`), y 9 endpoints admin (`/v1/admin/scheduled-tasks/*`).
+- **Frontend**: nueva sección `/admin/tareas-programadas` — configuración con edición
+  inline (draft local + commit en blur), "ejecutar ahora" con diálogo de confirmación
+  mostrando la lista antes de borrar, tabla de registros con selección múltiple y
+  borrado en bloque, y restauración por chollo desde el detalle de cada registro.
+- **Seguridad de despliegue**: la fila sembrada por la migración tiene `enabled=false`
+  — el modo automático no borra nada hasta que un admin lo active explícitamente desde
+  el panel. Todos los endpoints exigen `require_admin`; los 2 más destructivos
+  (`delete_run`, `bulk_delete`) quedan en `admin_audit_log`.
+- **Tests**: 235 unitarios + 37 de integración en verde (venv del proyecto). Los tests
+  de integración corren contra la Supabase de producción real (no hay BD de test
+  aislada todavía — ver deuda técnica) y quedan protegidos con limpieza `try/finally`.
+- **Deuda técnica abierta tras esta feature**: ver `docs/project/10-technical-debt.md`
+  (DB de test aislada, ajuste de la regla `no_longer_deal` antes de activar el modo
+  automático, snapshot de restauración incompleto, y el registro `TASK_HANDLERS`
+  hardcodeado en dos sitios en vez de una fábrica genérica real).
+- **Pendiente físico**: QA manual en navegador (checkboxes, diálogos, overflow a
+  375px) — ningún agente de esta sesión tenía herramienta de navegador disponible.
 
 ---
 
