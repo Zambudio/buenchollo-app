@@ -91,12 +91,16 @@ export function ScheduledTaskConfigPanel({ task }: { readonly task: ScheduledTas
   };
 
   const handleRunNow = async () => {
-    const result = await preview.mutateAsync(task.id);
-    if (result.candidates.length === 0) {
-      setPendingPreview(null);
-      return;
+    try {
+      const result = await preview.mutateAsync(task.id);
+      if (result.candidates.length === 0) {
+        setPendingPreview(null);
+        return;
+      }
+      setPendingPreview(result);
+    } catch {
+      /* el toast ya lo muestra la mutación */
     }
-    setPendingPreview(result);
   };
 
   const handleConfirm = () => {
@@ -189,7 +193,7 @@ export function ScheduledTaskConfigPanel({ task }: { readonly task: ScheduledTas
               Se van a borrar {pendingPreview?.candidates.length ?? 0} chollo(s), ¿deseas continuar?
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
-              <div className="max-h-80 overflow-y-auto mt-2">
+              <div className="max-h-80 overflow-y-auto overflow-x-auto mt-2">
                 <table className="w-full text-sm text-left">
                   <thead className="text-xs uppercase text-muted-foreground">
                     <tr>

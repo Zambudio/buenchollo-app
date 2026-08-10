@@ -14,6 +14,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { formatRelativeTime } from "@/lib/format";
+import type { ScheduledTaskRun } from "@/services/api/scheduled-tasks";
 import {
   useBulkDeleteScheduledTaskRuns,
   useDeleteScheduledTaskRun,
@@ -31,6 +32,7 @@ export function ScheduledTaskRunsPanel({ taskId }: { readonly taskId: string }) 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [detailRunId, setDetailRunId] = useState<string | null>(null);
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+  const [pendingRunDelete, setPendingRunDelete] = useState<ScheduledTaskRun | null>(null);
 
   const allSelected = !!runs?.length && runs.every((r) => selected.has(r.id));
 
@@ -52,6 +54,17 @@ export function ScheduledTaskRunsPanel({ taskId }: { readonly taskId: string }) 
     bulkDelete.mutate(Array.from(selected));
     setSelected(new Set());
     setConfirmBulkDelete(false);
+  };
+
+  const handleConfirmRunDelete = () => {
+    if (!pendingRunDelete) return;
+    deleteRun.mutate(pendingRunDelete.id);
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.delete(pendingRunDelete.id);
+      return next;
+    });
+    setPendingRunDelete(null);
   };
 
   if (isLoading) return <p className="text-sm text-muted-foreground">Cargando registros...</p>;
@@ -109,14 +122,7 @@ export function ScheduledTaskRunsPanel({ taskId }: { readonly taskId: string }) 
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    deleteRun.mutate(run.id);
-                    setSelected((prev) => {
-                      const next = new Set(prev);
-                      next.delete(run.id);
-                      return next;
-                    });
-                  }}
+                  onClick={() => setPendingRunDelete(run)}
                   className="p-1 hover:text-alert-red"
                   title="Eliminar registro"
                 >
@@ -148,6 +154,22 @@ export function ScheduledTaskRunsPanel({ taskId }: { readonly taskId: string }) 
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleBulkDelete}>Eliminar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!pendingRunDelete} onOpenChange={(open) => !open && setPendingRunDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar este registro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción eliminará permanentemente el registro y sus chollos no restaurados. No se puede
+              deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmRunDelete}>Eliminar</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
