@@ -54,6 +54,7 @@
 | [`../adr/`](../adr/00-index.md) | 📋 **9 ADRs** firmados y datados (decisiones arquitectónicas) |
 | [`../reference/`](../reference/) | 📚 Referencias densas (plan hardening, auditoría OWASP, smoke test) |
 | [`../guides/Cloudflare.md`](../guides/Cloudflare.md) | ☁️ **Guía operativa viva** de Cloudflare (Workers, túnel, TLS, WAF) — estado real de producción |
+| [`../guides/NAS-SSH.md`](../guides/NAS-SSH.md) | 🔐 **Guía operativa viva** de conexión SSH al NAS — para que una IA haga rebuild/redeploy de `buenchollo-api` sin intervención manual |
 | [`../guides/MIGRATIONS.md`](../guides/MIGRATIONS.md) | 🛠️ Setup Alembic |
 | [`../archive/`](../archive/) | 🗄️ Documentación histórica preservada con índice de motivos |
 

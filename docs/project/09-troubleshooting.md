@@ -143,6 +143,33 @@ npm install
 npm run dev
 ```
 
+### 🚫 `Cannot GET /` en local aunque `vite.config.ts` esté bien
+
+> 💡 Comprueba si tu máquina tiene **dos letras de unidad mapeadas a la misma
+> ruta de red** (p. ej. `N:` y `Z:` ambas apuntando a `\\mi-nas\carpeta`).
+> Lanzar `npm run dev` desde una de ellas puede hacer que Vite/TanStack Start
+> mezclen rutas de ambas letras para el mismo módulo internamente y el
+> middleware SSR deje de responder — sin ningún error visible en consola ni
+> en el log del servidor.
+
+```powershell
+Get-PSDrive -PSProvider FileSystem | Select-Object Name, DisplayRoot
+```
+
+Si dos letras comparten `DisplayRoot`, arranca siempre desde la que use
+`fileURLToPath(import.meta.url)` internamente (compruébalo con
+`DEBUG=vite:* npm run dev` y buscando rutas `default-entry` en el log — si
+salen con una letra distinta a la que usaste para lanzar el comando, ese es
+el problema). En este proyecto: **arrancar siempre desde `Z:`, no desde
+`N:`**.
+
+### 🚫 `@/*` no resuelve en el arranque (`Failed to run dependency scan`)
+
+> 💡 Mismo origen que el de arriba: `vite-tsconfig-paths` no siempre resuelve
+> alias en unidades de red con doble letra. `vite.config.ts` ya trae un alias
+> explícito de respaldo (`resolve.alias: { "@": path.resolve(__dirname, "./src") }`)
+> — si vuelve a fallar, revisa que no se haya perdido en un merge.
+
 ### 🗂️ El Drawer de categorías se queda abierto al cargar
 
 > 💡 Bug detectado durante los E2E. La causa es que el dialog de
@@ -169,6 +196,40 @@ CORS_ORIGINS=https://buenchollotech.com,https://www.buenchollotech.com
 > ⚠️ Reiniciar el backend tras editar `.env`. Recuerda que **nunca**
 > debe quedarse `*` en producción (el backend loguea WARNING si lo
 > detecta con `APP_ENV=production`).
+
+---
+
+## 🤖 Motor de IA (OmniRoute)
+
+### ⏱️ "Autocompletar desde Amazon" falla con `signal timed out`
+
+> 💡 `/products/preview-from-url` encadena Amazon PA-API + Supabase + 2
+> llamadas a OmniRoute (copywriting y categorización, en paralelo desde
+> `ProductAIEnricher`). Con modelos gratuitos/locales puede rondar los 15-20s
+> incluso paralelizado. Esa ruta ya usa un timeout propio de 45s en
+> `productsApi.previewFromUrl` (`services/api/products.ts`), no el de 15s por
+> defecto de `apiClient`. Si vuelve a fallar:
+
+```
+1. Revisar el log del backend: cada llamada a OmniRoute aparece como
+   "HTTP Request: POST http://<ip-nas>:20128/v1/chat/completions"
+2. Si tarda >45s de forma consistente, el contenedor OmniRoute del NAS está
+   sobrecargado o el modelo elegido (AI_MODEL / AI_FALLBACK_MODELS) es lento
+   — no es un bug del código, es latencia real del proveedor gratuito.
+```
+
+> 📚 Diagnóstico completo y decisión de diseño:
+> [`PROJECT_STATUS.md` § 3.terdecies](../../PROJECT_STATUS.md).
+
+### ❓ ¿Las llamadas de IA van a OmniRoute o a OpenAI?
+
+> 💡 No te fíes solo del `.env` — verifícalo en los logs del backend
+> (`logger: "httpx"`, línea `HTTP Request: POST <url>/chat/completions`). El
+> fallback a `api.openai.com` (`config.py → effective_ai_base_url`) solo se
+> activa si `AI_BASE_URL` está **vacío**; si OmniRoute está caído pero
+> `AI_BASE_URL` sigue relleno, los reintentos de `AI_FALLBACK_MODELS` siguen
+> yendo todos a OmniRoute (mismo `base_url` cacheado en el cliente) y fallan
+> igual — no hay failover automático de proveedor en caliente.
 
 ---
 

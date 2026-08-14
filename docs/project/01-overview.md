@@ -51,8 +51,9 @@ y comentan, y el sistema notifica vía **alertas personalizadas** y un
 | 💬 `comments` | Comentarios anidados con votación + ownership check |
 | 🔔 `alerts` | Alertas por keyword/categoría/precio. AlertMatcher cruza cada chollo nuevo |
 | 📬 `notifications` | Bandeja in-app + badge en el header |
-| 📦 `products` | Preview de URL Amazon (extracción ASIN + enriquecimiento OpenAI) |
-| ✈️ `telegram` | Publicación al canal con copy IA y categorías |
+| 🤖 `ai` | Motor de IA desacoplado (OmniRoute/OpenCode/modelos gratuitos), fallback multi-modelo y base para Chatbot web |
+| 📦 `products` | Preview de URL Amazon (extracción ASIN + enriquecimiento IA con copywriting y categorías) |
+| ✈️ `telegram` | Publicación al canal con formato emoji premium, hashtags IA y programación de deals |
 | 🏷️ `categories` | Catálogo maestro (admin) |
 | 🏪 `stores` | Catálogo maestro (admin) |
 | 👤 `users` | Perfil, roles, stats |

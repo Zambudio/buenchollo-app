@@ -1,9 +1,13 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { defineConfig, loadEnv } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import tsConfigPaths from "vite-tsconfig-paths";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 import { cloudflare } from "@cloudflare/vite-plugin";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Configuración nativa del stack (Vite + TanStack Start + Cloudflare Worker).
 // El alias "@/*" se resuelve desde tsconfig.json vía vite-tsconfig-paths.
@@ -28,6 +32,11 @@ export default defineConfig(({ command, mode }) => {
         : undefined,
     },
     resolve: {
+      // Alias explícito de respaldo: en unidades de red con doble letra de unidad
+      // (N: / Z: apuntando al mismo NAS), vite-tsconfig-paths no siempre resuelve "@/*".
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
+      },
       dedupe: [
         "react",
         "react-dom",

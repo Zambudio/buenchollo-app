@@ -86,6 +86,12 @@
   <td>✅ Aceptado</td>
   <td>2026-08-10</td>
 </tr>
+<tr>
+  <td><a href="ADR-013-motor-ia-unificado-omniroute-modelos-gratuitos.md">013</a></td>
+  <td>🤖 Motor de IA unificado con OmniRoute, fallback de modelos gratuitos y base para Chatbot</td>
+  <td>✅ Aceptado</td>
+  <td>2026-08-12</td>
+</tr>
 </tbody>
 </table>
 

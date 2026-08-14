@@ -111,6 +111,63 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     openai_model: str = "gpt-4o"
 
+    # ── Motor unificado de IA (OmniRoute / OpenCode / Modelos Gratuitos / Fallback) ──
+    # Proveedor de IA: "omniroute", "opencode", "groq", "openrouter", "ollama", "openai", "custom"
+    ai_provider: str = "omniroute"
+    # URL base del endpoint OpenAI-compatible (OmniRoute local por defecto: http://127.0.0.1:20128/v1)
+    ai_base_url: str = "http://127.0.0.1:20128/v1"
+    # Clave de API para el router o proveedor (en local/OmniRoute puede ser cualquier string no vacío si no hay auth)
+    ai_api_key: str = ""
+    # Modelo principal
+    ai_model: str = "omniroute/oc/deepseek-v4-flash-free"
+    # Modelos de fallback en cascada en caso de rate-limit (429) o indisponibilidad
+    ai_fallback_models: Annotated[list[str], NoDecode] = Field(
+        default=["llama-3.3-70b-versatile", "gemini-2.0-flash", "deepseek-chat"]
+    )
+    ai_temperature: float = 0.2
+    ai_timeout_seconds: float = 25.0
+
+    @field_validator("ai_fallback_models", mode="before")
+    @classmethod
+    def parse_ai_fallback_models(cls, v: str | list) -> list[str]:
+        if isinstance(v, str):
+            s = v.strip()
+            if s.startswith("["):
+                try:
+                    parsed = json.loads(s)
+                    if isinstance(parsed, list):
+                        return [str(m).strip() for m in parsed if str(m).strip()]
+                except json.JSONDecodeError:
+                    pass
+            return [m.strip() for m in s.split(",") if m.strip()]
+        return v
+
+    @property
+    def effective_ai_base_url(self) -> str:
+        """Devuelve la URL base configurada o la estándar de OpenAI si se usa OpenAI clásico."""
+        if self.ai_base_url:
+            return self.ai_base_url.rstrip("/")
+        if self.openai_api_key:
+            return "https://api.openai.com/v1"
+        return "http://127.0.0.1:20128/v1"
+
+    @property
+    def effective_ai_api_key(self) -> str:
+        """Devuelve la clave de API activa priorizando AI_API_KEY sobre OPENAI_API_KEY."""
+        if self.ai_api_key:
+            return self.ai_api_key
+        if self.openai_api_key:
+            return self.openai_api_key
+        # Para endpoints locales (OmniRoute/Ollama/OpenCode local) un placeholder evita errores en el SDK
+        return "local-no-key-required"
+
+    @property
+    def effective_ai_model(self) -> str:
+        """Devuelve el modelo principal configurado o el modelo OpenAI si se usa OpenAI clásico."""
+        if self.ai_model:
+            return self.ai_model
+        return self.openai_model or "omniroute/oc/deepseek-v4-flash-free"
+
     supabase_url: str = ""
     supabase_key: str = ""
     # Secreto HS256 legacy de Supabase Auth. Solo necesario si el proyecto
@@ -131,6 +188,7 @@ class Settings(BaseSettings):
     def amazon_effective_credential_version(self) -> str:
         """Return the configured Amazon credential version, accepting the legacy env name."""
         return self.amazon_credential_version or self.amazon_api_version
+
 
 
 @lru_cache

@@ -90,7 +90,7 @@ async def generate_post(
     Genera el texto formateado del post y sugiere categorías vía GPT.
     La llamada a OpenAI es opcional: si falla o no hay clave, devuelve lista vacía.
     """
-    generator = TelegramPostGenerator(openai_api_key=settings.openai_api_key)
+    generator = TelegramPostGenerator(settings=settings)
 
     text = generator.generate_text(
         title=payload.title,

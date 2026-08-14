@@ -24,8 +24,18 @@ export interface AmazonPreviewResponse {
   expires_at: string | null;
 }
 
+// Encadena Amazon PA-API + Supabase + llamadas al motor de IA (copywriting y
+// categorización, en paralelo gracias a ProductAIEnricher). Aun paralelizado
+// puede rondar los 15s del timeout por defecto del cliente; se amplía aquí
+// en vez de subir el límite global.
+const PREVIEW_FROM_URL_TIMEOUT_MS = 45_000;
+
 export const productsApi = {
   /** Genera una preview de producto a partir de una URL de Amazon o ASIN. */
   previewFromUrl: (url: string): Promise<AmazonPreviewResponse> =>
-    apiClient.post<AmazonPreviewResponse>("/products/preview-from-url", { url }),
+    apiClient.post<AmazonPreviewResponse>(
+      "/products/preview-from-url",
+      { url },
+      { signal: AbortSignal.timeout(PREVIEW_FROM_URL_TIMEOUT_MS) },
+    ),
 };

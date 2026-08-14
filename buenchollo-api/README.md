@@ -63,7 +63,11 @@ Copia `.env.example` a `.env` y rellena cada valor. ⚠️ **Nunca subas
 | 🔑 `SUPABASE_URL` | ✅ | `https://<ref>.supabase.co` |
 | 🔐 `SUPABASE_KEY` | ✅ | **service_role key** (privada). ⚠️ NO la anon key |
 | 🌐 `CORS_ORIGINS` | ✅ | Lista separada por comas. ❌ Nunca `*` en prod |
-| 🤖 `OPENAI_API_KEY` | ⚠️ | Para autocomplete |
+| 🤖 `AI_PROVIDER` | — | `omniroute` · `opencode` · `groq` · `openrouter` · `ollama` · `openai` |
+| 🌐 `AI_BASE_URL` | ⚠️ | Endpoint OpenAI-compatible (`http://127.0.0.1:20128/v1` para OmniRoute) |
+| 🧠 `AI_MODEL` | ⚠️ | Modelo principal gratuito (ej: `omniroute/oc/deepseek-v4-flash-free`) |
+| 🔄 `AI_FALLBACK_MODELS` | — | Cascada de modelos de respaldo separados por coma |
+| 🔑 `AI_API_KEY` | — | API key o token (opcional en OmniRoute local) |
 | 🛒 `AMAZON_CLIENT_ID/SECRET` | ⚠️ | Para autocomplete Amazon |
 | 🏷️ `AMAZON_AFFILIATE_TAG` | ⚠️ | Tag de afiliado |
 | 🔧 `APP_ENV` | — | `local` · `staging` · `production` |

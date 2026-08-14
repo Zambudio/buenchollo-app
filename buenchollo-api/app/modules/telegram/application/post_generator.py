@@ -3,6 +3,7 @@
 import logging
 import re
 from datetime import datetime
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -46,11 +47,35 @@ def _format_price_es(value: float) -> str:
     return f"{integer_part.replace(',', '.')},{decimal_part}"
 
 
-class TelegramPostGenerator:
-    """Formatea el texto de un chollo para Telegram y sugiere categorías con GPT."""
+from app.modules.ai.domain.ports import TelegramAIServiceProtocol
+from app.modules.ai.infrastructure.llm_client import OpenAICompatibleLLMClient
+from app.modules.ai.infrastructure.telegram_ai_service import TelegramAIService
 
-    def __init__(self, openai_api_key: str = "") -> None:
+
+class TelegramPostGenerator:
+    """Formatea el texto de un chollo para Telegram y sugiere categorías con el motor de IA."""
+
+    def __init__(
+        self,
+        openai_api_key: str = "",
+        ai_service: TelegramAIServiceProtocol | None = None,
+        settings: Any | None = None,
+    ) -> None:
         self._openai_key = openai_api_key
+        if ai_service is not None:
+            self._ai_service = ai_service
+        elif settings is not None:
+            llm_client = OpenAICompatibleLLMClient(settings)
+            self._ai_service = TelegramAIService(llm_client)
+        elif openai_api_key:
+            from app.core.config import Settings
+            cfg = Settings(openai_api_key=openai_api_key)
+            llm_client = OpenAICompatibleLLMClient(cfg)
+            self._ai_service = TelegramAIService(llm_client)
+        else:
+            from app.core.config import get_settings
+            llm_client = OpenAICompatibleLLMClient(get_settings())
+            self._ai_service = TelegramAIService(llm_client)
 
     # ── Generación de texto ────────────────────────────────────────────────────
 
@@ -140,7 +165,7 @@ class TelegramPostGenerator:
         entities.append({"type": "bold", "offset": 0, "length": total})
         return entities
 
-    # ── Sugerencia de categorías con GPT ─────────────────────────────────────
+    # ── Sugerencia de categorías con IA ──────────────────────────────────────
 
     async def suggest_categories(
         self,
@@ -148,35 +173,12 @@ class TelegramPostGenerator:
         description: str,
         available: list[str],
     ) -> list[str]:
-        """Llama a GPT-4o-mini para elegir 1-2 hashtags del catálogo disponible."""
-        if not available or not self._openai_key:
+        """Llama al servicio de IA para elegir 1-2 hashtags del catálogo disponible."""
+        if not available or self._ai_service is None:
             return []
+        return await self._ai_service.suggest_categories(
+            title=title,
+            description=description,
+            available=available,
+        )
 
-        try:
-            from openai import AsyncOpenAI
-            client = AsyncOpenAI(api_key=self._openai_key)
-
-            cats_str = " ".join(available)
-            prompt = (
-                "Elige 1 o 2 hashtags de esta lista que mejor describan el producto.\n"
-                "Solo puedes usar hashtags de la lista. Responde solo con los hashtags.\n\n"
-                f"Lista: {cats_str}\n"
-                f"Producto: {title}\n{description}"
-            )
-
-            response = await client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": "Solo puedes usar las categorías proporcionadas."},
-                    {"role": "user", "content": prompt},
-                ],
-                temperature=0.2,
-            )
-            raw = response.choices[0].message.content.strip()
-            tokens = raw.replace(",", " ").split()
-            allowed = set(available)
-            return [t for t in tokens if t in allowed][:2]
-
-        except Exception as exc:
-            logger.warning("Sugerencia de categorías GPT falló: %s", exc)
-            return []
