@@ -13,6 +13,7 @@ Uso (desde buenchollo-api/, con DATABASE_URL apuntando al Postgres de test):
 
 import asyncio
 import sys
+import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -41,11 +42,13 @@ from app.core.database import Base  # noqa: E402
 # Mismo seed que la migración real (alembic/versions/20260809120000_scheduled_tasks.py):
 # create_all() crea las tablas pero no ejecuta migraciones, así que la fila
 # única de `price_check` que los tests de integración esperan encontrar hay
-# que insertarla aquí a mano.
+# que insertarla aquí a mano. `id` se genera aquí porque el default del
+# modelo ORM (ScheduledTask.id) es del lado de Python (default=), no
+# server_default=, así que un INSERT en SQL crudo no lo rellena solo.
 _SEED_SCHEDULED_TASKS = text(
     """
-    INSERT INTO scheduled_tasks (task_type, enabled, frequency_preset, run_hour, config)
-    VALUES ('price_check', false, 'weekly', 4, '{"price_tolerance_percent": 10}'::json)
+    INSERT INTO scheduled_tasks (id, task_type, enabled, frequency_preset, run_hour, config)
+    VALUES (:id, 'price_check', false, 'weekly', 4, '{"price_tolerance_percent": 10}'::json)
     """
 )
 
@@ -57,7 +60,7 @@ async def main() -> None:
     engine = create_async_engine(settings.database_url)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        await conn.execute(_SEED_SCHEDULED_TASKS)
+        await conn.execute(_SEED_SCHEDULED_TASKS, {"id": str(uuid.uuid4())})
     await engine.dispose()
     print(f"Esquema creado: {len(Base.metadata.tables)} tablas")
 
