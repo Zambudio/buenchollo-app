@@ -32,10 +32,22 @@ import app.modules.blog.domain.models  # noqa: F401, E402
 import app.modules.blog_comments.domain.models  # noqa: F401, E402
 import app.core.audit.models  # noqa: F401, E402
 
+from sqlalchemy import text  # noqa: E402
 from sqlalchemy.ext.asyncio import create_async_engine  # noqa: E402
 
 from app.core.config import get_settings  # noqa: E402
 from app.core.database import Base  # noqa: E402
+
+# Mismo seed que la migración real (alembic/versions/20260809120000_scheduled_tasks.py):
+# create_all() crea las tablas pero no ejecuta migraciones, así que la fila
+# única de `price_check` que los tests de integración esperan encontrar hay
+# que insertarla aquí a mano.
+_SEED_SCHEDULED_TASKS = text(
+    """
+    INSERT INTO scheduled_tasks (task_type, enabled, frequency_preset, run_hour, config)
+    VALUES ('price_check', false, 'weekly', 4, '{"price_tolerance_percent": 10}'::json)
+    """
+)
 
 
 async def main() -> None:
@@ -45,6 +57,7 @@ async def main() -> None:
     engine = create_async_engine(settings.database_url)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await conn.execute(_SEED_SCHEDULED_TASKS)
     await engine.dispose()
     print(f"Esquema creado: {len(Base.metadata.tables)} tablas")
 
