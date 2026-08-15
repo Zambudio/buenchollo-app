@@ -95,9 +95,7 @@ export function ScheduledTaskConfigPanel({ task }: { readonly task: ScheduledTas
     try {
       const result = await preview.mutateAsync(task.id);
       if (result.candidates.length === 0) {
-        toast.success(
-          `${result.total_checked} chollo(s) analizado(s), ninguno requiere cambios`,
-        );
+        toast.success(`${result.total_checked} chollo(s) analizado(s), ninguno requiere cambios`);
         setPendingPreview(null);
         return;
       }
@@ -135,7 +133,9 @@ export function ScheduledTaskConfigPanel({ task }: { readonly task: ScheduledTas
             onChange={(e) =>
               update.mutate({
                 id: task.id,
-                data: { frequency_preset: e.target.value as ScheduledTaskConfig["frequency_preset"] },
+                data: {
+                  frequency_preset: e.target.value as ScheduledTaskConfig["frequency_preset"],
+                },
               })
             }
             className="mt-1 w-full bg-surface-900 border border-surface-700 px-3 py-2 text-sm outline-none focus:border-cyan-glow"
@@ -190,7 +190,10 @@ export function ScheduledTaskConfigPanel({ task }: { readonly task: ScheduledTas
         </button>
       </div>
 
-      <AlertDialog open={!!pendingPreview} onOpenChange={(open) => !open && setPendingPreview(null)}>
+      <AlertDialog
+        open={!!pendingPreview}
+        onOpenChange={(open) => !open && setPendingPreview(null)}
+      >
         <AlertDialogContent className="max-w-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>

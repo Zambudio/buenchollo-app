@@ -87,7 +87,11 @@ export function ScheduledTaskRunsPanel({ taskId }: { readonly taskId: string }) 
         <thead className="border-b border-surface-700 font-mono text-xs uppercase text-muted-foreground">
           <tr>
             <th className="p-3 w-10">
-              <Checkbox checked={allSelected} onCheckedChange={toggleAll} aria-label="Seleccionar todos" />
+              <Checkbox
+                checked={allSelected}
+                onCheckedChange={toggleAll}
+                aria-label="Seleccionar todos"
+              />
             </th>
             <th className="text-left p-3">Fecha</th>
             <th className="text-left p-3">Tipo</th>
@@ -148,7 +152,8 @@ export function ScheduledTaskRunsPanel({ taskId }: { readonly taskId: string }) 
           <AlertDialogHeader>
             <AlertDialogTitle>Eliminar {selected.size} registro(s)</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción eliminará permanentemente los registros seleccionados. No se puede deshacer.
+              Esta acción eliminará permanentemente los registros seleccionados. No se puede
+              deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -158,13 +163,16 @@ export function ScheduledTaskRunsPanel({ taskId }: { readonly taskId: string }) 
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={!!pendingRunDelete} onOpenChange={(open) => !open && setPendingRunDelete(null)}>
+      <AlertDialog
+        open={!!pendingRunDelete}
+        onOpenChange={(open) => !open && setPendingRunDelete(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar este registro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción eliminará permanentemente el registro y sus chollos no restaurados. No se puede
-              deshacer.
+              Esta acción eliminará permanentemente el registro y sus chollos no restaurados. No se
+              puede deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
