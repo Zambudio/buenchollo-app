@@ -59,6 +59,30 @@ está autorizada en `~/.ssh/authorized_keys` del usuario en el NAS y el usuario 
 > `AI_BASE_URL=http://192.168.1.3:20128/v1` no responde, el problema es del
 > contenedor OmniRoute, no de la conectividad al NAS.
 
+## 1.1 Caso concreto: `buenchollo-api` (este proyecto)
+
+- **Ruta real en el NAS**:
+  `/volume1/NAS-DRIVE-PEDRO/IA/02_Proyectos/WEB-Buenchollo/BuenCholloTech/buenchollo-api`
+  (verificado con `docker inspect buenchollo-api --format '{{index .Config.Labels "com.docker.compose.project.working_dir"}}'`).
+  Es el **mismo recurso de red** que `N:`/`Z:` en la máquina de desarrollo — el
+  código ya está ahí en tiempo real, **no hace falta el `tar`+`scp` del §5** para
+  este proyecto concreto. Basta con:
+  ```bash
+  DC="sudo -n /volume1/@appstore/ContainerManager/usr/bin/docker-compose"
+  ssh -o BatchMode=yes nas-zambu "cd /volume1/NAS-DRIVE-PEDRO/IA/02_Proyectos/WEB-Buenchollo/BuenCholloTech/buenchollo-api && $DC build && $DC up -d"
+  ```
+- **⚠️ Trampa**: existe también `/volume1/docker/buenchollo-auto/`, un proyecto
+  **viejo y no relacionado** (bot de scraping con sesión de Telegram + SQLite
+  local, `docker-compose.yml` con servicio `buenchollo-auto`). Un `find -iname
+  docker-compose.yml -path '*buenchollo*'` lo encuentra por el nombre y puede
+  confundirse con el proyecto real — verificar siempre el contenido del
+  `docker-compose.yml` (servicios `buenchollo-api`/`buenchollo-scheduler`/
+  `cloudflared`) antes de tocar nada.
+- **`.env` del NAS**: revisar que `APP_ENV=production` esté puesto — si está en
+  `local` (ver `docs/project/04-configuration.md`), la API real acepta CORS
+  desde `localhost:*` y no manda HSTS. Incidente real y fix:
+  [`PROJECT_STATUS.md` § 3.quaterdecies](../../PROJECT_STATUS.md).
+
 ## 2. Configuración del cliente SSH (ya hecha en la máquina de trabajo)
 
 En `~/.ssh/config` (de la máquina local desde la que trabaja la IA):

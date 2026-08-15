@@ -35,3 +35,10 @@ status: "active"
   de asumir que el código de la feature está roto** — puede ser un cambio de
   entorno ajeno a la tarea en curso, no un bug de la feature que se está
   probando.
+- **La misma unidad de red la monta el propio NAS**: el directorio real de
+  `buenchollo-api` en el NAS
+  (`/volume1/NAS-DRIVE-PEDRO/IA/02_Proyectos/WEB-Buenchollo/BuenCholloTech/buenchollo-api`)
+  es el mismo recurso físico que `N:`/`Z:` — no hace falta subir código para
+  desplegar, solo `docker-compose build && up -d` por SSH. Detalle y trampa
+  del proyecto viejo homónimo (`/volume1/docker/buenchollo-auto/`) en
+  [`docs/guides/NAS-SSH.md § 1.1`](../../docs/guides/NAS-SSH.md).

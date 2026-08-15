@@ -1,5 +1,5 @@
 # PROJECT_STATUS — BuenCholloTech
-*Última actualización: 2026-08-15 (validación local de OmniRoute, incidente de entorno "Antigravity" y optimización de latencia — ver § 3.terdecies)*
+*Última actualización: 2026-08-15 (rebuild en NAS y corrección de APP_ENV en producción — ver § 3.quaterdecies)*
 
 > **⚠️ Revisar este documento antes de migrar a dominio web en producción.**
 > Contiene el estado real del proyecto, deuda técnica pendiente y la hoja de ruta completa.
@@ -233,6 +233,42 @@ abrir la web al público:
   aparcadas sin trigger, a propósito (`OPTIMIZACION_PLAN.md`).
 
 **Suite backend: 141 pytest** en verde (unitarios + integración).
+
+### 3.quaterdecies  Rebuild en NAS + corrección de APP_ENV en producción — 2026-08-15
+
+Tras el § 3.terdecies, despliegue real del motor de IA unificado en el NAS y
+auditoría rápida de la configuración de producción encontrada en el camino.
+
+- **Rebuild**: `buenchollo-api`/`buenchollo-scheduler`/`cloudflared` reconstruidos
+  y reiniciados vía SSH siguiendo [`docs/guides/NAS-SSH.md`](docs/guides/NAS-SSH.md).
+  Sin incidentes: `alembic upgrade head` limpio, healthcheck OK,
+  `https://api.buenchollotech.com/health` → 200.
+- **Hallazgo de camino**: el directorio real del proyecto en el NAS
+  (`/volume1/NAS-DRIVE-PEDRO/IA/02_Proyectos/WEB-Buenchollo/BuenCholloTech/buenchollo-api`)
+  es el **mismo recurso de red** que `N:`/`Z:` en la máquina de desarrollo — no
+  hace falta `tar`+`scp` para este proyecto en concreto, el NAS ya ve el código
+  en tiempo real. Hay que tener cuidado de no confundirlo con
+  `/volume1/docker/buenchollo-auto/`, un proyecto viejo y no relacionado (bot de
+  scraping con sesión de Telegram + SQLite) que también contiene "buenchollo" en
+  la ruta.
+- **Config drift encontrado y corregido**: el `.env` del NAS tenía
+  `APP_ENV=local` en vez de `production` (desde antes de esta sesión, no
+  relacionado con el rebuild). Efecto real medido en logs:
+  - `effective_cors_origins` (`config.py:72-95`) añadía automáticamente
+    `localhost:8081/8082/5173` a la lista de orígenes permitidos de la API
+    real, con `allow_credentials=True`, porque esa rama solo se activa cuando
+    `app_env != "production"`.
+  - `SecurityHeadersMiddleware` no mandaba cabecera HSTS (`main.py:110-112`)
+    — mitigado en parte porque Cloudflare ya aplica HSTS a nivel de borde.
+  - `/health` reportaba `"environment":"local"`, confuso para monitorización.
+  - Corregido: `APP_ENV=production` en el `.env` del NAS + recreación de
+    contenedores. Verificado: `/health` → `"environment":"production"`,
+    `CORS origins configurados` → solo los 3 dominios reales, sin los
+    `localhost:*` extra.
+- **Sin cambios de código para este fix** (solo `.env` del NAS): no hay commit
+  asociado, queda registrado aquí como único rastro.
+
+---
 
 ### 3.terdecies  Validación local de OmniRoute, incidente de entorno y optimización de latencia — 2026-08-15
 
