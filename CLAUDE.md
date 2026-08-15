@@ -38,6 +38,7 @@ Proyecto dual: uso personal + Trabajo Final de Máster (TFM) — las decisiones 
 
 - **ADR-001**: Monolito Modular con FastAPI y Clean Architecture pragmática
 - **ADR-002**: Migración de BaaS directo a API Gateway — el frontend nunca llama a Supabase DB directamente
+- **ADR-013**: Motor de IA unificado con OmniRoute / OpenCode, fallback de modelos gratuitos y base para Chatbot
 
 ---
 
@@ -47,12 +48,14 @@ Proyecto dual: uso personal + Trabajo Final de Máster (TFM) — las decisiones 
 app/
 ├── core/          # config, database, security, logging (compartido)
 └── modules/
+    ├── ai/            # motor unificado LLM, fallback multi-modelo, copywriting, categorización, chatbot
     ├── deals/
     │   ├── domain/        # modelos SQLAlchemy (Deal)
     │   ├── application/   # casos de uso, cleaner_service
     │   ├── infrastructure/# repositorios, adapters externos
     │   └── api/           # router FastAPI, schemas Pydantic
-    ├── products/          # preview Amazon (DIP con Protocols)
+    ├── products/          # preview Amazon (DIP con Protocols e integración ProductAIEnricher)
+    ├── telegram/          # publicación al canal, formato emoji premium, hashtags IA
     ├── categories/
     ├── stores/
     └── users/             # /auth/me, Profile model
@@ -134,6 +137,8 @@ El dominio no depende de FastAPI, SQLAlchemy, ni ningún framework externo.
 Las **normas de trabajo y la memoria del proyecto** viven **dentro del repo** en [`.claude/memory/`](.claude/memory/) (versionadas). El índice [`.claude/memory/MEMORY.md`](.claude/memory/MEMORY.md) lista cada nota: forma de trabajo iterativa, no continuar con lo crítico, deps solo en `develop`, método de revisión/auditoría, estado del proyecto, etc. **Consúltalas al inicio de cada sesión** y mantenlas al día (una nota por fichero, con frontmatter; actualiza también el índice).
 
 La guía operativa **viva** de la infraestructura (Cloudflare, túnel, hardening) está en [`docs/guides/Cloudflare.md`](docs/guides/Cloudflare.md); úsala y mantenla al día al tocar infraestructura.
+
+Para conectar por SSH al NAS y hacer rebuild/redeploy de `buenchollo-api` (Docker, sin `git` en el NAS), sigue [`docs/guides/NAS-SSH.md`](docs/guides/NAS-SSH.md) — procedimiento verificado, permite operar sin intervención manual del usuario salvo en acciones de impacto real.
 
 ---
 

@@ -49,12 +49,34 @@
 | `AMAZON_API_VERSION` | `3.2` (no cambiar salvo indicación de Amazon) |
 | `AMAZON_MARKETPLACE` | `www.amazon.es` |
 
-### 🤖 OpenAI (⚠️ obligatoria para copy)
+### 🤖 Motor de IA Unificado (OmniRoute / OpenCode / Modelos Gratuitos / Fallback)
+
+| Variable | Obligatoria | Descripción |
+|---|---|---|
+| `AI_PROVIDER` | — | `omniroute` (por defecto), `opencode`, `groq`, `openrouter`, `ollama`, `openai` |
+| `AI_BASE_URL` | ⚠️ | Endpoint OpenAI-compatible (`http://127.0.0.1:20128/v1` en local/NAS, o URL cloud) |
+| `AI_MODEL` | ⚠️ | Modelo principal gratuito (ej: `omniroute/oc/deepseek-v4-flash-free`) |
+| `AI_FALLBACK_MODELS` | — | Cascada de modelos separados por comas si el principal falla (429/timeout) |
+| `AI_API_KEY` | — | Clave de API o token (opcional si OmniRoute local no requiere auth) |
+| `AI_TEMPERATURE` | — | Temperatura por defecto (`0.2`) |
+| `AI_TIMEOUT_SECONDS` | — | Timeout de peticiones LLM en segundos (`25.0`) |
+
+#### 🤖 OpenAI Legacy (Opcional)
 
 | Variable | Descripción |
 |---|---|
-| `OPENAI_API_KEY` | `sk-...` |
+| `OPENAI_API_KEY` | Clave de OpenAI (`sk-...`). Usada automáticamente como fallback si no hay `AI_API_KEY` |
 | `OPENAI_MODEL` | `gpt-4o` por defecto |
+
+> ⚠️ El fallback a OpenAI (`effective_ai_base_url` en `config.py`) solo se
+> activa si `AI_BASE_URL` está **vacío** al arrancar. No es un failover en
+> caliente: si OmniRoute deja de responder con `AI_BASE_URL` relleno, los
+> reintentos de `AI_FALLBACK_MODELS` siguen yendo todos a OmniRoute.
+
+> 🐢 `/products/preview-from-url` hace 2 llamadas a OmniRoute en paralelo
+> (`ProductAIEnricher`) y puede rondar 10-20s con modelos gratuitos/locales;
+> por eso `previewFromUrl` en el frontend usa un timeout propio de 45s en vez
+> del de 15s por defecto de `apiClient` (`services/api/products.ts`).
 
 ### ✈️ Telegram (⚠️ obligatorias para publicar al canal)
 

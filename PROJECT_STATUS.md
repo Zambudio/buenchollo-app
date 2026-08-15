@@ -1,5 +1,5 @@
 # PROJECT_STATUS — BuenCholloTech
-*Última actualización: 2026-08-10 (motor de tareas programadas + revisión de precios — ver § 3.undecies)*
+*Última actualización: 2026-08-15 (validación local de OmniRoute, incidente de entorno "Antigravity" y optimización de latencia — ver § 3.terdecies)*
 
 > **⚠️ Revisar este documento antes de migrar a dominio web en producción.**
 > Contiene el estado real del proyecto, deuda técnica pendiente y la hoja de ruta completa.
@@ -233,6 +233,94 @@ abrir la web al público:
   aparcadas sin trigger, a propósito (`OPTIMIZACION_PLAN.md`).
 
 **Suite backend: 141 pytest** en verde (unitarios + integración).
+
+### 3.terdecies  Validación local de OmniRoute, incidente de entorno y optimización de latencia — 2026-08-15
+
+Sesión de verificación end-to-end de la migración del § 3.duodecies / ADR-013
+(llamadas de IA de Telegram y preview de Amazon movidas de OpenAI a OmniRoute).
+Antes de poder probarlo hubo que resolver dos problemas de entorno no
+relacionados con el código de la feature:
+
+- **Incidente "Antigravity"**: otro agente de IA (Google Antigravity), en un
+  intento fallido de arrancar `buenchollo-web` durante ~1h, convirtió el
+  proyecto de TanStack Start (SSR) en una SPA manual: añadió `appType: "spa"`
+  a `vite.config.ts` y creó `index.html` + `src/main.tsx` (bootstrap
+  `ReactDOM.createRoot` que no existían en el proyecto). Resultado: la página
+  cargaba visualmente pero **ningún botón respondía** (dos sistemas de
+  hidratación compitiendo por el DOM). Revertido (`git restore` + borrado de
+  los ficheros nuevos).
+- **Bug de entorno real, no relacionado con Antigravity**: tras revertir,
+  TanStack Start seguía devolviendo `Cannot GET /` en local. Causa: la máquina
+  tiene `N:` y `Z:` mapeadas a la **misma** ruta UNC del NAS
+  (`\\Zambu-nas\nas-drive-pedro`); lanzar `npm run dev` desde `N:` hace que
+  Vite/TanStack Start mezclen rutas `N:` y `Z:` para el mismo módulo y el SSR
+  se rompe en silencio. Fix: arrancar siempre desde `Z:`, y añadir un alias
+  `@` explícito de respaldo en `vite.config.ts` (`resolve.alias`) porque
+  `vite-tsconfig-paths` tampoco resuelve `@/*` de forma fiable en esta unidad
+  de red duplicada.
+
+Con el entorno saneado, se verificó **con logs reales del backend** que las
+llamadas de IA van a `http://192.168.1.3:20128/v1/chat/completions`
+(OmniRoute), ninguna a `api.openai.com`; el fallback en `effective_ai_base_url`
+(`config.py`) solo cae a OpenAI si `AI_BASE_URL` está vacío, no como failover
+en caliente si OmniRoute deja de responder — queda documentado por si se
+quiere ese failover real en el futuro.
+
+**Optimización de latencia real encontrada probando "Autocompletar desde
+Amazon"**: `/products/preview-from-url` encadena Amazon PA-API + Supabase + 2
+llamadas secuenciales a OmniRoute (copywriting + categorización), 20–45s
+totales — muy por encima del timeout de 15s de `apiClient` (fijado en el
+AUDIT M-06 del § 3.septies). Fix de dos partes:
+
+- `ProductAIEnricher.enrich_product()`
+  (`buenchollo-api/app/modules/ai/infrastructure/product_enricher.py`)
+  paraleliza copywriting y categorización con `ThreadPoolExecutor` — son
+  independientes entre sí — y corta esa parte de ~40s a ~14s.
+- Aun paralelizado, 14s sigue al borde del timeout global; `previewFromUrl`
+  (`buenchollo-web/src/services/api/products.ts`) pasa ahora un `AbortSignal`
+  propio de 45s solo para esta ruta, sin tocar el límite de 15s del resto de
+  la app.
+
+**Nueva guía operativa**: [`docs/guides/NAS-SSH.md`](docs/guides/NAS-SSH.md) —
+acceso SSH al NAS y rebuild/redeploy de `buenchollo-api` sin `git` en el NAS
+(tar + scp + docker-compose), trasladada desde fuera del repo para que quede
+versionada y cargada automáticamente por Claude Code.
+
+- **Tests**: 257 unitarios backend + 168 frontend en verde tras los cambios
+  (ninguno nuevo añadido — sesión de verificación/fix de entorno, no de
+  feature nueva).
+- **Sin deuda técnica nueva.**
+
+---
+
+### 3.duodecies  Motor de IA Unificado desacoplado (OmniRoute / OpenCode / Fallback modelos gratuitos) — 2026-08-12
+
+Eliminación de la dependencia de pago directo a OpenAI para operaciones de copywriting y categorización,
+y creación de la infraestructura base para el futuro Chatbot conversacional de recomendaciones en la web (ADR-013).
+
+- **Qué hace**: Centraliza todas las llamadas de IA del backend a través de un gateway OpenAI-compatible
+  (**OmniRoute** en `http://127.0.0.1:20128/v1`, **OpenCode**, **Groq free tier**, **OpenRouter free models**,
+  o **Ollama**), eliminando costes por tokens de OpenAI para operaciones deterministas de preview y Telegram.
+- **Backend**:
+  - Nuevo módulo `app/modules/ai/` con entidades (`AIProductEnrichment`, `AIChatMessage`, `AIChatResponse`),
+    puertos (`LLMClientProtocol`, `ProductEnricherProtocol`, `TelegramAIServiceProtocol`, `DealRecommenderProtocol`)
+    y adaptadores de infraestructura.
+  - `OpenAICompatibleLLMClient`: cliente asíncrono y síncrono agnóstico con **fallback automático multi-modelo**
+    en cascada (ante errores 429 Rate Limit o indisponibilidad) y **extractor de JSON defensivo**
+    (`extract_json_payload`) tolerante a bloques markdown, trailing commas y texto conversacional.
+  - `ProductAIEnricher`: generación de eslogan corto, descripción web en markdown, texto para Telegram
+    y categorización taxonómica.
+  - `TelegramAIService`: sugerencia de hashtags para Telegram validados contra el catálogo.
+  - `DealRecommenderAssistant`: motor conversacional base para el futuro **Chatbot Web**, preparado para
+    inyectar contexto de ofertas activas y responder con recomendaciones personalizadas.
+  - `app/modules/products/infrastructure/openai_client.py` refactorizado como facade sobre `ProductAIEnricher`.
+  - `app/modules/telegram/application/post_generator.py` y `telegram/api/router.py` actualizados para inyectar
+    el servicio de IA desacoplado.
+- **Configuración**: Variables `AI_PROVIDER`, `AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL`, `AI_FALLBACK_MODELS`,
+  `AI_TEMPERATURE`, `AI_TIMEOUT_SECONDS` en `app/core/config.py` y `.env.example`, con retrocompatibilidad
+  transparente si existe `OPENAI_API_KEY`.
+- **Tests**: 13 nuevos tests unitarios en `test_ai_llm_client.py` (JSON extraction, fallback multi-modelo,
+  copywriting, categorización, sugerencia de hashtags, chatbot) + 14 tests de regresión en verde.
 
 ---
 
@@ -584,8 +672,6 @@ Es el único test roto conocido.
 - [x] ~~Capa `application/` en `users/`~~ (cumplido en F2)
 - [ ] Migrar tests de integración a CI con servicio Postgres (actualmente solo en local)
 
----
-
 ## 6. Cómo escalar a nuevos proveedores (AliExpress, PCComponentes…)
 
 La arquitectura ya está preparada. Para añadir AliExpress:
@@ -600,8 +686,6 @@ La arquitectura ya está preparada. Para añadir AliExpress:
    El caso de uso PreviewProductFromUrlUseCase no cambia nada.
 
 3. El campo Deal.source ya existe para identificar el origen del chollo.
-
-Nada más. deals, categories, stores, users, telegram: sin tocar.
 ```
 
 ---
@@ -613,6 +697,7 @@ buenchollo-api/
 ├── app/
 │   ├── core/           # config, database, security, logging
 │   └── modules/
+│       ├── ai/            # domain (entities, ports) + infrastructure (llm_client, product_enricher, telegram_ai, deal_recommender)
 │       ├── deals/
 │       │   ├── domain/        # Deal, DealVote, Favorite — modelos ORM + lógica pura
 │       │   ├── application/   # DealService, DealCleanerService
@@ -621,13 +706,17 @@ buenchollo-api/
 │       ├── products/
 │       │   ├── domain/        # ProductPreview, Protocols (DIP)
 │       │   ├── application/   # PreviewProductFromUrlUseCase
-│       │   └── infrastructure/# AmazonClient, OpenAIClient, [AliexpressClient]
-│       ├── categories/        # mismo patrón — pendiente application layer
-│       ├── stores/            # mismo patrón — pendiente application layer
-│       ├── users/             # mismo patrón — pendiente application layer
-│       ├── telegram/          # api + application (post_generator) + infrastructure
-│       ├── alerts/            # ⬜ pendiente crear módulo
-│       └── notifications/     # ⬜ pendiente crear módulo
+│       │   └── infrastructure/# AmazonClient, ProductAIEnricher adapter (OpenAIAssistant facade)
+│       ├── telegram/          # api + application (post_generator) + infrastructure (bot, category_repo)
+│       ├── scheduled_tasks/   # motor genérico tareas programadas + price_check
+│       ├── scheduled_deals/   # programación y publicación de chollos
+│       ├── blog/              # blog con editor Tiptap y posts
+│       ├── blog_comments/     # comentarios de blog
+│       ├── categories/        # catálogo maestro
+│       ├── stores/            # catálogo maestro
+│       ├── users/             # /auth/me, Profile model
+│       ├── alerts/            # alertas de usuario y matcher
+│       └── notifications/     # notificaciones in-app
 
 buenchollo-web/
 ├── src/
