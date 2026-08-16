@@ -55,7 +55,10 @@ Genera un JSON con exactamente estos tres campos para el producto:
 3. "telegram_text": texto conciso para publicar en el canal de Telegram de ofertas.
    - Máximo 2-3 líneas.
    - Sin markdown, sin viñetas, sin listas.
-   - Destaca el beneficio principal y la oportunidad de compra de forma atractiva.
+   - Resume en tono de venta el producto y su beneficio principal (para qué sirve, qué lo hace bueno).
+   - NO añadas frases de cierre tipo llamada a la acción ni de urgencia (prohibido: "hazte con el tuyo",
+     "no te lo pierdas", "antes de que se agote", "cómpralo ya", "corre a por él", "consíguelo rápido",
+     o cualquier variante). El precio, el enlace y la urgencia ya los añade la plantilla del post, no el texto.
 
 PRODUCTO: {title}
 INFORMACIÓN / CARACTERÍSTICAS: {description}
