@@ -111,54 +111,48 @@ Panel de control con métricas agregadas (chollos, tráfico, usuarios, favoritas
 El sistema implementa un **Monolito Modular con Clean Architecture pragmática** ([ADR-001](docs/adr/ADR-001-monolito-modular-fastapi.md)) y un **API Gateway FastAPI** ([ADR-002](docs/adr/ADR-002-migracion-baas-a-api-gateway.md)). El cliente frontend se comunica de forma estricta a través de endpoints REST versionados (`/v1`).
 
 ```mermaid
-flowchart TD
-    subgraph ClientLayer ["🌐 Capa de Cliente & Edge"]
-        Browser["👤 Usuario / Navegador Web"]
-        CF_Worker["⚡ Cloudflare Workers<br/>(React 19 SSR Frontend)"]
-        CF_Edge["🛡️ Cloudflare Edge<br/>(WAF + DDoS + TLS Strict + Rate Limit)"]
+flowchart LR
+    Browser["🌐 Browser / Cliente<br/>(React 19 + TS)"]
+
+    subgraph cloudflare ["⚡ Cloudflare Edge"]
+        Workers["⚡ Cloudflare Workers<br/>(SSR Frontend)"]
+        Tunnel["🔐 Cloudflare Tunnel<br/>(Zero-Trust API)"]
     end
 
-    subgraph InfrastructureLayer ["🏠 Servidor & Infraestructura NAS"]
-        CF_Tunnel["🔐 Cloudflare Tunnel<br/>(Zero-Trust Portless)"]
-        
-        subgraph FastAPIApp ["🐍 Monolito Modular — buenchollo-api"]
-            Gateway["🔌 API Gateway /v1"]
-            DealsMod["📦 Deals Module"]
-            AIMod["🤖 OmniRoute AI Engine"]
-            CronMod["⏰ Scheduled Tasks Engine"]
-            BlogMod["✍️ Blog & Tiptap Engine"]
-            AlertsMod["🔔 Notification & Matcher Engine"]
-        end
+    subgraph nas ["🏠 NAS Synology — Docker"]
+        API["🐍 FastAPI Gateway<br/>buenchollo-api (/v1)"]
     end
 
-    subgraph ExternalServices ["☁️ Persistencia & Servicios Externos"]
-        SupaDB[("🐘 PostgreSQL / Supabase<br/>(RLS en 12 tablas + PgBouncer)")]
-        SupaAuth["🔑 Supabase Auth<br/>(Google OAuth + JWT)"]
-        SupaStorage["📦 Supabase Storage<br/>(Assets & Media)"]
-        AmazonAPI["🛒 Amazon Creators API & Keepa"]
-        TelegramAPI["✈️ Telegram Bot API"]
-        SentrySaaS["📊 Sentry Observability"]
+    subgraph supa ["☁️ Supabase Cloud"]
+        Auth["🔑 Auth (Google OAuth)"]
+        DB[("🐘 PostgreSQL<br/>(RLS + PgBouncer)")]
+        Storage["📦 Storage (Media)"]
     end
 
-    Browser <--> CF_Edge <--> CF_Worker
-    Browser <--> CF_Edge <--> CF_Tunnel <--> Gateway
-    
-    Gateway --> DealsMod & AIMod & CronMod & BlogMod & AlertsMod
-    
-    FastAPIApp -- "SQLAlchemy Async / service_role" --> SupaDB
-    FastAPIApp -- "JWT Verification" --> SupaAuth
-    FastAPIApp -- "Scraping & Historic Data" --> AmazonAPI
-    FastAPIApp -- "Push Notifications" --> TelegramAPI
-    FastAPIApp -- "Telemetry & Crash Reports" --> SentrySaaS
-    CF_Worker -. "Upload Assets" .-> SupaStorage
+    subgraph ext ["🔌 Servicios & APIs Externas"]
+        Amazon["🛒 Amazon Creators & Keepa"]
+        AI["🤖 OmniRoute AI Engine"]
+        Telegram["✈️ Telegram Bot API"]
+        Sentry["📊 Sentry Telemetry"]
+    end
 
-    classDef edge fill:#0f172a,stroke:#0ea5e9,color:#f8fafc;
-    classDef app fill:#1e1b4b,stroke:#818cf8,color:#f8fafc;
-    classDef ext fill:#14532d,stroke:#22c55e,color:#f8fafc;
-    
-    class Browser,CF_Worker,CF_Edge edge;
-    class CF_Tunnel,Gateway,DealsMod,AIMod,CronMod,BlogMod,AlertsMod app;
-    class SupaDB,SupaAuth,SupaStorage,AmazonAPI,TelegramAPI,SentrySaaS ext;
+    Browser --> Workers
+    Browser -- "HTTPS /v1" --> Tunnel --> API
+    Workers -. "Auth & Assets" .-> Auth & Storage
+
+    API -- "SQLAlchemy Async" --> DB
+    API -- "Valida JWT" --> Auth
+    API -- "Scraping & Precios" --> Amazon
+    API -- "Generación & Copy" --> AI
+    API -- "Publicación" --> Telegram
+    API -- "Observabilidad" --> Sentry
+
+    classDef client fill:#0f172a,stroke:#0ea5e9,color:#e2e8f0
+    classDef internal fill:#1e1b4b,stroke:#818cf8,color:#e2e8f0
+    classDef ext fill:#14532d,stroke:#22c55e,color:#e2e8f0
+    class Auth,DB,Storage,Amazon,AI,Telegram,Sentry ext
+    class API,Workers,Tunnel internal
+    class Browser client
 ```
 
 ---
