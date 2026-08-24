@@ -1,16 +1,16 @@
-# 🎓 Bloque académico — entrega del Máster
+# 🏗️ Arquitectura y Diseño Técnico
 
 <p align="center">
-  <strong>Documentación de entrega de <code>BuenCholloTech</code></strong><br>
-  <em>Máster en Desarrollo con IA · 2025</em>
+  <strong>Documentación técnica de <code>BuenCholloTech</code></strong><br>
+  <em>Diseño de software, calidad y seguridad en producción</em>
 </p>
 
 ---
 
 > 📖 **¿Qué encontrarás aquí?**
 > Diez capítulos numerados que explican **qué se ha construido**, **por
-> qué se ha construido así**, y **cómo se han aplicado los cuatro grandes
-> bloques del máster** sobre un único producto real.
+> qué se ha construido así**, y **cómo se han aplicado los principios
+> fundamentales de ingeniería de software** sobre un producto real.
 >
 > Si lo que buscas es **cómo instalar o ejecutar** BuenCholloTech, eso
 > vive en [`docs/project/`](../project/00-index.md). Aquí se explican
@@ -56,14 +56,14 @@ Si tienes una hora → léelo todo.
 
 ---
 
-## 🧭 Mapa por bloque del máster
+## 🧭 Mapa por área técnica
 
 Para que puedas saltar directamente al material relevante de cada
-bloque cursado:
+disciplina:
 
 <table>
 <thead>
-<tr><th>Bloque del máster</th><th>Documentos clave</th></tr>
+<tr><th>Área de ingeniería</th><th>Documentos clave</th></tr>
 </thead>
 <tbody>
 <tr>
@@ -124,5 +124,5 @@ bloque cursado:
 ---
 
 <p align="center">
-  <em>Pedro Zambudio · Máster en Desarrollo con IA · 2025</em>
+  <em>Pedro Zambudio · BuenCholloTech</em>
 </p>

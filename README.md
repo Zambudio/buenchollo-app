@@ -6,15 +6,15 @@
 
 <p align="center">
   <strong>Plataforma de comunidad de chollos tecnológicos</strong><br>
-  <em>Producto personal en producción + Trabajo Final del Máster en Desarrollo con IA 2025</em>
+  <em>Producto personal en producción</em>
 </p>
 
 <p align="center">
   <a href="https://github.com/Zambudio/buenchollo-app/actions/workflows/ci.yml">
     <img alt="CI" src="https://github.com/Zambudio/buenchollo-app/actions/workflows/ci.yml/badge.svg?branch=main">
   </a>
-  <a href="https://github.com/Zambudio/buenchollo-app/releases/tag/v1.0.0-tfm">
-    <img alt="release" src="https://img.shields.io/badge/release-v1.0.0--tfm-22d3ee">
+  <a href="https://github.com/Zambudio/buenchollo-app/releases/tag/v1.0.0">
+    <img alt="release" src="https://img.shields.io/badge/release-v1.0.0-22d3ee">
   </a>
   <img alt="python" src="https://img.shields.io/badge/python-3.11-3776AB?logo=python&logoColor=white">
   <img alt="typescript" src="https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white">
@@ -24,13 +24,13 @@
 
 ---
 
-## 🎓 Entrega · Trabajo Final de Máster
+## 🎬 Demostración y Presentación
 
-> Materiales de defensa del TFM: la presentación en diapositivas y el vídeo explicativo del proyecto.
+> Vídeo explicativo y slides del proyecto.
 
-| Entregable | Ubicación |
+| Recurso | Ubicación |
 |---|---|
-| 🖥️ **Slides de la presentación** | [`presentacion/BuenCholloTech-TFM.pptx`](presentacion/BuenCholloTech-TFM.pptx) |
+| 🖥️ **Slides de presentación** | [`presentacion/BuenCholloTech-TFM.pptx`](presentacion/BuenCholloTech-TFM.pptx) |
 | 🎥 **Vídeo de presentación** | [▶️ Ver en YouTube](https://youtu.be/ZyAo8iIAIXQ) |
 
 ---
@@ -43,7 +43,7 @@ sistema de alertas personalizadas, votación comunitaria y publicación
 automatizada al canal de Telegram del proyecto.
 
 > 💡 **Producto real desplegado en un NAS Synology con arquitectura
-> profesional**, no un prototipo académico desechable.
+> profesional.**
 
 ---
 
@@ -165,9 +165,9 @@ buenchollo-app/
 │   ├── workflows/ci.yml           CI con 4 jobs
 │   └── dependabot.yml             updates semanales agrupados
 │
-└── 📚 docs/                       Documentación dual
+└── 📚 docs/                       Documentación completa
     ├── project/                   operativa (instalar, ejecutar, ...)
-    ├── master/                    bloque académico del Máster
+    ├── master/                    arquitectura y diseño técnico
     ├── adr/                       9 ADRs firmados
     ├── reference/                 referencias técnicas densas
     └── archive/                   histórico preservado
@@ -337,9 +337,9 @@ La documentación se organiza en **dos bloques** claramente separados:
 | [08 · Despliegue](docs/project/08-deployment.md) | 🚀 NAS + Docker, dominio definitivo |
 | [09 · Troubleshooting](docs/project/09-troubleshooting.md) | 🔍 Errores comunes y soluciones |
 
-### 🎓 Bloque académico del Máster — [`docs/master/`](docs/master/00-index.md)
+### 🏗️ Arquitectura y Diseño Técnico — [`docs/master/`](docs/master/00-index.md)
 
-> _Documentación formal con la justificación de las decisiones._
+> _Documentación formal con la justificación de las decisiones técnicas._
 
 | Documento | Contenido |
 |---|---|
@@ -375,23 +375,23 @@ La documentación se organiza en **dos bloques** claramente separados:
 ## 🏷️ Estado del proyecto
 
 ```
-🟢 v1.0.0-tfm publicado
+🟢 v1.0.0 publicado
 🟢 En producción en https://buenchollotech.com — frontend en Cloudflare Workers
 🟢 API FastAPI en el NAS expuesta vía Cloudflare Tunnel (api.buenchollotech.com)
 🟢 237 tests automatizados verdes · CI verde en main
 🟢 Sin CVEs conocidas: pip-audit y npm audit a 0 (tooling de tests actualizado a vitest 4, 2026-07-16)
-🟢 Documentación dual (operativa + académica) completa
+🟢 Documentación técnica y operativa completa
 ```
 
 ---
 
 <p align="center">
-  <strong>Pedro Zambudio</strong> · <em>Máster en Desarrollo con IA · 2025</em>
+  <strong>Pedro Zambudio</strong> · <em>BuenCholloTech</em>
 </p>
 
 <p align="center">
   <a href="https://github.com/Zambudio/buenchollo-app">📦 Repositorio</a> ·
   <a href="docs/project/00-index.md">📘 Operativa</a> ·
-  <a href="docs/master/00-index.md">🎓 Académica</a> ·
+  <a href="docs/master/00-index.md">🏗️ Arquitectura</a> ·
   <a href="docs/adr/00-index.md">📋 ADRs</a>
 </p>

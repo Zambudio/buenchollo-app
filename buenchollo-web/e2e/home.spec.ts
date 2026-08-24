@@ -3,7 +3,7 @@
  *  Por qué no testamos las cards renderizadas: TanStack Start hace SSR de
  *  los datos en el servidor de Node, fuera del alcance de `page.route`.
  *  Reproducir aquí el backend completo o stubear el SSR sería más coste
- *  que valor para el alcance del TFM.
+ *  que valor para la fase actual.
  *
  *  En su lugar verificamos que la página responde, que el chrome de la
  *  app está presente, y que los CTA principales son accesibles. La

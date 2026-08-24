@@ -1,11 +1,10 @@
 # Plan de Hardening Arquitectónico — BuenChollo
 *Plan vivo. Última actualización: 2026-05-27*
 
-> **Contexto**: tras la auditoría arquitectónica del 2026-05-27 (alto cumplimiento
-> con el módulo de Arquitectura del máster), se identificaron 10 áreas mejorables
+> **Contexto**: tras la auditoría arquitectónica del 2026-05-27, se identificaron 10 áreas mejorables
 > (ARQ-01 a ARQ-10). Este plan las aborda todas, ordenadas por dependencias
-> lógicas. Objetivo: dejar BuenChollo en estado "producción real", no sólo
-> entregable de TFM, porque el proyecto va a crecer.
+> lógicas. Objetivo: dejar BuenCholloTech en estado "producción real", preparándolo
+> para el crecimiento continuo del producto.
 >
 > **Forma de trabajo**: una tarea = un commit. Por cada tarea: modificar →
 > verificar (manual + tsc/pytest) → commit + push → marcar `[x]` → siguiente.
@@ -398,10 +397,10 @@ cross-repo, se extrae el service en ese momento siguiendo el patrón de
 ### 7.2 Actualizar PROJECT_STATUS.md
 - [x] Nueva sección `§ 3.quater` con resumen de este plan completado.
 - [x] Valoración arquitectónica actualizada.
-- [x] Lista de pendientes futuros (post-TFM): featurefactor lo que no se hizo.
+- [x] Lista de pendientes futuros: refactor de lo no prioritario.
 
-### 7.3 Commit final tag `v1.0.0-tfm`
-- [x] `git tag v1.0.0-tfm -m "Versión presentada como Trabajo Final de Máster"`.
+### 7.3 Commit final tag `v1.0.0`
+- [x] `git tag v1.0.0 -m "Versión estable en producción"`.
 - [x] `git push --tags`.
 - [x] **Razón**: punto fijo del repo para volver si algo se rompe después.
 
@@ -409,7 +408,7 @@ cross-repo, se extrae el service en ese momento siguiendo el patrón de
 
 ## Resumen de impacto esperado
 
-| Bloque | Tiempo estimado | Valor TFM | Valor producción |
+| Bloque | Tiempo estimado | Valor arquitectura | Valor producción |
 |---|---|:---:|:---:|
 | F1 - ADRs | 2-3h | ⭐⭐⭐⭐⭐ | ⭐⭐ |
 | F2 - Backend fundamentos | 4-6h | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ |

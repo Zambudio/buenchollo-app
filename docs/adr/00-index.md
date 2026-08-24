@@ -97,9 +97,9 @@
 
 ---
 
-## 🧭 Mapa por bloque del máster
+## 🧭 Mapa por área técnica
 
-> Si te interesa un bloque concreto, salta directamente a los ADRs
+> Si te interesa un área técnica concreta, salta directamente a los ADRs
 > relevantes:
 
 | Bloque | ADRs |

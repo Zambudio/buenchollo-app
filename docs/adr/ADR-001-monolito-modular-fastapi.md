@@ -51,7 +51,7 @@ Las dependencias apuntan siempre hacia dentro: `api → application → domain �
 - **Despliegue en NAS doméstico**: Recursos limitados. Los microservicios requieren infraestructura que no justifica la escala del proyecto.
 - **Modularidad sin complejidad**: La separación por módulos permite extraer a microservicio en el futuro si fuera necesario, sin reescribir desde cero.
 - **Mantenibilidad**: Un equipo de una persona puede mantener un monolito modular mucho más eficientemente que múltiples servicios.
-- **Contexto académico**: La arquitectura es suficientemente elaborada para demostrar principios de diseño (SOLID, Clean Architecture) en el TFM.
+- **Mantenibilidad técnica**: La arquitectura es suficientemente elaborada para estructurar y mantener profesionalmente principios de diseño (SOLID, Clean Architecture).
 
 ---
 

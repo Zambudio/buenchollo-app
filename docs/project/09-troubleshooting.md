@@ -350,7 +350,7 @@ git log --oneline -10
 # https://github.com/Zambudio/buenchollo-app/actions
 
 # Última versión estable
-git checkout v1.0.0-tfm
+git checkout v1.0.0
 ```
 
 > 📧 Si el problema persiste, abrir issue privado o mandar email a

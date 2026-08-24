@@ -122,4 +122,4 @@ Cada sección lleva el resultado esperado entre paréntesis. Marca con
 
 | Fecha | Versión | Operador | Veredicto |
 |---|---|---|---|
-| _YYYY-MM-DD_ | _v1.0.0-tfm_ | _Pedro_ | _PASS / FAIL_ |
+| _YYYY-MM-DD_ | _v1.0.0_ | _Pedro_ | _PASS / FAIL_ |

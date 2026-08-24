@@ -84,7 +84,7 @@ Convención de mensajes:
 - **Mensajes amigables en cliente, mensajes técnicos en logs**: el frontend
   no expone errores de servidor crudos (ADR-006 limpió los `str(exc)`).
 - **OpenAPI gratis del lado del backend**: Pydantic genera `/docs` con los
-  schemas. Útil para defender contratos en la memoria del TFM.
+  schemas. Útil para documentar y verificar contratos de la API.
 - **Cada lado evoluciona a su ritmo**: si añadimos un campo opcional al
   backend, no rompemos el frontend hasta que decidamos usarlo.
 

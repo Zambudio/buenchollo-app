@@ -1,7 +1,7 @@
 # 🏁 10 · Conclusiones
 
-> **TL;DR** · BuenCholloTech demuestra los cuatro grandes bloques del
-> máster sobre un único producto real, desplegado y en uso. Cada
+> **TL;DR** · BuenCholloTech demuestra los cuatro pilares fundamentales de
+> ingeniería de software sobre un único producto real, desplegado y en uso. Cada
 > decisión está documentada, cada test contribuye, cada hallazgo de
 > seguridad está resuelto o aceptado con justificación, y el uso de
 > IA está supervisado y limitado. El siguiente paso lo decide el
@@ -9,7 +9,7 @@
 
 ---
 
-## 🎓 Lo que se ha aprendido
+## 🎯 Lo que se ha aprendido
 
 > _Cuatro lecciones concretas, no genéricas, que el desarrollo de
 > BuenCholloTech ha consolidado._
@@ -74,7 +74,7 @@ auditorías cruzadas) cubren los riesgos identificados.
 
 <table>
 <thead>
-<tr><th>Bloque del máster</th><th>Cómo se demuestra en BuenCholloTech</th></tr>
+<tr><th>Área de ingeniería</th><th>Cómo se demuestra en BuenCholloTech</th></tr>
 </thead>
 <tbody>
 <tr>
@@ -106,34 +106,33 @@ auditorías cruzadas) cubren los riesgos identificados.
 
 ---
 
-## 🗺️ Cómo se han aplicado los contenidos del máster
+## 🗺️ Estructura de sprints ejecutados
 
-Cada sprint del proyecto se ha alineado deliberadamente con un módulo
-del máster:
+Cada sprint del proyecto se ha enfocado en consolidar una dimensión técnica específica:
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│  Sprint F1–F7  →  Módulo de Arquitectura                     │
+│  Sprint F1–F7  →  Arquitectura y Hardening                   │
 │  (hardening · Alembic · request_id · rate limit · audit · …) │
 └──────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────┐
-│  Sprint Q1–Q7  →  Módulo de Calidad del software             │
+│  Sprint Q1–Q7  →  Calidad del software                       │
 │  (Vitest · Testing Library · Playwright · Husky · CI · …)    │
 └──────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────┐
-│  Sprint S1–S7  →  Módulo de Seguridad                        │
+│  Sprint S1–S7  →  Seguridad y Pentesting                     │
 │  (OWASP · 6 fixes · Security Headers · CORS · SSRF · …)      │
 └──────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────┐
-│  Sprint docs   →  Integración final con todos los módulos    │
-│  (docs/project · docs/master · 9 ADRs · README dual)         │
+│  Sprint docs   →  Integración y Documentación                │
+│  (docs/project · docs/master · 9 ADRs · README)              │
 └──────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────┐
-│  Uso de IA transversal  →  Módulo de Desarrollo con IA       │
+│  Uso de IA transversal  →  Desarrollo asistido por IA        │
 │  (Claude Code · CLAUDE.md · auditorías por módulo · ADR-009) │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -142,12 +141,11 @@ del máster:
 
 ## 💎 Qué valor tiene el proyecto
 
-### 🎓 Valor académico
+### 🏗️ Valor de ingeniería y arquitectura
 
 - Un producto **completo y desplegado**, no un prototipo desechable
 - Decisiones técnicas **explicadas y documentadas**, con ADRs firmados
-- Aplicación práctica de los cuatro grandes bloques del máster sobre
-  un único producto
+- Aplicación práctica de los pilares de ingeniería sobre un único producto
 
 ### 💼 Valor profesional
 
@@ -156,7 +154,7 @@ del máster:
   versionados, gates de calidad locales y en CI, auditorías OWASP,
   observabilidad con Sentry, rollback documentado
 - Código real publicado en GitHub bajo el repositorio
-  `Zambudio/buenchollo-app`, **accesible a empleadores potenciales**
+  `Zambudio/buenchollo-app`, **accesible en producción**
 
 ### 🚀 Valor de producto
 
@@ -205,8 +203,7 @@ Aplica también a las otras áreas:
      El humano tiene que entenderlo y poder explicarlo."
 ```
 
-BuenCholloTech se entrega como un proyecto que cumple esos cuatro
-"no basta":
+BuenCholloTech es un proyecto que cumple esos cuatro "no basta":
 
 - ✅ **Funciona**
 - ✅ **Se puede cambiar**
@@ -217,7 +214,7 @@ BuenCholloTech se entrega como un proyecto que cumple esos cuatro
 
 <p align="center">
   <strong>Pedro Zambudio</strong><br>
-  Máster en Desarrollo con IA · 2025
+  <em>BuenCholloTech</em>
 </p>
 
 <p align="center">

@@ -1,7 +1,7 @@
 # 📚 Referencias técnicas
 
 > **TL;DR** · Documentos densos que no son ni operativa diaria
-> ([`../project/`](../project/00-index.md)) ni explicación académica
+> ([`../project/`](../project/00-index.md)) ni diseño general
 > ([`../master/`](../master/00-index.md)), pero que mantienen valor
 > como **referencia técnica** y se enlazan desde ambos bloques.
 
@@ -80,13 +80,13 @@ También es el insumo del que se destila
 > debe ser **corta y directa**: comandos, ejemplos, tabla de errores
 > comunes.
 >
-> La documentación académica de
+> La documentación de arquitectura de
 > [`../master/`](../master/00-index.md) debe ser **explicativa y
 > justificativa**: por qué se tomó cada decisión.
 >
 > Pero algunos documentos técnicos son **largos y densos sin caber en
 > ninguno de los dos modos**: una auditoría OWASP detallada de 500
-> líneas no es operativa diaria ni es el formato académico final.
+> líneas no es operativa diaria ni encaja en un resumen ejecutivo.
 >
 > 📦 Vive aquí, en `reference/`, y se enlaza desde donde corresponda.
 
@@ -94,7 +94,7 @@ También es el insumo del que se destila
 
 <p align="center">
   <a href="../project/00-index.md">📘 Operativa</a> ·
-  <a href="../master/00-index.md">🎓 Bloque académico</a> ·
+  <a href="../master/00-index.md">🏗️ Arquitectura y Diseño</a> ·
   <a href="../adr/00-index.md">📋 ADRs</a> ·
   <a href="../archive/">🗄️ Histórico</a>
 </p>

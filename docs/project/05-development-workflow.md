@@ -145,8 +145,8 @@ feat/lo-que-sea
 ## 🏷️ Tag de release
 
 ```bash
-git tag -a v1.0.0-tfm -m "Versión presentada como Trabajo Final de Máster"
-git push origin v1.0.0-tfm
+git tag -a v1.0.0 -m "Versión estable en producción"
+git push origin v1.0.0
 ```
 
 Convención: **SemVer** + sufijo descriptivo cuando aplique.

@@ -92,7 +92,7 @@ grande), con caídas eventuales a **Haiku 4.5** para tareas rápidas
 | **F1–F7** (arquitectura) | mayo 2026 | 30 tareas: docs, Alembic, request_id, rate limiting, audit log, health, Sentry, /v1, frontend pro-grade, CI/CD, smoke test |
 | **Q1–Q7** (calidad) | mayo 2026 | Vitest + Playwright + Husky + coverage thresholds + métricas |
 | **S1–S7** (seguridad) | junio 2026 | Auditoría OWASP completa + 6 fixes medios + CI security-audit |
-| **Documentación** | junio 2026 | Reorganización en `docs/project/` operativa y `docs/master/` académica |
+| **Documentación** | junio 2026 | Reorganización en `docs/project/` operativa y `docs/master/` de arquitectura y diseño |
 
 ### 🅱️ Patrón B — Implementación guiada de features
 

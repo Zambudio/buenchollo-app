@@ -220,7 +220,7 @@ Cuando BuenChollo se mueva del DDNS de Synology a su dominio propio:
 |---|---|
 | [`docs/reference/SECURITY_AUDIT.md`](../reference/SECURITY_AUDIT.md) | Auditoría OWASP completa con hallazgos SEC-01 a SEC-09 |
 | [`SECURITY.md`](../../SECURITY.md) | Política de divulgación responsable (raíz) |
-| [`docs/master/07-seguridad.md`](../master/07-seguridad.md) | Sección académica del módulo |
+| [`docs/master/07-seguridad.md`](../master/07-seguridad.md) | Documento detallado de arquitectura de seguridad |
 
 ---
 

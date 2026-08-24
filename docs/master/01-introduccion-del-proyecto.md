@@ -4,8 +4,7 @@
 > ofertas tecnológicas, construida sobre un **NAS doméstico** con
 > arquitectura profesional. Combina curación humana del admin con
 > alertas personalizadas, votación comunitaria y publicación
-> automatizada a Telegram. Es **producto personal real** y a la vez
-> **Trabajo Final del Máster en Desarrollo con IA 2025**.
+> automatizada a Telegram. Es un **producto personal real en producción**.
 
 ---
 
@@ -65,15 +64,14 @@ manual:
 ```
 
 **Objetivo personal**: automatizar todo ese flujo manual para escalar
-a una audiencia mayor y, en su caso, abrirlo como producto real con
-dominio propio.
+a una audiencia mayor y abrirlo como producto real con dominio propio.
 
-### Motivación académica
+### Enfoque de ingeniería y arquitectura
 
-El máster cubre cuatro grandes bloques: **arquitectura**, **calidad**,
+El desarrollo se fundamenta en cuatro pilares: **arquitectura**, **calidad**,
 **seguridad** y **uso de IA**. BuenCholloTech permite ponerlos en
-práctica simultáneamente sobre un único producto **real**, no sobre
-un ejercicio académico desechable.
+práctica simultáneamente sobre un producto **real**, no sobre
+un prototipo desechable.
 
 Cada decisión técnica está pensada para ser **defendible
 profesionalmente**:
@@ -81,7 +79,7 @@ profesionalmente**:
 - 🗂️ Cada gran decisión vive en un **ADR firmado**.
 - 📅 Cada sprint tiene una **bitácora cronológica** en
   [`PROJECT_STATUS.md`](../../PROJECT_STATUS.md).
-- 🎯 Cada bloque del máster tiene **un sprint dedicado**: F1–F7
+- 🎯 Cada área técnica tiene **sprints dedicados**: F1–F7
   arquitectura, Q1–Q7 calidad, S1–S7 seguridad.
 
 ---
@@ -123,7 +121,7 @@ profesionalmente**:
 
 ## 📦 Alcance del proyecto
 
-El TFM cubre un **MVP funcional en producción** desplegado en NAS
+El proyecto cubre un **MVP funcional en producción** desplegado en NAS
 Synology:
 
 ✅ Frontend público con feed, búsqueda y detalle de chollos

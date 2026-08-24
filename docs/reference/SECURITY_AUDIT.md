@@ -452,16 +452,7 @@ de Supabase (config externa al código).
 
 - **Lockfile** versionado: ✅ (`package-lock.json`, `requirements*.txt` con pins).
 - **Dependabot** activo: ✅ (`.github/dependabot.yml` semanal con grupos).
-- **CVEs detectadas**:
-  - Python: **5 en `python-multipart 0.0.6`** → SEC-01 (crítico arreglar).
-  - npm: **17 moderate** todas en dev-tooling → SEC-07.
-- **Imágenes Docker**: `python:3.11-slim` (oficial, mantenida).
-- **Scripts postinstall sospechosos**: ninguno.
-- **Dependencias innecesarias detectadas**:
-  - `@cloudflare/vite-plugin`, `wrangler`, `miniflare` → no se usan
-    para deploy. Considerar eliminar (Pedro decide).
-- **SBOM**: no generado. No necesario para TFM; opcional a futuro con
-  `cyclonedx-bom`.
+- **SBOM**: no generado. Opcional a futuro con `cyclonedx-bom`.
 
 ---
 
@@ -510,7 +501,7 @@ de Supabase (config externa al código).
 | Dependabot updates semanales | ✅ |
 | Protección de ramas | ⚠️ no verificado en GitHub settings |
 
-**Propuesta de checks adicionales** (todos opcionales para TFM):
+**Propuesta de checks adicionales** (todos opcionales para la fase actual):
 
 - Job `security-audit` en CI que corre:
   - `pip-audit -r requirements.txt --strict` (fallar si CVE high+)
@@ -519,13 +510,13 @@ de Supabase (config externa al código).
   - `bandit -r app/` para análisis estático de seguridad Python
 
 Si se quiere DAST: OWASP ZAP baseline contra `http://localhost:8080`
-en CI. Coste +2 min, valor educativo alto para TFM.
+en CI. Coste +2 min, valor informativo para la auditoría.
 
 ---
 
 ## 12. Plan de acción priorizado
 
-### 🔴 Imprescindible antes de entregar (4 commits)
+### 🔴 Imprescindible antes de desplegar (4 commits)
 
 1. **SEC-01 — Pin `python-multipart 0.0.27`** (1 línea, 0 riesgo).
    Verificar con `pip-audit` post-fix.
@@ -536,7 +527,7 @@ en CI. Coste +2 min, valor educativo alto para TFM.
 4. **SEC-04 — `CORS_ORIGINS=*` → default sensato + warning en startup**
    (4 líneas en `.env.example` + 5 en `main.py`).
 
-### 🟡 Recomendable antes de entregar (2 commits)
+### 🟡 Recomendable antes de desplegar (2 commits)
 
 5. **SEC-05 — `max_length` en schemas Pydantic de deals** (10 líneas).
 6. **SEC-06 — Allowlist de dominios Amazon en `extract_asin_from_url`**
@@ -556,7 +547,7 @@ en CI. Coste +2 min, valor educativo alto para TFM.
    - Plan de respuesta a incidentes (§10).
    - Checklist pre-go-live al dominio definitivo (verificación NAS,
      HSTS, certificados Let's Encrypt).
-   - Resumen para evaluación del proyecto (§14).
+   - Resumen ejecutivo de seguridad (§14).
 10. **`npm audit fix`** en `buenchollo-web` (corrige los 17 moderate
     de tooling).
 
@@ -565,13 +556,13 @@ en CI. Coste +2 min, valor educativo alto para TFM.
 - Migrar a cookies HttpOnly (alto coste, no idiomático con Supabase JS SDK).
 - 2FA TOTP para admins (decisión externa al código; recomendar a Pedro
   activarlo en Supabase Auth de su cuenta personal).
-- DAST automatizado con OWASP ZAP (over-engineering para TFM).
+- DAST automatizado con OWASP ZAP (over-engineering para la fase actual).
 - Generación SBOM (over-engineering).
 - WAF / Cloudflare front (depende del dominio definitivo).
 
 ---
 
-## 13. Checklist final para defensa del proyecto
+## 13. Checklist de seguridad
 
 Tras aplicar los puntos 1-7 del plan (imprescindible + recomendable):
 
@@ -589,9 +580,9 @@ Tras aplicar los puntos 1-7 del plan (imprescindible + recomendable):
 
 ---
 
-## 14. Resumen para evaluación del proyecto (borrador)
+## 14. Resumen de postura de seguridad
 
-> *Para incluir en la memoria una vez aplicado el plan.*
+> *Resumen ejecutivo de seguridad de la plataforma.*
 
 **Security by Design:**
 La arquitectura limita la superficie de ataque desde el origen.
@@ -639,13 +630,10 @@ npm audit + secret scanning.
 - DAST automatizado con OWASP ZAP en CI.
 - SBOM con CycloneDX.
 
-**Decisiones razonables para TFM:**
-El proyecto tiene un único administrador (el autor), opera sobre un
-NAS doméstico con tráfico bajo, y maneja datos no críticos (ofertas
-públicas, no datos financieros). El nivel de control aplicado es
-proporcional al riesgo real y defendible al nivel "senior junior" /
-"sysadmin con visión de seguridad", no se exige nivel CISO ni
-auditoría externa.
+**Decisiones de arquitectura de seguridad:**
+El proyecto opera sobre un NAS doméstico con tráfico controlado y maneja
+datos de ofertas públicas y notificaciones de usuario. El nivel de control
+aplicado es proporcional al riesgo real y mantenible profesionalmente.
 
 ---
 

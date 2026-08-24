@@ -1,7 +1,7 @@
 # 🗂️ 03 · Estructura del proyecto
 
 > **TL;DR** · Monorepo con backend FastAPI + frontend React + carpeta
-> `docs/` dual (operativa + académica). Backend con Clean Architecture
+> `docs/` organizada en operativa y arquitectura. Backend con Clean Architecture
 > pragmática por módulo. Frontend organizado por features. Reglas
 > claras de **dónde añadir cada cosa**.
 

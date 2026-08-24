@@ -94,7 +94,7 @@
 <tr>
   <td>📜 <strong>Sin SBOM</strong></td>
   <td>No hay inventario formal para auditorías externas</td>
-  <td>Para un TFM con un solo proyecto, <code>package-lock.json</code> + <code>requirements.txt</code> cumplen la función</td>
+  <td>Para un proyecto de esta escala, <code>package-lock.json</code> + <code>requirements.txt</code> cumplen la función</td>
 </tr>
 </tbody>
 </table>
@@ -158,7 +158,7 @@
 | 🔐 **2FA TOTP para administradores en código** | Configuración externa: Supabase admin tiene 2FA en su cuenta personal | Para single admin con cuenta única, es proporcional |
 | 🍪 **Migración JWT a cookies HttpOnly** | localStorage (default Supabase SDK) | Alto coste, SDK no lo soporta idiomáticamente, mitigado con CSP |
 | 🤖 **DAST automatizado con OWASP ZAP** | Manual via `securityheaders.com` y `ssllabs.com/ssltest` | Coste CI alto sin valor añadido al tamaño actual |
-| 📜 **SBOM con CycloneDX** | Lockfiles + Dependabot | Para un TFM con un solo repo, lockfiles son SBOM funcional |
+| 📜 **SBOM con CycloneDX** | Lockfiles + Dependabot | Para la escala actual del repositorio, lockfiles son SBOM funcional |
 | 🛡️ **WAF / Cloudflare front** | Reverse proxy DSM con HTTPS | Depende del dominio definitivo |
 | 🔁 **Rotación periódica de claves** | Procedimiento documentado | Manual hoy, automatizable con scripts |
 | 📦 **Política de retención de logs Sentry** | Default 30 días en plan gratuito | Suficiente para forensic básico |
@@ -214,8 +214,7 @@
 
 ## 🌟 Posible evolución del producto
 
-Si BuenCholloTech sale del ámbito académico y se convierte en producto
-real, los pasos naturales:
+Para hacer escalar BuenCholloTech y evolucionarlo en producción, los pasos naturales son:
 
 ```
 1. 🌐 Comprar dominio + configurar Cloudflare (CDN + DNS + DDoS)
@@ -245,9 +244,9 @@ real, los pasos naturales:
 9. 💰 Monetización (banner discreto, afiliados ampliados, Premium)
 ```
 
-> 💡 Estas son **ideas, no compromisos**. El proyecto cierra para TFM
-> con el MVP funcional descrito; cualquier evolución posterior será
-> decisión deliberada con su propio análisis de viabilidad.
+> 💡 Estas son **ideas de evolución futura**. El proyecto cuenta actualmente
+> con el MVP funcional descrito; cualquier expansión posterior se ejecutará
+> de forma incremental según las necesidades de la comunidad.
 
 ---
 

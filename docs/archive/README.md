@@ -125,7 +125,7 @@
 
 <p align="center">
   <a href="../project/00-index.md">📘 Operativa</a> ·
-  <a href="../master/00-index.md">🎓 Bloque académico</a> ·
+  <a href="../master/00-index.md">🏗️ Arquitectura y Diseño</a> ·
   <a href="../adr/00-index.md">📋 ADRs</a> ·
   <a href="../reference/">📚 Referencias</a>
 </p>

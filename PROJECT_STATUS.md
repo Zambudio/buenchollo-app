@@ -14,7 +14,7 @@ El proyecto está en producción funcionando, con CI verde en GitHub Actions, in
 de calidad senior (observabilidad, rate limiting, audit log, request_id, Sentry) y frontend
 con TypeScript strict + ESLint endurecido + TanStack Query + organización por features.
 Las decisiones técnicas (Clean Architecture, DIP con Protocols, async/await, PgBouncer,
-API versionada `/v1`, ADR-002) son correctas y defendibles académicamente para el TFM.
+API versionada `/v1`, ADR-002) son correctas y defendibles profesionalmente.
 
 ---
 
@@ -40,13 +40,13 @@ API versionada `/v1`, ADR-002) son correctas y defendibles académicamente para 
 | 5 | Scheduler — activación programada, expiración automática, limpieza al arrancar | ✅ Completado |
 | 6 | Telegram — panel completo con preview, GPT, categorías, canales, emojis Premium | ✅ Completado |
 | 7 | Tests unitarios (DealService, AlertMatcher, matches_alert) | ✅ Completado (2026-05-26) |
-| 8 | Refactor de buenas prácticas para TFM — ver § 3.bis | ✅ Completado (2026-05-26) |
+| 8 | Refactor de buenas prácticas — ver § 3.bis | ✅ Completado (2026-05-26) |
 
 ---
 
 ### 3.bis  Refactor de buenas prácticas — 2026-05-26
 
-Bloque grande de refactor previo a la entrega del TFM, con auditoría completa
+Bloque grande de refactor previo al lanzamiento de la v1.0.0, con auditoría completa
 SOLID / DRY / KISS / YAGNI y plan por fases. Resumen:
 
 **Fase 1 — Imprescindibles (P0)**
@@ -134,14 +134,14 @@ Probado tras el fix: home, login, favoritos, comentarios, votos, panel admin
 
 ### 3.sexies  Módulo de Seguridad — 2026-06-02
 
-Sprint dedicado al módulo de Seguridad del TFM. Auditoría completa
+Sprint dedicado al módulo de Seguridad. Auditoría completa
 OWASP Top 10 con 6 hallazgos medios resueltos (ninguno crítico).
 
 - `docs/reference/SECURITY_AUDIT.md`: informe completo con threat model, mapa
   de superficie de ataque, evaluación OWASP Top 10, hallazgos
   priorizados con cómo se explotan, impacto y cambio mínimo.
 - `docs/SECURITY.md`: política, controles, deuda asumida, plan de
-  respuesta a incidentes, checklist pre-go-live, defensa TFM.
+  respuesta a incidentes, checklist pre-go-live.
 - Fixes aplicados:
   - SEC-01: pin `python-multipart==0.0.27` (5 CVEs DoS resueltas).
   - SEC-02: handler 500 ya no refleja Origin arbitrario.
@@ -483,7 +483,7 @@ acepta **ambos formatos** (JSON array y CSV), así que no hay que tocar los
 
 ### 3.quinquies  Módulo de Calidad QA — 2026-05-30
 
-Sprint dedicado al módulo de Calidad del software del TFM. El backend ya
+Sprint dedicado al módulo de Calidad del software. El backend ya
 tenía cobertura razonable (87 pytest); el frontend no tenía una sola
 línea de test. Tras este sprint:
 
@@ -500,7 +500,7 @@ Suite total automatizada: **158 tests verde**.
 
 ---
 
-### 3.quater  Hardening arquitectónico F1–F7 — 2026-05-30 (release v1.0.0-tfm)
+### 3.quater  Hardening arquitectónico F1–F7 — 2026-05-30 (release v1.0.0)
 
 Sprint final de hardening definido en [`docs/reference/PLAN_ARQUITECTURA.md`](docs/reference/PLAN_ARQUITECTURA.md).
 30 tareas en 7 fases. Todas verdes.
@@ -556,7 +556,7 @@ Sprint final de hardening definido en [`docs/reference/PLAN_ARQUITECTURA.md`](do
 - `F7.1` [`docs/reference/SMOKE_TEST.md`](docs/reference/SMOKE_TEST.md) con guion exhaustivo manual
   pre-release (10 secciones, ~50 checks).
 - `F7.2` Esta sección.
-- `F7.3` Tag `v1.0.0-tfm`.
+- `F7.3` Tag `v1.0.0`.
 
 **Decisión arquitectónica notable durante el sprint**
 - Tests separados por tipo: 78 unitarios (mockean Supabase/Amazon, corren en CI

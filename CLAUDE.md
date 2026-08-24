@@ -17,7 +17,7 @@ Ante varias opciones válidas, elige la más simple y mantenible.
 ## Contexto del proyecto
 
 **BuenCholloTech** es una plataforma para publicar, gestionar y automatizar chollos tecnológicos.
-Proyecto dual: uso personal + Trabajo Final de Máster (TFM) — las decisiones técnicas deben ser defendibles académicamente.
+Proyecto personal en producción — las decisiones técnicas deben ser defendibles profesionalmente.
 
 ### Componentes
 
@@ -151,7 +151,7 @@ Para conectar por SSH al NAS y hacer rebuild/redeploy de `buenchollo-api` (Docke
 | `crear-feature-siguiendo-clean-architecture.md` | Al implementar cualquier feature nueva |
 | `refactorizar-sin-romper-funcionalidad.md` | Al mejorar código existente |
 | `disenar-mejorar-tests.md` | Al escribir o revisar tests |
-| `documentar-decision-tecnica-pfmaster.md` | Al crear un ADR o documento técnico para el TFM |
+| `documentar-decision-tecnica-pfmaster.md` | Al crear un ADR o documento de arquitectura técnica |
 | `auditar-arquitectura.md` | Al revisar el estado general del proyecto |
 | `revision-seguridad-basica.md` | Al revisar seguridad de un módulo o feature |
 

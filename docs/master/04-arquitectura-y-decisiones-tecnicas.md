@@ -303,8 +303,8 @@ Cada decisión se ha tomado optimizando por:
 | 🥈 **Reversibilidad** | Decisiones que no atan a un proveedor o stack sin necesidad |
 | 🥉 **Simplicidad** | KISS y YAGNI antes que "preparación para escala futura" especulativa |
 
-Esto se traduce en decisiones explícitas que parecen "menos sofisticadas"
-que las habituales en presentaciones académicas — y precisamente por
+Esto se traduce en decisiones explícitas que priorizan la simplicidad
+frente a la sobreingeniería teórica — y precisamente por
 eso son **las correctas** para el contexto real del proyecto.
 
 ---

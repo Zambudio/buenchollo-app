@@ -2,8 +2,7 @@
 
 > **TL;DR** · Registro vivo de lo que falta o conviene mejorar **ahora mismo**.
 > Solo items **abiertos**: cuando uno se cierra, se elimina de aquí (el histórico
-> resuelto vive en [`PROJECT_STATUS.md`](../../PROJECT_STATUS.md)). Esta página es
-> interna del proyecto; **no forma parte del bloque académico** ([`docs/master/`](../master/00-index.md)).
+> resuelto vive en [`PROJECT_STATUS.md`](../../PROJECT_STATUS.md)). Para consultar el diseño de arquitectura, ver [`docs/master/`](../master/00-index.md).
 
 Última revisión: **2026-08-10** (incidente de datos de test en producción — ver
 `PROJECT_STATUS.md` § 3.duodecies — sube TD-15 a Alta).

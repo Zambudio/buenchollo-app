@@ -243,7 +243,7 @@ npm audit --omit=dev --audit-level=high
 
 ---
 
-## 📜 Resumen para evaluación
+## 📜 Resumen ejecutivo de seguridad
 
 ### ¿Cómo se aplicó Security by Design?
 

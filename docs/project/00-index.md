@@ -42,7 +42,7 @@
 | [07](07-security.md) | 🛡️ **Seguridad** | Controles, política `--no-verify`, incidentes |
 | [08](08-deployment.md) | 🚀 **Despliegue** | NAS Synology + Docker, dominio definitivo |
 | [09](09-troubleshooting.md) | 🔍 **Troubleshooting** | Errores comunes y soluciones |
-| [10](10-technical-debt.md) | 🧾 **Deuda técnica** | Registro vivo de lo pendiente (interno, no académico) |
+| [10](10-technical-debt.md) | 🧾 **Deuda técnica** | Registro vivo de tareas pendientes |
 
 ---
 
@@ -50,7 +50,7 @@
 
 | Carpeta | Para qué |
 |---|---|
-| [`../master/`](../master/00-index.md) | 🎓 **Bloque académico** del Máster — explicación formal de decisiones |
+| [`../master/`](../master/00-index.md) | 🏗️ **Bloque de arquitectura y diseño** — explicación formal de decisiones técnicas |
 | [`../adr/`](../adr/00-index.md) | 📋 **9 ADRs** firmados y datados (decisiones arquitectónicas) |
 | [`../reference/`](../reference/) | 📚 Referencias densas (plan hardening, auditoría OWASP, smoke test) |
 | [`../guides/Cloudflare.md`](../guides/Cloudflare.md) | ☁️ **Guía operativa viva** de Cloudflare (Workers, túnel, TLS, WAF) — estado real de producción |

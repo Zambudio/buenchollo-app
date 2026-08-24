@@ -1,8 +1,7 @@
 # 🎯 02 · Objetivos y alcance
 
-> **TL;DR** · BuenCholloTech busca ser **un producto personal real**
-> simultáneamente al servir como **Trabajo Final del Máster**. No se
-> entrega un prototipo desechable: se entrega un sistema en producción
+> **TL;DR** · BuenCholloTech es **un producto personal real en producción**. No se
+> trata de un prototipo desechable: se trata de un sistema en producción
 > con decisiones explicadas, calidad medible y seguridad aplicada.
 
 ---
@@ -13,26 +12,25 @@
 ┌────────────────────────────────────────────────────────────┐
 │                                                            │
 │    Construir una plataforma web completa de comunidad      │
-│    de ofertas tecnológicas que sirva simultáneamente       │
-│    como producto personal en producción                    │
-│    y como soporte para demostrar los contenidos del        │
-│    Máster en Desarrollo con IA 2025.                       │
+│    de ofertas tecnológicas que sirva como producto         │
+│    personal en producción con los más altos estándares     │
+│    de arquitectura y calidad de software.                  │
 │                                                            │
 └────────────────────────────────────────────────────────────┘
 ```
 
-El objetivo **no** es entregar un prototipo desechable, sino un
+El objetivo **no** es crear un prototipo desechable, sino un
 sistema:
 
 - 🔍 **Defendible técnicamente** — cada decisión está explicada.
 - 📊 **Con niveles de calidad y seguridad medibles** — no afirmaciones vagas.
-- 🛠️ **Que se pueda mantener y evolucionar** — porque seguirá vivo después de la entrega.
+- 🛠️ **Que se pueda mantener y evolucionar** — porque seguirá vivo y activo en producción.
 
 ---
 
 ## 🎯 Objetivos específicos
 
-### 🎓 Académicos
+### 🏗️ De ingeniería y arquitectura
 
 <table>
 <thead>
@@ -157,10 +155,10 @@ Justificaciones detalladas: [`docs/adr/`](../adr/00-index.md).
 
 ---
 
-## 🏁 ¿Qué se considera "terminado"?
+## 🏁 Criterios de finalización del MVP
 
-El proyecto se entrega cuando se cumplen estas 8 condiciones,
-**todas presentes en el repositorio en el momento de la entrega**:
+El proyecto alcanza su versión lista para producción cuando se cumplen estas 8 condiciones,
+**todas presentes en el repositorio**:
 
 | # | Condición | Estado |
 |---|---|---|
@@ -169,9 +167,9 @@ El proyecto se entrega cuando se cumplen estas 8 condiciones,
 | 3 | Coverage threshold automatizado en `src/lib/**` ≥ 90% | ✅ |
 | 4 | **0 CVEs** conocidas en deps de producción | ✅ |
 | 5 | **9 ADRs** firmados cubriendo las decisiones clave | ✅ |
-| 6 | Documentación dual (operativa + académica) coherente | ✅ |
+| 6 | Documentación técnica y operativa completa y coherente | ✅ |
 | 7 | Plataforma **desplegada y accesible** en el NAS | ✅ |
-| 8 | Tag de release **`v1.0.0-tfm`** publicado | ✅ |
+| 8 | Tag de release **`v1.0.0`** publicado | ✅ |
 
 ---
 

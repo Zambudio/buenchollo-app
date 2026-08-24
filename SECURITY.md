@@ -15,7 +15,7 @@
 
 | Versión | Soporte de seguridad |
 |---|---|
-| 🟢 `v1.0.0-tfm` (rama `main`) | ✅ Soporte activo |
+| 🟢 `v1.0.0` (rama `main`) | ✅ Soporte activo |
 | 🔴 Versiones anteriores | ❌ Sin soporte |
 
 ---

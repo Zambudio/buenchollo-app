@@ -7,8 +7,8 @@ consistente durante todo el desarrollo del proyecto.
 
 ## Contexto
 
-El Máster en Desarrollo con IA 2025 exige que la IA sea **parte
-explícita** del proceso de desarrollo. Pero "usar IA" puede significar
+El desarrollo asistido por IA es un pilar explícito del proceso de
+ingeniería del proyecto. Pero "usar IA" puede significar
 desde "pegar prompts a ChatGPT y copiar la salida" hasta "vibe coding
 sin revisar". Ninguno de los dos extremos es defendible
 profesionalmente.
@@ -22,7 +22,7 @@ El proyecto necesitaba una decisión documentada sobre:
 5. Qué riesgos asume el uso de IA y cómo se mitigan.
 
 Esta decisión necesitaba quedar firmada como ADR para que cualquier
-persona que evalúe el proyecto pueda entender de forma explícita el
+persona que revise el proyecto pueda entender de forma explícita el
 papel que la IA ha tenido en BuenCholloTech.
 
 ## Decisión
@@ -55,7 +55,7 @@ Se carga automáticamente en cada conversación.
 
 ### 2. Patrones de uso aplicados
 
-**Patrón A — Auditorías por módulo del máster.**
+**Patrón A — Auditorías por módulo técnico.**
 
 Para cada bloque (arquitectura, calidad, seguridad, documentación) se
 ejecuta:
@@ -165,23 +165,21 @@ Decisiones que siguen siendo exclusivamente humanas:
 
 - Trazabilidad: "¿qué papel ha tenido la IA?" tiene una respuesta
   concreta con evidencia (CLAUDE.md, commits, ADRs, documentos)
-  que cualquier evaluador puede verificar.
+  que cualquier revisor puede verificar.
 - Reproducibilidad: alguien puede leer este ADR y replicar el método
   en su propio proyecto.
 
 ## Alternativas consideradas
 
-### A1: No usar IA, demostrar capacidad sin asistente
+### A1: No usar IA
 
-**Rechazada**. Es **ignorar el contenido del máster**, que se llama
-explícitamente "Desarrollo con IA". Además, no usar IA en un proyecto
-de 2026 es elegir conscientemente ser menos productivo.
+**Rechazada**. Desaprovecha las herramientas de desarrollo asistido por IA.
+No usar IA en un proyecto de software moderno es elegir ser menos productivo.
 
 ### A2: Vibe coding (IA genera, Pedro pega sin entender)
 
-**Rechazada**. Es la práctica peligrosa que el módulo de IA del máster
-busca evitar. Genera código que aparenta funcionar pero el
-desarrollador no puede defender ni mantener.
+**Rechazada**. Es una práctica peligrosa. Genera código que aparenta funcionar
+pero el desarrollador no puede defender ni mantener.
 
 ### A3: IA sólo para autocompletado (Copilot only)
 
