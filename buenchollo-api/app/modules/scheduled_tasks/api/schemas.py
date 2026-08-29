@@ -32,6 +32,7 @@ class CandidateSchema(BaseModel):
     slug: str
     image_url: str | None = None
     description: str | None = None
+    short_description: str | None = None
     store_id: str | None = None
     store_name: str | None = None
     category_id: str | None = None
@@ -40,6 +41,8 @@ class CandidateSchema(BaseModel):
     affiliate_url: str
     source_url: str | None = None
     old_price: Decimal
+    previous_price: Decimal | None = None
+    discount_percentage: int | None = None
     new_price: Decimal | None = None
     reason: _Reason
 
@@ -72,13 +75,16 @@ class RunItemResponse(BaseModel):
     deal_id_snapshot: str
     title: str
     slug: str
-    image_url: str | None
-    store_name: str | None
+    image_url: str | None = None
+    short_description: str | None = None
+    store_name: str | None = None
     old_price: Decimal
-    new_price: Decimal | None
+    previous_price: Decimal | None = None
+    discount_percentage: int | None = None
+    new_price: Decimal | None = None
     reason: str
-    restored_at: datetime | None
-    restored_deal_id: str | None
+    restored_at: datetime | None = None
+    restored_deal_id: str | None = None
     model_config = ConfigDict(from_attributes=True)
 
 

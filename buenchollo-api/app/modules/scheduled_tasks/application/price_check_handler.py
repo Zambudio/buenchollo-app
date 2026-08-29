@@ -81,12 +81,14 @@ class PriceCheckHandler:
         new_price = None
         if reason == "price_increase":
             new_price = Decimal(str(product.current_price)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        prev_price = Decimal(str(deal.previous_price)) if getattr(deal, "previous_price", None) is not None else None
         return Candidate(
             deal_id=deal.id,
             title=deal.title,
             slug=deal.slug,
             image_url=deal.image_url,
             description=deal.description,
+            short_description=getattr(deal, "short_description", None),
             store_id=deal.store_id,
             store_name=deal.store.name if deal.store else None,
             category_id=deal.category_id,
@@ -95,6 +97,8 @@ class PriceCheckHandler:
             affiliate_url=deal.affiliate_url,
             source_url=deal.source_url,
             old_price=Decimal(str(deal.current_price)),
+            previous_price=prev_price,
+            discount_percentage=getattr(deal, "discount_percentage", None),
             new_price=new_price,
             reason=reason,
         )

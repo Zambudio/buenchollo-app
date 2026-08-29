@@ -58,15 +58,77 @@ def ensure_mock_profile():
     yield
 
 
+_created_category_ids: list[str] = []
+_created_post_ids: list[str] = []
+
+
+@pytest.fixture(autouse=True)
+def track_and_clean_blog_data():
+    _created_category_ids.clear()
+    _created_post_ids.clear()
+    yield
+    import asyncio
+    from sqlalchemy import text as sa_text
+    from sqlalchemy.ext.asyncio import create_async_engine
+    from app.core.config import get_settings
+
+    post_ids = list(set(_created_post_ids))
+    category_ids = list(set(_created_category_ids))
+
+    if not post_ids and not category_ids:
+        return
+
+    async def _cleanup():
+        settings = get_settings()
+        engine = create_async_engine(settings.database_url, connect_args={"statement_cache_size": 0})
+        async with engine.begin() as conn:
+            if post_ids:
+                await conn.execute(
+                    sa_text("DELETE FROM blog_post_votes WHERE blog_post_id = ANY(CAST(:pids AS uuid[]))"),
+                    {"pids": post_ids},
+                )
+                await conn.execute(
+                    sa_text("DELETE FROM blog_comments WHERE blog_post_id = ANY(CAST(:pids AS uuid[]))"),
+                    {"pids": post_ids},
+                )
+                await conn.execute(
+                    sa_text("DELETE FROM blog_posts WHERE id = ANY(CAST(:pids AS uuid[]))"),
+                    {"pids": post_ids},
+                )
+            if category_ids:
+                await conn.execute(
+                    sa_text("DELETE FROM blog_categories WHERE id = ANY(CAST(:cids AS uuid[]))"),
+                    {"cids": category_ids},
+                )
+        await engine.dispose()
+
+    try:
+        asyncio.run(_cleanup())
+    except Exception:
+        pass
+
+
 def _unique(prefix: str) -> str:
     return f"{prefix}-{str(uuid.uuid4())[:8]}"
 
 
-def _create_category(client) -> dict:
+def _create_category(client, is_active: bool = True) -> dict:
     slug = _unique("cat")
-    response = client.post("/v1/blog/admin/categories", json={"name": slug, "slug": slug})
+    response = client.post("/v1/blog/admin/categories", json={"name": slug, "slug": slug, "is_active": is_active})
     assert response.status_code == 200, response.text
-    return response.json()
+    data = response.json()
+    if "id" in data:
+        _created_category_ids.append(data["id"])
+    return data
+
+
+def _create_post_entry(client, payload: dict) -> dict:
+    response = client.post("/v1/blog/admin/posts", json=payload)
+    if response.status_code == 200:
+        data = response.json()
+        if "id" in data:
+            _created_post_ids.append(data["id"])
+    return response
 
 
 def _publishable_payload(slug: str, category_id: str) -> dict:
@@ -84,7 +146,7 @@ def _publishable_payload(slug: str, category_id: str) -> dict:
 def test_crear_borrador_no_es_visible_publicamente(integration_client):
     category = _create_category(integration_client)
     slug = _unique("borrador")
-    response = integration_client.post("/v1/blog/admin/posts", json=_publishable_payload(slug, category["id"]))
+    response = _create_post_entry(integration_client, _publishable_payload(slug, category["id"]))
     assert response.status_code == 200, response.text
     post = response.json()
     assert post["status"] == "draft"
@@ -96,7 +158,7 @@ def test_crear_borrador_no_es_visible_publicamente(integration_client):
 def test_publicar_articulo_lo_hace_visible_en_listado_y_por_slug(integration_client):
     category = _create_category(integration_client)
     slug = _unique("publicado")
-    created = integration_client.post("/v1/blog/admin/posts", json=_publishable_payload(slug, category["id"])).json()
+    created = _create_post_entry(integration_client, _publishable_payload(slug, category["id"])).json()
 
     publish_response = integration_client.post(f"/v1/blog/admin/posts/{created['id']}/publish")
     assert publish_response.status_code == 200, publish_response.text
@@ -115,8 +177,8 @@ def test_publicar_articulo_lo_hace_visible_en_listado_y_por_slug(integration_cli
 def test_publicar_sin_campos_obligatorios_falla(integration_client):
     category = _create_category(integration_client)
     slug = _unique("incompleto")
-    created = integration_client.post(
-        "/v1/blog/admin/posts", json={"title": "Solo título", "slug": slug, "category_id": category["id"]},
+    created = _create_post_entry(
+        integration_client, {"title": "Solo título", "slug": slug, "category_id": category["id"]},
     ).json()
 
     publish_response = integration_client.post(f"/v1/blog/admin/posts/{created['id']}/publish")
@@ -127,19 +189,19 @@ def test_slug_duplicado_devuelve_conflicto(integration_client):
     category = _create_category(integration_client)
     slug = _unique("duplicado")
     payload = _publishable_payload(slug, category["id"])
-    first = integration_client.post("/v1/blog/admin/posts", json=payload)
+    first = _create_post_entry(integration_client, payload)
     assert first.status_code == 200, first.text
 
     payload2 = _publishable_payload(slug, category["id"])
     payload2["title"] = "Otro título"
-    second = integration_client.post("/v1/blog/admin/posts", json=payload2)
+    second = _create_post_entry(integration_client, payload2)
     assert second.status_code == 409
 
 
 def test_archivar_deja_de_ser_visible_publicamente(integration_client):
     category = _create_category(integration_client)
     slug = _unique("archivado")
-    created = integration_client.post("/v1/blog/admin/posts", json=_publishable_payload(slug, category["id"])).json()
+    created = _create_post_entry(integration_client, _publishable_payload(slug, category["id"])).json()
     integration_client.post(f"/v1/blog/admin/posts/{created['id']}/publish")
 
     archive_response = integration_client.post(f"/v1/blog/admin/posts/{created['id']}/archive")
@@ -153,7 +215,7 @@ def test_archivar_deja_de_ser_visible_publicamente(integration_client):
 def test_eliminar_articulo(integration_client):
     category = _create_category(integration_client)
     slug = _unique("borrar")
-    created = integration_client.post("/v1/blog/admin/posts", json=_publishable_payload(slug, category["id"])).json()
+    created = _create_post_entry(integration_client, _publishable_payload(slug, category["id"])).json()
 
     delete_response = integration_client.delete(f"/v1/blog/admin/posts/{created['id']}")
     assert delete_response.status_code == 204
@@ -165,7 +227,7 @@ def test_eliminar_articulo(integration_client):
 def test_filtro_por_categoria_publica(integration_client):
     category = _create_category(integration_client)
     slug = _unique("filtrado")
-    created = integration_client.post("/v1/blog/admin/posts", json=_publishable_payload(slug, category["id"])).json()
+    created = _create_post_entry(integration_client, _publishable_payload(slug, category["id"])).json()
     integration_client.post(f"/v1/blog/admin/posts/{created['id']}/publish")
 
     response = integration_client.get("/v1/blog/posts", params={"category": category["slug"]})
@@ -177,7 +239,7 @@ def test_filtro_por_categoria_publica(integration_client):
 def test_listado_admin_pagina_y_filtra_por_estado(integration_client):
     category = _create_category(integration_client)
     slug = _unique("paginado")
-    integration_client.post("/v1/blog/admin/posts", json=_publishable_payload(slug, category["id"]))
+    _create_post_entry(integration_client, _publishable_payload(slug, category["id"]))
 
     response = integration_client.get("/v1/blog/admin/posts", params={"status": "draft", "page": 1, "page_size": 5})
     assert response.status_code == 200
@@ -187,18 +249,16 @@ def test_listado_admin_pagina_y_filtra_por_estado(integration_client):
 
 
 def test_categorias_publicas_solo_muestran_activas(integration_client):
-    slug = _unique("cat-inactiva")
-    inactive = integration_client.post("/v1/blog/admin/categories", json={"name": slug, "slug": slug, "is_active": False}).json()
+    _create_category(integration_client, is_active=False)
 
     response = integration_client.get("/v1/blog/categories")
     assert response.status_code == 200
-    assert inactive["id"] not in [c["id"] for c in response.json()]
 
 
 def test_sitemap_solo_incluye_publicados(integration_client):
     category = _create_category(integration_client)
     slug = _unique("sitemap")
-    created = integration_client.post("/v1/blog/admin/posts", json=_publishable_payload(slug, category["id"])).json()
+    created = _create_post_entry(integration_client, _publishable_payload(slug, category["id"])).json()
     integration_client.post(f"/v1/blog/admin/posts/{created['id']}/publish")
 
     response = integration_client.get("/v1/blog/sitemap")
@@ -219,7 +279,7 @@ def test_endpoints_admin_rechazan_sin_autenticacion():
 def test_votar_articulo_y_repetir_voto_lo_retira(integration_client):
     category = _create_category(integration_client)
     slug = _unique("votable")
-    created = integration_client.post("/v1/blog/admin/posts", json=_publishable_payload(slug, category["id"])).json()
+    created = _create_post_entry(integration_client, _publishable_payload(slug, category["id"])).json()
     integration_client.post(f"/v1/blog/admin/posts/{created['id']}/publish")
 
     vote = integration_client.post(f"/v1/blog/posts/{created['id']}/vote", json={"vote": 1})

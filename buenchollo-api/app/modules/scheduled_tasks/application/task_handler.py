@@ -22,6 +22,9 @@ class Candidate:
     old_price: Decimal
     new_price: Decimal | None
     reason: str
+    previous_price: Decimal | None = None
+    discount_percentage: int | None = None
+    short_description: str | None = None
 
 
 @dataclass

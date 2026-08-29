@@ -19,7 +19,7 @@ from app.modules.scheduled_tasks.api.schemas import (
     ScheduledTaskResponse,
     ScheduledTaskUpdate,
 )
-from app.modules.scheduled_tasks.application.price_check_handler import PriceCheckHandler
+from app.modules.scheduled_tasks.application.factory import build_task_handlers
 from app.modules.scheduled_tasks.application.scheduled_task_service import ScheduledTaskService
 from app.modules.scheduled_tasks.application.task_handler import Candidate
 from app.modules.scheduled_tasks.domain.exceptions import ScheduledTaskRunNotFound
@@ -34,8 +34,8 @@ def get_scheduled_task_service(
 ) -> ScheduledTaskService:
     repo = ScheduledTaskRepository(db)
     deal_repo = DealRepository(db)
-    handler = PriceCheckHandler(AmazonProductClient(settings), deal_repo)
-    return ScheduledTaskService(repo, deal_repo, {"price_check": handler}, db)
+    handlers = build_task_handlers(db, settings)
+    return ScheduledTaskService(repo, deal_repo, handlers, db)
 
 
 @router.get("", response_model=list[ScheduledTaskResponse])

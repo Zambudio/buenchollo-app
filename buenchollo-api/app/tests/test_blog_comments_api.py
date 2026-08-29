@@ -57,11 +57,68 @@ def ensure_mock_profile():
     yield
 
 
+_created_category_ids: list[str] = []
+_created_post_ids: list[str] = []
+
+
+@pytest.fixture(autouse=True)
+def track_and_clean_comment_data():
+    _created_category_ids.clear()
+    _created_post_ids.clear()
+    yield
+    import asyncio
+    from sqlalchemy import text as sa_text
+    from sqlalchemy.ext.asyncio import create_async_engine
+    from app.core.config import get_settings
+
+    post_ids = list(set(_created_post_ids))
+    category_ids = list(set(_created_category_ids))
+
+    if not post_ids and not category_ids:
+        return
+
+    async def _cleanup():
+        settings = get_settings()
+        engine = create_async_engine(settings.database_url, connect_args={"statement_cache_size": 0})
+        async with engine.begin() as conn:
+            if post_ids:
+                await conn.execute(
+                    sa_text("DELETE FROM blog_comment_votes WHERE comment_id IN (SELECT id FROM blog_comments WHERE blog_post_id = ANY(CAST(:pids AS uuid[])))"),
+                    {"pids": post_ids},
+                )
+                await conn.execute(
+                    sa_text("DELETE FROM blog_comments WHERE blog_post_id = ANY(CAST(:pids AS uuid[]))"),
+                    {"pids": post_ids},
+                )
+                await conn.execute(
+                    sa_text("DELETE FROM blog_post_votes WHERE blog_post_id = ANY(CAST(:pids AS uuid[]))"),
+                    {"pids": post_ids},
+                )
+                await conn.execute(
+                    sa_text("DELETE FROM blog_posts WHERE id = ANY(CAST(:pids AS uuid[]))"),
+                    {"pids": post_ids},
+                )
+            if category_ids:
+                await conn.execute(
+                    sa_text("DELETE FROM blog_categories WHERE id = ANY(CAST(:cids AS uuid[]))"),
+                    {"cids": category_ids},
+                )
+        await engine.dispose()
+
+    try:
+        asyncio.run(_cleanup())
+    except Exception:
+        pass
+
+
 def _create_post(client) -> str:
     cat_slug = f"cat-{str(uuid.uuid4())[:8]}"
     category = client.post(
         "/v1/blog/admin/categories", json={"name": cat_slug, "slug": cat_slug}
     ).json()
+    if "id" in category:
+        _created_category_ids.append(category["id"])
+
     slug = f"post-{str(uuid.uuid4())[:8]}"
     post = client.post(
         "/v1/blog/admin/posts",
@@ -75,6 +132,8 @@ def _create_post(client) -> str:
             "category_id": category["id"],
         },
     ).json()
+    if "id" in post:
+        _created_post_ids.append(post["id"])
     return post["id"]
 
 

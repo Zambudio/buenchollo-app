@@ -42,6 +42,7 @@ API versionada `/v1`, ADR-002) son correctas y defendibles profesionalmente.
 | 7 | Tests unitarios (DealService, AlertMatcher, matches_alert) | ✅ Completado (2026-05-26) |
 | 8 | Refactor de buenas prácticas — ver § 3.bis | ✅ Completado (2026-05-26) |
 | 9 | Failover resiliente a OpenAI oficial — ver § 3.quindecies | ✅ Completado (2026-08-29) |
+| 10 | Cierre de deuda técnica (TD-15, TD-16, TD-17) — ver § 3.sexdecies | ✅ Completado (2026-08-29) |
 
 ---
 
@@ -232,6 +233,25 @@ abrir la web al público:
   en `/v1/deals`; autenticados en `no-store` y nunca `HIT`. Validación funcional
   de votos/comentarios con F5 normal superada el 2026-07-19. Fase 2/3 siguen
   aparcadas sin trigger, a propósito (`OPTIMIZACION_PLAN.md`).
+
+---
+
+### 3.sexdecies  Cierre de deuda técnica (TD-15, TD-16, TD-17) — 2026-08-29
+
+Resolución de los tres ítems principales de deuda técnica registrados en `docs/project/10-technical-debt.md`:
+
+- **TD-15 (Alta) — Aislamiento y limpieza garantizada en tests de integración**:
+  - `test_blog_api.py` y `test_blog_comments_api.py` ahora implementan fixtures automáticas de tracking y limpieza en cascada con `DELETE` por ID en teardown (`track_and_clean_blog_data` y `track_and_clean_comment_data`).
+  - Se elimina definitivamente el riesgo de contaminar la base de datos compartida al ejecutar `pytest -m integration` en local.
+- **TD-17 (Media) — Factoría centralizada de handlers de tareas programadas**:
+  - Creado `app/modules/scheduled_tasks/application/factory.py` con la función `build_task_handlers(session, settings)`.
+  - Unifica la instanciación de handlers entre el router FastAPI (`/admin/scheduled-tasks`) y el worker en segundo plano (`buenchollo-scheduler`), eliminando la duplicación hardcodeada (SRP/DRY).
+- **TD-16 (Baja) — Snapshot de restauración completo en `scheduled_task_run_items`**:
+  - Añadidas las columnas `previous_price`, `discount_percentage` y `short_description` a la tabla `scheduled_task_run_items` mediante migración Alembic `20260829120000_scheduled_task_run_items_discount_fields.py`.
+  - Mapeadas en el modelo ORM, en la entidad `Candidate`, en el handler de precios y en `ScheduledTaskService.restore_item` para que al restaurar un chollo borrado conserve todos sus badges de descuento y eslogan originales.
+- **Suite de tests verificada**: **260 tests unitarios backend en verde** + **168 tests vitest frontend en verde** (428 tests automáticos en total).
+
+---
 
 ### 3.quindecies  Failover resiliente a OpenAI oficial ante fallos/respuestas vacías y optimización de latencia — 2026-08-29
 

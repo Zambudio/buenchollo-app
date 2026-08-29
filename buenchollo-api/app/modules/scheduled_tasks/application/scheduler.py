@@ -16,9 +16,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
 from app.core.config import Settings
-from app.modules.deals.infrastructure.repository import DealRepository
-from app.modules.products.infrastructure.amazon_client import AmazonProductClient
-from app.modules.scheduled_tasks.application.price_check_handler import PriceCheckHandler
+from app.modules.scheduled_tasks.application.factory import build_task_handlers
 from app.modules.scheduled_tasks.application.scheduled_task_service import (
     ScheduledTaskService,
     is_task_due,
@@ -71,8 +69,8 @@ async def _run(settings: Settings) -> int:
             try:
                 repo = ScheduledTaskRepository(session)
                 deal_repo = DealRepository(session)
-                handler = PriceCheckHandler(AmazonProductClient(settings), deal_repo)
-                service = ScheduledTaskService(repo, deal_repo, {"price_check": handler}, session)
+                handlers = build_task_handlers(session, settings)
+                service = ScheduledTaskService(repo, deal_repo, handlers, session)
 
                 now_local = datetime.now(timezone.utc).astimezone()
                 executed = await _execute_due_tasks(repo, service, session, now_local)

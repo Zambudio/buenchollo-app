@@ -318,6 +318,7 @@ def _run_item(**overrides):
         title="Producto X",
         slug="producto-x",
         description="desc",
+        short_description="Eslogan corto",
         image_url="https://img/x.jpg",
         affiliate_url="https://amazon.es/dp/B0D9WH9WLD",
         source_url=None,
@@ -326,6 +327,8 @@ def _run_item(**overrides):
         category_id="cat-1",
         subcategory_id=None,
         old_price=Decimal("100.00"),
+        previous_price=Decimal("150.00"),
+        discount_percentage=33,
         restored_at=None,
         restored_deal_id=None,
     )
@@ -405,6 +408,9 @@ async def test_restore_item_crea_deal_activo_y_marca_restaurado():
     assert created_deal.title == "Producto X"
     assert created_deal.status == "active"
     assert created_deal.current_price == Decimal("100.00")
+    assert created_deal.previous_price == Decimal("150.00")
+    assert created_deal.discount_percentage == 33
+    assert created_deal.short_description == "Eslogan corto"
     assert item.restored_at is not None
     assert item.restored_deal_id == "new-deal-1"
     repo.update_run_item.assert_awaited_once_with(item)
