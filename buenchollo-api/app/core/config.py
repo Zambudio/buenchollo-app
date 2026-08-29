@@ -126,6 +126,8 @@ class Settings(BaseSettings):
     )
     ai_temperature: float = 0.2
     ai_timeout_seconds: float = 25.0
+    # Intentos fallidos o respuestas vacías del proveedor gratuito antes de enrutar a OpenAI
+    ai_max_empty_responses: int = 3
 
     @field_validator("ai_fallback_models", mode="before")
     @classmethod

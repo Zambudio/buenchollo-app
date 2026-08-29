@@ -74,6 +74,12 @@ Responde SOLO un objeto JSON válido con las claves: "short_description", "long_
         # Normalizar claves si el modelo utilizó variantes
         if "telegram_description" in result and "telegram_text" not in result:
             result["telegram_text"] = result.pop("telegram_description")
+        if "description" in result and "long_description" not in result:
+            result["long_description"] = result.pop("description")
+        if not result.get("telegram_text") and result.get("short_description"):
+            result["telegram_text"] = result["short_description"]
+        elif not result.get("short_description") and result.get("telegram_text"):
+            result["short_description"] = result["telegram_text"][:80]
 
         return result
 

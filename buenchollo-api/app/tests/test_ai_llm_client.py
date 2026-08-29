@@ -68,6 +68,7 @@ def test_llm_client_generate_text_fallback_on_error():
     settings = Settings(
         ai_model="model-fails",
         ai_fallback_models=["model-succeeds"],
+        openai_api_key="",
     )
     client = OpenAICompatibleLLMClient(settings)
 
@@ -87,10 +88,101 @@ def test_llm_client_generate_text_fallback_on_error():
         assert mock_sync_client.chat.completions.create.call_count == 2
 
 
+def test_llm_client_generate_text_fallback_to_openai_after_3_empty_responses():
+    """Verifica que tras 3 respuestas vacías de modelos gratuitos, se enruta a OpenAI oficial."""
+    settings = Settings(
+        ai_model="model-empty-1",
+        ai_fallback_models=["model-empty-2", "model-empty-3", "model-extra"],
+        openai_api_key="sk-test-key",
+        openai_model="gpt-4o",
+        ai_max_empty_responses=3,
+    )
+    client = OpenAICompatibleLLMClient(settings)
+
+    mock_primary_client = MagicMock()
+    empty_res = MagicMock()
+    empty_res.choices = [MagicMock(message=MagicMock(content="   "))]  # Respuesta vacía
+    mock_primary_client.chat.completions.create.return_value = empty_res
+
+    mock_openai_client = MagicMock()
+    openai_res = MagicMock()
+    openai_res.choices = [MagicMock(message=MagicMock(content="Descripción generada por OpenAI gpt-4o"))]
+    mock_openai_client.chat.completions.create.return_value = openai_res
+
+    with patch.object(client, "_sync_client", mock_primary_client), \
+         patch.object(client, "_openai_sync_client", mock_openai_client):
+
+        result = client.generate_text([{"role": "user", "content": "Genera post"}])
+
+        assert result.content == "Descripción generada por OpenAI gpt-4o"
+        assert result.model == "openai/gpt-4o"
+        # Debe haber intentado exactamente 3 veces con modelos gratuitos antes de saltar a OpenAI
+        assert mock_primary_client.chat.completions.create.call_count == 3
+        assert mock_openai_client.chat.completions.create.call_count == 1
+
+
+def test_llm_client_generate_json_fallback_to_openai_after_failures():
+    """Verifica que si los modelos gratuitos fallan o devuelven JSON vacío, se enruta a OpenAI."""
+    settings = Settings(
+        ai_model="model-fails-json",
+        ai_fallback_models=["model-fails-2", "model-fails-3"],
+        openai_api_key="sk-test-key",
+        openai_model="gpt-4o-mini",
+        ai_max_empty_responses=3,
+    )
+    client = OpenAICompatibleLLMClient(settings)
+
+    mock_primary_client = MagicMock()
+    mock_primary_client.chat.completions.create.side_effect = Exception("OmniRoute 502 Bad Gateway")
+
+    mock_openai_client = MagicMock()
+    openai_res = MagicMock()
+    openai_res.choices = [MagicMock(message=MagicMock(content='{"short_description": "Chollo", "telegram_text": "Texto telegram"}'))]
+    mock_openai_client.chat.completions.create.return_value = openai_res
+
+    with patch.object(client, "_sync_client", mock_primary_client), \
+         patch.object(client, "_openai_sync_client", mock_openai_client):
+
+        result = client.generate_json([{"role": "user", "content": "Genera JSON"}])
+
+        assert result["short_description"] == "Chollo"
+        assert result["telegram_text"] == "Texto telegram"
+        assert mock_openai_client.chat.completions.create.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_llm_client_agenerate_text_fallback_to_openai():
+    """Verifica fallback asíncrono a OpenAI tras fallos en modelos gratuitos."""
+    settings = Settings(
+        ai_model="async-fails",
+        ai_fallback_models=["async-fails-2"],
+        openai_api_key="sk-test-key",
+        openai_model="gpt-4o",
+        ai_max_empty_responses=2,
+    )
+    client = OpenAICompatibleLLMClient(settings)
+
+    mock_primary_async = MagicMock()
+    mock_primary_async.chat.completions.create = AsyncMock(side_effect=Exception("Connection refused"))
+
+    mock_openai_async = MagicMock()
+    openai_res = MagicMock()
+    openai_res.choices = [MagicMock(message=MagicMock(content="Async OpenAI response"))]
+    mock_openai_async.chat.completions.create = AsyncMock(return_value=openai_res)
+
+    with patch.object(client, "_async_client", mock_primary_async), \
+         patch.object(client, "_openai_async_client", mock_openai_async):
+
+        res = await client.agenerate_text([{"role": "user", "content": "Ping"}])
+        assert res.content == "Async OpenAI response"
+        assert res.model == "openai/gpt-4o"
+
+
 def test_llm_client_generate_json_fallback():
     settings = Settings(
         ai_model="model-fails-json",
         ai_fallback_models=["model-good-json"],
+        openai_api_key="",
     )
     client = OpenAICompatibleLLMClient(settings)
     mock_sync_client = MagicMock()
