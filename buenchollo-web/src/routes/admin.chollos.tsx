@@ -8,7 +8,7 @@
  *  guardar (con conflicto 409) → Telegram.
  */
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import {
   dealsService,
   isDuplicateDealError,
@@ -24,10 +24,13 @@ import { dealFormSchema } from "@/lib/validation/deals";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import {
-  TelegramPanel,
-  type TelegramScheduleRequest,
+import type {
+  TelegramScheduleRequest,
 } from "@/features/telegram/components/TelegramPanel";
+
+const TelegramPanel = lazy(() =>
+  import("@/features/telegram/components/TelegramPanel").then((m) => ({ default: m.TelegramPanel })),
+);
 import type { TelegramGenerateRequest } from "@/services/api/telegram";
 import {
   buildDealPayload,
@@ -469,12 +472,14 @@ function AdminDeals() {
   return (
     <div>
       {showTelegramPanel && telegramDealData && (
-        <TelegramPanel
-          dealData={telegramDealData}
-          onClose={() => setShowTelegramPanel(false)}
-          onSchedule={telegramCanSchedule ? scheduleFromTelegram : undefined}
-          defaultScheduledAt={defaultScheduledAt}
-        />
+        <Suspense fallback={<div className="fixed inset-0 z-50 bg-background/80 flex items-center justify-center font-mono text-xs text-cyan-glow">Cargando panel Telegram...</div>}>
+          <TelegramPanel
+            dealData={telegramDealData}
+            onClose={() => setShowTelegramPanel(false)}
+            onSchedule={telegramCanSchedule ? scheduleFromTelegram : undefined}
+            defaultScheduledAt={defaultScheduledAt}
+          />
+        </Suspense>
       )}
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <h2 className="font-mono text-sm uppercase text-cyan-glow">Gestión de chollos</h2>
