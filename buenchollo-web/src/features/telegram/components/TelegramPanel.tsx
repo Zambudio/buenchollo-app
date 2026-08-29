@@ -42,6 +42,20 @@ function defaultScheduleDate(): string {
   return toDatetimeLocal(next.toISOString());
 }
 
+function extractLocalSuggestions(title: string, desc: string, allCats: string[]): string[] {
+  if (!allCats.length) return [];
+  const text = `${title} ${desc}`.toLowerCase();
+  const found: string[] = [];
+  for (const cat of allCats) {
+    const raw = cat.replace(/^#/, "").toLowerCase();
+    if (raw.length >= 4 && text.includes(raw)) {
+      found.push(cat);
+      if (found.length >= 2) break;
+    }
+  }
+  return found;
+}
+
 export function TelegramPanel({
   dealData,
   onClose,
@@ -109,7 +123,11 @@ export function TelegramPanel({
         expires_at: dealData.expires_at,
       });
       setText(result.text);
-      setSuggested(result.suggested_categories);
+      const suggestedCats =
+        result.suggested_categories && result.suggested_categories.length > 0
+          ? result.suggested_categories
+          : extractLocalSuggestions(dealData.title, dealData.description || "", categories);
+      setSuggested(suggestedCats);
     } catch {
       // Fallback local: construir el mensaje básico para que nunca se quede vacío
       const priceStr = `${dealData.current_price.toFixed(2).replace(".", ",")} €`;
@@ -119,6 +137,8 @@ export function TelegramPanel({
       const descStr = dealData.description ? `✏️${dealData.description.trim()}\n\n` : "";
       const basicText = `🍄 ${dealData.title}\n\n${prevPriceStr}\n🛒 ${dealData.affiliate_url}\n\n${descStr}🔗 Todos los chollos en nuestra web\n\n`;
       setText(basicText);
+      const fallbackCats = extractLocalSuggestions(dealData.title, dealData.description || "", categories);
+      setSuggested(fallbackCats);
       toast.error("Error generando sugerencias con IA. Se ha cargado la plantilla base.");
     } finally {
       setGenerating(false);

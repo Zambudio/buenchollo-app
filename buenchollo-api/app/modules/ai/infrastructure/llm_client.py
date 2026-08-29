@@ -93,7 +93,7 @@ class OpenAICompatibleLLMClient:
         cascade to the next model or trigger OpenAI fallback instead of stalling the request.
         """
         if self._sync_client is None:
-            fast_free_timeout = min(self.settings.ai_timeout_seconds, 6.0)
+            fast_free_timeout = min(self.settings.ai_timeout_seconds, 3.5)
             self._sync_client = OpenAI(
                 base_url=self.settings.effective_ai_base_url,
                 api_key=self.settings.effective_ai_api_key,
@@ -106,7 +106,7 @@ class OpenAICompatibleLLMClient:
     def async_client(self) -> AsyncOpenAI:
         """Lazy initialization of the primary asynchronous OpenAI-compatible client."""
         if self._async_client is None:
-            fast_free_timeout = min(self.settings.ai_timeout_seconds, 6.0)
+            fast_free_timeout = min(self.settings.ai_timeout_seconds, 3.5)
             self._async_client = AsyncOpenAI(
                 base_url=self.settings.effective_ai_base_url,
                 api_key=self.settings.effective_ai_api_key,

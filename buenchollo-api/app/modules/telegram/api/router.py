@@ -112,10 +112,15 @@ async def generate_post(
                 description=payload.description or "",
                 available=categories,
             ),
-            timeout=6.0,
+            timeout=10.0,
         )
     except Exception:
-        suggested = []
+        from app.modules.ai.infrastructure.telegram_ai_service import TelegramAIService
+        suggested = TelegramAIService.extract_heuristic_tags(
+            title=payload.title,
+            description=payload.description or "",
+            available=categories,
+        )
 
     return TelegramGenerateResponse(text=text, suggested_categories=suggested)
 
