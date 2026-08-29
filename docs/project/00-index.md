@@ -7,7 +7,7 @@
 ---
 
 > 📖 **¿Qué encontrarás aquí?**
-> Nueve capítulos numerados con **comandos**, **ejemplos** y
+> Diez capítulos numerados con **comandos**, **ejemplos** y
 > **tablas de errores comunes**. Si lo que buscas es **por qué se ha
 > construido así**, eso vive en [`docs/master/`](../master/00-index.md).
 
@@ -51,7 +51,7 @@
 | Carpeta | Para qué |
 |---|---|
 | [`../master/`](../master/00-index.md) | 🏗️ **Bloque de arquitectura y diseño** — explicación formal de decisiones técnicas |
-| [`../adr/`](../adr/00-index.md) | 📋 **9 ADRs** firmados y datados (decisiones arquitectónicas) |
+| [`../adr/`](../adr/00-index.md) | 📋 **13 ADRs** firmados y datados (decisiones arquitectónicas) |
 | [`../reference/`](../reference/) | 📚 Referencias densas (plan hardening, auditoría OWASP, smoke test) |
 | [`../guides/Cloudflare.md`](../guides/Cloudflare.md) | ☁️ **Guía operativa viva** de Cloudflare (Workers, túnel, TLS, WAF) — estado real de producción |
 | [`../guides/NAS-SSH.md`](../guides/NAS-SSH.md) | 🔐 **Guía operativa viva** de conexión SSH al NAS — para que una IA haga rebuild/redeploy de `buenchollo-api` sin intervención manual |

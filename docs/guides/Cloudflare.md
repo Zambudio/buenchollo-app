@@ -387,7 +387,7 @@ curl -sI https://buenchollotech.com | findstr /I "strict-transport content-secur
   Edge TTL 30s. Verificado con `curl -D -` (no `-I`: el WAF de T6.4 bloquea
   HEAD con 403, no está en la allowlist de métodos — confundió la primera
   comprobación). 1ª petición `cf-cache-status: MISS`, 2ª `HIT`. Plan de
-  optimización Fase 1 completo al 100% (`OPTIMIZACION_PLAN.md`).
+  optimización Fase 1 completo al 100% (ver `PROJECT_STATUS.md`).
 - 2026-07-18 — 🔴 **T9 v1 retirada el mismo día**: causaba los contadores de
   votos/comentarios obsoletos con F5 (solo Shift+F5 refrescaba) y una **fuga
   potencial entre usuarios**: `starts_with("/v1/deals")` cacheaba también

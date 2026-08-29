@@ -231,8 +231,7 @@ abrir la web al público:
   `--workers 2`. Cache Rule v2 de Cloudflare (§ T9), limitada a cinco rutas
   públicas exactas y respetando `Cache-Control`, verificada con `MISS → HIT`
   en `/v1/deals`; autenticados en `no-store` y nunca `HIT`. Validación funcional
-  de votos/comentarios con F5 normal superada el 2026-07-19. Fase 2/3 siguen
-  aparcadas sin trigger, a propósito (`OPTIMIZACION_PLAN.md`).
+  de votos/comentarios con F5 normal superada el 2026-07-19.
 
 ---
 
@@ -252,7 +251,7 @@ Refuerzo de resiliencia integral para garantizar que el panel de Telegram siempr
 
 ### 3.duodevicies  Plan de optimización de rendimiento: Fase 2 (PostgreSQL Trigram, Code-Splitting y GZip) — 2026-08-29
 
-Ejecución y validación completa de la Fase 2 del plan de optimización ([`OPTIMIZACION_PLAN.md`](OPTIMIZACION_PLAN.md)):
+Ejecución y validación completa de la Fase 2 de optimizaciones:
 
 - **PostgreSQL Trigram (`pg_trgm`)**:
   - Migración Alembic `20260829140000_deals_pg_trgm_search_indexes.py` activando la extensión `pg_trgm` y creando el índice GIN `ix_deals_title_trgm` sobre `deals USING gin (title gin_trgm_ops)`.

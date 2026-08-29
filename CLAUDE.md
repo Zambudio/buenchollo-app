@@ -121,8 +121,7 @@ El dominio no depende de FastAPI, SQLAlchemy, ni ningún framework externo.
 - **Refactoring**: no hacerlo de forma masiva sin explicar impacto. No cambiar contratos de API sin avisar.
 - **Documentación**: actualizar README o docs si cambia el uso del sistema. Proponer ADR cuando haya decisión técnica relevante.
 - **No romper** funcionalidad existente ni tests existentes.
-- **Recordatorio de deuda técnica**: al **cambiar de tarea** (cuando se cierra algo y se pasa a otra cosa), recuérdame brevemente que hay deuda técnica pendiente y apunta a [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md). Mantén ese registro al día: al cerrar un item, bórralo de ahí y anota el cierre en `PROJECT_STATUS.md`.
-- **Recordatorio de plan de optimización**: igual que la deuda técnica, al **cambiar de tarea** recuérdame brevemente que hay un plan de rendimiento pendiente (NAS sin workers, cache Cloudflare, futura migración de infra) en [`OPTIMIZACION_PLAN.md`](OPTIMIZACION_PLAN.md). Deliberadamente no se ejecuta hasta tener base de usuarios real — no proponer migrar infraestructura ni asumir gasto mensual sin que el usuario lo pida explícitamente. Mantenlo al día igual que la deuda técnica.
+- **Recordatorio de deuda técnica y rendimiento**: al **cambiar de tarea** (cuando se cierra algo y se pasa a otra cosa), recuérdame brevemente los ítems de deuda técnica o monitoreo pendientes apuntando a [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md). Mantén ese registro al día: al cerrar un item, bórralo de ahí y anota el cierre en `PROJECT_STATUS.md`. Las optimizaciones de rendimiento completadas están consolidadas en `PROJECT_STATUS.md` (§ 3.duodevicies). No proponer migrar infraestructura a la nube ni asumir gasto mensual sin que el usuario lo pida explícitamente.
 
 ### Flujo de ramas (web en producción)
 

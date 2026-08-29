@@ -75,10 +75,13 @@ Principios obligatorios:
 - Documentar comandos importantes en README.
 - Proponer ADRs cuando haya decisiones técnicas relevantes.
 
-9. Forma de trabajar
+9. Forma de trabajar y flujo de ramas
+- Todo el trabajo activo, cambios de código, tests y documentación se realizan en la rama `develop`.
+- NUNCA hacer commits directos en `main` ni realizar merge a `main` o despliegue a producción en el NAS sin confirmación explícita previa del usuario.
 - Antes de cambios grandes, analizar y proponer plan.
 - No refactorizar masivamente sin explicar impacto.
-- No romper funcionalidad existente.
+- No romper funcionalidad existente ni tests existentes.
 - Si hay varias opciones, elegir la más simple y mantenible.
 - Si falta contexto, pedirlo antes de inventar.
+- Al cambiar de tarea, recordar brevemente los ítems de deuda técnica pendientes en `docs/project/10-technical-debt.md`.
 - Al terminar cambios, resumir archivos modificados, motivo y cómo probar.

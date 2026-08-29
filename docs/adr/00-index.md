@@ -1,6 +1,6 @@
 # 📋 Architecture Decision Records (ADRs)
 
-> **TL;DR** · Once decisiones arquitectónicas firmadas, datadas y
+> **TL;DR** · Trece decisiones arquitectónicas firmadas, datadas y
 > justificadas con contexto + alternativas evaluadas + consecuencias.
 > Si quieres entender **por qué** se tomó una decisión técnica del
 > proyecto, está aquí.
@@ -104,10 +104,10 @@
 
 | Bloque | ADRs |
 |---|---|
-| 📐 **Arquitectura de Software** | [001](ADR-001-monolito-modular-fastapi.md) · [002](ADR-002-migracion-baas-a-api-gateway.md) · [004](ADR-004-persistencia-sqlalchemy-pgbouncer.md) · [007](ADR-007-di-fastapi-depends.md) · [012](ADR-012-motor-tareas-programadas.md) |
+| 📐 **Arquitectura de Software** | [001](ADR-001-monolito-modular-fastapi.md) · [002](ADR-002-migracion-baas-a-api-gateway.md) · [004](ADR-004-persistencia-sqlalchemy-pgbouncer.md) · [007](ADR-007-di-fastapi-depends.md) · [011](ADR-011-blog-tiptap-editor.md) · [012](ADR-012-motor-tareas-programadas.md) · [013](ADR-013-motor-ia-unificado-omniroute-modelos-gratuitos.md) |
 | 🧪 **Calidad del Software** | [008](ADR-008-estrategia-calidad-testing.md) |
 | 🛡️ **Seguridad** | [003](ADR-003-autenticacion-supabase-jwt.md) · [005](ADR-005-validacion-doble-frontera.md) · [006](ADR-006-rls-service-role.md) · [010](ADR-010-validacion-jwt-local.md) |
-| 🤖 **Desarrollo con IA** | [009](ADR-009-uso-de-ia-en-desarrollo.md) |
+| 🤖 **Desarrollo con IA** | [009](ADR-009-uso-de-ia-en-desarrollo.md) · [013](ADR-013-motor-ia-unificado-omniroute-modelos-gratuitos.md) |
 
 ---
 
