@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import APIRouter, FastAPI, Request
 from fastapi.exceptions import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse, PlainTextResponse
 
 from slowapi.errors import RateLimitExceeded
@@ -115,6 +116,7 @@ app.add_middleware(
 # listados públicos. Sin esto, Cloudflare/navegador deciden solos qué cachear
 # (causa de los contadores obsoletos con F5 — Cloudflare.md § T9).
 app.add_middleware(CacheHeadersMiddleware)
+app.add_middleware(GZipMiddleware, minimum_size=500)
 app.add_middleware(RequestIdMiddleware)
 
 
