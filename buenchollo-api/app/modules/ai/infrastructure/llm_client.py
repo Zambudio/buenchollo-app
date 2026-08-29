@@ -87,12 +87,18 @@ class OpenAICompatibleLLMClient:
 
     @property
     def sync_client(self) -> OpenAI:
-        """Lazy initialization of the primary synchronous OpenAI-compatible client."""
+        """Lazy initialization of the primary synchronous OpenAI-compatible client.
+        
+        Uses max_retries=0 and a short timeout so that failing free models immediately
+        cascade to the next model or trigger OpenAI fallback instead of stalling the request.
+        """
         if self._sync_client is None:
+            fast_free_timeout = min(self.settings.ai_timeout_seconds, 6.0)
             self._sync_client = OpenAI(
                 base_url=self.settings.effective_ai_base_url,
                 api_key=self.settings.effective_ai_api_key,
-                timeout=self.settings.ai_timeout_seconds,
+                timeout=fast_free_timeout,
+                max_retries=0,
             )
         return self._sync_client
 
@@ -100,10 +106,12 @@ class OpenAICompatibleLLMClient:
     def async_client(self) -> AsyncOpenAI:
         """Lazy initialization of the primary asynchronous OpenAI-compatible client."""
         if self._async_client is None:
+            fast_free_timeout = min(self.settings.ai_timeout_seconds, 6.0)
             self._async_client = AsyncOpenAI(
                 base_url=self.settings.effective_ai_base_url,
                 api_key=self.settings.effective_ai_api_key,
-                timeout=self.settings.ai_timeout_seconds,
+                timeout=fast_free_timeout,
+                max_retries=0,
             )
         return self._async_client
 
@@ -115,6 +123,7 @@ class OpenAICompatibleLLMClient:
                 base_url="https://api.openai.com/v1",
                 api_key=self.settings.openai_api_key,
                 timeout=self.settings.ai_timeout_seconds,
+                max_retries=1,
             )
         return self._openai_sync_client
 
@@ -126,6 +135,7 @@ class OpenAICompatibleLLMClient:
                 base_url="https://api.openai.com/v1",
                 api_key=self.settings.openai_api_key,
                 timeout=self.settings.ai_timeout_seconds,
+                max_retries=1,
             )
         return self._openai_async_client
 

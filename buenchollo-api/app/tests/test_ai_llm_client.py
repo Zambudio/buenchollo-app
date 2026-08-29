@@ -255,11 +255,12 @@ def test_product_ai_enricher_graceful_error_handling():
     mock_llm.generate_json.side_effect = Exception("Router down")
 
     enricher = ProductAIEnricher(mock_llm)
-    product = ProductPreview(title="Test Product")
+    product = ProductPreview(title="Test Product Title", description="Test details")
     data = enricher.enrich_product(product, "cat")
 
-    assert "⚠️ Error IA" in data["short_description"]
-    assert "Hubo un error" in data["long_description"]
+    assert data["short_description"] == "Test Product Title"
+    assert data["telegram_text"] == "Test Product Title"
+    assert "Test details" in data["long_description"]
 
 
 # ── Tests de TelegramAIService ──────────────────────────────────────────────

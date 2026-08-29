@@ -30,13 +30,25 @@ class ProductAIEnricher:
                 copy_data = copy_future.result()
                 cat_data = cat_future.result()
 
+            # Si no se pudo generar copywriting, usar fallback de rescate con datos del producto
+            if not copy_data.get("short_description") and not copy_data.get("telegram_text"):
+                title = getattr(product, "title", "")
+                desc = getattr(product, "description", "")
+                copy_data["short_description"] = title[:80]
+                copy_data["telegram_text"] = title[:140]
+                if not copy_data.get("long_description") and desc:
+                    copy_data["long_description"] = desc
+
             return {**copy_data, **cat_data}
 
         except Exception as exc:
             logger.error("Error crítico en ProductAIEnricher: %s", exc)
+            title = getattr(product, "title", "")
+            desc = getattr(product, "description", "")
             return {
-                "short_description": f"⚠️ Error IA: {str(exc)[:50]}",
-                "long_description": "Hubo un error al generar los textos. Revisa la configuración del motor de IA.",
+                "short_description": title[:80] if title else "Gran oferta tecnológica",
+                "long_description": desc or "Detalles y especificaciones en la tienda oficial.",
+                "telegram_text": title[:140] if title else "Oferta destacada en Amazon",
             }
 
     def _get_copywriting(self, product: Any) -> dict[str, Any]:
