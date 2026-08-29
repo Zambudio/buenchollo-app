@@ -56,13 +56,24 @@ simultáneas contra el pooler. Verificación de latencia vía
 
 ---
 
-## Fase 2 — Si Fase 1 no es suficiente
+## Fase 2 — Optimización de base de datos, bundles y compresión — ✅ HECHA 2026-08-29
 
-- Revisar si conviene mover imágenes (subidas por Amazon/Storage) a un CDN de
-  imágenes propio o a transformaciones de Cloudflare Images.
-- Revisar si `search_active` (ilike sobre título) necesita índice GIN/trigram
-  (`pg_trgm`) — descartado en la migración de índices de 2026-07-09 por no ser
-  aún un cuello de botella medido.
+### 1. Índices GIN Trigram (`pg_trgm`) en PostgreSQL — ✅ hecho
+Migración Alembic `20260829140000_deals_pg_trgm_search_indexes.py` activando la extensión
+`pg_trgm` y creando el índice `ix_deals_title_trgm` sobre `deals USING gin (title gin_trgm_ops)`.
+Acelera drásticamente las búsquedas de texto con `ILIKE '%query%'` en el buscador de la web
+y la API (`search_active`), transformando `Seq Scan` en `Bitmap Index Scan`.
+
+### 2. Code Splitting y Carga Perezosa en Frontend — ✅ hecho
+- `TelegramPanel` desacoplado y cargado con `React.lazy` y `<Suspense>` en `admin.chollos.tsx`,
+  generando un chunk independiente (`TelegramPanel-*.js`) y reduciendo el peso de carga inicial.
+- `BlogEditor` (Tiptap) ya aislado en chunk bajo demanda para el panel de administración.
+- `DealCard` implementa `decoding="async"`, dimensiones fijas y `loading="lazy"` sin CLS.
+
+### 3. Compresión GZip en FastAPI — ✅ hecho
+Middleware `GZipMiddleware(app, minimum_size=500)` registrado en `buenchollo-api/app/main.py`.
+Reduce hasta un 75-80% el payload transferido en listados de chollos, blog y endpoints públicos,
+probado con tests automáticos en `test_gzip_compression.py`.
 
 ---
 

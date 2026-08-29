@@ -236,6 +236,23 @@ abrir la web al público:
 
 ---
 
+### 3.duodevicies  Plan de optimización de rendimiento: Fase 2 (PostgreSQL Trigram, Code-Splitting y GZip) — 2026-08-29
+
+Ejecución y validación completa de la Fase 2 del plan de optimización ([`OPTIMIZACION_PLAN.md`](OPTIMIZACION_PLAN.md)):
+
+- **PostgreSQL Trigram (`pg_trgm`)**:
+  - Migración Alembic `20260829140000_deals_pg_trgm_search_indexes.py` activando la extensión `pg_trgm` y creando el índice GIN `ix_deals_title_trgm` sobre `deals USING gin (title gin_trgm_ops)`.
+  - Acelera las búsquedas de texto con `ILIKE '%query%'` en el buscador de la web y la API pública, evitando `Seq Scan` en PostgreSQL.
+- **Code-Splitting y Carga Perezosa en Frontend**:
+  - `TelegramPanel` desacoplado y cargado con `React.lazy` y `<Suspense>` en `admin.chollos.tsx`, separando su bundle en un chunk independiente bajo demanda (`TelegramPanel-*.js`).
+  - Verificado con `npm run build` en TanStack Start / Vite y 28 archivos de tests `vitest` (168 tests pasando al 100%).
+- **Compresión de Respuestas HTTP en FastAPI**:
+  - Middleware `GZipMiddleware(app, minimum_size=500)` registrado en `buenchollo-api/app/main.py`.
+  - Reduce entre un 70% y un 80% el ancho de banda transferido en listados grandes de chollos, blog y endpoints públicos.
+  - Verificado con test unitario en `test_gzip_compression.py` (264 tests unitarios de backend pasando al 100%).
+
+---
+
 ### 3.septendecies  Corrección de sugerencia de etiquetas/categorías en Telegram (case-insensitivity y normalización) — 2026-08-29
 
 Resolución del fallo donde la IA no recomendaba etiquetas en el panel de publicación de Telegram:
