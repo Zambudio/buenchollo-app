@@ -46,3 +46,22 @@ def test_preview_product_from_url_raises_not_found() -> None:
     with pytest.raises(ProductNotFoundError):
         use_case.execute("https://www.amazon.es/dp/INVALID")
 
+
+def test_preview_product_from_url_passes_provider() -> None:
+    product = ProductPreview(title="Producto Test", asin="B08TEST123")
+    category_client = MagicMock()
+    category_client.get_categories_hierarchy.return_value = []
+    category_client.format_categories_for_prompt.return_value = ""
+    ai_assistant = MagicMock()
+    ai_assistant.enrich_product.return_value = {
+        "short_description": "Eslogan IA",
+        "category_id": "cat-123",
+    }
+    use_case = PreviewProductFromUrlUseCase(FakeProductProvider(product), category_client, ai_assistant)
+
+    result = use_case.execute("https://www.amazon.es/dp/B08TEST123", provider="openai")
+
+    assert result.short_description == "Eslogan IA"
+    assert result.category_id == "cat-123"
+    ai_assistant.enrich_product.assert_called_once_with(product, "", provider="openai")
+

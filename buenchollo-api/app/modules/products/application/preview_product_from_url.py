@@ -36,7 +36,12 @@ class CategoryClient(Protocol):
 class AIEnricher(Protocol):
     """Port for enriching product data with AI-generated text and categorization."""
 
-    def enrich_product(self, product: ProductPreview, categories_prompt: str) -> dict[str, Any]:
+    def enrich_product(
+        self,
+        product: ProductPreview,
+        categories_prompt: str,
+        provider: str | None = None,
+    ) -> dict[str, Any]:
         """Return a dict with AI-generated fields (short_description, category_id, …)."""
 
 
@@ -55,7 +60,7 @@ class PreviewProductFromUrlUseCase:
         self.category_client = category_client
         self.ai_assistant = ai_assistant
 
-    def execute(self, url: str) -> ProductPreview:
+    def execute(self, url: str, provider: str | None = None) -> ProductPreview:
         """Fetch from provider, then enrich with AI categorization."""
         product = self.product_provider.get_product_preview(url)
         if product is None:
@@ -70,7 +75,7 @@ class PreviewProductFromUrlUseCase:
         categories_prompt = self.category_client.format_categories_for_prompt(categories)
 
         # Categorize and enrich with AI
-        ai_data = self.ai_assistant.enrich_product(product, categories_prompt)
+        ai_data = self.ai_assistant.enrich_product(product, categories_prompt, provider=provider)
         
         # Merge AI data into the product entity
         if ai_data:

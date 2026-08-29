@@ -168,10 +168,36 @@ class OpenAICompatibleLLMClient:
         model: str | None = None,
         temperature: float | None = None,
         max_tokens: int | None = None,
+        provider: str | None = None,
     ) -> LLMGenerationResult:
-        """Genera texto con reintento automático en cascada y fallback a OpenAI tras fallos/respuestas vacías."""
-        models_to_try = self._get_model_cascade(model)
+        """Genera texto con selección de proveedor, reintento automático y fallback a OpenAI."""
         eff_temp = temperature if temperature is not None else self.settings.ai_temperature
+
+        # 1. Si se solicita explícitamente OpenAI directo
+        if provider == "openai":
+            target_model = model or self.settings.openai_model or "gpt-4o"
+            try:
+                response = self.openai_sync_client.chat.completions.create(
+                    model=target_model,
+                    messages=messages,  # type: ignore[arg-type]
+                    temperature=eff_temp,
+                    max_tokens=max_tokens,
+                )
+                choice = response.choices[0]
+                content = (choice.message.content or "").strip()
+                if content:
+                    logger.info("Llamada directa a OpenAI oficial completada con éxito usando '%s'.", target_model)
+                    return LLMGenerationResult(
+                        content=content,
+                        model=f"openai/{target_model}",
+                        raw_response={"id": getattr(response, "id", "")},
+                    )
+            except Exception as exc:
+                logger.error("Error al invocar OpenAI directo en generate_text: %s", exc)
+                return LLMGenerationResult(content="", model=f"openai/{target_model}", raw_response={"error": str(exc)})
+
+        # 2. Cascada estándar (OmniRoute / modelos gratuitos)
+        models_to_try = self._get_model_cascade(model)
         max_empty_allowed = getattr(self.settings, "ai_max_empty_responses", 3)
         failure_count = 0
         last_exception: Exception | None = None
@@ -220,8 +246,8 @@ class OpenAICompatibleLLMClient:
                     exc,
                 )
 
-        # ── Fallback a OpenAI Oficial ──────────────────────────────────────────
-        if self.has_openai_fallback:
+        # ── Fallback a OpenAI Oficial (si no está deshabilitado por provider="omniroute") ────────
+        if self.has_openai_fallback and provider != "omniroute":
             target_model = self.settings.openai_model or "gpt-4o"
             logger.warning(
                 "Modelos gratuitos fallaron o devolvieron respuestas vacías (%d fallos/vacíos). "
@@ -264,10 +290,38 @@ class OpenAICompatibleLLMClient:
         model: str | None = None,
         temperature: float | None = None,
         max_tokens: int | None = None,
+        provider: str | None = None,
     ) -> dict[str, Any]:
-        """Genera un JSON estructurado con fallback automático y extracción tolerante."""
-        models_to_try = self._get_model_cascade(model)
+        """Genera un JSON estructurado con selección de proveedor, fallback y extracción tolerante."""
         eff_temp = temperature if temperature is not None else self.settings.ai_temperature
+
+        # 1. Si se solicita explícitamente OpenAI directo
+        if provider == "openai":
+            target_model = model or self.settings.openai_model or "gpt-4o"
+            try:
+                kwargs: dict[str, Any] = {
+                    "model": target_model,
+                    "messages": messages,
+                    "temperature": eff_temp,
+                    "response_format": {"type": "json_object"},
+                }
+                if max_tokens:
+                    kwargs["max_tokens"] = max_tokens
+
+                response = self.openai_sync_client.chat.completions.create(**kwargs)
+                content = response.choices[0].message.content or ""
+                parsed = extract_json_payload(content)
+                if isinstance(parsed, dict) and bool(parsed):
+                    logger.info("Generación de JSON directo vía OpenAI oficial completada con éxito usando '%s'.", target_model)
+                    return parsed
+                if isinstance(parsed, list) and bool(parsed):
+                    return {"items": parsed}
+            except Exception as exc:
+                logger.error("Error al generar JSON con OpenAI directo: %s", exc)
+                return {}
+
+        # 2. Cascada estándar (OmniRoute / modelos gratuitos)
+        models_to_try = self._get_model_cascade(model)
         max_empty_allowed = getattr(self.settings, "ai_max_empty_responses", 3)
         failure_count = 0
         last_exception: Exception | None = None
@@ -281,7 +335,7 @@ class OpenAICompatibleLLMClient:
                 break
 
             try:
-                kwargs: dict[str, Any] = {
+                kwargs = {
                     "model": current_model,
                     "messages": messages,
                     "temperature": eff_temp,
@@ -324,8 +378,8 @@ class OpenAICompatibleLLMClient:
                     exc,
                 )
 
-        # ── Fallback a OpenAI Oficial ──────────────────────────────────────────
-        if self.has_openai_fallback:
+        # ── Fallback a OpenAI Oficial (si no está deshabilitado por provider="omniroute") ────────
+        if self.has_openai_fallback and provider != "omniroute":
             target_model = self.settings.openai_model or "gpt-4o"
             logger.warning(
                 "Modelos gratuitos fallaron o devolvieron JSON vacío (%d fallos/vacíos). "
@@ -368,10 +422,36 @@ class OpenAICompatibleLLMClient:
         model: str | None = None,
         temperature: float | None = None,
         max_tokens: int | None = None,
+        provider: str | None = None,
     ) -> LLMGenerationResult:
-        """Genera texto de forma asíncrona con reintento automático y fallback a OpenAI."""
-        models_to_try = self._get_model_cascade(model)
+        """Genera texto de forma asíncrona con selección de proveedor y fallback a OpenAI."""
         eff_temp = temperature if temperature is not None else self.settings.ai_temperature
+
+        # 1. Si se solicita explícitamente OpenAI directo
+        if provider == "openai":
+            target_model = model or self.settings.openai_model or "gpt-4o"
+            try:
+                response = await self.openai_async_client.chat.completions.create(
+                    model=target_model,
+                    messages=messages,  # type: ignore[arg-type]
+                    temperature=eff_temp,
+                    max_tokens=max_tokens,
+                )
+                choice = response.choices[0]
+                content = (choice.message.content or "").strip()
+                if content:
+                    logger.info("Llamada async directa a OpenAI oficial completada con éxito usando '%s'.", target_model)
+                    return LLMGenerationResult(
+                        content=content,
+                        model=f"openai/{target_model}",
+                        raw_response={"id": getattr(response, "id", "")},
+                    )
+            except Exception as exc:
+                logger.error("Error al invocar OpenAI directo async en agenerate_text: %s", exc)
+                return LLMGenerationResult(content="", model=f"openai/{target_model}", raw_response={"error": str(exc)})
+
+        # 2. Cascada estándar (OmniRoute / modelos gratuitos)
+        models_to_try = self._get_model_cascade(model)
         max_empty_allowed = getattr(self.settings, "ai_max_empty_responses", 3)
         failure_count = 0
         last_exception: Exception | None = None
@@ -420,8 +500,8 @@ class OpenAICompatibleLLMClient:
                     exc,
                 )
 
-        # ── Fallback a OpenAI Oficial ──────────────────────────────────────────
-        if self.has_openai_fallback:
+        # ── Fallback a OpenAI Oficial (si no está deshabilitado por provider="omniroute") ────────
+        if self.has_openai_fallback and provider != "omniroute":
             target_model = self.settings.openai_model or "gpt-4o"
             logger.warning(
                 "Modelos gratuitos fallaron o devolvieron respuestas vacías async (%d fallos/vacíos). "
@@ -464,10 +544,38 @@ class OpenAICompatibleLLMClient:
         model: str | None = None,
         temperature: float | None = None,
         max_tokens: int | None = None,
+        provider: str | None = None,
     ) -> dict[str, Any]:
-        """Genera JSON de forma asíncrona con fallback automático y extracción tolerante."""
-        models_to_try = self._get_model_cascade(model)
+        """Genera JSON de forma asíncrona con selección de proveedor, fallback y extracción tolerante."""
         eff_temp = temperature if temperature is not None else self.settings.ai_temperature
+
+        # 1. Si se solicita explícitamente OpenAI directo
+        if provider == "openai":
+            target_model = model or self.settings.openai_model or "gpt-4o"
+            try:
+                kwargs: dict[str, Any] = {
+                    "model": target_model,
+                    "messages": messages,
+                    "temperature": eff_temp,
+                    "response_format": {"type": "json_object"},
+                }
+                if max_tokens:
+                    kwargs["max_tokens"] = max_tokens
+
+                response = await self.openai_async_client.chat.completions.create(**kwargs)
+                content = response.choices[0].message.content or ""
+                parsed = extract_json_payload(content)
+                if isinstance(parsed, dict) and bool(parsed):
+                    logger.info("Generación JSON async directa vía OpenAI oficial completada con éxito usando '%s'.", target_model)
+                    return parsed
+                if isinstance(parsed, list) and bool(parsed):
+                    return {"items": parsed}
+            except Exception as exc:
+                logger.error("Error async al generar JSON con OpenAI directo: %s", exc)
+                return {}
+
+        # 2. Cascada estándar (OmniRoute / modelos gratuitos)
+        models_to_try = self._get_model_cascade(model)
         max_empty_allowed = getattr(self.settings, "ai_max_empty_responses", 3)
         failure_count = 0
         last_exception: Exception | None = None
@@ -481,7 +589,7 @@ class OpenAICompatibleLLMClient:
                 break
 
             try:
-                kwargs: dict[str, Any] = {
+                kwargs = {
                     "model": current_model,
                     "messages": messages,
                     "temperature": eff_temp,
@@ -524,8 +632,8 @@ class OpenAICompatibleLLMClient:
                     exc,
                 )
 
-        # ── Fallback a OpenAI Oficial ──────────────────────────────────────────
-        if self.has_openai_fallback:
+        # ── Fallback a OpenAI Oficial (si no está deshabilitado por provider="omniroute") ────────
+        if self.has_openai_fallback and provider != "omniroute":
             target_model = self.settings.openai_model or "gpt-4o"
             logger.warning(
                 "Modelos gratuitos fallaron o devolvieron JSON vacío async (%d fallos/vacíos). "

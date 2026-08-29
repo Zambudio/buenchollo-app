@@ -235,6 +235,23 @@ abrir la web al público:
 
 ---
 
+### 3.vicies  Selector de motor de IA en panel de autocompletar de Amazon (OmniRoute / OpenAI / Auto) — 2026-08-30
+
+Incorporación de selector explícito de motor de IA en el panel de autocompletar de Amazon para el administrador:
+
+- **Frontend (`buenchollo-web`)**:
+  - `AmazonAutofillPanel`: Selector integrado con diseño acorde al UI System (estética terminal / bordes cyan glow / responsive) para elegir entre `OmniRoute (Modelos Gratuitos)`, `OpenAI (GPT-4o Oficial)` y `Automático (OmniRoute + Fallback)`.
+  - Persistencia de la preferencia del administrador en `localStorage` (`buenchollo_ai_provider`).
+  - `productsApi.previewFromUrl`: Envía el parámetro `provider` a la API (`/v1/products/preview-from-url`).
+  - Tests unitarios añadidos en `AmazonAutofillPanel.test.tsx` (171 tests `vitest` en verde, build exitoso en TanStack Start / Vite).
+- **Backend (`buenchollo-api`)**:
+  - `ProductPreviewFromUrlRequest`: Campo opcional `provider` ("omniroute" | "openai" | "auto").
+  - `OpenAICompatibleLLMClient`: Soporte directo para invocación a OpenAI oficial (`provider="openai"`) o ejecución prioritaria en OmniRoute (`provider="omniroute"`).
+  - Propagación limpia a través de `PreviewProductFromUrlUseCase` -> `OpenAIAssistant` -> `ProductAIEnricher` -> `LLMClientProtocol`.
+  - Tests unitarios en `test_product_preview_use_case.py` y suite completa de backend pasando con 100% de éxito (264 tests `pytest`).
+
+---
+
 ### 3.undevicies  Blindaje de triple capa para sugerencias de categorías en Telegram — 2026-08-29
 
 Refuerzo de resiliencia integral para garantizar que el panel de Telegram siempre entregue etiquetas sugeridas pertinentes:

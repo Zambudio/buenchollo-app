@@ -16,16 +16,21 @@ class ProductAIEnricher:
     def __init__(self, llm_client: LLMClientProtocol) -> None:
         self.llm_client = llm_client
 
-    def enrich_product(self, product: Any, categories_prompt: str) -> dict[str, Any]:
+    def enrich_product(
+        self,
+        product: Any,
+        categories_prompt: str,
+        provider: str | None = None,
+    ) -> dict[str, Any]:
         """Generate short description, markdown long description, telegram text and categories."""
         try:
             # Copywriting y categorización son independientes (no comparten datos de
             # salida): se lanzan en paralelo para no sumar sus latencias, ya que cada
             # llamada al motor de IA puede tardar varios segundos con modelos gratuitos.
             with ThreadPoolExecutor(max_workers=2) as executor:
-                copy_future = executor.submit(self._get_copywriting, product)
+                copy_future = executor.submit(self._get_copywriting, product, provider)
                 cat_future = executor.submit(
-                    self._get_categorization, getattr(product, "title", ""), categories_prompt
+                    self._get_categorization, getattr(product, "title", ""), categories_prompt, provider
                 )
                 copy_data = copy_future.result()
                 cat_data = cat_future.result()
@@ -51,7 +56,7 @@ class ProductAIEnricher:
                 "telegram_text": title[:140] if title else "Oferta destacada en Amazon",
             }
 
-    def _get_copywriting(self, product: Any) -> dict[str, Any]:
+    def _get_copywriting(self, product: Any, provider: str | None = None) -> dict[str, Any]:
         today = datetime.now().strftime("%Y-%m-%d")
         title = getattr(product, "title", "")
         description = getattr(product, "description", "")
@@ -81,7 +86,7 @@ Responde SOLO un objeto JSON válido con las claves: "short_description", "long_
             {"role": "system", "content": "Eres un asistente experto en eCommerce y copywriting de chollos. Responde únicamente en formato JSON."},
             {"role": "user", "content": prompt},
         ]
-        result = self.llm_client.generate_json(messages)
+        result = self.llm_client.generate_json(messages, provider=provider)
 
         # Normalizar claves si el modelo utilizó variantes
         if "telegram_description" in result and "telegram_text" not in result:
@@ -95,7 +100,12 @@ Responde SOLO un objeto JSON válido con las claves: "short_description", "long_
 
         return result
 
-    def _get_categorization(self, title: str, categories_prompt: str) -> dict[str, Any]:
+    def _get_categorization(
+        self,
+        title: str,
+        categories_prompt: str,
+        provider: str | None = None,
+    ) -> dict[str, Any]:
         prompt = f"""
 Analiza este producto y selecciona la CATEGORÍA y SUBCATEGORÍA más adecuadas de la lista disponible.
 
@@ -112,4 +122,4 @@ Responde SOLO un objeto JSON con exactamente dos claves:
             {"role": "system", "content": "Eres un clasificador taxonómico preciso de productos. Responde solo con JSON estructurado."},
             {"role": "user", "content": prompt},
         ]
-        return self.llm_client.generate_json(messages)
+        return self.llm_client.generate_json(messages, provider=provider)

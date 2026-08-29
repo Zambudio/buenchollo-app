@@ -79,8 +79,21 @@ function AdminDeals() {
   const [defaultScheduledAt, setDefaultScheduledAt] = useState<string | null>(null);
   const [calendarRefresh, setCalendarRefresh] = useState(0);
   const [calendarDealId, setCalendarDealId] = useState<string | null>(null);
+  const [aiProvider, setAiProvider] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("buenchollo_ai_provider") || "omniroute";
+    }
+    return "omniroute";
+  });
   const images = useDealImages(form, setForm, user?.id);
   const nav = useNavigate();
+
+  const handleAiProviderChange = (newProvider: string) => {
+    setAiProvider(newProvider);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("buenchollo_ai_provider", newProvider);
+    }
+  };
 
   /** Diálogo de conflicto cuando el backend devuelve 409 DUPLICATE_DEAL.
    *  Guardamos también el payload original para poder reintentar como
@@ -128,7 +141,7 @@ function AdminDeals() {
     try {
       let d: AmazonPreviewResponse;
       try {
-        d = await productsApi.previewFromUrl(url);
+        d = await productsApi.previewFromUrl(url, aiProvider);
       } catch (e: unknown) {
         // El backend corta antes de gastar en IA si el ASIN ya existe.
         // Mostramos el mismo diálogo de duplicado que usa el guardado manual,
@@ -508,7 +521,9 @@ function AdminDeals() {
       <AmazonAutofillPanel
         url={amazonUrl}
         busy={autofilling}
+        provider={aiProvider}
         onUrlChange={setAmazonUrl}
+        onProviderChange={handleAiProviderChange}
         onAutofill={autofillFromAmazon}
       />
 

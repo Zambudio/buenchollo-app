@@ -31,11 +31,11 @@ export interface AmazonPreviewResponse {
 const PREVIEW_FROM_URL_TIMEOUT_MS = 45_000;
 
 export const productsApi = {
-  /** Genera una preview de producto a partir de una URL de Amazon o ASIN. */
-  previewFromUrl: (url: string): Promise<AmazonPreviewResponse> =>
+  /** Genera una preview de producto a partir de una URL de Amazon o ASIN con opción de elegir motor de IA. */
+  previewFromUrl: (url: string, provider?: string): Promise<AmazonPreviewResponse> =>
     apiClient.post<AmazonPreviewResponse>(
       "/products/preview-from-url",
-      { url },
+      { url, ...(provider ? { provider } : {}) },
       { signal: AbortSignal.timeout(PREVIEW_FROM_URL_TIMEOUT_MS) },
     ),
 };

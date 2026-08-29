@@ -7,6 +7,7 @@ class ProductPreviewFromUrlRequest(BaseModel):
     """Request payload for previewing a product from a URL or ASIN."""
 
     url: str = Field(..., min_length=1, examples=["https://www.amazon.es/dp/B08TEST123"])
+    provider: str | None = Field(default=None, description="Proveedor de IA: 'omniroute', 'openai' o 'auto'")
 
     @field_validator("url")
     @classmethod

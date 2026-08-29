@@ -70,6 +70,6 @@ async def preview_from_url(
         if existing is not None:
             raise DuplicateDealError(existing.id, existing.slug, existing.title)
 
-    product = await run_in_threadpool(use_case.execute, payload.url)
+    product = await run_in_threadpool(use_case.execute, payload.url, payload.provider)
     return ProductPreviewResponse.model_validate(product)
 

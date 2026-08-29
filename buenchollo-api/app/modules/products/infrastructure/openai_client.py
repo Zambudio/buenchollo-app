@@ -19,7 +19,12 @@ class OpenAIAssistant:
         self._llm_client = OpenAICompatibleLLMClient(settings)
         self._enricher = ProductAIEnricher(self._llm_client)
 
-    def enrich_product(self, product: ProductPreview, categories_prompt: str) -> dict[str, Any]:
+    def enrich_product(
+        self,
+        product: ProductPreview,
+        categories_prompt: str,
+        provider: str | None = None,
+    ) -> dict[str, Any]:
         """Enrich product preview with copywriting and categorization."""
-        return self._enricher.enrich_product(product, categories_prompt)
+        return self._enricher.enrich_product(product, categories_prompt, provider=provider)
 

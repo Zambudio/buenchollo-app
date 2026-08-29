@@ -20,6 +20,7 @@ class LLMClientProtocol(Protocol):
         model: str | None = None,
         temperature: float | None = None,
         max_tokens: int | None = None,
+        provider: str | None = None,
     ) -> LLMGenerationResult:
         """Synchronously generate text using the primary model with automatic fallback."""
 
@@ -30,6 +31,7 @@ class LLMClientProtocol(Protocol):
         model: str | None = None,
         temperature: float | None = None,
         max_tokens: int | None = None,
+        provider: str | None = None,
     ) -> dict[str, Any]:
         """Synchronously generate and parse structured JSON with automatic fallback and markdown stripping."""
 
@@ -40,6 +42,7 @@ class LLMClientProtocol(Protocol):
         model: str | None = None,
         temperature: float | None = None,
         max_tokens: int | None = None,
+        provider: str | None = None,
     ) -> LLMGenerationResult:
         """Asynchronously generate text using the primary model with automatic fallback."""
 
@@ -50,6 +53,7 @@ class LLMClientProtocol(Protocol):
         model: str | None = None,
         temperature: float | None = None,
         max_tokens: int | None = None,
+        provider: str | None = None,
     ) -> dict[str, Any]:
         """Asynchronously generate and parse structured JSON with automatic fallback and markdown stripping."""
 
@@ -61,6 +65,7 @@ class ProductEnricherProtocol(Protocol):
         self,
         product: Any,
         categories_prompt: str,
+        provider: str | None = None,
     ) -> dict[str, Any]:
         """Generate short_description, long_description, telegram_text, category_id, subcategory_id."""
 
