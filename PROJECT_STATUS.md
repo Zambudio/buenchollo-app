@@ -236,6 +236,20 @@ abrir la web al público:
 
 ---
 
+### 3.undevicies  Blindaje de triple capa para sugerencias de categorías en Telegram — 2026-08-29
+
+Refuerzo de resiliencia integral para garantizar que el panel de Telegram siempre entregue etiquetas sugeridas pertinentes:
+
+- **Causa raíz del fallo intermitente**:
+  - En `buenchollo-api/app/modules/telegram/api/router.py`, `asyncio.wait_for` tenía un timeout de 6.0s. Cuando los modelos gratuitos de OmniRoute experimentaban latencia o caídas, la cascada de 3 reintentos superaba los 6s y el bloque `except Exception:` descartaba las sugerencias devolviendo lista vacía `[]` antes de llegar a OpenAI.
+- **Solución implementada**:
+  - **Capa 1 (IA con Fast Timeout)**: `fast_free_timeout = 3.5s` en `llm_client.py` con `max_retries=0` para saltar inmediatamente a OpenAI `gpt-4o` en milisegundos si los modelos gratuitos tardan. Timeout de ruta ampliado a 10s.
+  - **Capa 2 (Backend Heuristics & Synonyms)**: `TelegramAIService.extract_heuristic_tags` con mapa de sinónimos y lematización (`SYNONYM_MAP`) que rescata etiquetas canónicas si la IA falla o produce timeout en el router.
+  - **Capa 3 (Frontend Client Fallback)**: `extractLocalSuggestions` en `TelegramPanel.tsx` calculando coincidencias locales inmediatas en el cliente si la red o API fallasen.
+- **Verificación**: 168 tests vitest frontend y 264 tests pytest backend pasando con 100% de éxito.
+
+---
+
 ### 3.duodevicies  Plan de optimización de rendimiento: Fase 2 (PostgreSQL Trigram, Code-Splitting y GZip) — 2026-08-29
 
 Ejecución y validación completa de la Fase 2 del plan de optimización ([`OPTIMIZACION_PLAN.md`](OPTIMIZACION_PLAN.md)):
