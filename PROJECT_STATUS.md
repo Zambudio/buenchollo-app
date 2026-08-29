@@ -236,6 +236,21 @@ abrir la web al público:
 
 ---
 
+### 3.septendecies  Corrección de sugerencia de etiquetas/categorías en Telegram (case-insensitivity y normalización) — 2026-08-29
+
+Resolución del fallo donde la IA no recomendaba etiquetas en el panel de publicación de Telegram:
+
+- **Causa identificada**:
+  - `TelegramAIService.suggest_categories` comparaba los tokens devueltos por el LLM contra el conjunto `available` con igualdad estricta sensible a mayúsculas/minúsculas (`t in allowed`).
+  - Como el catálogo en `categories.json` usa PascalCase (ej: `#Auriculares`, `#Gaming`, `#SmartPhones`, `#FuentesAlimentación`) y los modelos devuelven texto en minúsculas (`#auriculares #gaming`), la comparación descartaba el 100% de las coincidencias y devolvía siempre lista vacía `[]`.
+- **Solución implementada**:
+  - **Normalización insensible a mayúsculas, acentos y almohadilla (`_normalize_tag`)**: Mapea cualquier variante devuelta por el LLM a su categoría canónica oficial.
+  - **Extracción tolerante con expresiones regulares**: Capta etiquetas tanto si vienen en formato texto, con viñetas, comas o JSON.
+  - **Fallback heurístico de rescate**: Si el motor de IA no devuelve resultados o se produce un timeout, busca coincidencias de términos clave en el título y descripción del producto contra el catálogo para asegurar siempre sugerencias pertinentes.
+- **Tests añadidos**: 2 nuevos tests unitarios en `test_ai_llm_client.py` verificando normalización con acentos/minúsculas y fallback heurístico (18/18 pasando).
+
+---
+
 ### 3.sexdecies  Cierre de deuda técnica (TD-15, TD-16, TD-17) — 2026-08-29
 
 Resolución de los tres ítems principales de deuda técnica registrados en `docs/project/10-technical-debt.md`:
