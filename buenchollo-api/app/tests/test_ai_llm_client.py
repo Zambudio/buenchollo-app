@@ -283,6 +283,41 @@ async def test_telegram_ai_service_suggest_categories():
 
 
 @pytest.mark.asyncio
+async def test_telegram_ai_service_suggest_categories_case_insensitive_and_accents():
+    """Verifica que el modelo devuelva minúsculas o sin tildes y mapee a los canónicos con PascalCase."""
+    mock_llm = MagicMock()
+    res = MagicMock()
+    res.content = "Recomiendo los hashtags: #fuentesalimentacion, #audio"
+    mock_llm.agenerate_text = AsyncMock(return_value=res)
+
+    service = TelegramAIService(mock_llm)
+    suggested = await service.suggest_categories(
+        title="Fuente de poder 750W",
+        description="Modular 80 Plus Gold",
+        available=["#FuentesAlimentación", "#Audio", "#Gaming", "#Teclados"],
+    )
+
+    assert suggested == ["#FuentesAlimentación", "#Audio"]
+
+
+@pytest.mark.asyncio
+async def test_telegram_ai_service_keyword_fallback_when_llm_fails():
+    """Verifica que si la IA falla, se extraigan categorías relevantes por coincidencia de términos."""
+    mock_llm = MagicMock()
+    mock_llm.agenerate_text = AsyncMock(side_effect=Exception("LLM Timeout"))
+
+    service = TelegramAIService(mock_llm)
+    suggested = await service.suggest_categories(
+        title="Auriculares Bluetooth Inalámbricos Sony",
+        description="Cancelación de ruido activa",
+        available=["#Auriculares", "#Auricularesbluetooth", "#Teclados", "#Ratones"],
+    )
+
+    assert len(suggested) >= 1
+    assert any(tag in ["#Auriculares", "#Auricularesbluetooth"] for tag in suggested)
+
+
+@pytest.mark.asyncio
 async def test_telegram_ai_service_empty_available():
     mock_llm = MagicMock()
     service = TelegramAIService(mock_llm)
