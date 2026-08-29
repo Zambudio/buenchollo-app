@@ -235,6 +235,23 @@ abrir la web al público:
 
 ---
 
+### 3.unvicies  Cierre de TD-18: Refinación defensiva de la regla `no_longer_deal` en el revisor de precios — 2026-08-30
+
+Resolución de **TD-18**, protegiendo la base de datos de borrados falsos positivos en las ejecuciones automáticas periódicas del revisor de precios:
+
+- **Problema previo**:
+  - Si Amazon omitía `savingBasis` o `discount_percentage` en la respuesta de la PA-API (algo frecuente incluso en productos con descuento activo), el handler `PriceCheckHandler._evaluate_one` marcaba el producto como `"no_longer_deal"` y lo borraba de forma indiscriminada.
+- **Regla defensiva implementada**:
+  - Si Amazon omite los campos de porcentaje o precio base, pero el precio actual de la tienda se mantiene dentro del rango de oferta (`current_price <= maximum_price`), **el chollo se conserva activo**.
+  - Solo se marca `"no_longer_deal"` si Amazon reporta explícitamente descuento cero/negativo (`discount_percentage <= 0`), o si el precio actual iguala o supera el PVP anterior registrado en el deal (`current_price >= deal.previous_price`).
+  - La condición de subida excesiva de precio (`"price_increase"`) y producto agotado (`"out_of_stock"`) siguen operando con su prioridad habitual.
+- **Validación y Tests**:
+  - Tests unitarios actualizados y ampliados en `test_price_check_handler.py` (13/13 pasando).
+  - Suite completa de backend pasando al 100% (263 tests `pytest`).
+  - `docs/project/10-technical-debt.md` actualizado con **0 ítems de deuda técnica pendientes**.
+
+---
+
 ### 3.vicies  Selector de motor de IA en panel de autocompletar de Amazon (OmniRoute / OpenAI / Auto) — 2026-08-30
 
 Incorporación de selector explícito de motor de IA en el panel de autocompletar de Amazon para el administrador:

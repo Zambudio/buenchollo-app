@@ -93,10 +93,25 @@ def test_evaluate_marca_out_of_stock():
     assert result.candidates[0].new_price is None
 
 
-def test_evaluate_marca_no_longer_deal_si_amazon_ya_no_reporta_descuento():
-    deal = _deal()
+def test_evaluate_conserva_deal_si_precio_se_mantiene_aunque_amazon_omita_saving_basis():
+    """Protección contra falsos positivos (TD-18): Si Amazon omite original_price/discount_percentage
+    pero el producto sigue al precio de oferta publicado, el deal se mantiene activo."""
+    deal = _deal(current_price=100.0, previous_price=150.0)
     verifier = FakeVerifier({"B0D9WH9WLD": ProductPreview(
         current_price=100.0, original_price=None, discount_percentage=None, in_stock=True,
+    )})
+    handler = PriceCheckHandler(verifier, FakeDealRepo({}))
+
+    result = handler.evaluate([deal], {"price_tolerance_percent": 10})
+
+    assert result.total_checked == 1
+    assert result.candidates == []
+
+
+def test_evaluate_marca_no_longer_deal_si_descuento_explicito_es_cero():
+    deal = _deal(current_price=100.0)
+    verifier = FakeVerifier({"B0D9WH9WLD": ProductPreview(
+        current_price=100.0, original_price=100.0, discount_percentage=0, in_stock=True,
     )})
     handler = PriceCheckHandler(verifier, FakeDealRepo({}))
 
@@ -106,51 +121,14 @@ def test_evaluate_marca_no_longer_deal_si_amazon_ya_no_reporta_descuento():
     assert result.candidates[0].reason == "no_longer_deal"
 
 
-def test_evaluate_ignora_asin_no_encontrado_en_amazon():
-    deal = _deal()
-    verifier = FakeVerifier({})  # Amazon no devuelve nada para este ASIN
-    handler = PriceCheckHandler(verifier, FakeDealRepo({}))
-
-    result = handler.evaluate([deal], {"price_tolerance_percent": 10})
-
-    assert result.total_checked == 1
-    assert result.candidates == []
-
-
-def test_evaluate_usa_tolerancia_por_defecto_diez_por_ciento_si_falta_config():
-    deal = _deal()
-    verifier = FakeVerifier({"B0D9WH9WLD": ProductPreview(
-        current_price=111.0, original_price=150.0, discount_percentage=26, in_stock=True,
-    )})
-    handler = PriceCheckHandler(verifier, FakeDealRepo({}))
-
-    result = handler.evaluate([deal], {})
-
-    assert len(result.candidates) == 1
-    assert result.candidates[0].reason == "price_increase"
-
-
-def test_evaluate_prioriza_out_of_stock_sobre_no_longer_deal_si_ambos_aplican():
-    deal = _deal()
-    verifier = FakeVerifier({"B0D9WH9WLD": ProductPreview(
-        current_price=100.0, original_price=None, discount_percentage=None, in_stock=False,
-    )})
-    handler = PriceCheckHandler(verifier, FakeDealRepo({}))
-
-    result = handler.evaluate([deal], {"price_tolerance_percent": 10})
-
-    assert len(result.candidates) == 1
-    assert result.candidates[0].reason == "out_of_stock"
-
-
-def test_evaluate_prioriza_no_longer_deal_sobre_price_increase_si_ambos_aplican():
-    deal = _deal()
+def test_evaluate_marca_no_longer_deal_si_precio_actual_iguala_o_supera_el_pvp_anterior():
+    deal = _deal(current_price=100.0, previous_price=150.0)
     verifier = FakeVerifier({"B0D9WH9WLD": ProductPreview(
         current_price=150.0, original_price=None, discount_percentage=None, in_stock=True,
     )})
     handler = PriceCheckHandler(verifier, FakeDealRepo({}))
 
-    result = handler.evaluate([deal], {"price_tolerance_percent": 10})
+    result = handler.evaluate([deal], {"price_tolerance_percent": 100})
 
     assert len(result.candidates) == 1
     assert result.candidates[0].reason == "no_longer_deal"

@@ -65,15 +65,28 @@ class PriceCheckHandler:
     def _evaluate_one(deal, product, tolerance: Decimal) -> str | None:
         if not product.in_stock:
             return "out_of_stock"
-        if product.original_price is None or product.discount_percentage is None:
-            return "no_longer_deal"
         if product.current_price is None:
             return None
+
         old_price = Decimal(str(deal.current_price))
         current_price = Decimal(str(product.current_price)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         maximum_price = old_price * (Decimal("1") + tolerance / Decimal("100"))
+
+        # 1. Subida de precio por encima de la tolerancia de oferta
         if current_price > maximum_price:
             return "price_increase"
+
+        # 2. Descuento explícito en cero o negativo reportado por Amazon
+        if product.discount_percentage is not None and product.discount_percentage <= 0:
+            return "no_longer_deal"
+
+        # 3. Si el deal tenía precio anterior de referencia (PVP) y el precio actual iguala o supera ese PVP
+        deal_prev = getattr(deal, "previous_price", None)
+        if deal_prev is not None:
+            prev_price = Decimal(str(deal_prev))
+            if prev_price > old_price and current_price >= prev_price:
+                return "no_longer_deal"
+
         return None
 
     @staticmethod
