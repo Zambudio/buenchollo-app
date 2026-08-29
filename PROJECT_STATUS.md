@@ -1,5 +1,5 @@
 # PROJECT_STATUS — BuenCholloTech
-*Última actualización: 2026-08-15 (rebuild en NAS y corrección de APP_ENV en producción — ver § 3.quaterdecies)*
+*Última actualización: 2026-08-29 (Failover resiliente a OpenAI oficial y optimización de latencia — ver § 3.quindecies)*
 
 > **⚠️ Revisar este documento antes de migrar a dominio web en producción.**
 > Contiene el estado real del proyecto, deuda técnica pendiente y la hoja de ruta completa.
@@ -41,6 +41,7 @@ API versionada `/v1`, ADR-002) son correctas y defendibles profesionalmente.
 | 6 | Telegram — panel completo con preview, GPT, categorías, canales, emojis Premium | ✅ Completado |
 | 7 | Tests unitarios (DealService, AlertMatcher, matches_alert) | ✅ Completado (2026-05-26) |
 | 8 | Refactor de buenas prácticas — ver § 3.bis | ✅ Completado (2026-05-26) |
+| 9 | Failover resiliente a OpenAI oficial — ver § 3.quindecies | ✅ Completado (2026-08-29) |
 
 ---
 
@@ -232,7 +233,25 @@ abrir la web al público:
   de votos/comentarios con F5 normal superada el 2026-07-19. Fase 2/3 siguen
   aparcadas sin trigger, a propósito (`OPTIMIZACION_PLAN.md`).
 
-**Suite backend: 141 pytest** en verde (unitarios + integración).
+### 3.quindecies  Failover resiliente a OpenAI oficial ante fallos/respuestas vacías y optimización de latencia — 2026-08-29
+
+Resolución de incidencias en la generación de textos de Telegram y preview de Amazon causadas por
+indisponibilidad o timeouts en el gateway local de modelos gratuitos:
+
+- **Problema identificado**:
+  - Los modelos gratuitos en OmniRoute devolvían errores 404/502 o respuestas vacías sin salida utilizable.
+  - El cliente agnóstico no interpretaba respuestas vacías como fallo para pasar al siguiente modelo y no tenía implementado el failover a la API oficial de OpenAI (`https://api.openai.com/v1`).
+  - La librería de OpenAI aplicaba timeouts de 30s + `max_retries=2` con backoff por modelo gratuito caído, sumando más de 90s por llamada y provocando timeouts HTTP 524 en Cloudflare / navegador.
+- **Solución implementada**:
+  - **Umbral de fallos/respuestas vacías (`ai_max_empty_responses=3`)**: Detecta texto en blanco o JSON no parseable y tras 3 intentos fallidos consecutivos enruta de inmediato a OpenAI oficial (`OPENAI_API_KEY` y `OPENAI_MODEL=gpt-4o`).
+  - **Timeouts rápidos para modelos gratuitos**: `fast_free_timeout = min(ai_timeout_seconds, 6.0)` y `max_retries=0` para saltar de inmediato al siguiente modelo o a OpenAI sin retener la petición.
+  - **Protección con `asyncio.wait_for`** en `/v1/telegram/generate` para que la plantilla de post se entregue siempre en milisegundos sin bloquearse por la IA.
+  - **Plantilla base de rescate en el frontend** ([`TelegramPanel.tsx`](buenchollo-web/src/features/telegram/components/TelegramPanel.tsx)) y en `ProductAIEnricher` para que el formulario y el panel de Telegram nunca queden en blanco ante cualquier fallo de red.
+- **Despliegue y validación**:
+  - Rebuild y restart en el NAS completados vía SSH.
+  - Validado en producción con respuesta `200 OK` y health check verificado.
+
+---
 
 ### 3.quaterdecies  Rebuild en NAS + corrección de APP_ENV en producción — 2026-08-15
 
