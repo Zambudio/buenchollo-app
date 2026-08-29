@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -103,11 +104,18 @@ async def generate_post(
     )
 
     categories = repo.load()
-    suggested = await generator.suggest_categories(
-        title=payload.title,
-        description=payload.description or "",
-        available=categories,
-    )
+    suggested: list[str] = []
+    try:
+        suggested = await asyncio.wait_for(
+            generator.suggest_categories(
+                title=payload.title,
+                description=payload.description or "",
+                available=categories,
+            ),
+            timeout=6.0,
+        )
+    except Exception:
+        suggested = []
 
     return TelegramGenerateResponse(text=text, suggested_categories=suggested)
 

@@ -111,7 +111,15 @@ export function TelegramPanel({
       setText(result.text);
       setSuggested(result.suggested_categories);
     } catch {
-      toast.error("Error generando el post. Puedes escribirlo manualmente.");
+      // Fallback local: construir el mensaje básico para que nunca se quede vacío
+      const priceStr = `${dealData.current_price.toFixed(2).replace(".", ",")} €`;
+      const prevPriceStr = dealData.previous_price
+        ? `💶 Precio: ${priceStr} (antes ${dealData.previous_price.toFixed(2).replace(".", ",")} €)\n`
+        : `💶 Precio: ${priceStr}\n`;
+      const descStr = dealData.description ? `✏️${dealData.description.trim()}\n\n` : "";
+      const basicText = `🍄 ${dealData.title}\n\n${prevPriceStr}\n🛒 ${dealData.affiliate_url}\n\n${descStr}🔗 Todos los chollos en nuestra web\n\n`;
+      setText(basicText);
+      toast.error("Error generando sugerencias con IA. Se ha cargado la plantilla base.");
     } finally {
       setGenerating(false);
     }
