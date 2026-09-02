@@ -1,5 +1,5 @@
 # PROJECT_STATUS — BuenCholloTech
-*Última actualización: 2026-08-29 (Failover resiliente a OpenAI oficial y optimización de latencia — ver § 3.quindecies)*
+*Última actualización: 2026-09-02 (Fix: la revisión de precios de Amazon no se ejecutaba de forma automática — ver § 3.duovicies)*
 
 > **⚠️ Revisar este documento antes de migrar a dominio web en producción.**
 > Contiene el estado real del proyecto, deuda técnica pendiente y la hoja de ruta completa.
@@ -232,6 +232,26 @@ abrir la web al público:
   públicas exactas y respetando `Cache-Control`, verificada con `MISS → HIT`
   en `/v1/deals`; autenticados en `no-store` y nunca `HIT`. Validación funcional
   de votos/comentarios con F5 normal superada el 2026-07-19.
+
+---
+
+### 3.duovicies  Fix: la revisión de precios de Amazon no se ejecutaba de forma automática — 2026-09-02
+
+La tarea programada «Revisión de precios (Amazon)» solo funcionaba con el botón **Ejecutar ahora**; el ciclo automático del contenedor `buenchollo-scheduler` fallaba en silencio en cada tick horario.
+
+- **Causa raíz**:
+  - El commit `a3fc505` (cierre de TD-15/16/17, 29-ago) extrajo la creación de handlers a `factory.py` y eliminó el import de `DealRepository` de `scheduled_tasks/application/scheduler.py`, pero dejó viva la línea `deal_repo = DealRepository(session)` dentro de `_run()`.
+  - Cada ejecución de `run_due_scheduled_tasks` lanzaba `NameError: name 'DealRepository' is not defined`, que el bloque `except Exception` de `_run()` capturaba, registraba como *"Fallo global del worker de tareas programadas"* y devolvía `0`. Confirmado en logs de producción (`scheduler.py` línea 71, en cada tick horario desde el deploy de `a3fc505` ~30-ago hasta el 2-sep).
+  - El botón **Ejecutar ahora** no se veía afectado: usa el router FastAPI (`get_scheduled_task_service`), que sí importa `DealRepository`.
+- **Solución (`db913bf`)**:
+  - Reañadido el import de `DealRepository`.
+  - Extraída `_build_service(session, settings)` para aislar el cableado repo + servicio de la creación del engine/sesión y poder cubrirlo con un test que no necesita BD (ningún test llegaba a esa línea: el de `_run` sale antes por falta de `DATABASE_URL`, los de `_execute_due_tasks` mockean el `service`).
+  - Test de regresión `test_build_service_cablea_dependencias_sin_nameerror` en `test_scheduled_tasks_scheduler.py`.
+- **Despliegue y verificación**:
+  - El código va montado (`.:/app`); no requiere rebuild de imagen. `docker restart buenchollo-scheduler` → arranque limpio, 5 jobs registrados (`run_scheduled_tasks` incluido).
+  - Verificado dentro del contenedor en marcha: `_build_service()` resuelve (`ScheduledTaskService`, `deal_repo` OK, handler `price_check` OK). `GET /health` → `{"status":"ok","environment":"production"}`.
+  - Tests del módulo scheduler + price-check en verde (42/42).
+- **Deuda derivada**: ver **TD-19** en `docs/project/10-technical-debt.md` — el `except Exception` de `_run()` ocultó este fallo ~3 días sin ninguna alarma.
 
 ---
 
