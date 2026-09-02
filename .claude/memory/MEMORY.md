@@ -1,5 +1,5 @@
 - [Pedro construye BuenChollo como proyecto personal a largo plazo](user_proyecto_personal.md) — TFM es la presentación inmediata pero el proyecto crecerá en producción; decisiones técnicas con vista a escalabilidad real.
-- [Forma de trabajo iterativa tarea-a-tarea](feedback_forma_trabajo_iterativa.md) — modificar → verificar → commit + push en develop → marcar → confirmar antes de la siguiente. Merge a main y deploy solo bajo petición explícita.
+- [Forma de trabajo iterativa tarea-a-tarea](feedback_forma_trabajo_iterativa.md) — modificar → verificar → commit + push en develop → marcar → confirmar antes de la siguiente. Merge a main y deploy solo bajo petición explícita. La doc (PROJECT_STATUS/TD) va en el mismo commit del cambio, no como follow-up.
 - [No continuar si hay un aspecto crítico](feedback_no_continuar_con_critico.md) — parar y resolverlo antes de avanzar; no ofrecer "seguir o arreglar".
 - [Deps/framework solo en develop con CI verde](feedback_deps_solo_en_develop.md) — nunca empujar bumps a main sin verificar; main = producción y se despliega solo.
 - [Método de revisión/auditoría/documentación](feedback_metodo_revision_auditoria.md) — analizar antes de tocar, rol revisor senior pragmático, criterios SOLID/DRY/antipatrones, fases, formato de informe, doc interna vs máster, seguridad/testing transversal.
