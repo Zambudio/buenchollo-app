@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
 from app.core.config import Settings
+from app.modules.deals.infrastructure.repository import DealRepository
 from app.modules.scheduled_tasks.application.factory import build_task_handlers
 from app.modules.scheduled_tasks.application.scheduled_task_service import (
     ScheduledTaskService,
@@ -53,6 +54,21 @@ async def _execute_due_tasks(repo, service, session, now_local: datetime) -> int
     return executed
 
 
+def _build_service(session, settings: Settings) -> tuple[ScheduledTaskRepository, ScheduledTaskService]:
+    """Cablea repo + servicio con sus dependencias, aislado de la creación del
+    engine/sesión (mismo motivo que `_execute_due_tasks`): así un test puede
+    verificar el cableado con un fake de sesión, sin BD real. Antes esto vivía
+    inline dentro del try/except de `_run`, que se tragaba cualquier error de
+    importación — un `DealRepository` sin importar (import perdido al extraer
+    `build_task_handlers` a factory.py) reventaba cada tick automático con
+    NameError y la tarea no se ejecutaba nunca sola."""
+    repo = ScheduledTaskRepository(session)
+    deal_repo = DealRepository(session)
+    handlers = build_task_handlers(session, settings)
+    service = ScheduledTaskService(repo, deal_repo, handlers, session)
+    return repo, service
+
+
 async def _run(settings: Settings) -> int:
     if not settings.database_url:
         logger.error("DATABASE_URL no configurada para el worker de tareas programadas")
@@ -67,10 +83,7 @@ async def _run(settings: Settings) -> int:
     try:
         async with session_factory() as session:
             try:
-                repo = ScheduledTaskRepository(session)
-                deal_repo = DealRepository(session)
-                handlers = build_task_handlers(session, settings)
-                service = ScheduledTaskService(repo, deal_repo, handlers, session)
+                repo, service = _build_service(session, settings)
 
                 now_local = datetime.now(timezone.utc).astimezone()
                 executed = await _execute_due_tasks(repo, service, session, now_local)

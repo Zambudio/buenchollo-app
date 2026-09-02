@@ -5,7 +5,8 @@ from unittest.mock import AsyncMock, MagicMock, call
 import pytest
 
 from app.core.config import Settings
-from app.modules.scheduled_tasks.application.scheduler import _execute_due_tasks, _run
+from app.modules.scheduled_tasks.application.scheduler import _build_service, _execute_due_tasks, _run
+from app.modules.scheduled_tasks.application.scheduled_task_service import ScheduledTaskService
 
 
 def _task(task_id: str, *, enabled: bool = True, run_hour: int = 0, last_run_at=None, frequency_preset="weekly"):
@@ -129,3 +130,22 @@ async def test_run_devuelve_cero_sin_database_url():
     executed = await _run(settings)
 
     assert executed == 0
+
+
+def test_build_service_cablea_dependencias_sin_nameerror():
+    """Regresión: `_run` instanciaba `DealRepository` sin importarlo (el import
+    se perdió al extraer `build_task_handlers` a factory.py), así que cada tick
+    automático del scheduler reventaba con NameError, lo capturaba el `except
+    Exception` de `_run` ("Fallo global del worker de tareas programadas") y la
+    tarea no se ejecutaba nunca sola — solo funcionaba el botón "Ejecutar ahora"
+    (otra ruta, el router de FastAPI). Ningún test llegaba a esa línea: el de
+    `_run` retorna antes por falta de DATABASE_URL y los de `_execute_due_tasks`
+    inyectan un `service` ya mockeado."""
+    session = MagicMock()
+    settings = Settings(database_url="postgresql+asyncpg://user:pass@localhost/db")
+
+    repo, service = _build_service(session, settings)
+
+    assert isinstance(service, ScheduledTaskService)
+    assert service.deal_repo is not None
+    assert "price_check" in service.handlers
