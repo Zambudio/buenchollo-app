@@ -1,5 +1,5 @@
 # PROJECT_STATUS — BuenCholloTech
-*Última actualización: 2026-09-05 (Recorte persistente de imágenes para publicaciones de Telegram — ver § 3.quinvicies)*
+*Última actualización: 2026-09-05 (Hotfix Storage del recorte de imágenes de Telegram — ver § 3.quinvicies)*
 
 > **⚠️ Revisar este documento antes de migrar a dominio web en producción.**
 > Contiene el estado real del proyecto, deuda técnica pendiente y la hoja de ruta completa.
@@ -57,6 +57,15 @@ API versionada `/v1`, ADR-002) son correctas y defendibles profesionalmente.
   pruebas en verde; typecheck, lint y build de producción correctos.
 - Se normalizó con Prettier el formato pendiente de `AmazonAutofillPanel` y `admin.chollos`, que
   estaba bloqueando el job frontend de CI sin afectar al comportamiento.
+- **Incidente post-despliegue y hotfix**: el proyecto Supabase de producción no contenía el bucket
+  `deal-images` ni sus políticas, aunque ambos figuraban en una migración SQL legacy de 2026-04 que
+  no llegó al estado real de la infraestructura. El recortador reproducía de forma determinista
+  `NoSuchBucket / Bucket not found`. Se añadió la migración idempotente
+  `20260905140000_create_deal_images_storage.sql` y se aplicó en producción: bucket público con
+  límite de 5 MB y cuatro políticas (lectura pública; escritura/actualización/borrado para admins
+  autenticados mediante consulta inline a `user_roles`, ya que `public.has_role` no existe).
+  Verificación final: la sonda pública devuelve `NoSuchKey / Object not found`, una subida JPEG de
+  prueba respondió HTTP 200 y el objeto temporal se eliminó; API `/health` en 200.
 
 ---
 
