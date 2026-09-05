@@ -1,5 +1,5 @@
 # PROJECT_STATUS — BuenCholloTech
-*Última actualización: 2026-09-02 (Seguridad: RLS desactivado en `scheduled_deals` — ver § 3.tervicies)*
+*Última actualización: 2026-09-05 (Cierre de 3/4 de TD-20: hardening del Advisor de Supabase — ver § 3.quattuorvicies)*
 
 > **⚠️ Revisar este documento antes de migrar a dominio web en producción.**
 > Contiene el estado real del proyecto, deuda técnica pendiente y la hoja de ruta completa.
@@ -232,6 +232,22 @@ abrir la web al público:
   públicas exactas y respetando `Cache-Control`, verificada con `MISS → HIT`
   en `/v1/deals`; autenticados en `no-store` y nunca `HIT`. Validación funcional
   de votos/comentarios con F5 normal superada el 2026-07-19.
+
+---
+
+### 3.quattuorvicies  Cierre de 3/4 de TD-20: hardening del Advisor de Supabase (seguridad + rendimiento) — 2026-09-05
+
+Continuación de § 3.tervicies: tras cerrar el crítico, el Advisor completo (seguridad + rendimiento, conector MCP autorizado) reportó 4 hallazgos WARN — ninguno una exposición de datos. Ejecutado siguiendo [`docs/superpowers/plans/2026-09-05-supabase-advisor-hardening.md`](docs/superpowers/plans/2026-09-05-supabase-advisor-hardening.md).
+
+- **Verificación previa (Task 1, vía `execute_sql` del conector MCP)**: las 3 funciones `SECURITY DEFINER` señaladas son `RETURNS trigger` con 0 argumentos (revocar `EXECUTE` no afecta su disparo como trigger); `extensions` ya existe en el `search_path` por defecto (`"$user", public, extensions`) y aloja `pgcrypto`/`uuid-ossp`/`pg_stat_statements` — mover `pg_trgm` ahí es de bajo riesgo. `grep` confirmó que ningún código llama a esas funciones por RPC.
+- **3 migraciones nuevas** (`20260902120000` → `20260905121000`, cadena única):
+  - `20260905120000`: política `"Users view own role"` de `user_roles` reescrita con `(select auth.uid())` — cierra `auth_rls_initplan`.
+  - `20260905120500`: `REVOKE EXECUTE ... FROM PUBLIC, anon, authenticated` en `handle_new_user`, `recalc_comment_votes`, `recalc_blog_comment_votes` — cierra `anon_security_definer_function_executable` / `authenticated_security_definer_function_executable` (×3).
+  - `20260905121000`: `ALTER EXTENSION pg_trgm SET SCHEMA extensions` — cierra `extension_in_public`.
+- **Verificación post-despliegue** (302 tests en verde antes de desplegar; `alembic upgrade head` en `buenchollo-api`, head confirmado en `20260905121000`):
+  - `pg_trigger` confirma los 3 triggers (`on_auth_user_created`, `comment_votes_recalc`, `blog_comment_votes_recalc`) siguen adjuntos y `tgenabled = 'O'` — el `REVOKE` no los tocó.
+  - `EXPLAIN SELECT ... WHERE title % 'iphone'` sigue usando `Bitmap Index Scan on ix_deals_title_trgm` tras mover la extensión — el operador `%` resuelve sin cambios en la app.
+  - **Advisor real re-consultado**: `anon_security_definer_function_executable`, `authenticated_security_definer_function_executable`, `extension_in_public` y `auth_rls_initplan` ya **no aparecen**. Solo queda `auth_leaked_password_protection` (toggle manual de dashboard, sin API/migración disponible) — se mantiene abierto como TD-20 en `docs/project/10-technical-debt.md`.
 
 ---
 
