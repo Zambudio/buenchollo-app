@@ -249,6 +249,7 @@ Supabase envió un aviso **crítico** el 31-ago: *"Table publicly accessible"* s
   - Migración `20260902120000_enable_rls_scheduled_deals.py`: `ALTER TABLE public.scheduled_deals ENABLE ROW LEVEL SECURITY`. RLS on + 0 políticas ⇒ `anon`/`authenticated` denegados; el backend usa la conexión de servicio (bypassa RLS) y el worker sigue operando igual.
   - Test de regresión `test_migrations_rls.py`: escanea todas las migraciones (alembic + supabase) y falla si alguna tabla de `public` se crea sin RLS. Cierra la deuda de F7.1 de ADR-006 (smoke test pendiente).
 - **Despliegue**: `alembic upgrade head` en el contenedor `buenchollo-api` (prod estaba en la revisión padre `20260829140000`). Verificado tras aplicar: `scheduled_deals.rowsecurity = true`, worker leyendo/escribiendo con normalidad.
+- **Verificado con el Advisor real de Supabase (2026-09-05, conector MCP autorizado)**: `get_advisors(type="security")` ya **no** reporta `rls_disabled_in_public`. `scheduled_deals` aparece ahora solo como `rls_enabled_no_policy` (nivel INFO, no crítico) — el mismo estado "RLS on, 0 políticas, denegado por defecto" que las otras 21 tablas. El aviso crítico queda cerrado.
 
 ---
 
