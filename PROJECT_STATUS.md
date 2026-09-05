@@ -1,5 +1,5 @@
 # PROJECT_STATUS — BuenCholloTech
-*Última actualización: 2026-09-05 (Cierre de 3/4 de TD-20: hardening del Advisor de Supabase — ver § 3.quattuorvicies)*
+*Última actualización: 2026-09-05 (Recorte persistente de imágenes para publicaciones de Telegram — ver § 3.quinvicies)*
 
 > **⚠️ Revisar este documento antes de migrar a dominio web en producción.**
 > Contiene el estado real del proyecto, deuda técnica pendiente y la hoja de ruta completa.
@@ -43,6 +43,20 @@ API versionada `/v1`, ADR-002) son correctas y defendibles profesionalmente.
 | 8 | Refactor de buenas prácticas — ver § 3.bis | ✅ Completado (2026-05-26) |
 | 9 | Failover resiliente a OpenAI oficial — ver § 3.quindecies | ✅ Completado (2026-08-29) |
 | 10 | Cierre de deuda técnica (TD-15, TD-16, TD-17) — ver § 3.sexdecies | ✅ Completado (2026-08-29) |
+
+---
+
+### 3.quinvicies  Recorte persistente de imágenes para publicaciones de Telegram — 2026-09-05
+
+- El panel de Telegram permite seleccionar por arrastre la zona de la imagen que se publicará,
+  cancelar sin cambios o aceptar el recorte desde un diálogo responsive coherente con la UI admin.
+- El navegador genera un JPEG optimizado (máximo 2560 px), lo sube al bucket público
+  `deal-images` con la sesión admin y sustituye la URL de la imagen activa. La URL persistente se
+  utiliza tanto en la publicación inmediata como en las publicaciones programadas.
+- Se añadieron pruebas de aceptación y cancelación del flujo. Suite frontend: 29 ficheros y 173
+  pruebas en verde; typecheck, lint y build de producción correctos.
+- Se normalizó con Prettier el formato pendiente de `AmazonAutofillPanel` y `admin.chollos`, que
+  estaba bloqueando el job frontend de CI sin afectar al comportamiento.
 
 ---
 

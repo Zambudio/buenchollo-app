@@ -28,7 +28,10 @@ export function AmazonAutofillPanel({
         </div>
         <div className="flex items-center gap-2">
           <Bot className="size-3.5 text-cyan-glow" />
-          <label htmlFor="ai-provider" className="font-mono text-[10px] uppercase text-muted-foreground">
+          <label
+            htmlFor="ai-provider"
+            className="font-mono text-[10px] uppercase text-muted-foreground"
+          >
             Motor IA:
           </label>
           <select
@@ -45,7 +48,8 @@ export function AmazonAutofillPanel({
         </div>
       </div>
       <p className="font-mono text-[10px] text-muted-foreground mb-3">
-        Pega tu URL de afiliado de Amazon y rellenaremos título, imagen, marca, copywriting y precios automáticamente.
+        Pega tu URL de afiliado de Amazon y rellenaremos título, imagen, marca, copywriting y
+        precios automáticamente.
       </p>
       <div className="flex flex-col sm:flex-row gap-2">
         <input

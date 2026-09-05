@@ -16,7 +16,7 @@ describe("AmazonAutofillPanel", () => {
         onUrlChange={onUrlChange}
         onProviderChange={onProviderChange}
         onAutofill={onAutofill}
-      />
+      />,
     );
 
     expect(screen.getByText(/Autocompletar desde Amazon/i)).toBeInTheDocument();
@@ -37,7 +37,7 @@ describe("AmazonAutofillPanel", () => {
         onUrlChange={vi.fn()}
         onProviderChange={onProviderChange}
         onAutofill={vi.fn()}
-      />
+      />,
     );
 
     const select = screen.getByLabelText(/Motor IA/i);
@@ -54,7 +54,7 @@ describe("AmazonAutofillPanel", () => {
         onUrlChange={vi.fn()}
         onProviderChange={vi.fn()}
         onAutofill={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText(/PROCESANDO.../i)).toBeInTheDocument();

@@ -5,7 +5,17 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { CalendarClock, ChevronLeft, ChevronRight, Loader2, Plus, Send, X } from "lucide-react";
+import {
+  CalendarClock,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Crop,
+  Loader2,
+  Plus,
+  Send,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   telegramApi,
@@ -13,6 +23,8 @@ import {
   type TelegramGenerateRequest,
 } from "@/services/api/telegram";
 import { toDatetimeLocal } from "@/lib/format";
+import { cropAndUploadTelegramImage, type CropArea } from "../image-crop";
+import { TelegramImageCropper } from "./TelegramImageCropper";
 
 export interface TelegramScheduleRequest {
   text: string;
@@ -71,12 +83,13 @@ export function TelegramPanel({
   );
 
   // Imágenes
-  const images: string[] = dealData.images?.length
-    ? dealData.images
-    : dealData.image_url
-      ? [dealData.image_url]
-      : [];
+  const [images, setImages] = useState<string[]>(() =>
+    dealData.images?.length ? dealData.images : dealData.image_url ? [dealData.image_url] : [],
+  );
   const [imageIdx, setImageIdx] = useState(0);
+  const [cropOpen, setCropOpen] = useState(false);
+  const [savingCrop, setSavingCrop] = useState(false);
+  const [croppedIndexes, setCroppedIndexes] = useState<Set<number>>(() => new Set());
 
   // Canales
   const [channels, setChannels] = useState<TelegramChannel[]>([]);
@@ -137,7 +150,11 @@ export function TelegramPanel({
       const descStr = dealData.description ? `✏️${dealData.description.trim()}\n\n` : "";
       const basicText = `🍄 ${dealData.title}\n\n${prevPriceStr}\n🛒 ${dealData.affiliate_url}\n\n${descStr}🔗 Todos los chollos en nuestra web\n\n`;
       setText(basicText);
-      const fallbackCats = extractLocalSuggestions(dealData.title, dealData.description || "", categories);
+      const fallbackCats = extractLocalSuggestions(
+        dealData.title,
+        dealData.description || "",
+        categories,
+      );
       setSuggested(fallbackCats);
       toast.error("Error generando sugerencias con IA. Se ha cargado la plantilla base.");
     } finally {
@@ -174,6 +191,25 @@ export function TelegramPanel({
       toast.error("Error añadiendo categoría");
     } finally {
       setAddingCat(false);
+    }
+  };
+
+  const handleAcceptCrop = async (crop: CropArea) => {
+    const sourceUrl = images[imageIdx];
+    if (!sourceUrl) return;
+
+    setSavingCrop(true);
+    try {
+      const croppedUrl = await cropAndUploadTelegramImage(sourceUrl, crop);
+      setImages((current) => current.map((url, index) => (index === imageIdx ? croppedUrl : url)));
+      setCroppedIndexes((current) => new Set(current).add(imageIdx));
+      setCropOpen(false);
+      toast.success("Recorte guardado para la publicación");
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "No se pudo guardar el recorte";
+      toast.error(message);
+    } finally {
+      setSavingCrop(false);
     }
   };
 
@@ -299,11 +335,31 @@ export function TelegramPanel({
           {/* ── Selector de imagen ──────────────────────────────────────── */}
           {images.length > 0 && (
             <div>
-              <span className="font-mono text-[10px] uppercase text-muted-foreground block mb-2">
-                Imagen ({imageIdx + 1} / {images.length})
-              </span>
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase text-muted-foreground">
+                  Imagen ({imageIdx + 1} / {images.length})
+                  {croppedIndexes.has(imageIdx) && (
+                    <span className="flex items-center gap-1 text-cyan-glow">
+                      <Check className="size-3" /> Recortada
+                    </span>
+                  )}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setCropOpen(true)}
+                  disabled={savingCrop}
+                  className="flex min-h-8 items-center gap-1.5 border border-surface-700 px-2.5 font-mono text-[10px] font-bold uppercase text-cyan-glow transition-colors hover:border-cyan-glow hover:bg-cyan-glow/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-glow disabled:opacity-50"
+                >
+                  <Crop className="size-3.5" />
+                  Recortar
+                </button>
+              </div>
               <div className="relative border border-surface-700 bg-surface-900 aspect-video overflow-hidden">
-                <img src={images[imageIdx]} alt="" className="w-full h-full object-contain" />
+                <img
+                  src={images[imageIdx]}
+                  alt="Vista previa de la imagen seleccionada"
+                  className="w-full h-full object-contain"
+                />
                 {images.length > 1 && (
                   <>
                     <button
@@ -475,6 +531,7 @@ export function TelegramPanel({
                   scheduling ||
                   publishing ||
                   generating ||
+                  savingCrop ||
                   !text.trim() ||
                   !scheduledAt ||
                   !channelId
@@ -493,7 +550,7 @@ export function TelegramPanel({
           <button
             type="button"
             onClick={handlePublish}
-            disabled={publishing || scheduling || !text.trim() || !channelId}
+            disabled={publishing || scheduling || savingCrop || !text.trim() || !channelId}
             className="w-full bg-cyan-glow text-surface-900 font-mono text-sm font-bold py-3 flex items-center justify-center gap-2 hover:bg-foreground disabled:opacity-50"
           >
             {publishing ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
@@ -501,6 +558,15 @@ export function TelegramPanel({
           </button>
         </div>
       </div>
+
+      {cropOpen && images[imageIdx] && (
+        <TelegramImageCropper
+          imageUrl={images[imageIdx]}
+          saving={savingCrop}
+          onAccept={handleAcceptCrop}
+          onCancel={() => setCropOpen(false)}
+        />
+      )}
     </div>
   );
 }

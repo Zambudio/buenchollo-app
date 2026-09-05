@@ -24,12 +24,12 @@ import { dealFormSchema } from "@/lib/validation/deals";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import type {
-  TelegramScheduleRequest,
-} from "@/features/telegram/components/TelegramPanel";
+import type { TelegramScheduleRequest } from "@/features/telegram/components/TelegramPanel";
 
 const TelegramPanel = lazy(() =>
-  import("@/features/telegram/components/TelegramPanel").then((m) => ({ default: m.TelegramPanel })),
+  import("@/features/telegram/components/TelegramPanel").then((m) => ({
+    default: m.TelegramPanel,
+  })),
 );
 import type { TelegramGenerateRequest } from "@/services/api/telegram";
 import {
@@ -485,7 +485,13 @@ function AdminDeals() {
   return (
     <div>
       {showTelegramPanel && telegramDealData && (
-        <Suspense fallback={<div className="fixed inset-0 z-50 bg-background/80 flex items-center justify-center font-mono text-xs text-cyan-glow">Cargando panel Telegram...</div>}>
+        <Suspense
+          fallback={
+            <div className="fixed inset-0 z-50 bg-background/80 flex items-center justify-center font-mono text-xs text-cyan-glow">
+              Cargando panel Telegram...
+            </div>
+          }
+        >
           <TelegramPanel
             dealData={telegramDealData}
             onClose={() => setShowTelegramPanel(false)}
