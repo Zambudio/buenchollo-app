@@ -141,8 +141,17 @@ Ejecutar la migración `20260527090000_enable_rls_all_tables.sql` (idempotente).
 
 Cualquier `CREATE TABLE public.X` debe ir acompañado de
 `ALTER TABLE public.X ENABLE ROW LEVEL SECURITY;` en la misma migración.
-Documentar en `CLAUDE.md` como regla obligatoria — pendiente de cerrarse
-con la check de F7.1 (smoke test).
+
+**Guardarraíl (F7.1, cerrado 2026-09-02):** el test
+`buenchollo-api/app/tests/test_migrations_rls.py` escanea todas las migraciones
+(alembic + supabase) y falla si alguna crea una tabla de `public` sin activar
+RLS. Corre en cada CI.
+
+**Regresión conocida (2026-09-02):** `scheduled_deals`
+(`20260720120000_scheduled_deals.py`, 20-jul-2026) se creó sin RLS y Supabase
+lo marcó como `rls_disabled_in_public` crítico. Corregido en
+`20260902120000_enable_rls_scheduled_deals.py` (ver `PROJECT_STATUS.md`
+§ 3.tervicies). El test anterior habría evitado que llegara a producción.
 
 ### Auditoría del `anon key`
 

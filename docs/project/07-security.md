@@ -79,8 +79,11 @@ startup si producción tiene `*`.
 - 🔐 Service role key sólo en backend, anon key sólo en frontend
 - 🧪 CI usa env dummy para tests
 - 📦 Dependabot semanal con grupos
-- 🔒 **RLS Supabase** activado en las 12 tablas. Backend bypassa con
-  `service_role` por diseño ([ADR-006](../adr/ADR-006-rls-service-role.md))
+- 🔒 **RLS Supabase** activado en todas las tablas de `public` (22). Backend
+  bypassa con `service_role` por diseño ([ADR-006](../adr/ADR-006-rls-service-role.md)).
+  El test `test_migrations_rls.py` verifica que ninguna migración cree una tabla
+  de `public` sin RLS (regresión de `scheduled_deals`, ver `PROJECT_STATUS.md`
+  § 3.tervicies)
 
 ### 📝 Logging y monitoring
 

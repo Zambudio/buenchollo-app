@@ -1,5 +1,5 @@
 # PROJECT_STATUS — BuenCholloTech
-*Última actualización: 2026-09-02 (Fix: la revisión de precios de Amazon no se ejecutaba de forma automática — ver § 3.duovicies)*
+*Última actualización: 2026-09-02 (Seguridad: RLS desactivado en `scheduled_deals` — ver § 3.tervicies)*
 
 > **⚠️ Revisar este documento antes de migrar a dominio web en producción.**
 > Contiene el estado real del proyecto, deuda técnica pendiente y la hoja de ruta completa.
@@ -235,6 +235,23 @@ abrir la web al público:
 
 ---
 
+### 3.tervicies  Seguridad: RLS desactivado en `scheduled_deals` (`rls_disabled_in_public`) — 2026-09-02
+
+Supabase envió un aviso **crítico** el 31-ago: *"Table publicly accessible"* sobre el proyecto BuenChollo.
+
+- **Diagnóstico** (consulta directa al Postgres de producción vía la conexión del backend): de las 22 tablas de `public`, **solo `scheduled_deals` tenía RLS desactivado** (0 políticas, `anon` con SELECT/INSERT/DELETE). Las otras 21 están correctas.
+- **Causa raíz**: la migración `20260720120000_scheduled_deals.py` (20-jul) creó la tabla **sin** `ENABLE ROW LEVEL SECURITY`, saltándose la regla de [ADR-006](docs/adr/ADR-006-rls-service-role.md) (toda tabla nueva de `public` activa RLS en la misma migración). 2ª vez que ocurre esta clase de fallo.
+- **Exposición real**: el `anon key` es público (va en el bundle del frontend). Con RLS off, cualquiera podía:
+  - **Inyectar** una fila `status='programado'` con `telegram_text` / `image_url` / `affiliate_url` arbitrarios → el worker de publicaciones la habría publicado en el canal de Telegram y activado el chollo web asociado (secuestro de enlace de afiliado / contenido falso).
+  - **Borrar** toda la cola de publicaciones (173 filas).
+  - Sin PII de usuarios en esa tabla.
+- **Solución**:
+  - Migración `20260902120000_enable_rls_scheduled_deals.py`: `ALTER TABLE public.scheduled_deals ENABLE ROW LEVEL SECURITY`. RLS on + 0 políticas ⇒ `anon`/`authenticated` denegados; el backend usa la conexión de servicio (bypassa RLS) y el worker sigue operando igual.
+  - Test de regresión `test_migrations_rls.py`: escanea todas las migraciones (alembic + supabase) y falla si alguna tabla de `public` se crea sin RLS. Cierra la deuda de F7.1 de ADR-006 (smoke test pendiente).
+- **Despliegue**: `alembic upgrade head` en el contenedor `buenchollo-api` (prod estaba en la revisión padre `20260829140000`). Verificado tras aplicar: `scheduled_deals.rowsecurity = true`, worker leyendo/escribiendo con normalidad.
+
+---
+
 ### 3.duovicies  Fix: la revisión de precios de Amazon no se ejecutaba de forma automática — 2026-09-02
 
 La tarea programada «Revisión de precios (Amazon)» solo funcionaba con el botón **Ejecutar ahora**; el ciclo automático del contenedor `buenchollo-scheduler` fallaba en silencio en cada tick horario.
@@ -251,6 +268,7 @@ La tarea programada «Revisión de precios (Amazon)» solo funcionaba con el bot
   - El código va montado (`.:/app`); no requiere rebuild de imagen. `docker restart buenchollo-scheduler` → arranque limpio, 5 jobs registrados (`run_scheduled_tasks` incluido).
   - Verificado dentro del contenedor en marcha: `_build_service()` resuelve (`ScheduledTaskService`, `deal_repo` OK, handler `price_check` OK). `GET /health` → `{"status":"ok","environment":"production"}`.
   - Tests del módulo scheduler + price-check en verde (42/42).
+- **Verificación funcional en producción (confirmado por Pedro, 2026-09-05)**: con la tarea en frecuencia **Diario**, el registro de ejecuciones muestra 3 corridas consecutivas tipo **AUTOMÁTICA** (una por día desde el despliegue), sin intervención manual — el ciclo automático queda confirmado end-to-end, no solo a nivel de código/logs.
 - **Deuda derivada**: ver **TD-19** en `docs/project/10-technical-debt.md` — el `except Exception` de `_run()` ocultó este fallo ~3 días sin ninguna alarma.
 
 ---
