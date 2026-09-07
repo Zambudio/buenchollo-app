@@ -6,7 +6,7 @@
 -r requirements.txt
 
 # Testing
-pytest==9.0.3
+pytest==9.1.1
 pytest-asyncio>=0.23
 # httpx ya viene pinneado a 0.27.2 desde requirements.txt (supabase 2.9.1
 # exige httpx<0.28). El TestClient síncrono de Starlette funciona bien con
