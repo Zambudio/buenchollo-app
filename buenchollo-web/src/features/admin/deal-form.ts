@@ -83,30 +83,51 @@ export function dealToForm(d: DealDetailData): DealForm {
   };
 }
 
+export const FALLBACK_VARIOS_CATEGORY_ID = "99b72435-42f6-4628-a1af-3f66af5e4a88";
+export const FALLBACK_VARIOS_SUBCATEGORY_ID = "970d38ab-20e8-43e8-97a1-5c84dfd391c5";
+
 export function resolveCategorySelection(
   categoryId: string,
   subcategoryId: string,
   categories: Category[],
   subcategories: Category[],
-): { category_id: string; subcategory_id: string } | null {
-  if (categoryId && subcategoryId) {
-    return { category_id: categoryId, subcategory_id: subcategoryId };
+): { category_id: string; subcategory_id: string } {
+  // 1. Si tenemos una categoría válida en el catálogo
+  const matchedCategory = categories.find((c) => c.id === categoryId);
+  if (matchedCategory) {
+    const matchedSubcategory = subcategories.find(
+      (s) => s.id === subcategoryId && s.parent_id === matchedCategory.id,
+    );
+    if (matchedSubcategory) {
+      return { category_id: matchedCategory.id, subcategory_id: matchedSubcategory.id };
+    }
+    // Si la categoría existe pero la subcategoría falta o no coincide con el padre,
+    // buscamos la primera subcategoría válida de esta categoría para no perder la clasificación
+    const firstSubcategory = subcategories.find((s) => s.parent_id === matchedCategory.id);
+    if (firstSubcategory) {
+      return { category_id: matchedCategory.id, subcategory_id: firstSubcategory.id };
+    }
   }
 
+  // 2. Si no hay categoría válida, buscamos "Varios" en las categorías activas
   const fallbackCategory = categories.find(
-    (category) => category.name.trim().toLocaleLowerCase("es") === "varios",
+    (category) =>
+      category.slug === "varios-xly2" || category.name.trim().toLocaleLowerCase("es") === "varios",
   );
   const fallbackSubcategory = fallbackCategory
     ? subcategories.find(
         (subcategory) =>
           subcategory.parent_id === fallbackCategory.id &&
-          subcategory.name.trim().toLocaleLowerCase("es") === "varios",
-      )
+          (subcategory.slug === "varios-y175" ||
+            subcategory.name.trim().toLocaleLowerCase("es") === "varios"),
+      ) || subcategories.find((s) => s.parent_id === fallbackCategory.id)
     : undefined;
 
-  return fallbackCategory && fallbackSubcategory
-    ? { category_id: fallbackCategory.id, subcategory_id: fallbackSubcategory.id }
-    : null;
+  // 3. Devolvemos la pareja Varios encontrada o los IDs canónicos de producción (si el catálogo aún está cargando)
+  return {
+    category_id: fallbackCategory?.id ?? FALLBACK_VARIOS_CATEGORY_ID,
+    subcategory_id: fallbackSubcategory?.id ?? FALLBACK_VARIOS_SUBCATEGORY_ID,
+  };
 }
 
 /** Construye el payload de creación/actualización desde el formulario.

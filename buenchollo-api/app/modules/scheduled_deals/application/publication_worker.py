@@ -124,7 +124,9 @@ class ScheduledPublicationWorker:
             chat_id=destination_channel_id,
         )
         if not published_to_telegram:
-            raise RuntimeError("Telegram rechazo la publicacion")
+            last_err = getattr(self.bot, "last_error", None)
+            detail = f": {last_err}" if last_err else ""
+            raise RuntimeError(f"Telegram rechazo la publicacion{detail}")
 
         scheduled.deal.current_price = current_price
         scheduled.deal.discount_percentage = scheduled.discount_percentage

@@ -122,12 +122,50 @@ describe("resolveCategorySelection", () => {
     });
   });
 
-  it("conserva una clasificación completa", () => {
+  it("conserva una clasificación completa cuando coincide con el catálogo", () => {
     expect(
-      resolveCategorySelection("category-a", "subcategory-a", [category], [subcategory]),
+      resolveCategorySelection(category.id, subcategory.id, [category], [subcategory]),
     ).toEqual({
-      category_id: "category-a",
-      subcategory_id: "subcategory-a",
+      category_id: category.id,
+      subcategory_id: subcategory.id,
+    });
+  });
+
+  it("completa la subcategoría si la categoría existe pero falta la subcategoría", () => {
+    const techCategory = {
+      id: "cat-tech",
+      name: "Informática",
+      slug: "informatica",
+      icon: null,
+      display_order: 1,
+      parent_id: null,
+    } satisfies Category;
+    const techSubcategory = {
+      id: "subcat-minipc",
+      name: "Mini PC",
+      slug: "mini-pc",
+      icon: null,
+      display_order: 1,
+      parent_id: "cat-tech",
+    } satisfies Category;
+
+    expect(
+      resolveCategorySelection(
+        "cat-tech",
+        "",
+        [techCategory, category],
+        [techSubcategory, subcategory],
+      ),
+    ).toEqual({
+      category_id: "cat-tech",
+      subcategory_id: "subcat-minipc",
+    });
+  });
+
+  it("devuelve los IDs canónicos de producción cuando el catálogo aún no ha cargado", () => {
+    expect(resolveCategorySelection("", "", [], [])).toEqual({
+      category_id: "99b72435-42f6-4628-a1af-3f66af5e4a88",
+      subcategory_id: "970d38ab-20e8-43e8-97a1-5c84dfd391c5",
     });
   });
 });

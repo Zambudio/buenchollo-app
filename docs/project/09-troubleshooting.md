@@ -321,6 +321,37 @@ command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --po
 
 ---
 
+## 📢 Telegram y Publicaciones Programadas
+
+### ❌ Error al publicar en Telegram: "Telegram rechazó la publicación" (`failed to get HTTP URL content`)
+
+**Síntoma:** Una oferta programada o enviada desde el panel admin da error en Telegram y el chollo no se publica ni en Telegram ni en la web. Al cambiar la foto por otra, a veces sí funciona.
+
+**Causa:**
+Cuando el backend le pasa una URL a la Bot API de Telegram (`sendPhoto` con `{"photo": image_url}`), son los propios servidores de Telegram los que intentan descargar la imagen mediante HTTP GET. Las redes CDN de Amazon (`m.media-amazon.com`) o Supabase Storage (`deal-images`) a menudo aplican WAF/rate-limiting/bloqueo a las peticiones del bot de Telegram, respondiendo con `400 Bad Request: failed to get HTTP URL content`.
+
+**Solución aplicada:**
+1. `TelegramBot` (`app/modules/telegram/infrastructure/telegram_bot.py`) ahora pre-descarga la imagen en memoria con User-Agent de navegador (inmune a bloqueos de Amazon y Supabase) y se la transfiere directamente a Telegram mediante upload binario `multipart/form-data`.
+2. Si por algún motivo la descarga local no responde, cuenta con fallback a envío por URL directa.
+3. Se captura y formatea la descripción detallada devuelta por Telegram (`resp.json().get('description')`) para registrar en los logs y en la notificación de error la razón exacta del rechazo.
+
+---
+
+### 🚫 Bloqueo al guardar/programar en Telegram: "No se encontró la categoría y subcategoría Varios"
+
+**Síntoma:** Al usar "Pegar y rellenar" desde Amazon, se abre el panel de Telegram. Si la IA no asigna categoría y el campo se queda vacío, al pulsar "Programar" o "Guardar" la validación muestra un toast de error y no deja continuar, forzando a salir al formulario web.
+
+**Causa:**
+1. En el backend, si la IA devolvía `category_id: null` o una categoría principal sin subcategoría, no existía rescate automático en `preview_product_from_url.py`.
+2. En el frontend, `resolveCategorySelection` exigía tanto `categoryId` como `subcategoryId` cargados en memoria. Si el catálogo aún estaba cargando desde la API o la respuesta de la IA estaba incompleta, devolvía `null` y bloqueaba la validación.
+
+**Solución aplicada:**
+1. **En Backend (`preview_product_from_url.py`):** Si falta la categoría o la subcategoría, el backend le asigna automáticamente la categoría activa "Varios" y la subcategoría "Varios" (o la primera subcategoría válida de la categoría detectada), usando IDs canónicos de producción (`99b72435...` / `970d38ab...`).
+2. **En Frontend (`deal-form.ts`):** `resolveCategorySelection` nunca devuelve `null`, preserva la categoría principal si existe y garantiza la asignación de *Varios / Varios* de inmediato.
+3. En `admin.chollos.tsx`, el formulario y el payload de programación siempre cuentan con taxonomía válida.
+
+---
+
 ## 🐛 Sentry
 
 ### 🔇 No llegan eventos a Sentry aunque hay errores

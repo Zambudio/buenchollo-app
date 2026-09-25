@@ -173,8 +173,8 @@ function AdminDeals() {
         previous_price: d.original_price ? String(d.original_price) : f.previous_price,
         affiliate_url: url,
         store_id: amazonStore?.id ?? f.store_id,
-        category_id: categorySelection?.category_id ?? d.category_id ?? "",
-        subcategory_id: categorySelection?.subcategory_id ?? d.subcategory_id ?? "",
+        category_id: categorySelection.category_id,
+        subcategory_id: categorySelection.subcategory_id,
         expires_at: d.expires_at ? toDatetimeLocal(d.expires_at) : "",
         telegram_text: d.telegram_text || f.telegram_text,
         external_id: d.asin || f.external_id,
@@ -285,10 +285,6 @@ function AdminDeals() {
       cats,
       subcats,
     );
-    if (!categorySelection) {
-      toast.error("No se encontró la categoría y subcategoría Varios");
-      return false;
-    }
     const asin = form.external_id.trim().toUpperCase();
     if (!/^[A-Z0-9]{10}$/.test(asin)) {
       toast.error("Para programar se necesita un ASIN de Amazon válido (10 caracteres)");
@@ -329,7 +325,7 @@ function AdminDeals() {
       store_name: storeName,
       store_id: payload.store_id,
       category_id: categorySelection.category_id,
-      subcategory_id: payload.subcategory_id,
+      subcategory_id: categorySelection.subcategory_id,
       brand: payload.brand,
       shipping_info: payload.shipping_info,
       expires_at: payload.expires_at,
@@ -378,10 +374,6 @@ function AdminDeals() {
       cats,
       subcats,
     );
-    if (!categorySelection) {
-      toast.error("No se encontró la categoría y subcategoría Varios");
-      return;
-    }
 
     const formToSave = { ...form, ...categorySelection };
     const payload = buildDealPayload(formToSave, editing);

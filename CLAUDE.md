@@ -163,3 +163,29 @@ Para conectar por SSH al NAS y hacer rebuild/redeploy de `buenchollo-api` (Docke
 - **Cloudflare endurecido**: TLS Full (strict) + HSTS, redirect `www`→raíz, WAF + rate limiting + Bot Fight Mode. Detalle y bitácora en [`docs/guides/Cloudflare.md`](docs/guides/Cloudflare.md).
 - Login Google (Supabase) OK · Panel admin funcionando · CI de `main` en verde · flujo `main`/`develop` operativo.
 - **Deuda técnica**: registro vivo y completo en [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md). Lo más urgente: cifras de tests por reconciliar (TD-01) y `CORS_ORIGINS` que exige JSON array en vez de CSV (TD-02).
+
+---
+
+## 🧠 Base de Conocimiento Global (OBSIDIAN VAULT)
+
+Este proyecto está formalmente integrado con nuestra base de conocimiento general para todos los proyectos:
+📁 **`z:\IA\02_Proyectos\OBSIDIAN VAULT`**
+
+### Reglas Obligatorias para Claude Code / Agentes de IA:
+1. **Consulta Previa Obligatoria al Desarrollar**: Siempre que estemos desarrollando, buscando arquitecturas, configurando endpoints, ajustando Cloudflare o resolviendo errores, **el agente DEBE buscar y consultar información primero en `OBSIDIAN VAULT`** (`OBSIDIAN VAULT/index.md`).
+   - Ficha de entidad: `Entities/Proyecto-BuenCholloTech.md`.
+   - Conceptos arquitectónicos clave: `Concepts/Despliegue-Edge-Cloudflare-Workers-TanStack.md`, `Concepts/Exposicion-Segura-Cloudflare-Tunnel.md`, `Concepts/Integracion-Supabase-PgBouncer-FastAPI.md`, `Concepts/Flujo-Ramas-CI-CD-Produccion-Develop.md`, `Concepts/Patron-Monolito-Modular-FastAPI.md` y la pasarela `Entities/Servicio-OmniRoute-Gateway.md`.
+2. **Referencias cruzadas**: Si el usuario indica *"Hazlo como en el proyecto X"*, consulta las fichas correspondientes en `OBSIDIAN VAULT/Entities/` y `OBSIDIAN VAULT/Concepts/` para respetar las decisiones de diseño adoptadas en otros desarrollos.
+3. **Reutilización**: Reutiliza patrones existentes antes de inventar soluciones dispares.
+4. **Documentar y Relacionar Obligatoriamente Nuevos Desarrollos e Implementaciones**:
+   - Si se añade una nueva funcionalidad relevante, se toma una decisión arquitectónica (ADR), se agrega una integración cloud o se refactoriza un componente:
+   - **DEBE documentarse e interrelacionarse de inmediato en `OBSIDIAN VAULT`**.
+   - Seguir estrictamente la metodología Wiki-Base (`OBSIDIAN VAULT/SCHEMA.md`):
+     - Conservar fuentes inmutables en `RAW/` si aplica.
+     - Crear/actualizar fichas en `Entities/` o `Concepts/` con frontmatter YAML (`tags`, `updated: YYYY-MM-DD`, `fuentes`).
+     - Sección `## Cross-references` con Wikilinks nativos `[[...]]`, enlazando a las notas conceptuales y SIEMPRE a `[[index]]`, `[[SCHEMA]]` y `[[log]]`.
+     - Sección `## Fuentes`.
+     - Regla del Vault Cerrado (enlaces de navegación markdown estrictamente internos al Vault; rutas del proyecto como texto plano en backticks).
+     - Actualizar obligatoriamente `OBSIDIAN VAULT/index.md` y registrar la entrada en `OBSIDIAN VAULT/log.md`.
+5. **Criterio de Síntesis**: No documentes cambios de código menores ni datos efímeros; enfócate en patrones transferibles y lecciones aprendidas.
+

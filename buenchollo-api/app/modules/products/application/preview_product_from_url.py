@@ -92,5 +92,35 @@ class PreviewProductFromUrlUseCase:
             if ai_data.get("expires_at"):
                 product.expires_at = ai_data.get("expires_at")
 
+        # Fallback de categorización garantizado si la IA no clasificó o dejó incompleta la taxonomía
+        if not product.category_id or not product.subcategory_id:
+            varios_cat = next(
+                (
+                    c for c in categories
+                    if not c.get("parent_id") and (
+                        c.get("name", "").strip().lower() == "varios" or c.get("slug") == "varios-xly2"
+                    )
+                ),
+                None,
+            )
+            varios_cat_id = varios_cat["id"] if varios_cat else "99b72435-42f6-4628-a1af-3f66af5e4a88"
+            varios_sub = next(
+                (
+                    c for c in categories
+                    if c.get("parent_id") == varios_cat_id and (
+                        c.get("name", "").strip().lower() == "varios" or c.get("slug") == "varios-y175"
+                    )
+                ),
+                None,
+            )
+            varios_sub_id = varios_sub["id"] if varios_sub else "970d38ab-20e8-43e8-97a1-5c84dfd391c5"
+
+            if not product.category_id:
+                product.category_id = varios_cat_id
+                product.subcategory_id = varios_sub_id
+            elif not product.subcategory_id:
+                first_sub = next((c for c in categories if c.get("parent_id") == product.category_id), None)
+                product.subcategory_id = first_sub["id"] if first_sub else varios_sub_id
+
         return product
 

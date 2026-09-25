@@ -44,6 +44,17 @@ API versionada `/v1`, ADR-002) son correctas y defendibles profesionalmente.
 | 9 | Failover resiliente a OpenAI oficial — ver § 3.quindecies | ✅ Completado (2026-08-29) |
 | 10 | Cierre de deuda técnica (TD-15, TD-16, TD-17) — ver § 3.sexdecies | ✅ Completado (2026-08-29) |
 
+### 3.sexvicies Resiliencia en envío de fotos Telegram (Multipart) y Fallback de Categorías — 2026-09-25
+
+- **Diagnóstico y solución del fallo en Telegram ("failed to get HTTP URL content")**:
+  - Al publicar ofertas (automáticas o manuales) pasando la URL de la foto a la Bot API de Telegram (`sendPhoto` con `photo: url`), los servidores de Telegram intentaban descargar la imagen desde Amazon o Supabase Storage. Ambas CDNs aplican WAF/rate-limiting/bloqueos al User-Agent o IPs de Telegram, fallando intermitentemente con `400 Bad Request: failed to get HTTP URL content`.
+  - Se modificó `TelegramBot` (`telegram_bot.py`) para pre-descargar la imagen desde nuestro servidor en memoria y enviarla como archivo binario `multipart/form-data`. Si la pre-descarga no estuviera disponible, hace fallback al método por URL.
+  - Se mejoró la extracción y registro de errores de Telegram (`resp.json().get('description')`) y se propagó el mensaje detallado a `publication_worker.py` y notificaciones al admin en lugar del genérico "Telegram rechazo la publicacion".
+- **Resolución de categorías huérfanas o vacías en Telegram/Web**:
+  - En el backend (`preview_product_from_url.py`): si la IA no devuelve categoría o subcategoría, se asigna automáticamente de rescate la categoría y subcategoría "Varios" activa de la base de datos (o IDs canónicos de fallback).
+  - En el frontend (`deal-form.ts`): `resolveCategorySelection` ahora es infalible (nunca devuelve `null`), preserva la categoría principal completando la primera subcategoría si la IA devolvió categoría sin subcategoría, y utiliza IDs canónicos de producción en caso de que el catálogo se encuentre cargando.
+  - En `admin.chollos.tsx`: `autofillFromAmazon`, `scheduleFromTelegram` y `save` ya no bloquean ni generan mensajes confusos si la categoría no vino rellenada desde Amazon/IA.
+
 ---
 
 ### 3.quinvicies  Recorte persistente de imágenes para publicaciones de Telegram — 2026-09-05
