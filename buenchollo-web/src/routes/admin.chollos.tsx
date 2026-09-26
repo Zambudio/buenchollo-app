@@ -528,6 +528,9 @@ function AdminDeals() {
 
       <ScheduledDealsCalendar
         refreshToken={calendarRefresh}
+        stores={stores}
+        cats={cats}
+        subcats={subcats}
         openDealId={calendarDealId}
         onOpenHandled={() => setCalendarDealId(null)}
         onChanged={() => {

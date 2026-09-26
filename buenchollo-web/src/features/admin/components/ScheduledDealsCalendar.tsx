@@ -25,6 +25,8 @@ import {
 } from "@/services/api/scheduled-deals";
 import { ApiError } from "@/services/api/client";
 import { telegramApi, type TelegramChannel } from "@/services/api/telegram";
+import type { Category } from "@/services/api/categories";
+import type { Store } from "@/services/api/stores";
 import { adminInputCls as inputCls } from "../deal-form";
 
 const STATUS_COLORS: Record<ScheduledDealStatus, string> = {
@@ -46,32 +48,55 @@ const STATUS_LABELS: Record<ScheduledDealStatus, string> = {
 interface Props {
   readonly refreshToken: number;
   readonly onChanged: () => void;
+  readonly stores: Store[];
+  readonly cats: Category[];
+  readonly subcats: Category[];
   readonly openDealId?: string | null;
   readonly onOpenHandled?: () => void;
 }
 
 interface EditorState {
+  asin: string;
   title: string;
   description_web: string;
+  short_description: string;
   telegram_text: string;
   telegram_channel_id: string;
   offer_price: string;
   regular_price: string;
   image_url: string;
+  images: string;
   affiliate_url: string;
+  store_id: string;
+  category_id: string;
+  subcategory_id: string;
+  brand: string;
+  shipping_info: string;
+  expires_at: string;
+  show_keepa_chart: boolean;
   scheduled_at: string;
 }
 
 function editorFromDeal(deal: ScheduledDealData): EditorState {
   return {
+    asin: deal.asin,
     title: deal.title,
     description_web: deal.description_web,
+    short_description: deal.short_description ?? "",
     telegram_text: deal.telegram_text,
     telegram_channel_id: deal.telegram_channel_id ?? "",
     offer_price: String(deal.offer_price),
     regular_price: deal.regular_price == null ? "" : String(deal.regular_price),
     image_url: deal.image_url ?? "",
+    images: deal.images.join("\n"),
     affiliate_url: deal.affiliate_url,
+    store_id: deal.store_id ?? "",
+    category_id: deal.category_id,
+    subcategory_id: deal.subcategory_id ?? "",
+    brand: deal.brand ?? "",
+    shipping_info: deal.shipping_info ?? "",
+    expires_at: deal.expires_at ? toDatetimeLocal(deal.expires_at) : "",
+    show_keepa_chart: deal.show_keepa_chart,
     scheduled_at: toDatetimeLocal(deal.scheduled_at),
   };
 }
@@ -83,6 +108,9 @@ function localDayKey(date: Date): string {
 export function ScheduledDealsCalendar({
   refreshToken,
   onChanged,
+  stores,
+  cats,
+  subcats,
   openDealId,
   onOpenHandled,
 }: Props) {
@@ -93,6 +121,11 @@ export function ScheduledDealsCalendar({
   const [selected, setSelected] = useState<ScheduledDealData | null>(null);
   const [editor, setEditor] = useState<EditorState | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const filteredSubcats = useMemo(
+    () => subcats.filter((subcategory) => subcategory.parent_id === editor?.category_id),
+    [editor?.category_id, subcats],
+  );
 
   const load = useCallback(async (activeRange?: { start: string; end: string }) => {
     const targetRange = activeRange ?? rangeRef.current;
@@ -230,7 +263,16 @@ export function ScheduledDealsCalendar({
     const current = Number(editor.offer_price);
     const regular = editor.regular_price ? Number(editor.regular_price) : null;
     const scheduledAt = new Date(editor.scheduled_at);
-    const expiresAt = selected.expires_at ? new Date(selected.expires_at) : null;
+    const expiresAt = editor.expires_at ? new Date(editor.expires_at) : null;
+    const asin = editor.asin.trim().toUpperCase();
+    if (!/^[A-Z0-9]{10}$/.test(asin)) {
+      toast.error("El ASIN debe tener 10 letras o números");
+      return;
+    }
+    if (!editor.category_id) {
+      toast.error("Selecciona una categoría web");
+      return;
+    }
     if (Number.isNaN(scheduledAt.getTime()) || scheduledAt <= new Date()) {
       toast.error("La fecha programada debe estar en el futuro");
       return;
@@ -239,18 +281,35 @@ export function ScheduledDealsCalendar({
       toast.error("La publicación debe programarse antes de que caduque el chollo");
       return;
     }
+    const webImages = editor.images
+      .split(/\r?\n/)
+      .map((image) => image.trim())
+      .filter(Boolean)
+      .slice(0, 20);
+    const selectedStore = stores.find((store) => store.id === editor.store_id);
     setSaving(true);
     try {
       await scheduledDealsService.update(selected.id, {
+        asin,
         title: editor.title,
         description_web: editor.description_web,
+        short_description: editor.short_description || null,
         telegram_text: editor.telegram_text,
         telegram_channel_id: editor.telegram_channel_id || null,
         offer_price: current,
         regular_price: regular,
         discount_percentage: calculateDiscount(current, regular) ?? 0,
         image_url: editor.image_url || null,
+        images: webImages,
         affiliate_url: editor.affiliate_url,
+        store_id: editor.store_id || null,
+        store_name: selectedStore?.name ?? selected.store_name,
+        category_id: editor.category_id,
+        subcategory_id: editor.subcategory_id || null,
+        brand: editor.brand || null,
+        shipping_info: editor.shipping_info || null,
+        expires_at: expiresAt?.toISOString() ?? null,
+        show_keepa_chart: editor.show_keepa_chart,
         scheduled_at: scheduledAt.toISOString(),
       });
       closeModal();
@@ -332,7 +391,12 @@ export function ScheduledDealsCalendar({
             onClick={closeModal}
             aria-label="Cerrar"
           />
-          <div className="relative w-full max-w-3xl max-h-[92vh] overflow-y-auto bg-surface-800 border border-surface-600 p-4 sm:p-6">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="scheduled-deal-editor-title"
+            className="relative w-full max-w-4xl max-h-[92vh] overflow-y-auto bg-surface-800 border border-surface-600 p-4 sm:p-6"
+          >
             <div className="flex items-start justify-between gap-3 mb-4">
               <div>
                 <span
@@ -341,7 +405,9 @@ export function ScheduledDealsCalendar({
                 >
                   {STATUS_LABELS[selected.status]}
                 </span>
-                <h4 className="font-mono text-sm mt-1">Vista previa y edición</h4>
+                <h4 id="scheduled-deal-editor-title" className="font-mono text-sm mt-1">
+                  Vista previa y edición
+                </h4>
               </div>
               <button onClick={closeModal} className="p-1 hover:text-red-500" aria-label="Cerrar">
                 <X className="size-4" />
@@ -370,6 +436,15 @@ export function ScheduledDealsCalendar({
                   value={editor.title}
                   onChange={(e) => setEditor({ ...editor, title: e.target.value })}
                   className={inputCls}
+                  aria-label="Título web"
+                />
+                <input
+                  disabled={!editable}
+                  value={editor.short_description}
+                  onChange={(e) => setEditor({ ...editor, short_description: e.target.value })}
+                  className={inputCls}
+                  aria-label="Resumen web"
+                  placeholder="Descripción corta"
                 />
                 <div className="grid grid-cols-2 gap-3">
                   <input
@@ -390,6 +465,77 @@ export function ScheduledDealsCalendar({
                     className={inputCls}
                     aria-label="Precio habitual"
                   />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <input
+                    disabled={!editable}
+                    value={editor.brand}
+                    onChange={(e) => setEditor({ ...editor, brand: e.target.value })}
+                    className={inputCls}
+                    aria-label="Marca web"
+                    placeholder="Marca"
+                  />
+                  <input
+                    disabled={!editable}
+                    value={editor.shipping_info}
+                    onChange={(e) => setEditor({ ...editor, shipping_info: e.target.value })}
+                    className={inputCls}
+                    aria-label="Envío web"
+                    placeholder="Información de envío"
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <select
+                    disabled={!editable}
+                    value={editor.store_id}
+                    onChange={(e) => setEditor({ ...editor, store_id: e.target.value })}
+                    className={inputCls}
+                    aria-label="Tienda web"
+                  >
+                    <option value="">— Tienda —</option>
+                    {stores.map((store) => (
+                      <option key={store.id} value={store.id}>
+                        {store.name}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    disabled={!editable}
+                    required
+                    value={editor.category_id}
+                    onChange={(e) =>
+                      setEditor({ ...editor, category_id: e.target.value, subcategory_id: "" })
+                    }
+                    className={inputCls}
+                    aria-label="Categoría web"
+                  >
+                    <option value="">— Categoría —</option>
+                    {cats.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    disabled={!editable || !editor.category_id || filteredSubcats.length === 0}
+                    value={editor.subcategory_id}
+                    onChange={(e) => setEditor({ ...editor, subcategory_id: e.target.value })}
+                    className={inputCls}
+                    aria-label="Subcategoría web"
+                  >
+                    <option value="">
+                      {editor.category_id
+                        ? filteredSubcats.length
+                          ? "— Subcategoría —"
+                          : "Sin subcategorías"
+                        : "Elige categoría primero"}
+                    </option>
+                    {filteredSubcats.map((subcategory) => (
+                      <option key={subcategory.id} value={subcategory.id}>
+                        {subcategory.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <label className="block">
                   <span className="font-mono text-[10px] uppercase text-muted-foreground">
@@ -418,6 +564,15 @@ export function ScheduledDealsCalendar({
                   value={editor.scheduled_at}
                   onChange={(e) => setEditor({ ...editor, scheduled_at: e.target.value })}
                   className={inputCls}
+                  aria-label="Fecha de publicación"
+                />
+                <input
+                  disabled={!editable}
+                  type="datetime-local"
+                  value={editor.expires_at}
+                  onChange={(e) => setEditor({ ...editor, expires_at: e.target.value })}
+                  className={inputCls}
+                  aria-label="Caducidad web"
                 />
                 <input
                   disabled={!editable}
@@ -433,8 +588,42 @@ export function ScheduledDealsCalendar({
                   className={inputCls}
                   aria-label="URL imagen"
                 />
+                <div className="flex items-center gap-3 bg-surface-900 border border-surface-600 px-3 py-2.5">
+                  <input
+                    disabled={!editable}
+                    value={editor.asin}
+                    onChange={(e) => setEditor({ ...editor, asin: e.target.value })}
+                    className="flex-1 bg-transparent font-mono text-xs outline-none"
+                    aria-label="ASIN web"
+                    placeholder="ASIN de Amazon"
+                  />
+                  <label className="flex items-center gap-2 font-mono text-[10px] text-muted-foreground whitespace-nowrap">
+                    <input
+                      disabled={!editable}
+                      type="checkbox"
+                      checked={editor.show_keepa_chart}
+                      onChange={(e) => setEditor({ ...editor, show_keepa_chart: e.target.checked })}
+                      className="accent-cyan-500"
+                    />
+                    Mostrar gráfica Keepa
+                  </label>
+                </div>
               </div>
             </div>
+
+            <label className="block mt-4">
+              <span className="font-mono text-[10px] uppercase text-muted-foreground">
+                Imágenes web (una URL por línea)
+              </span>
+              <textarea
+                disabled={!editable}
+                rows={3}
+                value={editor.images}
+                onChange={(e) => setEditor({ ...editor, images: e.target.value })}
+                className={inputCls + " mt-1"}
+                aria-label="Imágenes web"
+              />
+            </label>
 
             <label className="block mt-4">
               <span className="font-mono text-[10px] uppercase text-muted-foreground">
