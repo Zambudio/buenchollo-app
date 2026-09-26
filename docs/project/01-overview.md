@@ -52,8 +52,12 @@ y comentan, y el sistema notifica vía **alertas personalizadas** y un
 | 🔔 `alerts` | Alertas por keyword/categoría/precio. AlertMatcher cruza cada chollo nuevo |
 | 📬 `notifications` | Bandeja in-app + badge en el header |
 | 🤖 `ai` | Motor de IA desacoplado (OmniRoute/OpenCode/modelos gratuitos), fallback multi-modelo y base para Chatbot web |
+| 📊 `analytics` | Analítica first-party, atribución por sesión, contador de blog y exclusión de dispositivo |
+| 📝 `blog` / `blog_comments` | Artículos, categorías editoriales, votos y comentarios del blog |
 | 📦 `products` | Preview de URL Amazon (extracción ASIN + enriquecimiento IA con copywriting y categorías) |
 | ✈️ `telegram` | Publicación al canal con formato emoji premium, hashtags IA y programación de deals |
+| 🗓️ `scheduled_deals` | Cola y calendario de publicaciones web/Telegram, con edición previa integral |
+| ⏱️ `scheduled_tasks` | Motor registrable de mantenimiento y revisión periódica de precios |
 | 🏷️ `categories` | Catálogo maestro (admin) |
 | 🏪 `stores` | Catálogo maestro (admin) |
 | 👤 `users` | Perfil, roles, stats |
@@ -90,17 +94,23 @@ y comentan, y el sistema notifica vía **alertas personalizadas** y un
 4. 🔔  Usuario crea alerta · vota · comenta · favorito
         │
         ▼
-5. 🛠️  Admin pega URL Amazon → autocomplete + IA     [/admin/chollos]
+5. 🛠️  Admin pega URL Amazon/link.amazon → autocomplete + IA [/admin/chollos]
         │
         ├─ 🎯 AlertMatcher dispara notificaciones
         ├─ 📋 admin_audit_log registra la acción
         └─ ✈️ Publicación opcional a Telegram
         │
         ▼
-6. ⏰  Scheduler interno                              [cada 5 min]
+6. ⏰  Scheduler dedicado                            [contenedor propio]
         ├─ Marca chollos expirados
-        ├─ Activa programados
-        └─ Limpia recursos antiguos                   [03:00 daily]
+        ├─ Publica programados en web/Telegram
+        ├─ Ejecuta revisión periódica de precios
+        └─ Aplica retención de analítica
+
+7. 📊  Analítica first-party                         [/admin/analitica]
+        ├─ Atribuye buscadores, Telegram, referencias y directo
+        ├─ Cuenta lecturas únicas del blog
+        └─ Permite excluir el navegador del administrador
 ```
 
 ---
@@ -140,6 +150,8 @@ Más detalle en [`03 · Estructura del proyecto`](03-project-structure.md).
 - [07 · Seguridad](07-security.md)
 - [08 · Despliegue](08-deployment.md)
 - [09 · Troubleshooting](09-troubleshooting.md)
+- [10 · Deuda técnica](10-technical-debt.md)
+- [11 · Estado actual verificado](11-current-state.md)
 
 ---
 

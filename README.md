@@ -16,7 +16,7 @@
   <a href="https://github.com/Zambudio/buenchollo-app/actions/workflows/ci.yml">
     <img alt="CI Status" src="https://img.shields.io/badge/CI%2FCD-Passing-22c55e?style=for-the-badge&logo=githubactions&logoColor=white">
   </a>
-  <img alt="Tests" src="https://img.shields.io/badge/Tests-237%20Passing-22c55e?style=for-the-badge&logo=vitest&logoColor=white">
+  <img alt="Tests" src="https://img.shields.io/badge/Tests-511%20Passing-22c55e?style=for-the-badge&logo=vitest&logoColor=white">
   <img alt="Security" src="https://img.shields.io/badge/Security-OWASP%20Audited-059669?style=for-the-badge&logo=shieldsdotio&logoColor=white">
 </p>
 
@@ -56,7 +56,7 @@ Extracción de atributos, generación de copies persuasivos para Telegram y cate
 <td width="50%">
 
 ### 🛒 Autocompletado Amazon & Keepa
-Pega una URL de Amazon y el sistema extrae automáticamente el **ASIN, título, precio, descuento, imágenes** e integra la **gráfica de historial de precios de Keepa** en tiempo real.
+Pega una URL de Amazon —incluidos los nuevos enlaces **`link.amazon`**— y el sistema extrae automáticamente el **ASIN, título, precio, descuento, imágenes** e integra la **gráfica de historial de precios de Keepa** en tiempo real.
 
 </td>
 </tr>
@@ -84,7 +84,7 @@ Motor de *matching* de alta velocidad en backend. Notifica a usuarios según cri
 <td width="50%">
 
 ### ✈️ Distribución Multicanal a Telegram
-Integración nativa con **Telegram Bot API**. Permite previsualizar el mensaje formateado con Emojis Premium y publicarlo con un solo clic a canales o grupos.
+Integración nativa con **Telegram Bot API**. Permite previsualizar, publicar o programar el mensaje; el enlace general pasa por **`/telegram`** para medir su tráfico sin alterar el enlace afiliado de compra.
 
 </td>
 </tr>
@@ -99,6 +99,20 @@ Frontend desplegado serverless en **Cloudflare Workers** (SSR). Backend FastAPI 
 
 ### 📊 Dashboard Admin & Audit Log
 Panel de control con métricas agregadas (chollos, tráfico, usuarios, favoritas) y registro de auditoría inmutable (**`admin_audit_log`**) trazable por `request_id` único.
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+### 👁️ Analítica First-Party
+Visitas, visitantes únicos, sesiones, procedencia, lecturas del blog y conversión Telegram → blog, con contador público por artículo y exclusión del dispositivo del administrador.
+
+</td>
+<td width="50%">
+
+### 🗓️ Edición de Publicaciones Programadas
+Calendario administrativo con edición integral de los datos web —incluidas categoría y subcategoría— y control independiente del contenido de Telegram.
 
 </td>
 </tr>
@@ -182,7 +196,7 @@ buenchollo-api/app/modules/<dominio>/
 
 ## 📋 ADRs (Architecture Decision Records)
 
-El proyecto cuenta con **13 ADRs formalizados** que documentan el contexto y la justificación de cada hito técnico:
+El proyecto cuenta con **14 ADRs formalizados** que documentan el contexto y la justificación de cada hito técnico:
 
 | # | Título | Decisión | Estado |
 |---|---|---|---|
@@ -191,7 +205,7 @@ El proyecto cuenta con **13 ADRs formalizados** que documentan el contexto y la 
 | [ADR-003](docs/adr/ADR-003-autenticacion-supabase-jwt.md) | Autenticación basada en Supabase Auth | Validación de tokens JWT en backend server-side | ✅ Aceptado |
 | [ADR-004](docs/adr/ADR-004-persistencia-sqlalchemy-pgbouncer.md) | Persistencia Asíncrona | SQLAlchemy 2 async + asyncpg + PgBouncer pooler | ✅ Aceptado |
 | [ADR-005](docs/adr/ADR-005-validacion-doble-frontera.md) | Validación en Doble Frontera | Zod en cliente (UX) + Pydantic v2 en servidor (Seguridad) | ✅ Aceptado |
-| [ADR-006](docs/adr/ADR-006-rls-service-role.md) | Hardening de Base de Datos | Row Level Security (RLS) en 12 tablas + service_role key | ✅ Aceptado |
+| [ADR-006](docs/adr/ADR-006-rls-service-role.md) | Hardening de Base de Datos | RLS obligatorio en tablas públicas + service_role key | ✅ Aceptado |
 | [ADR-007](docs/adr/ADR-007-di-fastapi-depends.md) | Inyección de Dependencias | Inyección nativa con `Depends` de FastAPI | ✅ Aceptado |
 | [ADR-008](docs/adr/ADR-008-estrategia-calidad-testing.md) | Estrategia de Calidad y Testing | Pirámide de testing 100/80/0 + Quality Gates | ✅ Aceptado |
 | [ADR-009](docs/adr/ADR-009-uso-de-ia-en-desarrollo.md) | Desarrollo Asistido por IA | Uso supervisado de Claude Code con reglas en `CLAUDE.md` | ✅ Aceptado |
@@ -199,6 +213,7 @@ El proyecto cuenta con **13 ADRs formalizados** que documentan el contexto y la 
 | [ADR-011](docs/adr/ADR-011-blog-tiptap-editor.md) | Motor de Contenido y Blog | Integración de editor WYSIWYG Tiptap + comentarios | ✅ Aceptado |
 | [ADR-012](docs/adr/ADR-012-motor-tareas-programadas.md) | Motor Asíncrono de Crons | Scheduled tasks engine en background sin dependencias pesadas | ✅ Aceptado |
 | [ADR-013](docs/adr/ADR-013-motor-ia-unificado-omniroute-modelos-gratuitos.md) | OmniRoute AI Engine | Router unificado de modelos LLM con fallback resiliente | ✅ Aceptado |
+| [ADR-014](docs/adr/ADR-014-analitica-first-party-atribucion-sesiones.md) | Analítica first-party | Atribución por sesión, privacidad y contador público del blog | ✅ Aceptado |
 
 ---
 
@@ -209,7 +224,7 @@ El proyecto cuenta con **13 ADRs formalizados** que documentan el contexto y la 
 | **Frontend** | React 19 · TypeScript Strict · Vite · TanStack Router · TanStack Query · Tailwind CSS · shadcn/ui · Tiptap Editor | UI/UX interactiva de alto rendimiento con SSR en Edge |
 | **Backend** | Python 3.11 · FastAPI 0.136 · SQLAlchemy 2.0 Async · asyncpg · Pydantic v2 · SlowAPI | API Gateway asíncrono de alta velocidad |
 | **Persistencia & Auth** | PostgreSQL (Supabase Managed) · Supabase Auth (Google OAuth) · Supabase Storage | Base de datos relacional con RLS, autenticación y storage |
-| **Edge & Cloud** | Cloudflare Workers · Cloudflare Tunnel · Cloudflare WAF · Let's Encrypt | Despliegue global en Edge con túnel Zero-Trust hacia el NAS |
+| **Edge & Cloud** | Cloudflare Workers · Cloudflare Tunnel · Cloudflare WAF | Despliegue global en Edge con túnel Zero-Trust hacia el NAS |
 | **Integraciones** | Amazon Creators API · Keepa API · OpenAI GPT-4o / OmniRoute · Telegram Bot API · Sentry SaaS | Extracción de datos, IA, notificaciones push y telemetría |
 | **DevOps & QA** | GitHub Actions · Docker & Compose · Husky · Vitest · Playwright · Alembic | Pipeline CI/CD automatizado, tests y migraciones |
 
@@ -217,7 +232,8 @@ El proyecto cuenta con **13 ADRs formalizados** que documentan el contexto y la 
 
 ## 🧪 Estrategia de Testing & Calidad
 
-> 📊 **237 Tests Automatizados Verdes** (127 Pytest + 102 Vitest + 8 E2E Playwright).
+> 📊 **511 tests automatizados verdes**, verificados el 2026-09-26: 309 Pytest
+> (272 sin BD + 37 de integración), 186 Vitest y 16 E2E Playwright.
 
 ```bash
 # 🐍 Ejecución de Suite Backend (Unitarios + Seguridad)
@@ -241,7 +257,7 @@ npm run quality:full
 ## 🛡️ Seguridad & DevSecOps
 
 - **Security by Design**: Superficie de ataque reducida mediante API Gateway.
-- **Defensa en Profundidad**: RLS (Row Level Security) activado en las 12 tablas de PostgreSQL.
+- **Defensa en Profundidad**: RLS activado en todas las tablas públicas de negocio; una prueba de regresión impide crear tablas nuevas sin habilitarlo.
 - **Protección HTTP**: Headers de seguridad aplicados globalmente (`CSP`, `HSTS`, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`).
 - **Mitigación DoS & SSRF**: Rate limiting adaptativo con SlowAPI y allowlist estricta de dominios para la extracción de ofertas.
 - **Auditoría DevSecOps**: CI integrado con `pip-audit`, `npm audit` y escaneo de secretos.
@@ -278,8 +294,9 @@ npm run dev
 ## 🗺️ Índice de Documentación (`docs/`)
 
 - [`docs/project/`](docs/project/00-index.md): **Guía Operativa del Proyecto** (Setup, Estructura, Configuración, Deployment).
+- [`docs/project/11-current-state.md`](docs/project/11-current-state.md): **Estado actual verificado** (producción, funciones, módulos, CI y pendientes).
 - [`docs/master/`](docs/master/00-index.md): **Especificación de Arquitectura y Diseño Técnico** (10 Capítulos exhaustivos).
-- [`docs/adr/`](docs/adr/00-index.md): ** Architecture Decision Records** (ADR-001 al ADR-013).
+- [`docs/adr/`](docs/adr/00-index.md): **Architecture Decision Records** (ADR-001 al ADR-014).
 - [`docs/guides/`](docs/guides/): **Guías Operativas en Vivo** (Cloudflare Setup, NAS-SSH Deployment, Migraciones Alembic).
 
 ---

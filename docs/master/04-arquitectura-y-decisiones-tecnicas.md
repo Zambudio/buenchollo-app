@@ -230,7 +230,7 @@ Cambiar de proveedor (p.ej. Aliexpress en vez de Amazon) implica
 
 ---
 
-## 📋 Decisiones técnicas relevantes — los 9 ADRs
+## 📋 Decisiones técnicas relevantes — los 14 ADRs
 
 <table>
 <thead>
@@ -246,12 +246,29 @@ Cambiar de proveedor (p.ej. Aliexpress en vez de Amazon) implica
 <tr><td><a href="../adr/ADR-007-di-fastapi-depends.md">007</a></td><td>🧬 Inyección de dependencias con Depends de FastAPI</td><td>✅ Aceptado</td></tr>
 <tr><td><a href="../adr/ADR-008-estrategia-calidad-testing.md">008</a></td><td>🧪 Estrategia de calidad y testing 100/80/0</td><td>✅ Aceptado</td></tr>
 <tr><td><a href="../adr/ADR-009-uso-de-ia-en-desarrollo.md">009</a></td><td>🤖 Uso de IA como apoyo supervisado al desarrollo</td><td>✅ Aceptado</td></tr>
+<tr><td><a href="../adr/ADR-010-validacion-jwt-local.md">010</a></td><td>🔑 Validación local de JWT con JWKS</td><td>✅ Aceptado</td></tr>
+<tr><td><a href="../adr/ADR-011-blog-tiptap-editor.md">011</a></td><td>📝 Editor de blog Tiptap con JSON como fuente de verdad</td><td>✅ Aceptado</td></tr>
+<tr><td><a href="../adr/ADR-012-motor-tareas-programadas.md">012</a></td><td>⏱️ Motor genérico de tareas programadas</td><td>✅ Aceptado</td></tr>
+<tr><td><a href="../adr/ADR-013-motor-ia-unificado-omniroute-modelos-gratuitos.md">013</a></td><td>🤖 Motor de IA unificado con OmniRoute y fallback</td><td>✅ Aceptado</td></tr>
+<tr><td><a href="../adr/ADR-014-analitica-first-party-atribucion-sesiones.md">014</a></td><td>📊 Analítica first-party con atribución por sesión</td><td>✅ Aceptado</td></tr>
 </tbody>
 </table>
 
 ---
 
 ## 🚀 Diagrama de despliegue
+
+La topología vigente es: navegador → Cloudflare Worker para la web; navegador →
+Cloudflare Tunnel → contenedores `buenchollo-api`/`buenchollo-scheduler` en el NAS
+para la API; y API → Supabase/servicios externos. No hay port forwarding ni
+reverse proxy DSM en el camino público actual.
+
+> El diagrama siguiente refleja la arquitectura inicial y se conserva como
+> histórico. El diagrama vigente y la operativa están en
+> [`docs/project/11-current-state.md`](../project/11-current-state.md) y
+> [`docs/guides/Cloudflare.md`](../guides/Cloudflare.md).
+
+### Histórico: arquitectura inicial no vigente
 
 ```
 ┌─────────────────────────────────────────────────┐

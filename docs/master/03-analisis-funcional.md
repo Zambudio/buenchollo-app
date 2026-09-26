@@ -54,6 +54,7 @@
 | 📰 Navegar el feed de chollos | Home |
 | 🔍 Buscar y filtrar | `/explorar` |
 | 📄 Ver el detalle de un chollo (precio, descuento, Keepa, comentarios) | `/chollo/{slug}` |
+| 📰 Leer artículos, comentarios y recomendaciones | `/blog` y `/blog/{slug}` |
 | 🛒 Abrir el enlace afiliado (ir a Amazon) | Detalle |
 | 💬 Acceder al canal de Telegram | Footer |
 | 🔐 Iniciar sesión con Google | Header |
@@ -130,11 +131,15 @@
 
 ```
 /admin
-├── /admin            → Dashboard con KPIs
-├── /admin/chollos    → CRUD de chollos + autocomplete + Telegram
-├── /admin/categorias → CRUD de categorías
-├── /admin/tiendas    → CRUD de tiendas
-└── /admin/usuarios   → Lista de usuarios y roles
+├── /admin                     → Dashboard con KPIs
+├── /admin/analitica           → Audiencia, procedencia y atribución
+├── /admin/chollos             → CRUD, autocomplete, calendario y Telegram
+├── /admin/categorias          → CRUD de categorías
+├── /admin/tiendas             → CRUD de tiendas
+├── /admin/blog                → Gestión editorial
+├── /admin/blog/categorias     → Categorías editoriales
+├── /admin/tareas-programadas  → Mantenimiento y revisión de precios
+└── /admin/usuarios            → Lista de usuarios y roles
 ```
 
 #### ⚡ Funcionalidad estrella: autocomplete desde URL de Amazon
@@ -178,6 +183,19 @@ imágenes, caducidad y gráfica Keepa— además de la fecha programada. Al guar
 la API sincroniza la instantánea de la programación y el chollo web enlazado. La
 edición de categoría filtra las subcategorías disponibles y el contenido de
 Telegram conserva su flujo independiente.
+
+#### 📊 Analítica de audiencia y procedencia
+
+La web registra visitas públicas con analítica propia, sin depender de un script
+de terceros. El panel distingue visitas, navegadores únicos y sesiones; separa
+lecturas de artículos; muestra evolución, páginas y procedencia; y calcula la
+conversión de sesiones iniciadas en Telegram que terminan leyendo el blog.
+
+La ruta `/telegram` marca la entrada antes de redirigir a la portada. La
+atribución es first-touch durante la sesión, de modo que una persona que entre
+desde Telegram y navegue después al blog sigue apareciendo como Telegram. El
+administrador puede excluir su navegador para que sus propias pruebas no alteren
+los datos ni el contador público de artículos.
 
 ---
 

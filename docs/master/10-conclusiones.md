@@ -79,11 +79,11 @@ auditorías cruzadas) cubren los riesgos identificados.
 <tbody>
 <tr>
   <td>📐 <strong>Arquitectura de software</strong></td>
-  <td>9 ADRs firmados · Clean Architecture pragmática verificable módulo por módulo · separación de responsabilidades con ejemplos concretos</td>
+  <td>14 ADRs firmados · Clean Architecture pragmática verificable módulo por módulo · separación de responsabilidades con ejemplos concretos</td>
 </tr>
 <tr>
   <td>🧪 <strong>Calidad del software</strong></td>
-  <td>Pirámide de 167 tests (137 unit + 13 integration + 8 E2E) · coverage estratégico 100/80/0 con threshold automático · métricas accionables Tier 1/2/3 · quality gates Husky + CI</td>
+  <td>Pirámide de 511 tests (272 backend sin BD + 37 backend de integración + 186 Vitest + 16 E2E) · coverage estratégico 100/80/0 · quality gates Husky + CI</td>
 </tr>
 <tr>
   <td>🛡️ <strong>Seguridad</strong></td>
@@ -99,7 +99,7 @@ auditorías cruzadas) cubren los riesgos identificados.
 </tr>
 <tr>
   <td>🚀 <strong>DevOps básico</strong></td>
-  <td>CI con 4 jobs · Dependabot semanal con grupos · despliegue Docker en NAS · scheduler integrado · migraciones Alembic auto-aplicadas</td>
+  <td>CI con 5 jobs · Dependabot semanal con grupos · frontend en Cloudflare Workers · API/scheduler Docker en NAS · migraciones Alembic auto-aplicadas</td>
 </tr>
 </tbody>
 </table>
@@ -128,7 +128,7 @@ Cada sprint del proyecto se ha enfocado en consolidar una dimensión técnica es
 
 ┌──────────────────────────────────────────────────────────────┐
 │  Sprint docs   →  Integración y Documentación                │
-│  (docs/project · docs/master · 9 ADRs · README)              │
+│  (docs/project · docs/master · 14 ADRs · README)             │
 └──────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────┐

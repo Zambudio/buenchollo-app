@@ -72,8 +72,9 @@ app/
 ### 🧱 Módulos de dominio
 
 ```
-deals · comments · alerts · notifications · categories ·
-stores · users · products · telegram
+ai · alerts · analytics · blog · blog_comments · categories · comments ·
+deals · notifications · products · scheduled_deals · scheduled_tasks ·
+stores · telegram · users
 ```
 
 ### 🔄 Flujo de dependencias
@@ -117,12 +118,19 @@ src/
 │   ├── alertas_.nueva.tsx         🆕 Crear alerta
 │   ├── admin.tsx                  🛠️ Layout del panel
 │   ├── admin.chollos.tsx          📦 CRUD chollos
+│   ├── admin.analitica.tsx        📊 Audiencia y atribución
+│   ├── admin.blog.tsx             📝 Gestión editorial
+│   ├── admin.tareas-programadas.tsx ⏱️ Mantenimiento recurrente
 │   ├── admin.categorias.tsx       🏷️ CRUD categorías
-│   └── admin.tiendas.tsx          🏪 CRUD tiendas
+│   ├── admin.tiendas.tsx          🏪 CRUD tiendas
+│   ├── blog.tsx / blog_.$slug.tsx 📰 Blog público
+│   └── telegram.tsx               📈 Entrada atribuida desde Telegram
 │
 ├── 🎨 features/                   Dominios funcionales
 │   ├── deals/components/          DealCard · Comments · ShareBox
 │   ├── admin/hooks/               useAdminStats
+│   ├── analytics/                 Tracking público + dashboard admin
+│   ├── blog/                      Editor Tiptap + render público
 │   ├── alerts/components/         RecommendedAlertsBlock
 │   ├── notifications/             NotificationsPopover · useUnreadNotifications
 │   └── telegram/components/       TelegramPanel

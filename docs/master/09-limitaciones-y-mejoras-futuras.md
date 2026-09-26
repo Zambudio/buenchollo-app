@@ -57,11 +57,6 @@
 </thead>
 <tbody>
 <tr>
-  <td>🪨 <strong><code>admin.chollos.tsx</code> con 940 líneas</strong></td>
-  <td>God Component difícil de mantener</td>
-  <td>Partirlo conlleva alto riesgo y los integration tests no cubren toda la lógica interactiva. Documentado como deuda asumida</td>
-</tr>
-<tr>
   <td>🎨 <strong><code>style-src 'unsafe-inline'</code> en CSP</strong></td>
   <td>Permite styles inline (no scripts)</td>
   <td>React + shadcn inyectan styles inline. Migrar a nonces es un sprint completo de coste alto</td>
@@ -77,14 +72,9 @@
   <td>Visibles en SonarLint del IDE. No bloquean uso, no se han priorizado para el MVP</td>
 </tr>
 <tr>
-  <td>🧪 <strong>Tests integración no corren en CI</strong></td>
-  <td>Cobertura visible sólo en local</td>
-  <td>Requieren PostgreSQL real (Supabase no levantable en CI). Se ejecutan en local antes de cada release</td>
-</tr>
-<tr>
   <td>🎭 <strong>Tests E2E con SSR</strong></td>
   <td><code>page.route</code> no intercepta llamadas server-side</td>
-  <td>Los E2E se limitan a verificar shell, rutas y guards. Resto cubierto por integration tests</td>
+  <td>Los flujos interactivos se mockean en el navegador; loaders SSR y persistencia quedan cubiertos por tests de contrato/integración y smoke tests</td>
 </tr>
 <tr>
   <td>🤖 <strong>Sin DAST automatizado</strong></td>
@@ -103,10 +93,9 @@
 
 | Limitación | Impacto | Justificación |
 |---|---|---|
-| 🏠 **Despliegue en NAS doméstico** | Si el ISP cae, el NAS se apaga o la IP cambia sin DDNS actualizado, la web cae | Para un MVP con audiencia inicial pequeña es proporcional al riesgo. Migración a VPS / Cloudflare Tunnel documentada |
+| 🏠 **API en NAS doméstico** | Si el ISP o el NAS caen, la API deja de responder; el Worker puede seguir sirviendo el shell pero no los datos dinámicos | Coste proporcional al tráfico actual. Cloudflare Tunnel evita abrir puertos, pero no aporta alta disponibilidad del origen |
 | 🔁 **Sin múltiples instancias** | No hay alta disponibilidad ni balanceo | Innecesario al volumen actual. SlowAPI tiene soporte de Redis para storage compartido |
 | 💾 **Sin backup automatizado** | Si Supabase pierde un proyecto, no hay snapshot diario propio | Supabase free tier tiene backups limitados pero existentes |
-| 🌐 **Sin CDN del frontend** | Se sirve desde el NAS | Si se mueve a dominio definitivo, se sirve ya desde Cloudflare Workers (CDN global) |
 
 ### 🎯 Decisiones conscientes que limitan capacidades
 
@@ -127,7 +116,6 @@
 | Mejora | Por qué |
 |---|---|
 | 📧 **Email para notificaciones críticas** con Resend | Punto de integración natural en `AlertMatcher.notify_matching_alerts()` |
-| 🪨 **Refactor de `admin.chollos.tsx`** en sub-componentes | Mejora la mantenibilidad. Estimación: 1 sprint con tests previos |
 | ✅ **Marcado individual de notificaciones** | Endpoint `PATCH /v1/notifications/{id}/read` |
 
 ### 📆 Medio plazo
@@ -159,7 +147,6 @@
 | 🍪 **Migración JWT a cookies HttpOnly** | localStorage (default Supabase SDK) | Alto coste, SDK no lo soporta idiomáticamente, mitigado con CSP |
 | 🤖 **DAST automatizado con OWASP ZAP** | Manual via `securityheaders.com` y `ssllabs.com/ssltest` | Coste CI alto sin valor añadido al tamaño actual |
 | 📜 **SBOM con CycloneDX** | Lockfiles + Dependabot | Para la escala actual del repositorio, lockfiles son SBOM funcional |
-| 🛡️ **WAF / Cloudflare front** | Reverse proxy DSM con HTTPS | Depende del dominio definitivo |
 | 🔁 **Rotación periódica de claves** | Procedimiento documentado | Manual hoy, automatizable con scripts |
 | 📦 **Política de retención de logs Sentry** | Default 30 días en plan gratuito | Suficiente para forensic básico |
 | 📦 **Política de retención de `admin_audit_log`** | Indefinida en BD | Si crece, particionar por mes o archivar a S3 |
@@ -172,11 +159,10 @@
 |---|---|---|
 | 📦 **Cache de respuestas Amazon Creators** | Sin cache | Si el admin pasa de 1/min a 10+/min consistentemente |
 | 🤖 **Cache de respuestas OpenAI** (mismo título → mismo copy) | Sin cache | Igual |
-| 🌐 **CDN para imágenes** | Servidas desde Supabase Storage | Cuando se mueva al dominio definitivo |
+| 🌐 **Optimización de imágenes** | Servidas desde Supabase Storage sin pipeline responsive completo | Cuando el volumen justifique variantes WebP/AVIF y tamaños responsivos |
 | 📄 **Paginación cursor-based** | Offset/limit | Si supera 10.000 chollos publicados |
 | 🔁 **Server-side caching con Redis** | Sin cache | Si los endpoints públicos sufren bajo carga |
-| 📦 **Compresión gzip/brotli en reverse proxy** | Por defecto en DSM | Verificar al pre-go-live |
-| 🖼️ **Image optimization** (WebP, responsive) | Original sin optimizar | Cuando se ponga CDN delante |
+| 📦 **Compresión gzip/brotli** | Gestionada por Cloudflare para frontend y tráfico proxificado | Verificar tras cambios de caché o plataforma |
 | 📊 **Lighthouse-CI automatizado** | Métricas documentadas pero no automatizadas | Si se entrega a usuarios externos con SLAs |
 
 ### 🎯 Performance budget
@@ -194,7 +180,7 @@
 
 | Mejora | Beneficio |
 |---|---|
-| 🐘 **Tests E2E con backend real** en CI | Levantar Postgres con GitHub Actions services. Coste: ~30s extra |
+| 🐘 **E2E contra un stack backend completo** | El CI ya prueba repositorios con PostgreSQL; falta un E2E que atraviese navegador, API y BD en un mismo flujo |
 | 📷 **Visual regression** con `toHaveScreenshot` sobre páginas estables (`/login`, `/error`) | Hoy aplazado por brittleness |
 | 🧬 **Mutation testing** con `mutmut` o `cosmic-ray` | Valida que los tests CORE son robustos |
 | 🎲 **Property-based testing** con `hypothesis` | Para funciones de cálculo (`calculateDiscount`, `slugify`) |
@@ -217,13 +203,13 @@
 Para hacer escalar BuenCholloTech y evolucionarlo en producción, los pasos naturales son:
 
 ```
-1. 🌐 Comprar dominio + configurar Cloudflare (CDN + DNS + DDoS)
+1. ✅ Dominio + Cloudflare Workers, Tunnel, WAF y DNS configurados
         │
         ▼
 2. 💎 Migrar a Supabase plan Pro (audit logs ampliados, PITR, soporte)
         │
         ▼
-3. 📊 Añadir analytics (Plausible o Umami autohospedado)
+3. ✅ Analítica first-party y atribución propia desplegadas
         │
         ▼
 4. 🛒 Sistema de afiliados ampliado (PCComponentes, MediaMarkt, Aliexpress)

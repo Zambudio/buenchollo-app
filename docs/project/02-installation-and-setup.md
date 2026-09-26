@@ -164,7 +164,8 @@ buenchollo-api/
 
 ### 4.4 🔒 RLS activado
 
-✅ Las **12 tablas** de `public` tienen Row Level Security activado.
+✅ Las tablas públicas de negocio tienen Row Level Security activado y una prueba
+de migraciones impide añadir otra sin RLS.
 El backend usa la `service_role key` para bypassarlo de forma
 controlada ([ADR-006](../adr/ADR-006-rls-service-role.md)).
 

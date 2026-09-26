@@ -299,16 +299,20 @@ igual sin ella (el middleware de la API emite cabeceras correctas en cualquier c
 
 ---
 
-### ✅ T8 — Tokens / secretos · 🟢 — HECHO: TUNNEL_TOKEN solo en .env del NAS. ⚠️ PENDIENTE rotarlo (quedó en el chat)
+### 🟡 T8 — Tokens / secretos · PARCIAL: almacenado fuera de Git; rotación pendiente
 
 - `TUNNEL_TOKEN` → solo en el `.env` del NAS (gitignored). **No** a git.
+- A 2026-09-26 no hay evidencia documental de que se rotara después de quedar
+  visible en una conversación. Se registra como TD-21 en
+  `docs/project/10-technical-debt.md`; no marcar como cerrado sin revocar el
+  anterior, desplegar el nuevo y verificar el health público.
 - **No** hace falta API Token de Cloudflare (DDNS descartado).
 - Rotación: Zero Trust → Tunnels → tu túnel → **Refresh token** → actualizar
   `.env` + reiniciar `cloudflared`.
 
 ---
 
-## 5. ✅ Checklist de go-live
+## 5. ✅ Checklist repetible de verificación
 
 ```bash
 curl -s https://api.buenchollotech.com/health         # {"status":"ok"}
@@ -326,11 +330,11 @@ curl -sI https://buenchollotech.com | findstr /I "strict-transport content-secur
 
 ---
 
-## 6. 🎯 10 acciones rápidas (orden recomendado)
+## 6. 🗄️ Secuencia histórica de implantación
 
 1. Zero Trust → Create Tunnel `buenchollo-nas`; copiar TUNNEL_TOKEN.
 2. Public Hostname `api.buenchollotech.com` → HTTP → `buenchollo-api:8000`.
-3. Añadir servicio `cloudflared` al `docker-compose.yml` + `CLOUDFLARE_TUNNEL_TOKEN` en `.env` del NAS → levantar. Verificar `api…/health`.
+3. Añadir servicio `cloudflared` al `docker-compose.yml` + `TUNNEL_TOKEN` en `.env` del NAS → levantar. Verificar `api…/health`.
 4. Borrar DNS manual `api → embyzambu.synology.me`.
 5. `VITE_API_URL = https://api.buenchollotech.com` en el Worker → redeploy.
 6. `.env` NAS: `APP_ENV=production`, `LOG_LEVEL=INFO`, `CORS_ORIGINS=https://buenchollotech.com,https://www.buenchollotech.com` → reiniciar API.

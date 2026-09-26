@@ -4,11 +4,21 @@
 > Solo items **abiertos**: cuando uno se cierra, se elimina de aquí (el histórico
 > resuelto vive en [`PROJECT_STATUS.md`](../../PROJECT_STATUS.md)). Para consultar el diseño de arquitectura, ver [`docs/master/`](../master/00-index.md).
 
-Última revisión: **2026-09-05** (Cierre de 3/4 sub-items de TD-20 — ver `PROJECT_STATUS.md` § 3.quattuorvicies).
+Última revisión: **2026-09-26** (auditoría integral de estado y documentación).
 
 ---
 
-## 🟡 Baja — observabilidad
+## 🔴 Alta — secretos de infraestructura
+
+- **TD-21 — Rotar y verificar el token de Cloudflare Tunnel.** La guía operativa
+  registra que `TUNNEL_TOKEN` quedó visible en una conversación y no contiene
+  evidencia posterior de rotación. Revocar el token anterior desde Cloudflare
+  Zero Trust, generar otro, actualizar únicamente el `.env` del NAS y reiniciar
+  `cloudflared`; después comprobar `https://api.buenchollotech.com/health` y dejar
+  fecha/evidencia en `docs/guides/Cloudflare.md`. No copiar el valor nuevo a Git,
+  documentación, logs ni chat.
+
+## 🟡 Baja — observabilidad y hardening de cuenta
 
 - **TD-20 — Protección de contraseñas filtradas desactivada en Supabase Auth.**
   `auth_leaked_password_protection` (Advisor de Supabase, nivel WARN): Supabase

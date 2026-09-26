@@ -2,7 +2,7 @@
 
 > **TL;DR** · `git pull` → tocar código (con IA si conviene) →
 > `npm run quality` → `git commit` (Husky ejecuta lint+tsc) →
-> `git push` (Husky ejecuta vitest) → CI valida 4 jobs →
+> `git push` (Husky ejecuta vitest) → CI valida 5 jobs →
 > merge cuando todo verde.
 
 ---
@@ -32,12 +32,13 @@
         │
         ▼
 6. ⚙️  CI verifica       ┌── backend (pytest)
+                          ├── backend-integration (PostgreSQL 16)
                           ├── frontend (typecheck + lint + Vitest cov)
                           ├── e2e (Playwright)
                           └── security-audit (pip-audit + npm audit + gitleaks)
         │
         ▼
-7. ✅  Mergear cuando los 4 jobs estén verdes
+7. ✅  Mergear cuando los 5 jobs estén verdes
 ```
 
 ---

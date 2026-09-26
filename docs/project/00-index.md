@@ -7,7 +7,7 @@
 ---
 
 > 📖 **¿Qué encontrarás aquí?**
-> Diez capítulos numerados con **comandos**, **ejemplos** y
+> Once capítulos numerados con **comandos**, **ejemplos** y
 > **tablas de errores comunes**. Si lo que buscas es **por qué se ha
 > construido así**, eso vive en [`docs/master/`](../master/00-index.md).
 
@@ -23,9 +23,10 @@
 | 💻 **Trabajar día a día** (commits, ramas, IA) | [05](05-development-workflow.md) |
 | 🧪 **Ejecutar tests o pasar el CI** | [06](06-testing-and-quality.md) |
 | 🛡️ **Revisar la seguridad operativa** | [07](07-security.md) |
-| 🚀 **Desplegar al NAS o al dominio definitivo** | [08](08-deployment.md) |
+| 🚀 **Desplegar o mantener producción** | [08](08-deployment.md) |
 | 🔍 **Algo no funciona** | [09](09-troubleshooting.md) |
 | 🧾 **Ver qué deuda técnica queda pendiente** | [10](10-technical-debt.md) |
+| ✅ **Comprobar el estado real actual** | [11](11-current-state.md) |
 
 ---
 
@@ -40,9 +41,10 @@
 | [05](05-development-workflow.md) | 💻 **Flujo de desarrollo** | Husky, commits, ramas, uso de IA |
 | [06](06-testing-and-quality.md) | 🧪 **Testing y calidad** | Comandos, gates, coverage, métricas |
 | [07](07-security.md) | 🛡️ **Seguridad** | Controles, política `--no-verify`, incidentes |
-| [08](08-deployment.md) | 🚀 **Despliegue** | NAS Synology + Docker, dominio definitivo |
+| [08](08-deployment.md) | 🚀 **Despliegue** | Workers, Tunnel y Docker en NAS |
 | [09](09-troubleshooting.md) | 🔍 **Troubleshooting** | Errores comunes y soluciones |
 | [10](10-technical-debt.md) | 🧾 **Deuda técnica** | Registro vivo de tareas pendientes |
+| [11](11-current-state.md) | ✅ **Estado actual verificado** | Producción, funciones, módulos, calidad y pendientes a 2026-09-26 |
 
 ---
 
@@ -51,7 +53,7 @@
 | Carpeta | Para qué |
 |---|---|
 | [`../master/`](../master/00-index.md) | 🏗️ **Bloque de arquitectura y diseño** — explicación formal de decisiones técnicas |
-| [`../adr/`](../adr/00-index.md) | 📋 **13 ADRs** firmados y datados (decisiones arquitectónicas) |
+| [`../adr/`](../adr/00-index.md) | 📋 **14 ADRs** firmados y datados (decisiones arquitectónicas) |
 | [`../reference/`](../reference/) | 📚 Referencias densas (plan hardening, auditoría OWASP, smoke test) |
 | [`../guides/Cloudflare.md`](../guides/Cloudflare.md) | ☁️ **Guía operativa viva** de Cloudflare (Workers, túnel, TLS, WAF) — estado real de producción |
 | [`../guides/NAS-SSH.md`](../guides/NAS-SSH.md) | 🔐 **Guía operativa viva** de conexión SSH al NAS — para que una IA haga rebuild/redeploy de `buenchollo-api` sin intervención manual |
