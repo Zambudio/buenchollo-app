@@ -23,7 +23,9 @@ que las comprobaciones del administrador distorsionen los datos.
 3. Aplicar atribución *first-touch* durante una sesión de 30 minutos de inactividad. La prioridad es
    UTM explícita, buscador reconocido, referencia externa y, por último, acceso directo.
 4. Publicar `/telegram` como entrada canónica que redirige a
-   `/?utm_source=telegram&utm_medium=social&utm_campaign=canal`.
+   `/?utm_source=telegram&utm_medium=social&utm_campaign=canal`. El generador de publicaciones
+   debe usar `https://buenchollotech.com/telegram` para el enlace general hacia la web, sin cambiar
+   el enlace de compra del producto.
 5. Contabilizar el contador público del blog una vez por navegador, artículo y día mediante una
    tabla de unicidad; conservar todos los pageviews para el análisis interno.
 6. Excluir automáticamente rutas administrativas y administradores, y ofrecer una preferencia local
