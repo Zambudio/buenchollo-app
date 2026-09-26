@@ -14,7 +14,9 @@
   registra que `TUNNEL_TOKEN` quedó visible en una conversación y no contiene
   evidencia posterior de rotación. Revocar el token anterior desde Cloudflare
   Zero Trust, generar otro, actualizar únicamente el `.env` del NAS y reiniciar
-  `cloudflared`; después comprobar `https://api.buenchollotech.com/health` y dejar
+  el servicio recreándolo con `docker compose up -d --force-recreate cloudflared`
+  (un `docker restart` no recarga `env_file`); después comprobar
+  `https://api.buenchollotech.com/health` y dejar
   fecha/evidencia en `docs/guides/Cloudflare.md`. No copiar el valor nuevo a Git,
   documentación, logs ni chat.
 

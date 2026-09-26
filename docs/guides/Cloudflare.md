@@ -308,7 +308,8 @@ igual sin ella (el middleware de la API emite cabeceras correctas en cualquier c
   anterior, desplegar el nuevo y verificar el health público.
 - **No** hace falta API Token de Cloudflare (DDNS descartado).
 - Rotación: Zero Trust → Tunnels → tu túnel → **Refresh token** → actualizar
-  `.env` + reiniciar `cloudflared`.
+  `.env` + ejecutar `docker compose up -d --force-recreate cloudflared` desde el
+  directorio del compose. Un `docker restart` no vuelve a cargar `env_file`.
 
 ---
 
