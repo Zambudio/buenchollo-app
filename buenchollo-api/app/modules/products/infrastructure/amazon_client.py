@@ -33,7 +33,7 @@ _ALLOWED_HOSTS = {
     "amazon.it", "www.amazon.it",
     "amazon.co.jp", "www.amazon.co.jp",
     "amazon.com.mx", "www.amazon.com.mx",
-    "amzn.to", "amzn.eu", "a.co",
+    "amzn.to", "amzn.eu", "a.co", "link.amazon",
     "m.media-amazon.com", "media-amazon.com",
 }
 

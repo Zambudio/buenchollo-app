@@ -19,7 +19,7 @@ CUSTOM_EMOJI_MAP: dict[str, str] = {
 }
 
 LINK_TEXT = "Todos los chollos en nuestra web"
-LINK_URL = "https://buenchollotech.com"
+LINK_URL = "https://buenchollotech.com/telegram"
 
 _MONTHS_ES = [
     "", "enero", "febrero", "marzo", "abril", "mayo", "junio",
@@ -181,4 +181,3 @@ class TelegramPostGenerator:
             description=description,
             available=available,
         )
-

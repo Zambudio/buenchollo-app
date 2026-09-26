@@ -9,6 +9,7 @@ import pytest
 
 from app.core.config import Settings
 from app.modules.products.application.preview_product_from_url import ProductProviderUnavailableError
+from app.modules.products.infrastructure import amazon_client
 from app.modules.products.infrastructure.amazon_client import (
     AmazonProductClient,
     MAX_ITEMS_PER_REQUEST,
@@ -27,6 +28,30 @@ def test_extract_asin_from_gp_product_url() -> None:
 
 def test_extract_asin_from_direct_asin() -> None:
     assert extract_asin_from_url("b10test789") == "B10TEST789"
+
+
+def test_extract_asin_from_link_amazon_short_url(monkeypatch) -> None:
+    """El nuevo acortador oficial debe resolverse antes de extraer el ASIN."""
+
+    class RedirectResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return None
+
+        @staticmethod
+        def geturl() -> str:
+            return "https://www.amazon.es/dp/B0ABC12345?tag=buenchollo0b-21"
+
+    monkeypatch.setattr(amazon_client, "_resolves_to_private_ip", lambda _url: False)
+    monkeypatch.setattr(
+        amazon_client.urllib.request,
+        "urlopen",
+        lambda _request, timeout: RedirectResponse(),
+    )
+
+    assert extract_asin_from_url("https://link.amazon/B01eQCJsW") == "B0ABC12345"
 
 
 def test_settings_accepts_legacy_amazon_api_version() -> None:
