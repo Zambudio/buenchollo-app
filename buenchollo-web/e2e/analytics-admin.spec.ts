@@ -1,12 +1,15 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { expect, test } from "@playwright/test";
 
-const supabaseUrl = /^VITE_SUPABASE_URL=(.+)$/m
-  .exec(readFileSync(".env", "utf8"))?.[1]
-  ?.trim()
-  .replace(/^['"]|['"]$/g, "");
+const localEnv = existsSync(".env") ? readFileSync(".env", "utf8") : "";
+const supabaseUrl =
+  process.env.VITE_SUPABASE_URL ??
+  /^VITE_SUPABASE_URL=(.+)$/m
+    .exec(localEnv)?.[1]
+    ?.trim()
+    .replace(/^['"]|['"]$/g, "");
 if (!supabaseUrl) throw new Error("VITE_SUPABASE_URL no está configurado para el E2E");
 
 const userId = "00000000-0000-4000-8000-000000000001";
