@@ -140,28 +140,36 @@
 #### ⚡ Funcionalidad estrella: autocomplete desde URL de Amazon
 
 ```
-1. ✏️  Admin pega "https://amzn.to/3xyz"
+1. ✏️  Admin pega una URL oficial, por ejemplo "https://link.amazon/B01eQCJsW"
    ▼
-2. 🌐  Backend sigue el redirect (con allowlist Amazon + bloqueo IPs privadas)
+2. 🖥️  Frontend reconoce amazon.*, amzn.* y dominios terminados en .amazon
    ▼
-3. 🔍  Extrae el ASIN
+3. 🌐  Backend valida el host, bloquea IPs privadas y sigue el redirect
    ▼
-4. 📡  Amazon Creators API → título, precio, imágenes, descripción técnica
+4. 🔍  Extrae el ASIN de la URL final
    ▼
-5. 🤖  OpenAI → copy adaptado + categorización sugerida
+5. 📡  Amazon Creators API → título, precio, imágenes, descripción técnica
    ▼
-6. ✅  Formulario rellenado en el frontend
+6. 🤖  OpenAI → copy adaptado + categorización sugerida
    ▼
-7. 🔁  Si el ASIN ya existe → diálogo "Chollo duplicado" (3 opciones)
+7. ✅  Formulario rellenado en el frontend
    ▼
-8. 💾  Admin guarda → dispara AlertMatcher → audit_log
+8. 🔁  Si el ASIN ya existe → diálogo "Chollo duplicado" (3 opciones)
+   ▼
+9. 💾  Admin guarda → dispara AlertMatcher → audit_log
 ```
+
+La comprobación del frontend es solo una ayuda de interfaz. La allowlist y la
+resolución segura del backend son la autoridad; ambos niveles deben actualizarse
+y probarse cuando Amazon incorpore un dominio oficial nuevo.
 
 #### 📤 Publicación a Telegram
 
 Botón "Enviar a Telegram" integrado en el form de chollos. Genera
 copy adaptado con OpenAI, lo muestra editable y publica al canal. Rate
-limit 5/min para evitar dobles envíos.
+limit 5/min para evitar dobles envíos. El enlace general hacia la web se
+publica como `https://buenchollotech.com/telegram` para conservar la atribución;
+el enlace de compra mantiene su URL de afiliado.
 
 ---
 
