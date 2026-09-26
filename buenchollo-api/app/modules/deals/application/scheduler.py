@@ -13,6 +13,7 @@ from app.modules.deals.application.cleaner_service import DealCleanerService
 from app.modules.scheduled_deals.application.publication_worker import run_due_scheduled_publications
 from app.modules.blog.application.scheduler import run_due_scheduled_posts
 from app.modules.scheduled_tasks.application.scheduler import run_due_scheduled_tasks
+from app.modules.analytics.application.cleanup import run_analytics_cleanup
 
 
 def build_deals_scheduler(settings: Settings) -> tuple[BackgroundScheduler, DealCleanerService]:
@@ -54,6 +55,16 @@ def build_deals_scheduler(settings: Settings) -> tuple[BackgroundScheduler, Deal
         hours=1,
         args=[settings],
         id="run_scheduled_tasks",
+        max_instances=1,
+        coalesce=True,
+    )
+    scheduler.add_job(
+        run_analytics_cleanup,
+        "cron",
+        hour=3,
+        minute=30,
+        args=[settings],
+        id="cleanup_analytics",
         max_instances=1,
         coalesce=True,
     )

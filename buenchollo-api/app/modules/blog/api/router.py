@@ -120,6 +120,7 @@ async def _detail_response(post: BlogPost, service: BlogPostService, repo: BlogP
         products={k: v.__dict__ for k, v in products.items()},
         votes_up=post.votes_up,
         votes_down=post.votes_down,
+        view_count=post.view_count,
     )
 
 

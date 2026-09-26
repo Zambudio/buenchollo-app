@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Boolean, String, Integer, SmallInteger, ForeignKey, DateTime, JSON, Uuid, Index, UniqueConstraint
+from sqlalchemy import Boolean, String, Integer, BigInteger, SmallInteger, ForeignKey, DateTime, JSON, Uuid, Index, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
@@ -55,6 +55,7 @@ class BlogPost(Base):
 
     votes_up: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     votes_down: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    view_count: Mapped[int] = mapped_column(BigInteger, default=0, nullable=False)
 
     scheduled_for: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

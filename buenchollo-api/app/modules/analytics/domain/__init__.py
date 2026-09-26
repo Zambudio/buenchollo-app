@@ -1,0 +1,1 @@
+"""Entidades persistentes de analítica."""

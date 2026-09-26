@@ -44,6 +44,11 @@ class Settings(BaseSettings):
     # despliegues concretos. Vacío => no se manda.
     sentry_release: str = ""
 
+    # Analítica first-party. El secreto HMAC pseudonimiza los identificadores
+    # aleatorios del navegador antes de escribirlos en PostgreSQL.
+    analytics_hash_secret: str = ""
+    analytics_retention_months: int = Field(default=25, ge=1, le=25)
+
     # Orígenes CORS permitidos, separados por comas en la variable de entorno.
     # Ejemplo: CORS_ORIGINS=https://buenchollotech.com,https://www.buenchollotech.com
     # En local se puede dejar vacío o usar "*" para permitir cualquier origen.
@@ -177,6 +182,10 @@ class Settings(BaseSettings):
     # actual) la verificación usa el JWKS público y esto puede quedar vacío.
     supabase_jwt_secret: str = ""
     database_url: str = ""
+
+    @property
+    def effective_analytics_hash_secret(self) -> str:
+        return self.analytics_hash_secret or self.supabase_key
 
     telegram_bot_token: str = ""
     telegram_main_channel_id: str = ""

@@ -34,6 +34,7 @@ from app.modules.scheduled_deals.api.router import router as scheduled_deals_rou
 from app.modules.scheduled_tasks.api.router import router as scheduled_tasks_router
 from app.modules.blog.api.router import router as blog_router
 from app.modules.blog_comments.api.router import router as blog_comments_router
+from app.modules.analytics.api.router import router as analytics_router
 
 settings = get_settings()
 configure_logging(settings.log_level, fmt=settings.log_format)
@@ -204,6 +205,7 @@ v1.include_router(scheduled_deals_router)
 v1.include_router(scheduled_tasks_router)
 v1.include_router(blog_router)
 v1.include_router(blog_comments_router)
+v1.include_router(analytics_router)
 
 app.include_router(v1)
 app.include_router(health_router)  # /health y /health/ready — sin /v1

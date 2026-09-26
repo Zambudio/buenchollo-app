@@ -7,6 +7,7 @@ import { initErrorTracking } from "@/lib/logger";
 import { Toaster } from "@/components/ui/sonner";
 import { WelcomeProfileDialog } from "@/features/auth/components/WelcomeProfileDialog";
 import { queryClient } from "@/lib/query-client";
+import { AnalyticsTracker } from "@/features/analytics/components/AnalyticsTracker";
 
 import { SITE_URL } from "@/lib/site";
 
@@ -120,6 +121,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AuthProvider>
+          <AnalyticsTracker />
           <Outlet />
           <WelcomeProfileDialog />
           <Toaster />

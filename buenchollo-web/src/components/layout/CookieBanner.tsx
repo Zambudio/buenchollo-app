@@ -34,8 +34,8 @@ export function CookieBanner() {
           </h2>
         </div>
         <p className="font-mono text-xs text-muted-foreground leading-relaxed mb-4">
-          Solo usamos almacenamiento técnico esencial (tu sesión de inicio de sesión). Sin cookies
-          de analítica ni publicidad. Más info en la{" "}
+          Usamos almacenamiento técnico para tu sesión y una medición propia y anónima de audiencia.
+          Sin publicidad ni seguimiento entre webs. Puedes excluir tu dispositivo en la{" "}
           <Link to="/politica-de-cookies" className="text-cyan-glow hover:underline">
             política de cookies
           </Link>{" "}

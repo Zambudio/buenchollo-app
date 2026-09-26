@@ -27,7 +27,8 @@ def main() -> None:
     cleaner.clean_expired_deals()
     logger.info(
         "Scheduler dedicado en marcha: "
-        "mark_expired + verify/publish scheduled (cada 5 min) | clean (03:00 diario)"
+        "mark_expired + verify/publish scheduled (cada 5 min) | "
+        "clean deals (03:00) | clean analytics (03:30)"
     )
     try:
         while True:

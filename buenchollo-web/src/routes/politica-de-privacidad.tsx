@@ -4,7 +4,7 @@ import { SITE_URL, SITE_NAME, CONTACT_EMAIL } from "@/lib/site";
 
 const TITLE = `Política de privacidad | ${SITE_NAME}`;
 const DESCRIPTION =
-  "Cómo trata BuenChollo Tech tus datos personales: inicio de sesión con Google, datos de cuenta, finalidades, proveedores, conservación, derechos y eliminación de datos.";
+  "Cómo trata BuenChollo Tech tus datos personales, incluida la medición propia y anónima de audiencia.";
 
 export const Route = createFileRoute("/politica-de-privacidad")({
   component: PoliticaDePrivacidad,
@@ -38,7 +38,7 @@ function PoliticaDePrivacidad() {
         </h1>
         <div className="h-px bg-cyan-glow/40 mb-4" />
         <p className="font-mono text-xs text-muted-foreground mb-8">
-          Última actualización: 6 de julio de 2026
+          Última actualización: 26 de septiembre de 2026
         </p>
 
         <div
@@ -104,6 +104,12 @@ function PoliticaDePrivacidad() {
               infraestructura (Cloudflare) con fines de seguridad y funcionamiento, así como
               información mínima de errores para diagnóstico técnico, configurada para no incluir
               datos personales adicionales de forma predeterminada.
+            </li>
+            <li>
+              <strong>Medición de audiencia:</strong> ruta visitada, fecha, origen general de la
+              sesión, dominio de referencia y etiquetas UTM cuando existen, vinculados a
+              identificadores aleatorios seudonimizados. Esta analítica no almacena la dirección IP
+              ni se vincula a tu cuenta.
             </li>
           </ul>
           <p>
@@ -183,6 +189,10 @@ function PoliticaDePrivacidad() {
               usuarios.
             </li>
             <li>
+              <strong>Medición de audiencia:</strong> conocer el uso agregado de la web, distinguir
+              visitantes y sesiones y saber qué contenidos y canales resultan útiles.
+            </li>
+            <li>
               <strong>Cumplimiento de obligaciones legales</strong> cuando resulte aplicable.
             </li>
           </ul>
@@ -195,7 +205,7 @@ function PoliticaDePrivacidad() {
             </li>
             <li>
               <strong>Interés legítimo:</strong> seguridad, prevención de fraude, protección del
-              servicio y notificaciones internas de funcionamiento.
+              servicio, notificaciones internas y medición estadística limitada de audiencia.
             </li>
             <li>
               <strong>Consentimiento:</strong> notificaciones opcionales por correo electrónico de
@@ -256,10 +266,14 @@ function PoliticaDePrivacidad() {
             <li>Mientras sea necesario para prestarte el servicio.</li>
             <li>Durante los plazos necesarios para atender posibles responsabilidades legales.</li>
             <li>Hasta que solicites su eliminación, cuando proceda.</li>
+            <li>
+              Los eventos de audiencia se eliminan automáticamente al alcanzar 25 meses; el
+              identificador del navegador caduca como máximo a los 395 días.
+            </li>
           </ul>
           <p>
-            No aplicamos actualmente un borrado automático por plazos fijos; los datos se eliminan a
-            solicitud del usuario o cuando dejan de ser necesarios para las finalidades descritas.
+            Los datos de cuenta se eliminan a solicitud del usuario o cuando dejan de ser necesarios
+            para las finalidades descritas.
           </p>
 
           <h2>10. Eliminación de cuenta y datos</h2>
@@ -302,16 +316,12 @@ function PoliticaDePrivacidad() {
 
           <h2>13. Cookies y almacenamiento local</h2>
           <p>
-            {SITE_NAME} utiliza exclusivamente almacenamiento técnico necesario para el
-            funcionamiento del inicio de sesión y el mantenimiento de tu sesión: tu sesión se guarda
-            en el almacenamiento local de tu navegador mediante nuestro proveedor de autenticación.
-            No utilizamos cookies ni herramientas de analítica, publicidad o seguimiento no
-            esenciales. La primera vez que visitas la web te mostramos un aviso informativo breve
-            sobre este almacenamiento técnico —sin categorías de cookies que aceptar o rechazar,
-            porque no existen—, que puedes cerrar pulsando «Entendido». Puedes consultar el detalle
-            completo en nuestra <Link to="/politica-de-cookies">Política de cookies</Link>. Si en el
-            futuro incorporásemos herramientas no esenciales, actualizaríamos esta política y
-            gestionaríamos el consentimiento correspondiente.
+            {SITE_NAME} usa almacenamiento local para mantener tu sesión y para una medición propia,
+            anónima y limitada de audiencia. No utilizamos analítica publicitaria ni seguimiento
+            entre webs. Puedes consultar los plazos, los datos registrados y excluir este navegador
+            en nuestra <Link to="/politica-de-cookies">Política de cookies</Link>. Si en el futuro
+            incorporamos herramientas que requieran consentimiento, solicitaremos una elección antes
+            de activarlas.
           </p>
 
           <h2>14. Menores</h2>
