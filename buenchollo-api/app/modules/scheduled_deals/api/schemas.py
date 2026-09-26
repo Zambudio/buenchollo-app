@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import AliasPath, BaseModel, ConfigDict, Field, field_validator
 
 from app.modules.scheduled_deals.domain.models import ScheduledDealStatus
 
@@ -82,15 +82,30 @@ class ScheduledDealResponse(BaseModel):
     asin: str
     title: str
     description_web: str
+    short_description: str | None = Field(
+        default=None, validation_alias=AliasPath("deal", "short_description")
+    )
     telegram_text: str
     telegram_channel_id: str | None = None
     offer_price: float
     regular_price: float | None = None
     discount_percentage: int
     image_url: str | None = None
+    images: list[str] = Field(default_factory=list, validation_alias=AliasPath("deal", "images"))
     affiliate_url: str
     store_name: str
+    store_id: str | None = Field(default=None, validation_alias=AliasPath("deal", "store_id"))
     category_id: str
+    subcategory_id: str | None = Field(
+        default=None, validation_alias=AliasPath("deal", "subcategory_id")
+    )
+    brand: str | None = Field(default=None, validation_alias=AliasPath("deal", "brand"))
+    shipping_info: str | None = Field(
+        default=None, validation_alias=AliasPath("deal", "shipping_info")
+    )
+    show_keepa_chart: bool = Field(
+        default=False, validation_alias=AliasPath("deal", "show_keepa_chart")
+    )
     scheduled_at: datetime
     expires_at: datetime | None = None
     status: ScheduledDealStatus

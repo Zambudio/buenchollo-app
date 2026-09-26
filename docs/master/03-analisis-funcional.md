@@ -171,6 +171,14 @@ limit 5/min para evitar dobles envíos. El enlace general hacia la web se
 publica como `https://buenchollotech.com/telegram` para conservar la atribución;
 el enlace de compra mantiene su URL de afiliado.
 
+Las publicaciones pendientes del calendario disponen de un editor completo.
+Permite modificar todos los datos que se publicarán en la web —título, resumen,
+descripción, precios, tienda, categoría, subcategoría, marca, envío, ASIN,
+imágenes, caducidad y gráfica Keepa— además de la fecha programada. Al guardar,
+la API sincroniza la instantánea de la programación y el chollo web enlazado. La
+edición de categoría filtra las subcategorías disponibles y el contenido de
+Telegram conserva su flujo independiente.
+
 ---
 
 ## 🔄 Sistema de alertas (la feature más usada)
