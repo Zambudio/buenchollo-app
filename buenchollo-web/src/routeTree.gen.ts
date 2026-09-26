@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TerminosYCondicionesRouteImport } from './routes/terminos-y-condiciones'
+import { Route as TelegramRouteImport } from './routes/telegram'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RegistroRouteImport } from './routes/registro'
 import { Route as PoliticaDePrivacidadRouteImport } from './routes/politica-de-privacidad'
@@ -37,6 +38,7 @@ import { Route as AdminTareasProgramadasRouteImport } from './routes/admin.tarea
 import { Route as AdminChollosRouteImport } from './routes/admin.chollos'
 import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
 import { Route as AdminBlogRouteImport } from './routes/admin.blog'
+import { Route as AdminAnaliticaRouteImport } from './routes/admin.analitica'
 import { Route as AdminBlogNuevoRouteImport } from './routes/admin.blog_.nuevo'
 import { Route as AdminBlogCategoriasRouteImport } from './routes/admin.blog_.categorias'
 import { Route as AdminBlogPostIdRouteImport } from './routes/admin.blog_.$postId'
@@ -45,6 +47,11 @@ import { Route as AdminBlogPostIdPreviewRouteImport } from './routes/admin.blog_
 const TerminosYCondicionesRoute = TerminosYCondicionesRouteImport.update({
   id: '/terminos-y-condiciones',
   path: '/terminos-y-condiciones',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TelegramRoute = TelegramRouteImport.update({
+  id: '/telegram',
+  path: '/telegram',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -182,6 +189,11 @@ const AdminBlogRoute = AdminBlogRouteImport.update({
   path: '/blog',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAnaliticaRoute = AdminAnaliticaRouteImport.update({
+  id: '/analitica',
+  path: '/analitica',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminBlogNuevoRoute = AdminBlogNuevoRouteImport.update({
   id: '/blog_/nuevo',
   path: '/blog/nuevo',
@@ -219,7 +231,9 @@ export interface FileRoutesByFullPath {
   '/politica-de-privacidad': typeof PoliticaDePrivacidadRoute
   '/registro': typeof RegistroRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/telegram': typeof TelegramRoute
   '/terminos-y-condiciones': typeof TerminosYCondicionesRoute
+  '/admin/analitica': typeof AdminAnaliticaRoute
   '/admin/blog': typeof AdminBlogRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/chollos': typeof AdminChollosRoute
@@ -252,7 +266,9 @@ export interface FileRoutesByTo {
   '/politica-de-privacidad': typeof PoliticaDePrivacidadRoute
   '/registro': typeof RegistroRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/telegram': typeof TelegramRoute
   '/terminos-y-condiciones': typeof TerminosYCondicionesRoute
+  '/admin/analitica': typeof AdminAnaliticaRoute
   '/admin/blog': typeof AdminBlogRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/chollos': typeof AdminChollosRoute
@@ -287,7 +303,9 @@ export interface FileRoutesById {
   '/politica-de-privacidad': typeof PoliticaDePrivacidadRoute
   '/registro': typeof RegistroRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/telegram': typeof TelegramRoute
   '/terminos-y-condiciones': typeof TerminosYCondicionesRoute
+  '/admin/analitica': typeof AdminAnaliticaRoute
   '/admin/blog': typeof AdminBlogRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/chollos': typeof AdminChollosRoute
@@ -323,7 +341,9 @@ export interface FileRouteTypes {
     | '/politica-de-privacidad'
     | '/registro'
     | '/sitemap.xml'
+    | '/telegram'
     | '/terminos-y-condiciones'
+    | '/admin/analitica'
     | '/admin/blog'
     | '/admin/categorias'
     | '/admin/chollos'
@@ -356,7 +376,9 @@ export interface FileRouteTypes {
     | '/politica-de-privacidad'
     | '/registro'
     | '/sitemap.xml'
+    | '/telegram'
     | '/terminos-y-condiciones'
+    | '/admin/analitica'
     | '/admin/blog'
     | '/admin/categorias'
     | '/admin/chollos'
@@ -390,7 +412,9 @@ export interface FileRouteTypes {
     | '/politica-de-privacidad'
     | '/registro'
     | '/sitemap.xml'
+    | '/telegram'
     | '/terminos-y-condiciones'
+    | '/admin/analitica'
     | '/admin/blog'
     | '/admin/categorias'
     | '/admin/chollos'
@@ -425,6 +449,7 @@ export interface RootRouteChildren {
   PoliticaDePrivacidadRoute: typeof PoliticaDePrivacidadRoute
   RegistroRoute: typeof RegistroRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  TelegramRoute: typeof TelegramRoute
   TerminosYCondicionesRoute: typeof TerminosYCondicionesRoute
   AlertasNuevaRoute: typeof AlertasNuevaRoute
   BlogSlugRoute: typeof BlogSlugRoute
@@ -439,6 +464,13 @@ declare module '@tanstack/react-router' {
       path: '/terminos-y-condiciones'
       fullPath: '/terminos-y-condiciones'
       preLoaderRoute: typeof TerminosYCondicionesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/telegram': {
+      id: '/telegram'
+      path: '/telegram'
+      fullPath: '/telegram'
+      preLoaderRoute: typeof TelegramRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -630,6 +662,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBlogRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/analitica': {
+      id: '/admin/analitica'
+      path: '/analitica'
+      fullPath: '/admin/analitica'
+      preLoaderRoute: typeof AdminAnaliticaRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/blog_/nuevo': {
       id: '/admin/blog_/nuevo'
       path: '/blog/nuevo'
@@ -662,6 +701,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminAnaliticaRoute: typeof AdminAnaliticaRoute
   AdminBlogRoute: typeof AdminBlogRoute
   AdminCategoriasRoute: typeof AdminCategoriasRoute
   AdminChollosRoute: typeof AdminChollosRoute
@@ -676,6 +716,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAnaliticaRoute: AdminAnaliticaRoute,
   AdminBlogRoute: AdminBlogRoute,
   AdminCategoriasRoute: AdminCategoriasRoute,
   AdminChollosRoute: AdminChollosRoute,
@@ -717,6 +758,7 @@ const rootRouteChildren: RootRouteChildren = {
   PoliticaDePrivacidadRoute: PoliticaDePrivacidadRoute,
   RegistroRoute: RegistroRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TelegramRoute: TelegramRoute,
   TerminosYCondicionesRoute: TerminosYCondicionesRoute,
   AlertasNuevaRoute: AlertasNuevaRoute,
   BlogSlugRoute: BlogSlugRoute,

@@ -11,6 +11,7 @@ import { TableOfContents } from "@/features/blog/components/public/TableOfConten
 import { BlogPostCard } from "@/features/blog/components/public/BlogPostCard";
 import { BlogComments } from "@/features/blog/components/public/BlogComments";
 import { BlogPostVoteControl } from "@/features/blog/components/public/BlogPostVoteControl";
+import { BlogViewCount } from "@/features/blog/components/public/BlogViewCount";
 import { ShareDialog } from "@/features/deals/components/ShareBox";
 import { useAuth } from "@/hooks/useAuth";
 import { errorMessage } from "@/lib/errors";
@@ -265,6 +266,7 @@ function BlogPostPage() {
 
         <div className="not-prose mt-10 pt-6 border-t border-surface-700 flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3 flex-wrap">
+            <BlogViewCount count={post.view_count} />
             <span className="text-sm text-muted-foreground">¿Te ha sido útil este artículo?</span>
             <BlogPostVoteControl
               votesUp={votes.up}

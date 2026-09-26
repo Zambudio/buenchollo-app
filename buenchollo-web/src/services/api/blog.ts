@@ -137,6 +137,7 @@ export interface BlogPostDetail {
   products: Record<string, BlogDealSummary>;
   votes_up: number;
   votes_down: number;
+  view_count: number;
 }
 
 export interface PostVoteResponse {
