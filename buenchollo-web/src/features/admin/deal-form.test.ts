@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { buildDealPayload, dealToForm, emptyForm, resolveCategorySelection } from "./deal-form";
+import {
+  buildDealPayload,
+  dealToForm,
+  emptyForm,
+  isAmazonProductReference,
+  resolveCategorySelection,
+} from "./deal-form";
 import type { Category } from "@/services/api/categories";
 import type { DealDetailData } from "@/services/api/deals";
 
@@ -15,6 +21,12 @@ const baseDeal = {
   previous_price: 149.99,
   status: "active",
 } as DealDetailData;
+
+describe("isAmazonProductReference", () => {
+  it("acepta el nuevo acortador link.amazon", () => {
+    expect(isAmazonProductReference("https://link.amazon/B01eQCJsW")).toBe(true);
+  });
+});
 
 describe("emptyForm", () => {
   it("arranca activo, sin imágenes y sin keepa", () => {

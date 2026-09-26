@@ -37,6 +37,11 @@ export interface DealForm {
 export const adminInputCls =
   "w-full bg-surface-900 border border-surface-700 px-3 py-2 font-mono text-sm outline-none focus:border-cyan-glow";
 
+/** Filtro de UX; la allowlist de seguridad definitiva vive en el backend. */
+export function isAmazonProductReference(value: string): boolean {
+  return /amazon\./i.test(value) || /amzn\./i.test(value) || /\.amazon(?:[/?#:]|$)/i.test(value);
+}
+
 export function emptyForm(): DealForm {
   return {
     title: "",

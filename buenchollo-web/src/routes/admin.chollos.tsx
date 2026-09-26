@@ -36,6 +36,7 @@ import {
   buildDealPayload,
   dealToForm,
   emptyForm,
+  isAmazonProductReference,
   resolveCategorySelection,
   type DealForm,
 } from "@/features/admin/deal-form";
@@ -133,7 +134,7 @@ function AdminDeals() {
       toast.error("Introduce una URL");
       return;
     }
-    if (!/amazon\./i.test(url) && !/amzn\./i.test(url)) {
+    if (!isAmazonProductReference(url)) {
       toast.error("La URL no parece de Amazon");
       return;
     }
