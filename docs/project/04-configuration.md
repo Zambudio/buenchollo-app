@@ -18,6 +18,10 @@
 | 🔐 `SUPABASE_KEY` | **service_role key** (privada, bypassa RLS). **NO** la anon key | `eyJ...` |
 | 🌐 `CORS_ORIGINS` | Lista separada por comas. ⚠️ Nunca `*` en producción | `http://localhost:8080,http://localhost:8081` |
 
+`SUPABASE_JWT_SECRET` solo es necesario para proyectos antiguos que todavía
+firmen JWT con HS256. La configuración actual valida ES256 mediante JWKS y puede
+dejarlo vacío.
+
 ### 🎛️ Opcionales (defaults seguros)
 
 | Variable | Default | Descripción |
@@ -28,7 +32,17 @@
 | `LOG_FORMAT` | `json` | `json` (Loki/ELK) o `text` (legible local) |
 | `RATE_LIMIT_ENABLED` | `true` | Desactiva todos los `@limiter.limit` sin tocar código |
 | `SCHEDULER_ENABLED` | `true` | Ejecuta mantenimiento y publicación programada en la API; en Docker la API usa `false` porque `buenchollo-scheduler` lo ejecuta una sola vez |
-| `CLOUDFLARE_DDNS_TOKEN` | (vacío) | Token "Edit zone DNS" de Cloudflare. Lo usa el contenedor `cloudflare-ddns` para mantener `api.<dominio>` apuntando a la IP pública del NAS (IP dinámica) |
+
+### 👁️ Analítica first-party
+
+| Variable | Default | Descripción |
+|---|---|---|
+| `ANALYTICS_HASH_SECRET` | fallback a `SUPABASE_KEY` | Secreto HMAC dedicado para seudonimizar los identificadores de visitante y sesión. La IP no se almacena. En producción debe ser una cadena larga y aleatoria distinta de otras claves |
+| `ANALYTICS_RETENTION_MONTHS` | `25` | Retención de eventos; admite de 1 a 25 meses |
+
+La ausencia de `ANALYTICS_HASH_SECRET` no impide arrancar por compatibilidad,
+pero el `.env` de producción ya debe incluirlo. Cambiarlo reinicia la continuidad
+de los identificadores seudónimos, no descifra datos anteriores.
 
 ### 🐛 Sentry (opcional)
 
@@ -47,7 +61,10 @@
 | `AMAZON_CLIENT_SECRET` | Credencial LWA |
 | `AMAZON_AFFILIATE_TAG` | p.ej. `buenchollo0b-21` |
 | `AMAZON_API_VERSION` | `3.2` (no cambiar salvo indicación de Amazon) |
+| `AMAZON_CREDENTIAL_VERSION` | Override opcional de la versión enviada en la credencial; vacío hereda `AMAZON_API_VERSION` |
 | `AMAZON_MARKETPLACE` | `www.amazon.es` |
+| `AMAZON_AUTH_ENDPOINT` | Endpoint OAuth de Amazon; por defecto `https://api.amazon.co.uk/auth/o2/token` |
+| `AMAZON_OAUTH_SCOPE` | Scope OAuth; por defecto `creatorsapi::default` |
 
 ### 🤖 Motor de IA Unificado (OmniRoute / OpenCode / Modelos Gratuitos / Fallback)
 
@@ -60,6 +77,7 @@
 | `AI_API_KEY` | — | Clave de API o token (opcional si OmniRoute local no requiere auth) |
 | `AI_TEMPERATURE` | — | Temperatura por defecto (`0.2`) |
 | `AI_TIMEOUT_SECONDS` | — | Timeout de peticiones LLM en segundos (`25.0`) |
+| `AI_MAX_EMPTY_RESPONSES` | — | Máximo de respuestas vacías toleradas antes de agotar el fallback (`3`) |
 
 #### 🤖 OpenAI Legacy (Opcional)
 
@@ -91,6 +109,12 @@ del siguiente intervalo y vuelve a verificarlas en la hora programada antes de
 publicar. Requiere también `DATABASE_URL`, las credenciales de Amazon y los tres
 valores de Telegram; sin ellos la programación queda en `error` y no se activa.
 
+### 📝 Blog (opcional)
+
+| Variable | Default | Descripción |
+|---|---|---|
+| `BLOG_AFFILIATE_DOMAINS` | (vacío) | Dominios afiliados adicionales, separados por comas, que el editor puede tratar como enlaces comerciales |
+
 > **Leyenda**: ✅ = la app no arranca sin ella · ⚠️ = la app arranca
 > pero el endpoint concreto falla cuando se invoca.
 
@@ -103,6 +127,7 @@ valores de Telegram; sin ellos la programación queda en `error` y no se activa.
 | `VITE_SUPABASE_URL` | ✅ | URL del proyecto Supabase |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | ✅ | **anon key** (pública por diseño). 🚨 **NUNCA** la service_role |
 | `VITE_API_URL` | ✅ | Base de `buenchollo-api` sin `/v1` final. Dev: `http://localhost:8000` |
+| `VITE_SENTRY_DSN` | — | DSN público opcional para errores del navegador; vacío desactiva Sentry frontend |
 
 > ⚠️ **Importante**: las variables `VITE_*` se embeben en el JavaScript
 > del cliente al hacer `npm run build`. **Cualquier valor que pongas

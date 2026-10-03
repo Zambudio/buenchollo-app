@@ -140,11 +140,11 @@ grande), con caídas eventuales a **Haiku 4.5** para tareas rápidas
 
 ```bash
 # Local antes del commit
-npm run quality                    # lint + typecheck + 72 vitest
-pytest -q -m "not integration"     # 78 pytest
+npm run quality                    # lint + typecheck + 186 vitest
+pytest -q -m "not integration"     # 272 pytest
 
 # En CI tras el push
-4 jobs: backend, frontend, e2e, security-audit
+5 jobs: backend, backend-integration, frontend, e2e, security-audit
 ```
 
 > 🚨 Si la IA genera código que rompe un test, el commit no se hace
@@ -262,9 +262,9 @@ al resto de tests.
 > **IA propuso**: refactorizar `admin.chollos.tsx` (940 líneas) en
 > varios sub-componentes.
 
-**Decisión humana**: ❌ **Rechazado por ahora**. Los tests integration
-no cubren toda la lógica interactiva. Documentado como deuda asumida
-con justificación. Cuando haya tests más completos, se hará.
+**Decisión humana inicial**: se aplazó hasta disponer de una red de seguridad.
+Después se ejecutó el refactor por componentes y hooks con pruebas de regresión;
+`admin.chollos.tsx` dejó de ser la pieza monolítica de 940 líneas.
 
 ---
 
@@ -289,7 +289,7 @@ Prácticamente todas, con grados distintos de intervención:
 
 ### ¿Cómo se validaron sus respuestas?
 
-Tres líneas defensivas: **tests automatizados** (167 tests + 4 jobs CI),
+Tres líneas defensivas: **tests automatizados** (511 tests + 5 jobs CI, fotografía 2026-09-26),
 **revisión humana** de cada commit, **auditorías cruzadas**.
 
 ### ¿Qué riesgos tiene usar IA?

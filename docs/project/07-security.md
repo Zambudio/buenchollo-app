@@ -199,21 +199,17 @@ curl -sI http://localhost:8000/health | \
 
 ---
 
-## ✅ Checklist pre-go-live al dominio definitivo
+## ✅ Estado de seguridad en producción
 
-Cuando BuenChollo se mueva del DDNS de Synology a su dominio propio:
-
-- [ ] 🌐 `CORS_ORIGINS` con los dominios reales (sin `*`)
-- [ ] ⚙️ `APP_ENV=production` para activar HSTS y warning CORS
-- [ ] 📝 `LOG_LEVEL=INFO` (nunca DEBUG en prod)
-- [ ] 🐛 `SENTRY_DSN` configurado y `SENTRY_ENVIRONMENT=production`
-- [ ] 🔒 Certificado Let's Encrypt auto-renovado en reverse proxy NAS
-- [ ] 🛡️ HSTS en el reverse proxy con `max-age=63072000; includeSubDomains; preload`
-- [ ] 📜 DNS CAA records limitando a Let's Encrypt
-- [ ] 🟢 Probar `https://securityheaders.com/` (objetivo: A)
-- [ ] 🟢 Probar `https://www.ssllabs.com/ssltest/` (objetivo: A)
-- [ ] 🔐 Activar 2FA TOTP en la cuenta de Supabase del admin
-- [ ] ✅ Ejecutar [`docs/reference/SMOKE_TEST.md`](../reference/SMOKE_TEST.md) completo
+- [x] `CORS_ORIGINS` limitado a los dominios reales.
+- [x] `APP_ENV=production` y `LOG_LEVEL=INFO` en el NAS.
+- [x] TLS Full (strict), HSTS, redirección HTTPS y `www` → raíz en Cloudflare.
+- [x] API publicada mediante Cloudflare Tunnel, sin puertos abiertos ni DDNS.
+- [x] WAF, rate limiting y Bot Fight Mode activos.
+- [x] RLS obligatorio para tablas públicas y prueba de regresión de migraciones.
+- [x] CI con auditoría de dependencias y escaneo del historial con gitleaks.
+- [ ] Activar manualmente la protección de contraseñas filtradas en Supabase Auth (TD-20).
+- [ ] Mantener el smoke test de [`docs/reference/SMOKE_TEST.md`](../reference/SMOKE_TEST.md) como comprobación previa a cambios sensibles.
 
 ---
 

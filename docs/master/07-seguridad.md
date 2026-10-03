@@ -16,7 +16,7 @@
 | Decisión arquitectónica | Beneficio de seguridad |
 |---|---|
 | 🚪 **API Gateway** ([ADR-002](../adr/ADR-002-migracion-baas-a-api-gateway.md)): el frontend nunca habla con la BD directamente | Punto único de validación y autorización. Sin lagunas. |
-| 🔒 **RLS activado** en las 12 tablas Supabase ([ADR-006](../adr/ADR-006-rls-service-role.md)) | Red de seguridad ante hipotético bypass de la API |
+| 🔒 **RLS activado** en las tablas públicas de negocio ([ADR-006](../adr/ADR-006-rls-service-role.md)) | Red de seguridad ante hipotético bypass de la API; una prueba protege las migraciones nuevas |
 | 🔑 **`service_role` sólo en backend** | El cliente nunca tiene acceso privilegiado a la BD |
 | 🛡️ **Validación en doble frontera** ([ADR-005](../adr/ADR-005-validacion-doble-frontera.md)) | El backend nunca confía en datos del cliente |
 | ⚠️ **Excepciones de dominio** que no exponen detalles internos | Errores genéricos al cliente, detalle sólo en logs |
@@ -239,7 +239,7 @@ npm audit --omit=dev --audit-level=high
 - 📜 **SBOM** con CycloneDX
 - 🍪 **Migración JWT a cookies HttpOnly** (alto coste, SDK Supabase no lo soporta idiomáticamente)
 - ⚡ **Lighthouse-CI** automatizado para performance budget
-- 🛡️ **WAF / Cloudflare front** cuando se mueva al dominio definitivo
+- 🛡️ **WAF, rate limiting y Bot Fight Mode** activos en Cloudflare
 
 ---
 
@@ -250,7 +250,7 @@ npm audit --omit=dev --audit-level=high
 La arquitectura limita la superficie de ataque desde el origen.
 ADR-002 prohíbe llamadas directas del frontend a la BD: todo pasa por
 la API Gateway FastAPI, donde se valida autenticación y autorización
-en cada endpoint. La BD tiene RLS activado en sus 12 tablas
+en cada endpoint. La BD tiene RLS activado en sus tablas públicas
 (ADR-006); el backend usa la `service_role` key, que bypassa RLS de
 forma controlada y auditada.
 

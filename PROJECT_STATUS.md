@@ -1,8 +1,10 @@
 # PROJECT_STATUS — BuenCholloTech
-*Última actualización: 2026-09-05 (Hotfix Storage del recorte de imágenes de Telegram — ver § 3.quinvicies)*
+*Última actualización: 2026-09-26 (auditoría documental integral; estado canónico en `docs/project/11-current-state.md`)*
 
-> **⚠️ Revisar este documento antes de migrar a dominio web en producción.**
-> Contiene el estado real del proyecto, deuda técnica pendiente y la hoja de ruta completa.
+> La migración al dominio propio ya está completada. Este documento conserva la
+> cronología; para el estado operativo vigente consulta
+> `docs/project/11-current-state.md` y para pendientes abiertos
+> `docs/project/10-technical-debt.md`.
 
 ---
 
@@ -15,6 +17,30 @@ de calidad senior (observabilidad, rate limiting, audit log, request_id, Sentry)
 con TypeScript strict + ESLint endurecido + TanStack Query + organización por features.
 Las decisiones técnicas (Clean Architecture, DIP con Protocols, async/await, PgBouncer,
 API versionada `/v1`, ADR-002) son correctas y defendibles profesionalmente.
+
+### 1.1 Fotografía verificada — 2026-09-26
+
+- Producción: frontend SSR en Cloudflare Workers y API/scheduler en Docker sobre
+  NAS, publicados mediante Cloudflare Tunnel.
+- Versión funcional auditada: merge `eee0a97`. Su CI de producción terminó
+  completamente en verde.
+- Calidad: 272 tests backend sin BD, 37 de integración con PostgreSQL, 186
+  Vitest y 16 E2E Playwright; **511 pruebas automatizadas** en total.
+- Analítica first-party desplegada: visitas, visitantes, sesiones, procedencia,
+  conversión Telegram → blog, contador público de artículos y exclusión del
+  dispositivo del administrador. ADR-014 aceptado.
+- Amazon: el autocompletado admite los nuevos enlaces oficiales
+  `https://link.amazon/...` tanto en frontend como en backend.
+- Telegram: el enlace general de las publicaciones usa
+  `https://buenchollotech.com/telegram`; el enlace de compra afiliado no cambia.
+- Publicaciones programadas: el editor del calendario permite cambiar todos los
+  campos web, incluida la pareja categoría/subcategoría, y mantiene independiente
+  el contenido de Telegram.
+- Deuda abierta: TD-21 (rotación pendiente del token de Cloudflare Tunnel),
+  TD-19 (observabilidad del arranque del worker) y el sub-item restante de TD-20
+  (protección de contraseñas filtradas en Supabase Auth).
+- Documentación: inventario funcional, arquitectura, configuración, despliegue,
+  calidad, limitaciones, glosario de dominio, Vault e índices auditados.
 
 ---
 
@@ -43,6 +69,44 @@ API versionada `/v1`, ADR-002) son correctas y defendibles profesionalmente.
 | 8 | Refactor de buenas prácticas — ver § 3.bis | ✅ Completado (2026-05-26) |
 | 9 | Failover resiliente a OpenAI oficial — ver § 3.quindecies | ✅ Completado (2026-08-29) |
 | 10 | Cierre de deuda técnica (TD-15, TD-16, TD-17) — ver § 3.sexdecies | ✅ Completado (2026-08-29) |
+
+### Analítica first-party y atribución — 2026-09-26
+
+- Nuevo módulo `analytics`, migración con RLS, tracking público y retención.
+- Panel `/admin/analitica`, contador público del blog, atribución first-touch,
+  ruta `/telegram` y exclusión del navegador del administrador.
+- Decisión documentada en ADR-014, plan de implementación y Vault.
+- Producción y CI verificados tras merge `e6c2055`.
+
+### Enlaces `link.amazon` y atribución desde Telegram — 2026-09-26
+
+- Frontend y backend aceptan y prueban el formato oficial
+  `https://link.amazon/<token>`; la resolución segura y la allowlist del backend
+  siguen siendo la autoridad.
+- El enlace general insertado en las publicaciones Telegram pasa a
+  `https://buenchollotech.com/telegram`; el enlace afiliado del producto no cambia.
+- Producción y CI verificados tras merge `0326a27`; documentación completada en
+  `ecfa650`.
+
+### Edición integral de publicaciones programadas — 2026-09-26
+
+- El contrato de `scheduled_deals` expone los campos editables del chollo
+  enlazado y el guardado sincroniza ambos registros.
+- El calendario admin permite cambiar todos los parámetros web, incluida la
+  pareja categoría/subcategoría filtrada por catálogo, sin alterar el flujo de
+  edición de Telegram.
+- Regresión cubierta por tests de esquema y E2E responsive. Producción y CI
+  verificados tras merge `eee0a97`.
+
+### Auditoría documental integral — 2026-09-26
+
+- Añadidos `CONTEXT.md` y `docs/project/11-current-state.md` como glosario y
+  fotografía operativa canónica.
+- Corregidos inventarios de módulos/rutas, variables de entorno, arquitectura
+  vigente, funcionalidad, ADRs, cifras de calidad, limitaciones ya resueltas y
+  estado de seguridad/despliegue.
+- Documentación del repositorio y ficha global del proyecto en el Vault
+  interrelacionadas y sometidas a comprobación de enlaces.
 
 ### 3.sexvicies Resiliencia en envío de fotos Telegram (Multipart) y Fallback de Categorías — 2026-09-25
 

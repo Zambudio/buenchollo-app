@@ -1,7 +1,7 @@
 # 🧪 06 · Calidad, testing y refactorización
 
 > **TL;DR** · Pirámide de testing clásica (más unit, menos E2E) con
-> **237 tests verdes en menos de un minuto**. Coverage estratégico **100/80/0**
+> **511 tests verdes** en el último CI de producción. Coverage estratégico **100/80/0**
 > en lugar de perseguir 100% global. Quality gates en **3 niveles**
 > (pre-commit, pre-push, CI).
 
@@ -20,17 +20,17 @@
 
 ```
                     ┌─────────────────────┐
-                    │  🎭 E2E  (8 tests)  │   Playwright + chromium · ~6s
+                    │  🎭 E2E (16 tests)  │   Playwright + chromium
                     └─────────────────────┘
               ┌────────────────────────────────┐
-              │  🔗 Integración backend (9)    │   pytest -m integration · Postgres real (local)
+              │  🔗 Integración backend (37)   │   pytest -m integration · PostgreSQL 16 en CI
               └────────────────────────────────┘
        ┌──────────────────────────────────────────────┐
-       │  ⚛️ Unit + RTL (220 = 118 pytest + 102 vitest) │   corren en CI en cada push
+       │  ⚛️ Unit + RTL (458 = 272 pytest + 186 vitest) │   corren en CI en cada push a main
        └──────────────────────────────────────────────┘
 ```
 
-📊 **Total**: **237 tests automatizados** (verificado 2026-07-17, pytest bajo Python 3.11).
+📊 **Total**: **511 tests automatizados** (verificado 2026-09-26: Python 3.11, Node 20 y Chromium).
 
 ### 🎯 Por qué esta proporción
 
@@ -139,8 +139,9 @@ src/lib/query-client.ts               (config sin lógica)
                                                                           ▼
                                                                   ┌───────────────┐
                                                                   │ ⚙️ CI (GitHub)│
-                                                                  │   4 jobs:     │
+                                                                  │   5 jobs:     │
                                                                   │   - backend   │
+                                                                  │   - integration│
                                                                   │   - frontend  │
                                                                   │   - e2e       │
                                                                   │   - security  │
@@ -159,7 +160,7 @@ npm run typecheck   # tsc --noEmit (strict + noUncheckedIndexedAccess)
 ### 🪝 Pre-push (Husky, ~3s)
 
 ```bash
-npm run test:run    # Vitest run (72 unit + integration)
+npm run test:run    # Vitest run (186 unit + integration)
 ```
 
 > 🚨 Si falla, el push se aborta. Los E2E **no** entran como gate
@@ -181,11 +182,12 @@ git push --no-verify
 
 ### ⚙️ CI — `.github/workflows/ci.yml`
 
-4 jobs en cada `push` a `main` y cada `pull_request`:
+5 jobs en cada `push` a `main` y cada `pull_request`:
 
 | Job | Comprueba | Artifact |
 |---|---|---|
-| 🐍 `backend` | `pytest -m "not integration"` (78 unit) | — |
+| 🐍 `backend` | `pytest -m "not integration"` (272) | — |
+| 🐘 `backend-integration` | `pytest -m integration` (37) con PostgreSQL 16 | — |
 | ⚛️ `frontend` | typecheck + ESLint + Vitest con coverage threshold | `coverage/` siempre |
 | 🎭 `e2e` | Playwright chromium con webServer | HTML report + traces en fallo |
 | 🛡️ `security-audit` | `pip-audit`, `npm audit --omit=dev`, `gitleaks` | — |
@@ -309,11 +311,9 @@ sprint del proyecto incluyó refactors sin dejar tests rojos en `main`:
 | Item | Por qué se asume |
 |---|---|
 | 📷 **Visual regression** (`toHaveScreenshot`) | Brittleness sin valor — cambios CSS sin defecto rompen tests |
-| 🎭 **Page Object Model elaborado** | Con 8 E2E, helpers ad-hoc son más legibles |
+| 🎭 **Page Object Model elaborado** | Con 16 E2E, helpers ad-hoc siguen siendo más legibles; reconsiderar al superar 20 |
 | 🎯 **MSW (Mock Service Worker)** | `page.route` + Vitest mocks bastan; MSW tendría sentido con docenas de tests |
 | 🛠️ **Tests E2E del admin completos** | OAuth Google requiere mocks complejos; cubierto con integration + smoke manual |
-| 🧪 **Tests integración en CI** | Requiere Postgres real; Supabase no levantable en CI |
-| 🪨 **Refactor `admin.chollos.tsx`** (940 líneas) | God Component conocido; partir tiene alto riesgo |
 | 🔍 **SonarJS / SonarQube** | ESLint estricto + TS strict ya cubren lo que detectaría |
 
 ---

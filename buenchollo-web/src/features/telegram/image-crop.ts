@@ -82,11 +82,33 @@ export async function createCroppedImage(sourceUrl: string, crop: CropArea): Pro
   return canvasToBlob(canvas);
 }
 
-export async function cropAndUploadTelegramImage(
-  sourceUrl: string,
-  crop: CropArea,
-): Promise<string> {
-  const blob = await createCroppedImage(sourceUrl, crop);
+export async function createRotatedImage(sourceUrl: string): Promise<Blob> {
+  const image = await loadImage(sourceUrl);
+  const scale = Math.min(1, OUTPUT_MAX_SIDE / Math.max(image.naturalWidth, image.naturalHeight));
+  const drawWidth = Math.max(1, Math.round(image.naturalWidth * scale));
+  const drawHeight = Math.max(1, Math.round(image.naturalHeight * scale));
+
+  // Al girar 90° se intercambian ancho y alto del lienzo.
+  const canvas = document.createElement("canvas");
+  canvas.width = drawHeight;
+  canvas.height = drawWidth;
+
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("El navegador no permite procesar esta imagen.");
+
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+  // Giro horario: llevamos el origen a la esquina superior derecha y rotamos.
+  context.translate(canvas.width, 0);
+  context.rotate(Math.PI / 2);
+  context.drawImage(image, 0, 0, drawWidth, drawHeight);
+
+  return canvasToBlob(canvas);
+}
+
+async function uploadTelegramImage(blob: Blob): Promise<string> {
   const path = `telegram/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
   const bucket = supabase.storage.from("deal-images");
   const { error } = await bucket.upload(path, blob, {
@@ -94,10 +116,21 @@ export async function cropAndUploadTelegramImage(
     contentType: OUTPUT_TYPE,
     upsert: false,
   });
-  if (error) throw new Error(`No se pudo guardar el recorte: ${error.message}`);
+  if (error) throw new Error(`No se pudo guardar la imagen editada: ${error.message}`);
 
   const {
     data: { publicUrl },
   } = bucket.getPublicUrl(path);
   return publicUrl;
+}
+
+export async function cropAndUploadTelegramImage(
+  sourceUrl: string,
+  crop: CropArea,
+): Promise<string> {
+  return uploadTelegramImage(await createCroppedImage(sourceUrl, crop));
+}
+
+export async function rotateAndUploadTelegramImage(sourceUrl: string): Promise<string> {
+  return uploadTelegramImage(await createRotatedImage(sourceUrl));
 }

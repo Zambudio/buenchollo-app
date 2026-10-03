@@ -324,7 +324,7 @@ ningún test rojo se quedara en `main`:
 <tbody>
 <tr>
   <td>🪨 <strong>God Component</strong></td>
-  <td><code>admin.chollos.tsx</code> tiene 940 líneas (documentado como deuda asumida — partir conlleva alto riesgo). El resto del frontend está bajo 400 líneas/archivo.</td>
+  <td>El antiguo <code>admin.chollos.tsx</code> monolítico se dividió en lógica pura, hooks y componentes de formulario, tabla, autocompletado y calendario, protegidos por tests.</td>
 </tr>
 <tr>
   <td>🪜 <strong>Prop drilling</strong></td>
@@ -373,7 +373,6 @@ ningún test rojo se quedara en `main`:
 > **conscientemente** dejado como mejora futura, con justificación en
 > [`09 · Limitaciones y mejoras futuras`](09-limitaciones-y-mejoras-futuras.md).
 
-- 🪨 `admin.chollos.tsx` God Component (940 líneas)
 - ♿ A11y warnings en algunos formularios admin
 - 🎨 `style-src 'unsafe-inline'` en CSP (necesario para React + shadcn)
 - 📷 Visual regression con `toHaveScreenshot`

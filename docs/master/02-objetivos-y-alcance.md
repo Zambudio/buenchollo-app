@@ -37,7 +37,7 @@ sistema:
 <tr><th>#</th><th>Objetivo</th><th>Cómo se materializa</th></tr>
 </thead>
 <tbody>
-<tr><td>1</td><td><strong>📐 Aplicar una arquitectura razonada y documentada</strong></td><td>Monolito modular con Clean Architecture pragmática · 9 ADRs firmados</td></tr>
+<tr><td>1</td><td><strong>📐 Aplicar una arquitectura razonada y documentada</strong></td><td>Monolito modular con Clean Architecture pragmática · 14 ADRs firmados</td></tr>
 <tr><td>2</td><td><strong>🧪 Implementar una estrategia de calidad medible</strong></td><td>Pirámide unit/integration/E2E · coverage estratégico 100/80/0 · quality gates automáticos</td></tr>
 <tr><td>3</td><td><strong>🛡️ Aplicar Security by Design y Security by Default</strong></td><td>Auditoría OWASP Top 10 completa · hallazgos priorizados · mitigaciones efectivas</td></tr>
 <tr><td>4</td><td><strong>🤖 Usar IA como apoyo supervisado al desarrollo</strong></td><td>Claude Code con <code>CLAUDE.md</code> · auditorías por módulo · validación obligatoria por tests + revisión humana</td></tr>
@@ -52,7 +52,7 @@ sistema:
 <tr><th>#</th><th>Objetivo</th><th>Estado actual</th></tr>
 </thead>
 <tbody>
-<tr><td>6</td><td><strong>🌐 Tener una plataforma en producción</strong> sirviendo a usuarios reales</td><td>✅ Desplegada en NAS Synology con DDNS HTTPS</td></tr>
+<tr><td>6</td><td><strong>🌐 Tener una plataforma en producción</strong> sirviendo a usuarios reales</td><td>✅ Frontend en Cloudflare Workers y API del NAS mediante Cloudflare Tunnel</td></tr>
 <tr><td>7</td><td><strong>⚡ Automatizar el flujo manual</strong> de publicación</td><td>✅ Pega URL → autocomplete + IA en menos de 30s</td></tr>
 <tr><td>8</td><td><strong>🌱 Permitir crecimiento futuro</strong> sin reescribir el núcleo</td><td>✅ Protocols + Clean Architecture facilitan extensión sin tocar el core</td></tr>
 </tbody>
@@ -70,6 +70,8 @@ sistema:
 - Acceso al canal de Telegram desde la web
 - Click en el enlace afiliado (Amazon Associates)
 - 📈 Gráfica de precios histórica (Keepa) en el detalle
+- 📰 Blog editorial con comentarios, votos y contador público de lecturas
+- 📊 Analítica first-party con atribución de buscadores, Telegram, referencias y tráfico directo
 
 #### 🔑 Para usuarios registrados (Google OAuth)
 
@@ -88,6 +90,9 @@ Todo lo anterior, más:
 - 🤖 **Autocomplete desde URL de Amazon**: extracción ASIN + Amazon Creators API + OpenAI genera copy
 - 🔁 **Detector de duplicados por ASIN** con diálogo de "sobrescribir" / "ir al existente"
 - 📤 Publicación a Telegram con copy adaptado por IA
+- 🗓️ Programación y edición integral previa de publicaciones web/Telegram
+- 📊 Panel de audiencia, atribución y conversión Telegram → blog
+- ⏱️ Motor de tareas programadas y revisión periódica de precios
 - 🗒️ Audit log de todas las acciones críticas
 
 ---
@@ -122,20 +127,19 @@ Todo lo anterior, más:
 │  asyncpg · Pydantic v2                                    │
 ├────────────────────────────────────────────────────────────┤
 │  PERSISTENCIA & AUTH                                       │
-│  PostgreSQL (Supabase managed) · RLS en 12 tablas         │
+│  PostgreSQL (Supabase managed) · RLS en tablas públicas   │
 │  Supabase Auth (Google OAuth + email)                     │
 │  Supabase Storage (imágenes admin)                        │
 ├────────────────────────────────────────────────────────────┤
 │  INTEGRACIONES EXTERNAS                                    │
-│  Amazon Creators API · OpenAI GPT-4o                      │
+│  Amazon Creators API · Keepa · OmniRoute / OpenAI         │
 │  Telegram Bot API · Sentry SaaS                           │
 ├────────────────────────────────────────────────────────────┤
 │  DEPLOY                                                    │
-│  NAS Synology DSM 7.2+ · Docker Compose                   │
-│  Reverse proxy DSM · Let's Encrypt                        │
+│  Cloudflare Workers · Tunnel · NAS Synology · Docker      │
 ├────────────────────────────────────────────────────────────┤
 │  CI/CD                                                     │
-│  GitHub Actions (4 jobs) · Husky · Dependabot semanal     │
+│  GitHub Actions (5 jobs) · Husky · Dependabot semanal     │
 └────────────────────────────────────────────────────────────┘
 ```
 
@@ -162,11 +166,11 @@ El proyecto alcanza su versión lista para producción cuando se cumplen estas 8
 
 | # | Condición | Estado |
 |---|---|---|
-| 1 | CI verde en `main` con los 4 jobs | ✅ |
-| 2 | **167 tests automatizados** verdes | ✅ |
+| 1 | CI verde en `main` con los 5 jobs | ✅ |
+| 2 | **511 tests automatizados** verdes (fotografía 2026-09-26) | ✅ |
 | 3 | Coverage threshold automatizado en `src/lib/**` ≥ 90% | ✅ |
 | 4 | **0 CVEs** conocidas en deps de producción | ✅ |
-| 5 | **9 ADRs** firmados cubriendo las decisiones clave | ✅ |
+| 5 | **14 ADRs** firmados cubriendo las decisiones clave | ✅ |
 | 6 | Documentación técnica y operativa completa y coherente | ✅ |
 | 7 | Plataforma **desplegada y accesible** en el NAS | ✅ |
 | 8 | Tag de release **`v1.0.0`** publicado | ✅ |

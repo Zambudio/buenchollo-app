@@ -292,7 +292,9 @@ function AdminDeals() {
       return false;
     }
 
-    const selectedImages = form.images.filter(Boolean);
+    // Usamos la lista editada en el panel (fotos eliminadas, recortadas o volteadas
+    // ya sustituidas) para no sumar la versión editada a las originales.
+    const selectedImages = request.images.filter(Boolean);
     if (request.image_url) {
       const existingIndex = selectedImages.indexOf(request.image_url);
       if (existingIndex >= 0) selectedImages.splice(existingIndex, 1);

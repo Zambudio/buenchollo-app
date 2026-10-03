@@ -1,6 +1,6 @@
 # 🧪 06 · Testing y calidad
 
-> **TL;DR** · **237 tests automatizados** verdes en menos de un minuto.
+> **TL;DR** · **511 tests automatizados** verdes en el último CI de producción.
 > Pirámide unit/integration/E2E. Coverage estratégico 100/80/0 con
 > threshold automático en `src/lib/**`. Gates en 3 niveles
 > (pre-commit, pre-push, CI).
@@ -14,16 +14,16 @@
 
 ```
                     ┌──────────────────────┐
-                    │  🎭 E2E (8)          │   Playwright + chromium
+                    │  🎭 E2E (16)         │   Playwright + chromium
                     └──────────────────────┘
               ┌──────────────────────────────────┐
-              │  🔗 Integración backend (9)      │   pytest -m integration · Postgres real (local)
+              │  🔗 Integración backend (37)     │   pytest -m integration · PostgreSQL 16 en CI
               └──────────────────────────────────┘
        ┌────────────────────────────────────────────────┐
-       │  ⚛️ Unit + RTL (220 = 118 pytest + 102 vitest)   │   corren en CI en cada push
+       │  ⚛️ Unit + RTL (458 = 272 pytest + 186 vitest)    │   corren en CI en cada push a main
        └────────────────────────────────────────────────┘
 
-  Total: 237 tests (verificado 2026-07-17 · pytest bajo Python 3.11)
+  Total: 511 tests (verificado 2026-09-26 · Python 3.11 + Node 20)
 ```
 
 ---
@@ -34,7 +34,7 @@
 
 ```bash
 pytest                              # toda la suite (necesita Postgres real para integración)
-pytest -q -m "not integration"      # 87 unitarios, rápido, sin BD
+pytest -q -m "not integration"      # 272 tests, rápido, sin BD
 pytest app/tests/test_deal_service.py -v   # un fichero concreto
 pytest -k "duplicate"               # tests cuyo nombre incluye "duplicate"
 ```
@@ -43,9 +43,9 @@ pytest -k "duplicate"               # tests cuyo nombre incluye "duplicate"
 
 ```bash
 npm run test                        # vitest watch (desarrollo)
-npm run test:run                    # 72 tests one-shot
+npm run test:run                    # 186 tests one-shot
 npm run test:coverage               # + reporte HTML en coverage/
-npm run test:e2e                    # 8 playwright (levanta dev server)
+npm run test:e2e                    # 16 Playwright (levanta dev server)
 npm run test:e2e:ui                 # modo UI interactivo
 npx playwright show-report          # último HTML report
 ```
@@ -180,9 +180,11 @@ vi.mock("sonner", () => ({ toast: mocks.toast }));
 
 Marcados con `pytestmark = pytest.mark.integration` a nivel de módulo.
 
-> ⚠️ Excluidos del CI (`pytest -m "not integration"`) porque requieren
-> **PostgreSQL real**. Se ejecutan en local antes de cada release y
-> vía [`docs/reference/SMOKE_TEST.md`](../reference/SMOKE_TEST.md).
+Corren en un job separado del CI con PostgreSQL 16 como servicio. El esquema de
+prueba se crea desde los modelos ORM mediante `scripts/create_test_schema.py`;
+el job unitario sigue usando `pytest -m "not integration"` para mantener rápido
+el feedback. El smoke manual de producción continúa documentado en
+[`docs/reference/SMOKE_TEST.md`](../reference/SMOKE_TEST.md).
 
 ---
 
@@ -202,8 +204,9 @@ Marcados con `pytestmark = pytest.mark.integration` a nivel de módulo.
                                                             ▼
                                                     ┌───────────────┐
                                                     │ ⚙️ CI         │
-                                                    │   4 jobs:     │
+                                                    │   5 jobs:     │
                                                     │   - backend   │
+                                                    │   - integration│
                                                     │   - frontend  │
                                                     │   - e2e       │
                                                     │   - security  │
@@ -264,10 +267,8 @@ Tres tiers documentados con umbrales verde/amarillo/rojo:
 | Item | Por qué se asume |
 |---|---|
 | 📷 Visual regression (`toHaveScreenshot`) | Brittleness sin valor en una UI que aún itera |
-| 🎭 Page Object Model elaborado | Con 8 E2E, helpers ad-hoc son más legibles |
+| 🎭 Page Object Model elaborado | Con 16 E2E, helpers ad-hoc siguen siendo más legibles; reconsiderar al superar 20 |
 | 🛠️ Tests E2E completos del admin | OAuth Google requiere mocks complejos |
-| 🧪 Tests integración en CI | Requiere Postgres real |
-| 🪨 Refactor `admin.chollos.tsx` (940 líneas) | God Component conocido; partir tiene alto riesgo |
 
 ---
 

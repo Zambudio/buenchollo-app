@@ -17,6 +17,21 @@
 
 ## 🏠 Arquitectura actual
 
+```text
+Navegador ── HTTPS ──> Cloudflare Worker (frontend SSR)
+    │
+    └────── HTTPS ──> Cloudflare Tunnel ──> buenchollo-api (NAS)
+                                              │
+                                              ├─> buenchollo-scheduler
+                                              ├─> PostgreSQL/Supabase Auth/Storage
+                                              └─> Amazon · Keepa · IA · Telegram · Sentry
+```
+
+Contenedores activos del stack: `buenchollo-api`, `buenchollo-scheduler` y
+`cloudflared`. El frontend no se sirve desde el NAS.
+
+### Histórico: topología anterior con DDNS y reverse proxy (no vigente)
+
 ```
 ┌──────────────────────────────────────────────────┐
 │  🌐 Internet                                     │
@@ -46,8 +61,8 @@
 └──────┘     └────────┘     └────────┘    └──────┘  └───────┘
 ```
 
-> 💡 El frontend se sirve estáticamente desde el mismo NAS, o se
-> puede mover a Cloudflare Pages / Vercel si se quiere CDN global.
+> Este bloque se conserva únicamente para entender la transición. No debe usarse
+> como receta de producción.
 
 ---
 
@@ -212,10 +227,11 @@ automáticamente (no hace falta apuntar a la IP del NAS).
 
 ---
 
-## 🎯 Pre-go-live al dominio definitivo
+## 🗄️ Histórico: plan pre-go-live ya ejecutado
 
-Cuando BuenCholloTech se mueva de DDNS Synology a su propio dominio
-(p.ej. `buenchollotech.com`):
+Este fue el plan utilizado para pasar de DDNS Synology al dominio
+`buenchollotech.com`. Se conserva como referencia histórica; no describe una
+tarea pendiente ni sustituye la guía viva de Cloudflare.
 
 ### 📝 Variables de entorno (.env del NAS)
 

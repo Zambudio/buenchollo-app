@@ -107,7 +107,7 @@ sólida y verificable.
 
 - **Severidad**: 🟡 Media
 - **Categoría**: Vulnerable Components (OWASP A06)
-- **Archivos**: [`buenchollo-api/requirements.txt`](../buenchollo-api/requirements.txt#L10)
+- **Archivos**: [`buenchollo-api/requirements.txt`](../../buenchollo-api/requirements.txt#L10)
 - **Evidencia** (output de `pip-audit`):
   ```
   python-multipart 0.0.6 → 5 CVEs:
@@ -138,7 +138,7 @@ sólida y verificable.
 
 - **Severidad**: 🟡 Media (mitigada por JWT-en-header)
 - **Categoría**: Security Misconfiguration (OWASP A05)
-- **Archivos**: [`buenchollo-api/app/main.py:140-148`](../buenchollo-api/app/main.py#L140)
+- **Archivos**: [`buenchollo-api/app/main.py:140-148`](../../buenchollo-api/app/main.py#L140)
 - **Evidencia**:
   ```python
   @app.exception_handler(Exception)
@@ -216,7 +216,7 @@ sólida y verificable.
 
 - **Severidad**: 🟡 Media (riesgo de descuido en deploy)
 - **Categoría**: Security Misconfiguration (OWASP A05)
-- **Archivos**: [`buenchollo-api/.env.example:36`](../buenchollo-api/.env.example#L36)
+- **Archivos**: [`buenchollo-api/.env.example:36`](../../buenchollo-api/.env.example#L36)
 - **Evidencia**:
   ```
   # ── CORS ───────────────────
@@ -241,7 +241,7 @@ sólida y verificable.
 
 - **Severidad**: 🟢 Baja (admin-only)
 - **Categoría**: Insecure Design (OWASP A04)
-- **Archivos**: [`buenchollo-api/app/modules/deals/api/schemas.py`](../buenchollo-api/app/modules/deals/api/schemas.py)
+- **Archivos**: [`buenchollo-api/app/modules/deals/api/schemas.py`](../../buenchollo-api/app/modules/deals/api/schemas.py)
 - **Evidencia**: `DealCreate.title: str`, `description: str | None`,
   `affiliate_url: str` — sin `Field(max_length=…)`.
 - **Riesgo**: un admin malicioso o token comprometido puede meter
@@ -264,7 +264,7 @@ sólida y verificable.
 
 - **Severidad**: 🟡 Media
 - **Categoría**: SSRF (OWASP A10)
-- **Archivos**: [`buenchollo-api/app/modules/products/infrastructure/amazon_client.py:60-90`](../buenchollo-api/app/modules/products/infrastructure/amazon_client.py)
+- **Archivos**: [`buenchollo-api/app/modules/products/infrastructure/amazon_client.py:60-90`](../../buenchollo-api/app/modules/products/infrastructure/amazon_client.py)
 - **Evidencia**:
   ```python
   def extract_asin_from_url(url_or_asin: str) -> str | None:
@@ -322,7 +322,7 @@ sólida y verificable.
 
 - **Severidad**: 🟡 Media (sin solución sencilla)
 - **Categoría**: Cryptographic Failures (OWASP A02)
-- **Archivos**: [`buenchollo-web/src/integrations/supabase/client.ts:20`](../buenchollo-web/src/integrations/supabase/client.ts#L20)
+- **Archivos**: [`buenchollo-web/src/integrations/supabase/client.ts:20`](../../buenchollo-web/src/integrations/supabase/client.ts#L20)
 - **Evidencia**: `storage: typeof window !== "undefined" ? localStorage : undefined`.
 - **Riesgo**: cualquier XSS en la web roba el JWT → la atacante puede
   hacer llamadas a la API como el usuario hasta que el token expire.
@@ -342,7 +342,7 @@ sólida y verificable.
 
 - **Severidad**: 🟢 Baja
 - **Categoría**: Logging/Monitoring Failures (OWASP A09)
-- **Archivos**: [`buenchollo-api/app/core/security.py:33`](../buenchollo-api/app/core/security.py#L33)
+- **Archivos**: [`buenchollo-api/app/core/security.py:33`](../../buenchollo-api/app/core/security.py#L33)
 - **Evidencia**:
   ```python
   logger.debug("JWT validado OK — user_id=%s email=%s",

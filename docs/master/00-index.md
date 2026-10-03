@@ -48,7 +48,7 @@ Si tienes una hora → léelo todo.
 | [03](03-analisis-funcional.md) | 👥 **Análisis funcional** | Usuarios, funcionalidades, flujos | ~10 min |
 | [04](04-arquitectura-y-decisiones-tecnicas.md) | 📐 **Arquitectura y decisiones técnicas** | Monolito modular + API Gateway + ADRs | ~15 min |
 | [05](05-buenas-practicas-y-principios-de-diseno.md) | ✨ **Buenas prácticas y principios de diseño** | SOLID, DRY, KISS, YAGNI con ejemplos del código | ~15 min |
-| [06](06-calidad-testing-y-refactorizacion.md) | 🧪 **Calidad, testing y refactorización** | Pirámide 167 tests · coverage estratégico | ~10 min |
+| [06](06-calidad-testing-y-refactorizacion.md) | 🧪 **Calidad, testing y refactorización** | Pirámide de 511 tests · coverage estratégico | ~10 min |
 | [07](07-seguridad.md) | 🛡️ **Seguridad** | Security by Design + OWASP Top 10 + hallazgos | ~15 min |
 | [08](08-uso-de-ia-en-el-desarrollo.md) | 🤖 **Uso de IA en el desarrollo** | Claude Code, patrones, supervisión humana | ~15 min |
 | [09](09-limitaciones-y-mejoras-futuras.md) | 🔭 **Limitaciones y mejoras futuras** | Deuda asumida con justificación | ~10 min |
@@ -71,7 +71,7 @@ disciplina:
   <td>
     <a href="04-arquitectura-y-decisiones-tecnicas.md">04 · Arquitectura</a> ·
     <a href="05-buenas-practicas-y-principios-de-diseno.md">05 · Buenas prácticas</a> ·
-    <a href="../adr/00-index.md">9 ADRs firmados</a>
+    <a href="../adr/00-index.md">14 ADRs firmados</a>
   </td>
 </tr>
 <tr>
@@ -115,7 +115,8 @@ disciplina:
 
 | Carpeta | Para qué |
 |---|---|
-| [`../adr/`](../adr/00-index.md) | **9 ADRs** firmados y datados (decisiones arquitectónicas) |
+| [`../adr/`](../adr/00-index.md) | **14 ADRs** firmados y datados (decisiones arquitectónicas) |
+| [`../project/11-current-state.md`](../project/11-current-state.md) | Estado actual verificado de producción, módulos, calidad y pendientes |
 | [`../reference/`](../reference/) | Referencias densas: plan de hardening, auditoría OWASP completa, smoke test |
 | [`../project/`](../project/00-index.md) | Operativa del repositorio (cómo instalar, ejecutar, desplegar) |
 | [`../../PROJECT_STATUS.md`](../../PROJECT_STATUS.md) | Bitácora viva del proyecto con cronología completa de sprints |
