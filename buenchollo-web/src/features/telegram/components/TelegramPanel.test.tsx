@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   addCategory: vi.fn(),
   notify: vi.fn(),
   cropAndUploadTelegramImage: vi.fn(),
+  rotateAndUploadTelegramImage: vi.fn(),
 }));
 
 vi.mock("@/services/api/telegram", () => ({
@@ -20,6 +21,7 @@ vi.mock("@/services/api/telegram", () => ({
 
 vi.mock("../image-crop", () => ({
   cropAndUploadTelegramImage: mocks.cropAndUploadTelegramImage,
+  rotateAndUploadTelegramImage: mocks.rotateAndUploadTelegramImage,
 }));
 
 beforeEach(() => {
@@ -210,5 +212,109 @@ describe("TelegramPanel", () => {
 
     expect(screen.queryByRole("dialog", { name: /recortar imagen/i })).not.toBeInTheDocument();
     expect(mocks.cropAndUploadTelegramImage).not.toHaveBeenCalled();
+  });
+
+  it("elimina imágenes y programa solo con las restantes", async () => {
+    const user = userEvent.setup();
+    const onSchedule = vi.fn().mockResolvedValue(true);
+
+    renderWithProviders(
+      <TelegramPanel
+        dealData={{
+          title: "Chollo de prueba",
+          current_price: 99,
+          affiliate_url: "https://amazon.es/dp/B0D9WH9WLD",
+          images: [
+            "https://images.test/a.jpg",
+            "https://images.test/b.jpg",
+            "https://images.test/c.jpg",
+          ],
+        }}
+        onClose={vi.fn()}
+        onSchedule={onSchedule}
+      />,
+    );
+
+    await screen.findByDisplayValue(/Chollo de prueba/);
+    await user.click(screen.getByRole("button", { name: "Eliminar imagen 2" }));
+    expect(screen.getByText(/imagen \(1 \/ 2\)/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /eliminar imagen actual/i }));
+    expect(screen.getByRole("button", { name: /eliminar imagen actual/i })).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: /programar y guardar/i }));
+
+    await waitFor(() => expect(onSchedule).toHaveBeenCalledOnce());
+    expect(onSchedule.mock.calls[0]?.[0]).toMatchObject({
+      image_url: "https://images.test/c.jpg",
+      images: ["https://images.test/c.jpg"],
+    });
+  });
+
+  it("no programa con más de 20 imágenes", async () => {
+    const user = userEvent.setup();
+    const onSchedule = vi.fn().mockResolvedValue(true);
+    const images = Array.from({ length: 21 }, (_, i) => `https://images.test/${i}.jpg`);
+
+    renderWithProviders(
+      <TelegramPanel
+        dealData={{
+          title: "Chollo de prueba",
+          current_price: 99,
+          affiliate_url: "https://amazon.es/dp/B0D9WH9WLD",
+          images,
+        }}
+        onClose={vi.fn()}
+        onSchedule={onSchedule}
+      />,
+    );
+
+    await screen.findByDisplayValue(/Chollo de prueba/);
+    expect(screen.getByText(/máximo 20 imágenes para programar/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /programar y guardar/i }));
+    expect(onSchedule).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Eliminar imagen 21" }));
+    await user.click(screen.getByRole("button", { name: /programar y guardar/i }));
+    await waitFor(() => expect(onSchedule).toHaveBeenCalledOnce());
+    expect(onSchedule.mock.calls[0]?.[0].images).toHaveLength(20);
+  });
+
+  it("gira la imagen 90° y sustituye la original al programar", async () => {
+    const user = userEvent.setup();
+    const onSchedule = vi.fn().mockResolvedValue(true);
+    mocks.rotateAndUploadTelegramImage.mockResolvedValue(
+      "https://storage.test/deal-images/telegram/rotated.jpg",
+    );
+
+    renderWithProviders(
+      <TelegramPanel
+        dealData={{
+          title: "Chollo de prueba",
+          current_price: 99,
+          affiliate_url: "https://amazon.es/dp/B0D9WH9WLD",
+          images: ["https://images.test/a.jpg", "https://images.test/b.jpg"],
+        }}
+        onClose={vi.fn()}
+        onSchedule={onSchedule}
+      />,
+    );
+
+    await screen.findByDisplayValue(/Chollo de prueba/);
+    await user.click(screen.getByRole("button", { name: /girar 90°/i }));
+
+    await waitFor(() =>
+      expect(mocks.rotateAndUploadTelegramImage).toHaveBeenCalledWith("https://images.test/a.jpg"),
+    );
+    expect(await screen.findByText(/girada/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /programar y guardar/i }));
+    await waitFor(() => expect(onSchedule).toHaveBeenCalledOnce());
+    expect(onSchedule.mock.calls[0]?.[0]).toMatchObject({
+      image_url: "https://storage.test/deal-images/telegram/rotated.jpg",
+      images: [
+        "https://storage.test/deal-images/telegram/rotated.jpg",
+        "https://images.test/b.jpg",
+      ],
+    });
   });
 });

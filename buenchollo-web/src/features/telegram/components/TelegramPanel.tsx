@@ -11,9 +11,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Crop,
+  RotateCw,
   Loader2,
   Plus,
   Send,
+  Trash2,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -23,12 +25,21 @@ import {
   type TelegramGenerateRequest,
 } from "@/services/api/telegram";
 import { toDatetimeLocal } from "@/lib/format";
-import { cropAndUploadTelegramImage, type CropArea } from "../image-crop";
+import {
+  cropAndUploadTelegramImage,
+  rotateAndUploadTelegramImage,
+  type CropArea,
+} from "../image-crop";
 import { TelegramImageCropper } from "./TelegramImageCropper";
+
+/** Límite de imágenes que acepta la API al guardar un chollo programado. */
+export const MAX_TELEGRAM_IMAGES = 20;
 
 export interface TelegramScheduleRequest {
   text: string;
   image_url: string | null;
+  /** Lista final de imágenes tras eliminar/editar en el panel. */
+  images: string[];
   scheduled_at: string;
   telegram_channel_id: string;
 }
@@ -88,8 +99,9 @@ export function TelegramPanel({
   );
   const [imageIdx, setImageIdx] = useState(0);
   const [cropOpen, setCropOpen] = useState(false);
-  const [savingCrop, setSavingCrop] = useState(false);
-  const [croppedIndexes, setCroppedIndexes] = useState<Set<number>>(() => new Set());
+  const [savingImage, setSavingImage] = useState(false);
+  // Etiqueta de la última edición por URL (sobrevive a reordenaciones al eliminar)
+  const [editedLabels, setEditedLabels] = useState<Record<string, string>>({});
 
   // Canales
   const [channels, setChannels] = useState<TelegramChannel[]>([]);
@@ -194,22 +206,50 @@ export function TelegramPanel({
     }
   };
 
+  const replaceCurrentImage = (newUrl: string, label: string) => {
+    setImages((current) => current.map((url, index) => (index === imageIdx ? newUrl : url)));
+    setEditedLabels((current) => ({ ...current, [newUrl]: label }));
+  };
+
+  const handleRotate = async () => {
+    const sourceUrl = images[imageIdx];
+    if (!sourceUrl) return;
+
+    setSavingImage(true);
+    try {
+      const rotatedUrl = await rotateAndUploadTelegramImage(sourceUrl);
+      replaceCurrentImage(rotatedUrl, "Girada");
+      toast.success("Imagen girada 90° para la publicación");
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "No se pudo girar la imagen";
+      toast.error(message);
+    } finally {
+      setSavingImage(false);
+    }
+  };
+
+  const handleRemoveImage = (index: number) => {
+    if (images.length <= 1) return;
+    const nextLength = images.length - 1;
+    setImages((current) => current.filter((_, i) => i !== index));
+    setImageIdx((current) => (index < current ? current - 1 : Math.min(current, nextLength - 1)));
+  };
+
   const handleAcceptCrop = async (crop: CropArea) => {
     const sourceUrl = images[imageIdx];
     if (!sourceUrl) return;
 
-    setSavingCrop(true);
+    setSavingImage(true);
     try {
       const croppedUrl = await cropAndUploadTelegramImage(sourceUrl, crop);
-      setImages((current) => current.map((url, index) => (index === imageIdx ? croppedUrl : url)));
-      setCroppedIndexes((current) => new Set(current).add(imageIdx));
+      replaceCurrentImage(croppedUrl, "Recortada");
       setCropOpen(false);
       toast.success("Recorte guardado para la publicación");
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "No se pudo guardar el recorte";
       toast.error(message);
     } finally {
-      setSavingCrop(false);
+      setSavingImage(false);
     }
   };
 
@@ -263,11 +303,19 @@ export function TelegramPanel({
       return;
     }
 
+    if (images.length > MAX_TELEGRAM_IMAGES) {
+      toast.error(
+        `Máximo ${MAX_TELEGRAM_IMAGES} imágenes: elimina ${images.length - MAX_TELEGRAM_IMAGES} antes de programar`,
+      );
+      return;
+    }
+
     setScheduling(true);
     try {
       const saved = await onSchedule({
         text,
         image_url: images[imageIdx] ?? null,
+        images,
         scheduled_at: date.toISOString(),
         telegram_channel_id: channelId,
       });
@@ -276,6 +324,9 @@ export function TelegramPanel({
       setScheduling(false);
     }
   };
+
+  const imageActionCls =
+    "flex min-h-8 items-center gap-1.5 border border-surface-700 px-2.5 font-mono text-[10px] font-bold uppercase text-cyan-glow transition-colors hover:border-cyan-glow hover:bg-cyan-glow/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-glow disabled:opacity-50";
 
   const inputCls =
     "w-full bg-surface-900 border border-surface-700 px-3 py-2 font-mono text-sm outline-none focus:border-cyan-glow";
@@ -338,22 +389,50 @@ export function TelegramPanel({
               <div className="mb-2 flex items-center justify-between gap-3">
                 <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase text-muted-foreground">
                   Imagen ({imageIdx + 1} / {images.length})
-                  {croppedIndexes.has(imageIdx) && (
+                  {editedLabels[images[imageIdx] ?? ""] && (
                     <span className="flex items-center gap-1 text-cyan-glow">
-                      <Check className="size-3" /> Recortada
+                      <Check className="size-3" /> {editedLabels[images[imageIdx] ?? ""]}
                     </span>
                   )}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setCropOpen(true)}
-                  disabled={savingCrop}
-                  className="flex min-h-8 items-center gap-1.5 border border-surface-700 px-2.5 font-mono text-[10px] font-bold uppercase text-cyan-glow transition-colors hover:border-cyan-glow hover:bg-cyan-glow/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-glow disabled:opacity-50"
-                >
-                  <Crop className="size-3.5" />
-                  Recortar
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={handleRotate}
+                    disabled={savingImage}
+                    title="Girar 90° a la derecha"
+                    className={imageActionCls}
+                  >
+                    <RotateCw className="size-3.5" />
+                    Girar 90°
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCropOpen(true)}
+                    disabled={savingImage}
+                    className={imageActionCls}
+                  >
+                    <Crop className="size-3.5" />
+                    Recortar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveImage(imageIdx)}
+                    disabled={savingImage || images.length <= 1}
+                    aria-label="Eliminar imagen actual"
+                    title="Eliminar imagen actual"
+                    className={`${imageActionCls} text-alert-red hover:border-alert-red hover:bg-alert-red/10`}
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
+                </div>
               </div>
+              {images.length > MAX_TELEGRAM_IMAGES && (
+                <p className="mb-2 font-mono text-[10px] text-alert-red">
+                  Máximo {MAX_TELEGRAM_IMAGES} imágenes para programar: elimina{" "}
+                  {images.length - MAX_TELEGRAM_IMAGES}.
+                </p>
+              )}
               <div className="relative border border-surface-700 bg-surface-900 aspect-video overflow-hidden">
                 <img
                   src={images[imageIdx]}
@@ -385,16 +464,27 @@ export function TelegramPanel({
               {images.length > 1 && (
                 <div className="flex gap-1 mt-2 overflow-x-auto">
                   {images.map((url, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => setImageIdx(i)}
-                      className={`shrink-0 w-12 h-12 border-2 overflow-hidden ${
-                        i === imageIdx ? "border-cyan-glow" : "border-surface-700"
-                      }`}
-                    >
-                      <img src={url} alt="" className="w-full h-full object-cover" />
-                    </button>
+                    <div key={`${i}-${url}`} className="relative shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setImageIdx(i)}
+                        aria-label={`Seleccionar imagen ${i + 1}`}
+                        className={`block w-12 h-12 border-2 overflow-hidden ${
+                          i === imageIdx ? "border-cyan-glow" : "border-surface-700"
+                        }`}
+                      >
+                        <img src={url} alt="" className="w-full h-full object-cover" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImage(i)}
+                        disabled={savingImage}
+                        aria-label={`Eliminar imagen ${i + 1}`}
+                        className="absolute right-0 top-0 bg-surface-900/90 p-0.5 text-alert-red opacity-70 hover:opacity-100 focus-visible:opacity-100 disabled:hidden"
+                      >
+                        <X className="size-3" />
+                      </button>
+                    </div>
                   ))}
                 </div>
               )}
@@ -531,7 +621,7 @@ export function TelegramPanel({
                   scheduling ||
                   publishing ||
                   generating ||
-                  savingCrop ||
+                  savingImage ||
                   !text.trim() ||
                   !scheduledAt ||
                   !channelId
@@ -550,7 +640,7 @@ export function TelegramPanel({
           <button
             type="button"
             onClick={handlePublish}
-            disabled={publishing || scheduling || savingCrop || !text.trim() || !channelId}
+            disabled={publishing || scheduling || savingImage || !text.trim() || !channelId}
             className="w-full bg-cyan-glow text-surface-900 font-mono text-sm font-bold py-3 flex items-center justify-center gap-2 hover:bg-foreground disabled:opacity-50"
           >
             {publishing ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
@@ -562,7 +652,7 @@ export function TelegramPanel({
       {cropOpen && images[imageIdx] && (
         <TelegramImageCropper
           imageUrl={images[imageIdx]}
-          saving={savingCrop}
+          saving={savingImage}
           onAccept={handleAcceptCrop}
           onCancel={() => setCropOpen(false)}
         />
