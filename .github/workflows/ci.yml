@@ -223,6 +223,6 @@ jobs:
 
       # ── gitleaks: detectar secretos hardcoded en el código y el historial ─
       - name: Escaneo de secretos con gitleaks
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
