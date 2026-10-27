@@ -25,7 +25,7 @@ psycopg2-binary>=2.9
 # Ya venía como dependencia transitiva de gotrue; se fija explícita porque
 # core/security.py la importa directamente. [crypto] = cryptography, necesaria
 # para validar firmas asimétricas.
-PyJWT[crypto]==2.13.0
+PyJWT[crypto]==2.15.1
 
 # Integraciones externas
 supabase==2.9.1       # storage3>=2.x introduce pyiceberg (no compila sin Build Tools) — mantener <2.10
