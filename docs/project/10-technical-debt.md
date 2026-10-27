@@ -4,7 +4,7 @@
 > Solo items **abiertos**: cuando uno se cierra, se elimina de aquí (el histórico
 > resuelto vive en [`PROJECT_STATUS.md`](../../PROJECT_STATUS.md)). Para consultar el diseño de arquitectura, ver [`docs/master/`](../master/00-index.md).
 
-Última revisión: **2026-09-26** (auditoría integral de estado y documentación).
+Última revisión: **2026-10-27** (overrides npm tras limpieza de advisories).
 
 ---
 
@@ -21,6 +21,18 @@
   documentación, logs ni chat.
 
 ## 🟡 Baja — observabilidad y hardening de cuenta
+
+- **TD-22 — Retirar los overrides npm temporales de `buenchollo-web`.**
+  `overrides.miniflare.undici = 7.30.1` existe porque `@cloudflare/vite-plugin`
+  1.65.0 arrastra `undici` 7.29.1 vía `miniflare` (GHSA-4qv8-2p9j-2685,
+  GHSA-f72v-6w45-q472, GHSA-xjj6-f33q-929c): quitarlo cuando una versión
+  estable del plugin traiga `undici >= 7.30.1`.
+  `overrides["@tailwindcss/typography"]["postcss-selector-parser"] = 6.1.5`
+  (GHSA-rj75-hqrm-r3gf): quitarlo cuando `@tailwindcss/typography` deje de
+  fijar 6.0.10. Al retirar cada uno, `npm ls undici` /
+  `npm ls postcss-selector-parser` y `npm audit` deben seguir limpios.
+  Impacto bajo: son parches de la misma línea mayor, pero un override olvidado
+  puede bloquear actualizaciones futuras.
 
 - **TD-20 — Protección de contraseñas filtradas desactivada en Supabase Auth.**
   `auth_leaked_password_protection` (Advisor de Supabase, nivel WARN): Supabase

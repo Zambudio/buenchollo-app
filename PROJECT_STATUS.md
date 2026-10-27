@@ -1,5 +1,5 @@
 # PROJECT_STATUS — BuenCholloTech
-*Última actualización: 2026-09-26 (auditoría documental integral; estado canónico en `docs/project/11-current-state.md`)*
+*Última actualización: 2026-10-27 (limpieza de advisories y cabeceras web; estado canónico en `docs/project/11-current-state.md`)*
 
 > La migración al dominio propio ya está completada. Este documento conserva la
 > cronología; para el estado operativo vigente consulta
@@ -69,6 +69,21 @@ API versionada `/v1`, ADR-002) son correctas y defendibles profesionalmente.
 | 8 | Refactor de buenas prácticas — ver § 3.bis | ✅ Completado (2026-05-26) |
 | 9 | Failover resiliente a OpenAI oficial — ver § 3.quindecies | ✅ Completado (2026-08-29) |
 | 10 | Cierre de deuda técnica (TD-15, TD-16, TD-17) — ver § 3.sexdecies | ✅ Completado (2026-08-29) |
+
+### Limpieza de advisories de dependencias y cabeceras web — 2026-10-27
+
+- `zod` 3.25.76 → ^4.6.7 (GHSA-mrhx-c7xc-m3w5); único cambio de código:
+  `z.ZodIssueCode.custom` → `"custom"` en `lib/validation/`.
+- Overrides temporales en `buenchollo-web/package.json`: `miniflare.undici`
+  = 7.30.1 y `@tailwindcss/typography.postcss-selector-parser` = 6.1.5
+  (retirada condicionada, ver TD-22 en `docs/project/10-technical-debt.md`).
+- `vitest`/`@vitest/coverage-v8` ^4.1.12, PyJWT 2.15.1, parches TanStack Start
+  y Tiptap. `npm audit` (incl. dev) y `pip-audit` → 0; umbral CI de
+  `npm audit` pasa de `critical` a `high`.
+- Cabeceras de seguridad en las respuestas SSR del Worker (`src/start.ts`),
+  cubiertas por `e2e/security-headers.spec.ts`.
+- PR #62 mergeado a `main` (`90764cf`): CI completo y Workers Builds en verde;
+  cabeceras comprobadas con `curl -sI https://buenchollotech.com`.
 
 ### Analítica first-party y atribución — 2026-09-26
 
