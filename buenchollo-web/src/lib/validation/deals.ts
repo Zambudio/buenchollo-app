@@ -19,7 +19,7 @@ const requiredPositiveNumberFromString = z
   .transform((v, ctx) => {
     const n = Number(v);
     if (!Number.isFinite(n) || n <= 0) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Debe ser un número positivo" });
+      ctx.addIssue({ code: "custom", message: "Debe ser un número positivo" });
       return z.NEVER;
     }
     return n;
@@ -33,7 +33,7 @@ const optionalPositiveNumberFromString = z
     if (!v) return null;
     const n = Number(v);
     if (!Number.isFinite(n) || n <= 0) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Debe ser un número positivo" });
+      ctx.addIssue({ code: "custom", message: "Debe ser un número positivo" });
       return z.NEVER;
     }
     return n;
