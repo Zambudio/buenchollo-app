@@ -92,7 +92,7 @@ Cloudflare → validar en esa URL (la API se prueba en localhost o contra la rea
 
 ```yaml
   cloudflared:
-    image: cloudflare/cloudflared:latest
+    image: cloudflare/cloudflared:2026.10.3
     container_name: buenchollo-cloudflared
     restart: always
     command: tunnel --no-autoupdate run
@@ -114,7 +114,9 @@ de forma nativa).
 > 4. **"Guardar"/"Iniciar" a veces solo REINICIA** el contenedor (conserva el
 >    entorno antiguo, token vacío). Para que tome el `.env` nuevo hay que
 >    **RECREAR** el contenedor: borrarlo (Contenedor → Eliminar) y recrear, o
->    por SSH `docker compose -p bc-api up -d --force-recreate cloudflared`.
+>    por SSH `docker-compose -p buenchollo-api up -d --no-deps --force-recreate cloudflared`
+>    (ver [`NAS-SSH.md`](NAS-SSH.md) para rutas y `sudo -n`; el proyecto compose
+>    actual se llama `buenchollo-api`, ya no `bc-api`).
 > 5. Verificar que el token entró: `docker exec buenchollo-cloudflared printenv
 >    TUNNEL_TOKEN | cut -c1-12`.
 
@@ -407,3 +409,12 @@ curl -sI https://buenchollotech.com | findstr /I "strict-transport content-secur
   `HIT` en autenticados).
 - 2026-07-19 — ✅ **T9 validación funcional cerrada**: votos y comentarios se
   actualizan correctamente con F5 normal. Se confirma resuelto el bug original.
+- 2026-10-27 — 🔐 **Aviso de seguridad de Cloudflare** (certificados intermedios
+  eMudhra/emSign comprometidos; `cloudflared` < 2026.10.2 aún confiaba en
+  ellos). El NAS corría **2026.7.2**. Imagen fijada a
+  `cloudflare/cloudflared:2026.10.3` en lugar de `:latest` (con `:latest`,
+  reiniciar no actualiza: hay que hacer `pull` y recrear). Sin impacto en
+  orígenes: todos los ingress del túnel son HTTP interno. ✅ **Desplegado** por
+  SSH: `docker-compose -p buenchollo-api pull cloudflared` +
+  `up -d --no-deps --force-recreate cloudflared`. Verificado: versión
+  2026.10.3, 4 conexiones registradas (mad01/05/07), `/health` → 200.
