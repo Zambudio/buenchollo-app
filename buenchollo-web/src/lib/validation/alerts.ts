@@ -26,7 +26,7 @@ const optionalPositiveNumberFromString = z
     if (!v) return null;
     const n = Number(v);
     if (!Number.isFinite(n) || n <= 0) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Debe ser un número positivo" });
+      ctx.addIssue({ code: "custom", message: "Debe ser un número positivo" });
       return z.NEVER;
     }
     return n;
@@ -40,7 +40,7 @@ const optionalDiscountPercentage = z
     if (!v) return null;
     const n = Number(v);
     if (!Number.isFinite(n) || n < 1 || n > 100) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Descuento entre 1 y 100" });
+      ctx.addIssue({ code: "custom", message: "Descuento entre 1 y 100" });
       return z.NEVER;
     }
     return n;
