@@ -294,7 +294,7 @@ subdominios añadiéndolos como SAN.
 docker run -d \
   --name cloudflared \
   --restart unless-stopped \
-  cloudflare/cloudflared:latest \
+  cloudflare/cloudflared:2026.10.3 \
   tunnel --no-autoupdate run --token <TUNNEL_TOKEN>
 ```
 

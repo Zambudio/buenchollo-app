@@ -92,7 +92,7 @@ Cloudflare → validar en esa URL (la API se prueba en localhost o contra la rea
 
 ```yaml
   cloudflared:
-    image: cloudflare/cloudflared:latest
+    image: cloudflare/cloudflared:2026.10.3
     container_name: buenchollo-cloudflared
     restart: always
     command: tunnel --no-autoupdate run
@@ -407,3 +407,11 @@ curl -sI https://buenchollotech.com | findstr /I "strict-transport content-secur
   `HIT` en autenticados).
 - 2026-07-19 — ✅ **T9 validación funcional cerrada**: votos y comentarios se
   actualizan correctamente con F5 normal. Se confirma resuelto el bug original.
+- 2026-10-27 — 🔐 **Aviso de seguridad de Cloudflare** (certificados intermedios
+  eMudhra/emSign comprometidos; `cloudflared` < 2026.10.2 aún confiaba en
+  ellos). Imagen fijada a `cloudflare/cloudflared:2026.10.3` en lugar de
+  `:latest`. Con `:latest`, reiniciar no actualiza: hay que hacer `pull` y
+  recrear. No afecta al origen: el túnel apunta a `http://buenchollo-api:8000`
+  (HTTP interno, sin cadena TLS). **Pendiente en el NAS:**
+  `sudo docker compose -p bc-api pull cloudflared && sudo docker compose -p bc-api up -d --force-recreate cloudflared`
+  y verificar con `docker exec buenchollo-cloudflared cloudflared --version`.

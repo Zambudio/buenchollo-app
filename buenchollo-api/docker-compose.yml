@@ -53,8 +53,11 @@ services:
   # Usamos env_file (no `environment: ${...}`) porque Synology Container Manager
   # no interpola variables ${...} en el YAML, pero sí inyecta env_file.
   # Con túnel NO se necesita DDNS ni abrir el 443.
+  # Versión fijada (no :latest): con --no-autoupdate, actualizar = cambiar el tag
+  # aquí + `docker compose pull cloudflared` + recrear. Mínimo 2026.10.2 por el
+  # aviso de certificados eMudhra (2026-10-20).
   cloudflared:
-    image: cloudflare/cloudflared:latest
+    image: cloudflare/cloudflared:2026.10.3
     container_name: buenchollo-cloudflared
     restart: always
     command: tunnel --no-autoupdate run
