@@ -1,0 +1,62 @@
+{#- Correos de cuenta de Supabase Auth (confirmación, recuperar contraseña,
+    cambio de email...). Se renderiza UNA vez con `scripts/build_auth_email_templates.py`
+    y el resultado conserva las variables de Supabase (`{{ .ConfirmationURL }}`,
+    `{{ .Token }}`...), que llegan aquí como texto literal. -#}
+{% extends "_layout.html.j2" %}
+{% import "_components.html.j2" as ui with context %}
+{% block content %}
+        {% call ui.panel(padding="34px 28px 32px", glow=true) %}
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td align="center">
+                <div style="font-size:38px;line-height:44px;">{{ icon }}</div>
+                <div style="padding-top:14px;">{{ ui.eyebrow(eyebrow) }}</div>
+                <h1 class="h1" style="margin:12px 0 0;font-family:{{ t.sans }};font-size:28px;line-height:35px;font-weight:700;letter-spacing:-.5px;color:{{ t.text }};">{{ title }}</h1>
+                <p style="margin:14px auto 0;max-width:440px;font-family:{{ t.sans }};font-size:16px;line-height:26px;color:{{ t.text_soft }};">{{ intro }}</p>
+                {% if detail %}
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:18px auto 0;">
+                  <tr>
+                    <td bgcolor="{{ t.bg }}" style="background:{{ t.bg }};border:1px solid {{ t.border }};border-radius:10px;padding:12px 18px;font-family:{{ t.mono }};font-size:13px;line-height:22px;color:{{ t.text_soft }};">{{ detail|safe }}</td>
+                  </tr>
+                </table>
+                {% endif %}
+                {% if code %}
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:22px auto 0;">
+                  <tr>
+                    <td bgcolor="{{ t.bg }}" style="background:{{ t.bg }};border:1px dashed {{ t.cyan }};border-radius:12px;padding:16px 28px;font-family:{{ t.mono }};font-size:32px;font-weight:700;letter-spacing:10px;color:{{ t.cyan }};">{{ code }}</td>
+                  </tr>
+                </table>
+                {% endif %}
+                {% if action_url %}
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:26px auto 0;">
+                  <tr><td>{{ ui.button(action_url, button_label, align="center") }}</td></tr>
+                </table>
+                {% endif %}
+                {% if expiry_note %}
+                <p style="margin:18px 0 0;font-family:{{ t.mono }};font-size:12px;line-height:19px;color:{{ t.muted }};">{{ expiry_note }}</p>
+                {% endif %}
+              </td>
+            </tr>
+          </table>
+        {% endcall %}
+
+        {% if action_url %}
+        {{ ui.spacer(14) }}
+        <tr>
+          <td class="px" style="padding:0 28px;font-family:{{ t.sans }};font-size:12px;line-height:19px;color:{{ t.muted }};text-align:center;">
+            ¿El botón no funciona? Copia y pega este enlace en tu navegador:<br>
+            <a href="{{ action_url }}" target="_blank" style="color:{{ t.cyan }};word-break:break-all;">{{ action_url }}</a>
+          </td>
+        </tr>
+        {% endif %}
+
+        {{ ui.spacer(16) }}
+        {% call ui.panel(padding="18px 22px") %}
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td width="28" valign="top" style="width:28px;font-size:18px;line-height:22px;">🛡️</td>
+              <td valign="top" style="font-family:{{ t.sans }};font-size:13px;line-height:21px;color:{{ t.muted }};">{{ safety_note }}</td>
+            </tr>
+          </table>
+        {% endcall %}
+{% endblock %}

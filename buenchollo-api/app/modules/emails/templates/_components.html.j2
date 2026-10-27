@@ -1,0 +1,150 @@
+{#- Piezas reutilizables de los correos. Todas reciben el tema `t` del contexto
+    global (Jinja lo expone a los macros importados "with context"). -#}
+
+{% macro spacer(h) -%}
+<tr><td style="height:{{ h }}px;line-height:{{ h }}px;font-size:0;">&nbsp;</td></tr>
+{%- endmacro %}
+
+{#- Tarjeta oscura con borde, como las de la web. -#}
+{% macro panel(padding="28px 28px", glow=false) -%}
+<tr>
+  <td class="px" bgcolor="{{ t.card }}" style="background:{{ t.card }};border:1px solid {{ t.cyan_border if glow else t.border }};border-radius:16px;padding:{{ padding }};">
+    {{ caller() }}
+  </td>
+</tr>
+{%- endmacro %}
+
+{#- Etiqueta tipo comentario de código: // RADAR ACTIVADO -#}
+{% macro eyebrow(text, color=none) -%}
+<div style="font-family:{{ t.mono }};font-size:12px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:{{ color or t.cyan }};">// {{ text }}</div>
+{%- endmacro %}
+
+{% macro h1(text) -%}
+<h1 class="h1" style="margin:12px 0 0;font-family:{{ t.sans }};font-size:30px;line-height:37px;font-weight:700;letter-spacing:-.5px;color:{{ t.text }};">{{ text }}</h1>
+{%- endmacro %}
+
+{% macro p(text, size=15, color=none, top=14) -%}
+<p style="margin:{{ top }}px 0 0;font-family:{{ t.sans }};font-size:{{ size }}px;line-height:{{ (size * 1.6)|round|int }}px;color:{{ color or t.text_soft }};">{{ text }}</p>
+{%- endmacro %}
+
+{#- Botón "a prueba de balas": celda con fondo + enlace con padding, para que
+    también se vea como botón en Outlook. `variant`: primary (verde CTA de la
+    web) | outline (borde cian). -#}
+{% macro button(url, label, variant="primary", full=false, align="left") -%}
+{%- set bg = t.cta if variant == "primary" else "transparent" -%}
+{%- set fg = t.cta_text if variant == "primary" else t.cyan -%}
+{#- El primario no lleva borde: con borde y fondo del mismo color aparecen
+    artefactos en las esquinas redondeadas. El padding compensa los 2px. -#}
+{%- set bd = "0" if variant == "primary" else "2px solid " ~ t.cyan -%}
+{%- set pad = "17px 28px" if variant == "primary" else "15px 26px" -%}
+<table role="presentation" class="btn{{ ' full' if full }}" cellpadding="0" cellspacing="0" border="0" align="{{ align }}" {% if full %}width="100%"{% endif %} style="{{ 'width:100%;' if full }}">
+  <tr>
+    <td align="center" {% if variant == "primary" %}bgcolor="{{ bg }}"{% endif %} style="background:{{ bg }};border:{{ bd }};border-radius:10px;">
+      <a href="{{ url }}" target="_blank" style="display:block;padding:{{ pad }};font-family:{{ t.mono }};font-size:14px;font-weight:700;letter-spacing:1.5px;line-height:18px;color:{{ fg }};text-decoration:none;text-transform:uppercase;white-space:nowrap;">{{ label }}</a>
+    </td>
+  </tr>
+</table>
+{%- endmacro %}
+
+{% macro chip(text) -%}
+<span style="display:inline-block;margin:0 6px 6px 0;padding:5px 10px;border:1px solid {{ t.cyan_border }};border-radius:999px;background:{{ t.cyan_soft }};font-family:{{ t.mono }};font-size:11px;font-weight:700;letter-spacing:.5px;line-height:14px;color:{{ t.cyan }};white-space:nowrap;">{{ text }}</span>
+{%- endmacro %}
+
+{#- Celda de estadística (nº grande + rótulo) para la franja de resumen. -#}
+{% macro stat(value, label, color=none, last=false) -%}
+<td valign="top" width="33%" style="width:33%;padding:0 {{ 0 if last else 8 }}px 0 0;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td class="stat-box" bgcolor="{{ t.bg }}" style="background:{{ t.bg }};border:1px solid {{ t.border }};border-radius:12px;padding:14px 14px 12px;">
+        <div class="stat-num" style="font-family:{{ t.mono }};font-size:22px;font-weight:700;line-height:26px;color:{{ color or t.text }};white-space:nowrap;">{{ value }}</div>
+        <div class="stat-label" style="padding-top:4px;font-family:{{ t.mono }};font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:{{ t.muted }};">{{ label }}</div>
+      </td>
+    </tr>
+  </table>
+</td>
+{%- endmacro %}
+
+{#- Tarjeta de chollo: misma información que la ficha de la web (foto, título,
+    precio, precio anterior, descuento, tienda, fin) + gráfica de Keepa si el
+    chollo la tiene activada. El botón SIEMPRE va a nuestra web, nunca directo
+    a la tienda: Amazon prohíbe enlaces de afiliado en correos. -#}
+{% macro deal_card(d) -%}
+<tr>
+  <td bgcolor="{{ t.card }}" style="background:{{ t.card }};border:1px solid {{ t.border }};border-radius:16px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td class="px" style="padding:22px 22px 0;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td class="stack stack-gap" width="190" valign="top" style="width:190px;padding-right:20px;">
+                <a href="{{ d.url }}" target="_blank" style="text-decoration:none;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td align="center" valign="middle" bgcolor="#ffffff" style="background:#ffffff;border-radius:12px;padding:12px;height:166px;">
+                        <img src="{{ d.image_url }}" width="166" alt="{{ d.title }}" style="display:block;margin:0 auto;width:166px;max-width:100%;height:auto;max-height:166px;border-radius:6px;">
+                      </td>
+                    </tr>
+                  </table>
+                </a>
+              </td>
+              <td class="stack" valign="top">
+                {% for name in d.alert_names %}{{ chip("🔔 " ~ name) }}{% endfor %}
+                <a href="{{ d.url }}" target="_blank" style="display:block;margin-top:6px;font-family:{{ t.sans }};font-size:19px;line-height:25px;font-weight:700;color:{{ t.text }};text-decoration:none;">{{ d.title }}</a>
+                {% if d.short_description %}
+                <div style="padding-top:6px;font-family:{{ t.sans }};font-size:14px;line-height:21px;color:{{ t.muted }};">{{ d.short_description }}</div>
+                {% endif %}
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:14px;">
+                  <tr>
+                    <td valign="middle" class="price" style="padding-right:10px;font-family:{{ t.mono }};font-size:30px;line-height:34px;font-weight:700;color:{{ t.cyan }};white-space:nowrap;">{{ d.price }}</td>
+                    {% if d.previous_price %}
+                    <td valign="middle" style="padding-right:10px;font-family:{{ t.mono }};font-size:14px;color:{{ t.muted }};text-decoration:line-through;white-space:nowrap;">{{ d.previous_price }}</td>
+                    {% endif %}
+                    {% if d.discount %}
+                    <td valign="middle"><span style="display:inline-block;padding:4px 8px;border-radius:6px;background:{{ t.red }};font-family:{{ t.mono }};font-size:13px;font-weight:700;line-height:16px;color:#ffffff;white-space:nowrap;">-{{ d.discount }}%</span></td>
+                    {% endif %}
+                  </tr>
+                </table>
+                {% if d.store %}
+                <div style="padding-top:10px;font-family:{{ t.mono }};font-size:13px;color:{{ t.muted }};">Disponible en <span style="color:{{ t.cyan }};font-weight:700;">{{ d.store }}</span>{% if d.savings %} &nbsp;·&nbsp; ahorras <span style="color:{{ t.green }};font-weight:700;">{{ d.savings }}</span>{% endif %}</div>
+                {% endif %}
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      {% if d.expires_label %}
+      <tr>
+        <td class="px" style="padding:16px 22px 0;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td bgcolor="{{ t.amber_soft }}" style="background:{{ t.amber_soft }};border-left:3px solid {{ t.amber }};border-radius:0 8px 8px 0;padding:10px 14px;font-family:{{ t.mono }};font-size:13px;font-weight:700;letter-spacing:1px;color:{{ t.amber }};">⏱ TERMINA: {{ d.expires_label }}</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      {% endif %}
+      {% if d.price_history_url %}
+      <tr>
+        <td class="px" style="padding:16px 22px 0;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td bgcolor="{{ t.bg }}" style="background:{{ t.bg }};border:1px solid {{ t.border }};border-radius:12px;padding:12px 14px 14px;">
+                <div style="font-family:{{ t.mono }};font-size:11px;font-weight:700;letter-spacing:2px;color:{{ t.text_soft }};padding-bottom:10px;">▸ HISTÓRICO DE PRECIOS</div>
+                <a href="{{ d.url }}" target="_blank" style="text-decoration:none;">
+                  <img src="{{ d.price_history_url }}" width="514" alt="Histórico de precios de {{ d.title }}" style="display:block;width:100%;max-width:514px;height:auto;border-radius:8px;background:#ffffff;">
+                </a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      {% endif %}
+      <tr>
+        <td class="px" style="padding:18px 22px 22px;">
+          {{ button(d.url, "Ir a la oferta  →", full=true) }}
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+{%- endmacro %}

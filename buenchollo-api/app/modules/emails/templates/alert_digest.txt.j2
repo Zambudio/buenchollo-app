@@ -1,0 +1,22 @@
+{{ greeting }}
+
+{{ intro }}
+{% for d in deals %}
+------------------------------------------------------------
+{{ d.title }}
+{{ d.price }}{% if d.previous_price %} (antes {{ d.previous_price }}){% endif %}{% if d.discount %} · -{{ d.discount }}%{% endif %}{% if d.store %} · {{ d.store }}{% endif %}
+{% if d.expires_label %}Termina: {{ d.expires_label }}
+{% endif %}{% if d.alert_names %}Alerta: {{ d.alert_names|join(", ") }}
+{% endif %}Ver la oferta: {{ d.url }}
+{% endfor %}
+------------------------------------------------------------
+{% if hidden_count %}
+Y {{ hidden_count }} chollo{{ "s" if hidden_count != 1 }} más en la web: {{ links.notifications }}
+{% endif %}
+¿Lo quieres al momento? Canal de Telegram: {{ links.telegram }}
+
+Gestionar mis alertas: {{ links.alerts }}
+Preferencias de correo: {{ links.preferences }}
+Darme de baja de estos correos: {{ links.unsubscribe }}
+
+Precios y disponibilidad en el momento del envío; pueden cambiar en cualquier momento. Como afiliados de Amazon, obtenemos ingresos por las compras adscritas que cumplen los requisitos aplicables.

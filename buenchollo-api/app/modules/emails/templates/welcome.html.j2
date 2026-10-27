@@ -1,0 +1,100 @@
+{% extends "_layout.html.j2" %}
+{% import "_components.html.j2" as ui with context %}
+
+{#- Tarjeta de "lo que ya puedes hacer". Solo funciones que existen hoy. -#}
+{% macro feature(icon, title, text, last=false) -%}
+<td class="stack stack-gap" valign="top" width="33%" style="width:33%;padding-right:{{ 0 if last else 10 }}px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td bgcolor="{{ t.bg }}" style="background:{{ t.bg }};border:1px solid {{ t.border }};border-radius:12px;padding:16px 14px;">
+        <div style="font-size:24px;line-height:28px;">{{ icon }}</div>
+        <div style="padding-top:10px;font-family:{{ t.sans }};font-size:15px;line-height:20px;font-weight:700;color:{{ t.text }};">{{ title }}</div>
+        <div style="padding-top:6px;font-family:{{ t.sans }};font-size:13px;line-height:20px;color:{{ t.muted }};">{{ text }}</div>
+      </td>
+    </tr>
+  </table>
+</td>
+{%- endmacro %}
+
+{% block content %}
+        {% call ui.panel(padding="34px 28px 30px", glow=true) %}
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td align="center">
+                <img src="{{ assets.logo }}" width="112" height="112" alt="BuenChollo Tech" style="display:block;width:112px;height:112px;margin:0 auto;border-radius:50%;">
+                <div style="padding-top:18px;">{{ ui.eyebrow("Nuevo miembro") }}</div>
+                <h1 class="h1" style="margin:12px 0 0;font-family:{{ t.sans }};font-size:30px;line-height:37px;font-weight:700;letter-spacing:-.5px;color:{{ t.text }};">{% if name %}¡Hola, {{ name }}!<br>{% endif %}Te damos la bienvenida a BuenChollo<span style="color:{{ t.cyan }};">&nbsp;Tech</span></h1>
+                <p style="margin:14px auto 0;max-width:460px;font-family:{{ t.sans }};font-size:16px;line-height:26px;color:{{ t.text_soft }};">Ya formas parte de la comunidad que caza los mejores chollos de tecnología. Nos alegra mucho tenerte por aquí y esperamos que disfrutes de cada oferta que encontremos para ti.</p>
+              </td>
+            </tr>
+          </table>
+        {% endcall %}
+
+        {{ ui.spacer(18) }}
+
+        {#- "Terminal" con el estado del proyecto: la web está en desarrollo. -#}
+        <tr>
+          <td bgcolor="{{ t.terminal }}" style="background:{{ t.terminal }};border:1px solid {{ t.border }};border-radius:16px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="padding:12px 18px;border-bottom:1px solid {{ t.border }};">
+                  <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:{{ t.red }};"></span>&nbsp;
+                  <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:{{ t.amber }};"></span>&nbsp;
+                  <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:{{ t.green }};"></span>
+                  <span style="padding-left:10px;font-family:{{ t.mono }};font-size:11px;color:{{ t.muted }};">buenchollo — estado</span>
+                </td>
+              </tr>
+              <tr>
+                <td class="px" style="padding:18px 22px 22px;font-family:{{ t.mono }};font-size:13px;line-height:23px;color:{{ t.text_soft }};">
+                  <span style="color:{{ t.green }};">$</span> buenchollo --estado<br>
+                  <span style="color:{{ t.cyan }};">▸</span> web en pleno desarrollo<br>
+                  <span style="color:{{ t.cyan }};">▸</span> muchas novedades en camino<br>
+                  <span style="color:{{ t.cyan }};">▸</span> tu opinión decide qué llega primero<span style="color:{{ t.cyan }};">&nbsp;▌</span>
+                  <p style="margin:16px 0 0;font-family:{{ t.sans }};font-size:15px;line-height:24px;color:{{ t.text_soft }};">La página está en desarrollo y cada poco llegan mejoras nuevas. Estamos preparando muchas implementaciones que esperamos sean de tu agrado. ¡Esto no ha hecho más que empezar!</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        {{ ui.spacer(18) }}
+
+        {% call ui.panel(padding="26px 24px") %}
+          {{ ui.eyebrow("Lo que ya puedes hacer") }}
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:16px;">
+            <tr>
+              {{ feature("🔥", "Chollos verificados", "Ofertas de tecnología revisadas cada día, con su precio anterior y descuento real.") }}
+              {{ feature("🔔", "Alertas a tu medida", "Dinos qué buscas y te avisamos en la web o con un resumen por correo cada noche.") }}
+              {{ feature("✈️", "Canal de Telegram", "Todos los chollos al momento, directamente en tu móvil.", last=true) }}
+            </tr>
+          </table>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:22px;">
+            <tr>
+              <td class="stack stack-gap" width="50%" style="width:50%;padding-right:8px;">{{ ui.button(links.new_alert, "Crear mi primera alerta", full=true) }}</td>
+              <td class="stack" width="50%" style="width:50%;padding-left:8px;">{{ ui.button(links.explore, "Explorar chollos", variant="outline", full=true) }}</td>
+            </tr>
+          </table>
+        {% endcall %}
+
+        {{ ui.spacer(18) }}
+
+        {% call ui.panel(padding="24px 24px") %}
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td class="stack stack-gap" valign="middle" style="padding-right:16px;">
+                {{ ui.eyebrow("¿Dudas o sugerencias?") }}
+                <p style="margin:8px 0 0;font-family:{{ t.sans }};font-size:14px;line-height:22px;color:{{ t.text_soft }};">Escríbenos a <a href="mailto:{{ contact_email }}" style="color:{{ t.cyan }};font-weight:700;text-decoration:none;">{{ contact_email }}</a>. Leemos todos los mensajes y nos ayudan a decidir qué construir después.</p>
+              </td>
+              <td class="stack" align="right" valign="middle" width="170" style="width:170px;">{{ ui.button("mailto:" ~ contact_email, "Escríbenos", variant="outline", full=true) }}</td>
+            </tr>
+          </table>
+        {% endcall %}
+
+        {{ ui.spacer(22) }}
+        <tr>
+          <td align="center" style="font-family:{{ t.sans }};font-size:15px;line-height:24px;color:{{ t.text_soft }};">
+            ¡Nos vemos entre chollos!<br>
+            <span style="font-family:{{ t.mono }};font-size:12px;letter-spacing:1px;color:{{ t.muted }};">— El equipo de BuenChollo Tech</span>
+          </td>
+        </tr>
+{% endblock %}

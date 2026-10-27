@@ -1,0 +1,58 @@
+{% extends "_layout.html.j2" %}
+{% import "_components.html.j2" as ui with context %}
+{% block content %}
+        {% call ui.panel(glow=true) %}
+          {{ ui.eyebrow("Radar activado · " ~ date_label) }}
+          {{ ui.h1(greeting) }}
+          {{ ui.p(intro) }}
+          {% if alert_names %}
+          <div style="padding-top:16px;">{% for name in alert_names %}{{ ui.chip("🔔 " ~ name) }}{% endfor %}</div>
+          {% endif %}
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:18px;">
+            <tr>
+              {{ ui.stat(stats.count, "chollos" if stats.count != 1 else "chollo") }}
+              {{ ui.stat("-" ~ stats.max_discount ~ "%", "máx. descuento", color=t.red) }}
+              {{ ui.stat(stats.total_savings or "—", "ahorro posible", color=t.green, last=true) }}
+            </tr>
+          </table>
+        {% endcall %}
+
+        {{ ui.spacer(18) }}
+
+        {% for d in deals %}
+        {{ ui.deal_card(d) }}
+        {{ ui.spacer(18) }}
+        {% endfor %}
+
+        {% if hidden_count %}
+        {% call ui.panel(padding="20px 24px") %}
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td class="stack stack-gap" valign="middle" style="font-family:{{ t.sans }};font-size:15px;line-height:23px;color:{{ t.text_soft }};">Y <strong style="color:{{ t.text }};">{{ hidden_count }} chollo{{ "s" if hidden_count != 1 }} más</strong> de tus alertas te esperan en la web.</td>
+              <td class="stack" align="right" valign="middle" style="padding-left:16px;">{{ ui.button(links.notifications, "Verlos todos", variant="outline") }}</td>
+            </tr>
+          </table>
+        {% endcall %}
+        {{ ui.spacer(18) }}
+        {% endif %}
+
+        {#- Gestión de alertas + promo del canal (lo inmediato está en Telegram). -#}
+        {% call ui.panel(padding="24px 24px") %}
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td class="stack stack-gap" valign="middle" style="padding-right:16px;">
+                {{ ui.eyebrow("¿Lo quieres al momento?") }}
+                {{ ui.p("En nuestro canal de Telegram publicamos cada chollo en cuanto sale, sin esperar al resumen de la noche.", size=14, top=8) }}
+              </td>
+              <td class="stack" align="right" valign="middle" width="190" style="width:190px;">{{ ui.button(links.telegram, "Unirme al canal", variant="outline", full=true) }}</td>
+            </tr>
+          </table>
+        {% endcall %}
+
+        {{ ui.spacer(14) }}
+        <tr>
+          <td align="center" style="padding:6px 0 0;">
+            <a href="{{ links.alerts }}" target="_blank" style="font-family:{{ t.mono }};font-size:13px;font-weight:700;letter-spacing:1px;color:{{ t.cyan }};text-decoration:none;">&gt; Gestionar mis alertas</a>
+          </td>
+        </tr>
+{% endblock %}
