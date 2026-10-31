@@ -13,6 +13,7 @@ import { Route as TerminosYCondicionesRouteImport } from './routes/terminos-y-co
 import { Route as TelegramRouteImport } from './routes/telegram'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RegistroRouteImport } from './routes/registro'
+import { Route as RestablecerPasswordRouteImport } from './routes/restablecer-password'
 import { Route as PoliticaDePrivacidadRouteImport } from './routes/politica-de-privacidad'
 import { Route as PoliticaDeCookiesRouteImport } from './routes/politica-de-cookies'
 import { Route as PerfilRouteImport } from './routes/perfil'
@@ -62,6 +63,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const RegistroRoute = RegistroRouteImport.update({
   id: '/registro',
   path: '/registro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RestablecerPasswordRoute = RestablecerPasswordRouteImport.update({
+  id: '/restablecer-password',
+  path: '/restablecer-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PoliticaDePrivacidadRoute = PoliticaDePrivacidadRouteImport.update({
@@ -230,6 +236,7 @@ export interface FileRoutesByFullPath {
   '/politica-de-cookies': typeof PoliticaDeCookiesRoute
   '/politica-de-privacidad': typeof PoliticaDePrivacidadRoute
   '/registro': typeof RegistroRoute
+  '/restablecer-password': typeof RestablecerPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/telegram': typeof TelegramRoute
   '/terminos-y-condiciones': typeof TerminosYCondicionesRoute
@@ -265,6 +272,7 @@ export interface FileRoutesByTo {
   '/politica-de-cookies': typeof PoliticaDeCookiesRoute
   '/politica-de-privacidad': typeof PoliticaDePrivacidadRoute
   '/registro': typeof RegistroRoute
+  '/restablecer-password': typeof RestablecerPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/telegram': typeof TelegramRoute
   '/terminos-y-condiciones': typeof TerminosYCondicionesRoute
@@ -302,6 +310,7 @@ export interface FileRoutesById {
   '/politica-de-cookies': typeof PoliticaDeCookiesRoute
   '/politica-de-privacidad': typeof PoliticaDePrivacidadRoute
   '/registro': typeof RegistroRoute
+  '/restablecer-password': typeof RestablecerPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/telegram': typeof TelegramRoute
   '/terminos-y-condiciones': typeof TerminosYCondicionesRoute
@@ -340,6 +349,7 @@ export interface FileRouteTypes {
     | '/politica-de-cookies'
     | '/politica-de-privacidad'
     | '/registro'
+    | '/restablecer-password'
     | '/sitemap.xml'
     | '/telegram'
     | '/terminos-y-condiciones'
@@ -375,6 +385,7 @@ export interface FileRouteTypes {
     | '/politica-de-cookies'
     | '/politica-de-privacidad'
     | '/registro'
+    | '/restablecer-password'
     | '/sitemap.xml'
     | '/telegram'
     | '/terminos-y-condiciones'
@@ -411,6 +422,7 @@ export interface FileRouteTypes {
     | '/politica-de-cookies'
     | '/politica-de-privacidad'
     | '/registro'
+    | '/restablecer-password'
     | '/sitemap.xml'
     | '/telegram'
     | '/terminos-y-condiciones'
@@ -448,6 +460,7 @@ export interface RootRouteChildren {
   PoliticaDeCookiesRoute: typeof PoliticaDeCookiesRoute
   PoliticaDePrivacidadRoute: typeof PoliticaDePrivacidadRoute
   RegistroRoute: typeof RegistroRoute
+  RestablecerPasswordRoute: typeof RestablecerPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TelegramRoute: typeof TelegramRoute
   TerminosYCondicionesRoute: typeof TerminosYCondicionesRoute
@@ -485,6 +498,13 @@ declare module '@tanstack/react-router' {
       path: '/registro'
       fullPath: '/registro'
       preLoaderRoute: typeof RegistroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/restablecer-password': {
+      id: '/restablecer-password'
+      path: '/restablecer-password'
+      fullPath: '/restablecer-password'
+      preLoaderRoute: typeof RestablecerPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/politica-de-privacidad': {
@@ -757,6 +777,7 @@ const rootRouteChildren: RootRouteChildren = {
   PoliticaDeCookiesRoute: PoliticaDeCookiesRoute,
   PoliticaDePrivacidadRoute: PoliticaDePrivacidadRoute,
   RegistroRoute: RegistroRoute,
+  RestablecerPasswordRoute: RestablecerPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TelegramRoute: TelegramRoute,
   TerminosYCondicionesRoute: TerminosYCondicionesRoute,

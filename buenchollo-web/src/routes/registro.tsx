@@ -67,7 +67,7 @@ function RegisterPage() {
       email: parsed.data.email,
       password: parsed.data.password,
       options: {
-        emailRedirectTo: `${window.location.origin}/login`,
+        emailRedirectTo: `${window.location.origin}/login?confirmed=1`,
         data: { display_name: parsed.data.displayName },
       },
     });
@@ -95,7 +95,7 @@ function RegisterPage() {
       type: "signup",
       email: confirmedEmail,
       options: {
-        emailRedirectTo: `${window.location.origin}/login`,
+        emailRedirectTo: `${window.location.origin}/login?confirmed=1`,
       },
     });
     setResending(false);

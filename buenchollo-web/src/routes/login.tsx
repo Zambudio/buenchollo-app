@@ -51,6 +51,16 @@ function LoginPage() {
   const [recoveryLoading, setRecoveryLoading] = useState(false);
   const [recoverySent, setRecoverySent] = useState(false);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("confirmed") === "1" || params.get("confirmed") === "true") {
+      toast.success("¡Correo confirmado correctamente! Ya puedes iniciar sesión.", {
+        duration: 6000,
+      });
+    }
+  }, []);
+
   if (user) {
     nav({ to: "/" });
     return null;
@@ -67,6 +77,10 @@ function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword(parsed.data);
     setLoading(false);
     if (error) {
+      if (error.message.toLowerCase().includes("email not confirmed")) {
+        toast.error("Debes confirmar tu correo electrónico antes de entrar. Revisa tu bandeja de entrada.");
+        return;
+      }
       toast.error("Credenciales incorrectas");
       return;
     }
@@ -83,7 +97,7 @@ function LoginPage() {
     }
     setRecoveryLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
-      redirectTo: `${window.location.origin}/perfil`,
+      redirectTo: `${window.location.origin}/restablecer-password`,
     });
     setRecoveryLoading(false);
     if (error) {

@@ -47,9 +47,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // 1) Listener primero
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, sess) => {
+    } = supabase.auth.onAuthStateChange((event, sess) => {
       setSession(sess);
       setUser(sess?.user ?? null);
+      if (event === "PASSWORD_RECOVERY") {
+        if (
+          typeof window !== "undefined" &&
+          !window.location.pathname.includes("restablecer-password")
+        ) {
+          window.location.href = "/restablecer-password";
+        }
+      }
       // diferimos para evitar carreras con el cliente HTTP
       setTimeout(() => {
         void loadMe(sess);
