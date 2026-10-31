@@ -8,6 +8,8 @@ import { PasswordInput } from "@/components/ui/PasswordInput";
 import { toast } from "sonner";
 import { z } from "zod";
 import { SITE_URL } from "@/lib/site";
+import { authApi } from "@/services/api/auth";
+import { Mail, CheckCircle2, RefreshCw } from "lucide-react";
 
 export const Route = createFileRoute("/registro")({
   component: RegisterPage,
@@ -44,6 +46,9 @@ function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [needsConfirmation, setNeedsConfirmation] = useState(false);
+  const [confirmedEmail, setConfirmedEmail] = useState("");
 
   if (user) {
     nav({ to: "/" });
@@ -58,11 +63,11 @@ function RegisterPage() {
       return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: parsed.data.email,
       password: parsed.data.password,
       options: {
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: `${window.location.origin}/login`,
         data: { display_name: parsed.data.displayName },
       },
     });
@@ -71,8 +76,34 @@ function RegisterPage() {
       toast.error(error.message);
       return;
     }
+
+    if (data?.user && !data.session) {
+      setConfirmedEmail(parsed.data.email);
+      setNeedsConfirmation(true);
+      return;
+    }
+
     toast.success("Cuenta creada. Bienvenido a BuenChollo Tech.");
+    void authApi.sendWelcomeEmail(parsed.data.displayName).catch(() => {});
     nav({ to: "/" });
+  };
+
+  const handleResend = async () => {
+    if (!confirmedEmail) return;
+    setResending(true);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: confirmedEmail,
+      options: {
+        emailRedirectTo: `${window.location.origin}/login`,
+      },
+    });
+    setResending(false);
+    if (error) {
+      toast.error("No se pudo reenviar: " + error.message);
+    } else {
+      toast.success("Correo de confirmación reenviado");
+    }
   };
 
   const onGoogle = async () => {
@@ -82,6 +113,52 @@ function RegisterPage() {
       return;
     }
   };
+
+  if (needsConfirmation) {
+    return (
+      <div className="min-h-dvh flex items-center justify-center bg-background px-4 py-12">
+        <div className="w-full max-w-md">
+          <Link to="/" className="flex justify-center mb-8">
+            <Logo />
+          </Link>
+          <div className="bg-surface-800 border border-surface-700 p-6 sm:p-8 text-center">
+            <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-cyan-glow/10 border border-cyan-glow/30 text-cyan-glow">
+              <Mail className="size-7" />
+            </div>
+            <div className="font-mono text-cyan-glow text-xs mb-2">&gt; CONFIRMA_TU_CORREO</div>
+            <h1 className="text-2xl font-bold mb-2">¡Revisa tu bandeja de entrada!</h1>
+            <p className="text-sm text-muted-foreground leading-relaxed mb-6">
+              Hemos enviado un enlace de confirmación a{" "}
+              <strong className="text-foreground">{confirmedEmail}</strong>.
+              Pulsa en el botón del correo para verificar tu cuenta y empezar a interceptar chollos.
+            </p>
+
+            <div className="space-y-3">
+              <button
+                onClick={handleResend}
+                disabled={resending}
+                className="w-full flex items-center justify-center gap-2 border border-surface-600 bg-surface-900 hover:border-cyan-glow text-foreground font-mono text-xs font-bold py-3 transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={`size-3.5 ${resending ? "animate-spin" : ""}`} />
+                {resending ? "REENVIANDO..." : "REENVIAR CORREO DE CONFIRMACIÓN"}
+              </button>
+
+              <Link
+                to="/login"
+                className="block w-full bg-cyan-glow text-surface-900 font-mono text-xs font-bold py-3 hover:bg-foreground transition-colors text-center"
+              >
+                IR A INICIAR SESIÓN
+              </Link>
+            </div>
+
+            <p className="text-xs text-muted-foreground mt-6">
+              ¿No lo ves en tu bandeja principal? Recuerda revisar tu carpeta de correo no deseado o spam.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-dvh flex items-center justify-center bg-background px-4 py-12">

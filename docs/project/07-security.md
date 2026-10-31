@@ -51,6 +51,22 @@ Permissions-Policy: camera=(), geolocation=(), microphone=(), payment=(), usb=()
 Strict-Transport-Security: max-age=63072000; includeSubDomains  (sólo prod)
 ```
 
+#### 🛡️ Security Headers en la web (Worker SSR)
+
+`buenchollo-web/src/start.ts` añade un request middleware global de TanStack
+Start que pone en **todas** las respuestas SSR:
+
+```http
+X-Frame-Options: DENY
+Content-Security-Policy: frame-ancestors 'none'
+X-Content-Type-Options: nosniff
+Referrer-Policy: strict-origin-when-cross-origin
+Permissions-Policy: camera=(), geolocation=(), microphone=(), payment=(), usb=()
+```
+
+Sin `script-src`: el SSR inyecta scripts inline de hidratación y se rompería
+sin nonces. Test: `e2e/security-headers.spec.ts`.
+
 #### 🌐 CORS
 
 Lista explícita, sin reflection en handlers de error, warning al
@@ -98,7 +114,11 @@ startup si producción tiene `*`.
 - 🔒 **Lockfiles** versionados
 - ✅ **`pip-audit`** sobre `requirements.txt` → **0 CVEs** (tras pin
   `python-multipart==0.0.27`, SEC-01)
-- ✅ **`npm audit --omit=dev`** → moderate restantes son dev-tooling
+- ✅ **`npm audit`** (incluidas dev) → **0** desde 2026-10-27; el CI falla en
+  `high` o superior (`npm audit --omit=dev --audit-level=high`)
+- 🩹 **Overrides temporales** en `buenchollo-web/package.json`
+  (`miniflare.undici`, `@tailwindcss/typography.postcss-selector-parser`):
+  parchean deps transitivas fijadas por upstream; retirada en TD-22
 - 🐳 Imágenes Docker oficiales (`python:3.11-slim`)
 - ⚙️ CI job `security-audit` corre `pip-audit`, `npm audit`, `gitleaks`
 
@@ -191,6 +211,9 @@ grep -rn "TODO\|FIXME\|HACK\|XXX" buenchollo-web/src buenchollo-api/app
 # 🔑 Verificar que no hay secretos hardcoded
 grep -rEn "(SECRET|TOKEN|PASSWORD|API_KEY|PRIVATE_KEY).*=.*['\"][a-zA-Z0-9]{16,}" \
   buenchollo-api/app buenchollo-web/src
+
+# 🛡️ Headers de seguridad de la web en producción
+curl -sI https://buenchollotech.com |   grep -iE "content-security|x-frame|x-content-type|referrer|permissions"
 
 # 🛡️ Headers de seguridad (con backend corriendo)
 curl -sI http://localhost:8000/health | \

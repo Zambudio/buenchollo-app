@@ -1,0 +1,119 @@
+{#- Piezas reutilizables de los correos. Todas reciben el tema `t` del contexto
+    global (Jinja lo expone a los macros importados "with context"). -#}
+
+{% macro spacer(h) -%}
+<tr><td style="height:{{ h }}px;line-height:{{ h }}px;font-size:0;">&nbsp;</td></tr>
+{%- endmacro %}
+
+{#- Tarjeta contenedora limpia sobre blanco o pastel suave. -#}
+{% macro panel(padding="28px 28px", glow=false, dark=false, bg=none, border=none, radius=16) -%}
+{%- set bg_color = bg or (t.card_subtle if dark else t.card) -%}
+{%- set bd_color = border or (t.border_strong if dark else (t.cyan_border if glow else t.border)) -%}
+<tr>
+  <td class="px" bgcolor="{{ bg_color }}" style="background:{{ bg_color }};border:1px solid {{ bd_color }};border-radius:{{ radius }}px;padding:{{ padding }};">
+    {{ caller() }}
+  </td>
+</tr>
+{%- endmacro %}
+
+{#- Etiqueta sutil y elegante -#}
+{% macro eyebrow(text, color=none) -%}
+<div style="font-family:{{ t.mono }};font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:{{ color or t.cta }};">// {{ text }}</div>
+{%- endmacro %}
+
+{% macro h1(text, color=none) -%}
+<h1 class="h1" style="margin:10px 0 0;font-family:{{ t.sans }};font-size:26px;line-height:34px;font-weight:700;letter-spacing:-.5px;color:{{ color or t.text }};">{{ text }}</h1>
+{%- endmacro %}
+
+{% macro p(text, size=15, color=none, top=12) -%}
+<p style="margin:{{ top }}px 0 0;font-family:{{ t.sans }};font-size:{{ size }}px;line-height:{{ (size * 1.6)|round|int }}px;color:{{ color or t.text_soft }};">{{ text }}</p>
+{%- endmacro %}
+
+{#- Botón a prueba de balas: primario (azul elegante) y secundario (borde suave). -#}
+{% macro button(url, label, variant="primary", full=false, align="center") -%}
+{%- set is_primary = variant == "primary" -%}
+{%- set bg = t.cta if is_primary else t.cta_secondary_bg -%}
+{%- set fg = t.cta_text if is_primary else t.cta_secondary_text -%}
+{%- set bd = "0" if is_primary else "1px solid " ~ t.cta_secondary_border -%}
+{%- set pad = "13px 22px" if is_primary else "12px 21px" -%}
+<table role="presentation" class="btn{{ ' full' if full }}" cellpadding="0" cellspacing="0" border="0" align="{{ align }}" {% if full %}width="100%"{% endif %} style="{{ 'width:100%;' if full }}">
+  <tr>
+    <td align="center" bgcolor="{{ bg }}" style="background:{{ bg }};border:{{ bd }};border-radius:8px;box-shadow:0 1px 2px rgba(0,0,0,0.05);">
+      <a href="{{ url }}" target="_blank" style="display:block;padding:{{ pad }};font-family:{{ t.mono }};font-size:13px;font-weight:700;letter-spacing:.8px;line-height:18px;color:{{ fg }};text-decoration:none;text-transform:uppercase;white-space:nowrap;">{{ label }}</a>
+    </td>
+  </tr>
+</table>
+{%- endmacro %}
+
+{% macro chip(text) -%}
+<span style="display:inline-block;margin:0 6px 6px 0;padding:5px 10px;border:1px solid {{ t.border }};border-radius:999px;background:{{ t.card_subtle }};font-family:{{ t.mono }};font-size:11px;font-weight:700;letter-spacing:.5px;line-height:14px;color:{{ t.text_soft }};white-space:nowrap;">{{ text }}</span>
+{%- endmacro %}
+
+{#- Celda de estadística (nº grande + rótulo) para la franja de resumen. -#}
+{% macro stat(value, label, color=none, last=false) -%}
+<td valign="top" width="33%" style="width:33%;padding:0 {{ 0 if last else 8 }}px 0 0;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td class="stat-box" bgcolor="{{ t.card_subtle }}" style="background:{{ t.card_subtle }};border:1px solid {{ t.border }};border-radius:12px;padding:14px 14px 12px;">
+        <div class="stat-num" style="font-family:{{ t.mono }};font-size:22px;font-weight:700;line-height:26px;color:{{ color or t.text }};white-space:nowrap;">{{ value }}</div>
+        <div class="stat-label" style="padding-top:4px;font-family:{{ t.mono }};font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:{{ t.muted }};">{{ label }}</div>
+      </td>
+    </tr>
+  </table>
+</td>
+{%- endmacro %}
+
+{#- Tarjeta de chollo: adaptada al estilo claro y armónico. -#}
+{% macro deal_card(d) -%}
+<tr>
+  <td bgcolor="{{ t.card }}" style="background:{{ t.card }};border:1px solid {{ t.border }};border-radius:14px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td class="px" style="padding:20px 20px 0;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td class="stack stack-gap" width="180" valign="top" style="width:180px;padding-right:18px;">
+                <a href="{{ d.url }}" target="_blank" style="text-decoration:none;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td align="center" valign="middle" bgcolor="{{ t.card_subtle }}" style="background:{{ t.card_subtle }};border:1px solid {{ t.border }};border-radius:10px;padding:12px;height:160px;">
+                        <img src="{{ d.image_url }}" width="150" alt="{{ d.title }}" style="display:block;margin:0 auto;width:150px;max-width:100%;height:auto;max-height:150px;border-radius:6px;">
+                      </td>
+                    </tr>
+                  </table>
+                </a>
+              </td>
+              <td class="stack" valign="top">
+                {% for name in d.alert_names %}{{ chip("🔔 " ~ name) }}{% endfor %}
+                <a href="{{ d.url }}" target="_blank" style="display:block;margin-top:6px;font-family:{{ t.sans }};font-size:18px;line-height:24px;font-weight:700;color:{{ t.text }};text-decoration:none;">{{ d.title }}</a>
+                {% if d.short_description %}
+                <div style="padding-top:6px;font-family:{{ t.sans }};font-size:13px;line-height:20px;color:{{ t.muted }};">{{ d.short_description }}</div>
+                {% endif %}
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:12px;">
+                  <tr>
+                    <td valign="middle" class="price" style="padding-right:10px;font-family:{{ t.mono }};font-size:28px;line-height:32px;font-weight:700;color:{{ t.cta }};white-space:nowrap;">{{ d.price }}</td>
+                    {% if d.previous_price %}
+                    <td valign="middle" style="padding-right:10px;font-family:{{ t.mono }};font-size:14px;color:{{ t.muted }};text-decoration:line-through;white-space:nowrap;">{{ d.previous_price }}</td>
+                    {% endif %}
+                    {% if d.discount %}
+                    <td valign="middle"><span style="display:inline-block;padding:3px 7px;border-radius:6px;background:#ef4444;font-family:{{ t.mono }};font-size:12px;font-weight:700;line-height:16px;color:#ffffff;white-space:nowrap;">-{{ d.discount }}%</span></td>
+                    {% endif %}
+                  </tr>
+                </table>
+                {% if d.store %}
+                <div style="padding-top:10px;font-family:{{ t.mono }};font-size:12px;color:{{ t.muted }};">Disponible en <span style="color:{{ t.cta }};font-weight:700;">{{ d.store }}</span>{% if d.savings %} &nbsp;·&nbsp; ahorras <span style="color:#16a34a;font-weight:700;">{{ d.savings }}</span>{% endif %}</div>
+                {% endif %}
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td class="px" style="padding:18px 20px 20px;">
+          {{ button(d.url, "Ver oferta  →", full=true) }}
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+{%- endmacro %}

@@ -1,0 +1,85 @@
+{% extends "_layout.html.j2" %}
+{% import "_components.html.j2" as ui with context %}
+{% block content %}
+        {#- PANEL SUPERIOR CONECTADO A LA CABECERA (Blanco, limpio y nítido) -#}
+        <tr>
+          <td class="px" bgcolor="#ffffff" style="background:#ffffff;border:1px solid #e2e8f0;border-top:0;border-radius:0 0 16px 16px;padding:30px 26px 28px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td>
+                  {{ ui.eyebrow("Radar activado · " ~ date_label) }}
+                  <h1 class="h1" style="margin:10px 0 0;font-family:{{ t.sans }};font-size:25px;line-height:33px;font-weight:700;letter-spacing:-.5px;color:{{ t.text }};">{{ greeting }}</h1>
+                  <p style="margin:12px 0 0;font-family:{{ t.sans }};font-size:15px;line-height:24px;color:{{ t.text_soft }};">{{ intro }}</p>
+                  {% if alert_names %}
+                  <div style="padding-top:14px;">{% for name in alert_names %}{{ ui.chip("🔔 " ~ name) }}{% endfor %}</div>
+                  {% endif %}
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:18px;">
+                    <tr>
+                      {{ ui.stat(stats.count, "chollos" if stats.count != 1 else "chollo") }}
+                      {{ ui.stat("-" ~ stats.max_discount ~ "%", "máx. descuento", color="#dc2626") }}
+                      {{ ui.stat(stats.total_savings or "—", "ahorro posible", color="#16a34a", last=true) }}
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        {{ ui.spacer(18) }}
+
+        {#- LISTA DE TARJETAS DE CHOLLOS -#}
+        {% for d in deals %}
+        {{ ui.deal_card(d) }}
+        {{ ui.spacer(16) }}
+        {% endfor %}
+
+        {% if hidden_count %}
+        {#- AVISO DE CHOLLOS ADICIONALES -#}
+        <tr>
+          <td class="px" bgcolor="#f8fafc" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:18px 22px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td class="stack stack-gap" valign="middle" style="font-family:{{ t.sans }};font-size:14px;line-height:22px;color:{{ t.text_soft }};">
+                  Y <strong style="color:{{ t.text }};">{{ hidden_count }} chollo{{ "s" if hidden_count != 1 }} más</strong> de tus alertas te esperan en la web.
+                </td>
+                <td class="stack" align="right" valign="middle" style="padding-left:14px;">
+                  {{ ui.button(links.notifications, "Verlos todos", variant="outline") }}
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        {{ ui.spacer(16) }}
+        {% endif %}
+
+        {#- PROMO DEL CANAL DE TELEGRAM (Avisos al instante) -#}
+        <tr>
+          <td class="px" bgcolor="#f8fafc" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:20px 22px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td class="stack stack-gap" valign="middle" style="padding-right:16px;">
+                  {{ ui.eyebrow("¿Lo quieres al momento?") }}
+                  <p style="margin:8px 0 0;font-family:{{ t.sans }};font-size:14px;line-height:21px;color:{{ t.text_soft }};">
+                    En nuestro canal de Telegram publicamos cada chollo en cuanto sale, sin esperar al resumen de la noche.
+                  </p>
+                </td>
+                <td class="stack" align="right" valign="middle" width="180" style="width:180px;">
+                  <a href="{{ links.telegram }}" target="_blank" style="display:inline-block;padding:12px 20px;background:#229ed9;border-radius:8px;font-family:{{ t.mono }};font-size:12px;font-weight:700;letter-spacing:1px;color:#ffffff;text-decoration:none;text-transform:uppercase;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.05);">
+                    <img src="{{ assets.telegram }}" width="15" height="15" alt="" style="display:inline-block;vertical-align:middle;margin-right:6px;border-radius:50%;">UNIRME AL CANAL
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        {{ ui.spacer(14) }}
+        <tr>
+          <td align="center" style="padding:4px 0;">
+            <a href="{{ links.alerts }}" target="_blank" style="font-family:{{ t.mono }};font-size:12px;font-weight:700;letter-spacing:1px;color:{{ t.cta }};text-decoration:none;">
+              &gt; GESTIONAR MIS ALERTAS
+            </a>
+          </td>
+        </tr>
+{% endblock %}

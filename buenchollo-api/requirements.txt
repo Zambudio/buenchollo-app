@@ -27,6 +27,10 @@ psycopg2-binary>=2.9
 # para validar firmas asimétricas.
 PyJWT[crypto]==2.15.1
 
+# Correos: plantillas HTML/texto (app/modules/emails/templates). El envío usa
+# smtplib de la stdlib, sin dependencias extra.
+Jinja2==3.1.6
+
 # Integraciones externas
 supabase==2.9.1       # storage3>=2.x introduce pyiceberg (no compila sin Build Tools) — mantener <2.10
 openai==2.37.0

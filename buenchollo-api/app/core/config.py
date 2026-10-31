@@ -195,6 +195,17 @@ class Settings(BaseSettings):
     # blog, además de los ya soportados por defecto (ver domain/affiliate_domains.py).
     blog_affiliate_domains: str = ""
 
+    # ── Configuración de Correo Electrónico (Zoho Mail / SMTP) ──
+    smtp_host: str = "smtp.zoho.eu"
+    smtp_port: int = 465
+    smtp_user: str = "info@buenchollotech.com"
+    smtp_password: str = ""
+    smtp_from_email: str = "info@buenchollotech.com"
+    smtp_from_name: str = "BuenChollo Tech"
+    smtp_reply_to: str = "contacto@buenchollotech.com"
+    smtp_use_ssl: bool = True
+    smtp_timeout_seconds: float = 10.0
+
     @property
     def amazon_effective_credential_version(self) -> str:
         """Return the configured Amazon credential version, accepting the legacy env name."""
