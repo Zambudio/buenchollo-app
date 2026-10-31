@@ -1,30 +1,51 @@
-"""Paleta y tipografías de los correos.
+"""Paleta y tipografías de los correos BuenChollo Tech.
 
-Equivalentes en hex del tema oscuro de la web (`buenchollo-web/src/styles.css`,
-definido en oklch): los clientes de correo no entienden oklch ni variables CSS,
-y Outlook tampoco rgba, así que los tonos translúcidos van ya mezclados sobre
-el fondo de tarjeta.
+Diseño limpio, elegante y armónico: fondo claro, tarjeta blanca,
+cabecera limpia sin bloques negros estridentes, tipografía refinada
+y acentos equilibrados.
 """
 
 THEME: dict[str, str] = {
-    "bg": "#010717",  # --surface-900
-    "card": "#051127",  # --surface-800
-    "terminal": "#030c1f",
-    "border": "#122239",  # --surface-700
-    "border_strong": "#2d3b4f",  # --surface-600
-    "cyan": "#00ebff",  # --cyan-glow
-    "cyan_border": "#035d73",  # cian al 35% sobre la tarjeta
-    "cyan_soft": "#05273d",  # cian al 10% sobre la tarjeta
-    "cta": "#16c784",  # .btn-cta
-    "cta_text": "#06231a",
-    "green": "#40cc6d",  # --success
-    "red": "#ff2b5e",  # --alert-red
-    "amber": "#f5a623",  # --color-countdown
-    "amber_soft": "#1d2027",
-    "text": "#eceff1",  # --foreground
-    "text_soft": "#c3cad3",
-    "muted": "#86909b",  # --muted-foreground
-    "faint": "#5b6676",
+    # Lienzo exterior limpio (gris perla suave)
+    "canvas": "#f8fafc",
+    "bg": "#f8fafc",
+
+    # Tarjetas y contenedores
+    "card": "#ffffff",
+    "card_subtle": "#f8fafc",
+    "card_pastel": "#f0f7ff",  # Acento pastel sutil
+
+    # Bordes limpios y discretos
+    "border": "#e2e8f0",
+    "border_subtle": "#f1f5f9",
+    "border_strong": "#cbd5e1",
+
+    # Cabecera y barra inferior limpias (sin fondo negro)
+    "header_bg": "#ffffff",
+    "header_line": "#2563eb",  # Línea de acento azul elegante
+    "footer_banner": "#f8fafc",
+    "footer_border": "#e2e8f0",
+
+    # Colores de acción armónicos (adiós verdes estridentes)
+    "cta": "#2563eb",  # Azul royal elegante y profesional
+    "cta_hover": "#1d4ed8",
+    "cta_text": "#ffffff",
+    "cta_secondary_bg": "#ffffff",
+    "cta_secondary_border": "#cbd5e1",
+    "cta_secondary_text": "#334155",
+
+    # Acentos
+    "cyan": "#0284c7",  # Azul cyan sofisticado
+    "cyan_dark": "#0369a1",
+    "cyan_border": "#bae6fd",
+    "cyan_soft": "#f0f9ff",
+    "telegram": "#229ed9",  # Azul oficial de Telegram
+
+    # Tipografía cuidada
+    "text": "#0f172a",  # Pizarra oscuro de alta legibilidad
+    "text_soft": "#334155",  # Gris grafito para párrafos
+    "muted": "#64748b",  # Gris medio para subtítulos y notas
+    "faint": "#94a3b8",  # Gris claro para avisos legales
     "sans": "'Space Grotesk','Segoe UI',Roboto,Helvetica,Arial,sans-serif",
     "mono": "'JetBrains Mono','SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace",
 }

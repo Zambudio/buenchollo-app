@@ -12,7 +12,8 @@
 | Web | `https://buenchollotech.com`, React 19 + TanStack Start SSR desplegado como Cloudflare Worker |
 | API | `https://api.buenchollotech.com`, FastAPI en Docker sobre NAS Synology y publicada mediante Cloudflare Tunnel |
 | Base de datos | PostgreSQL de Supabase mediante PgBouncer en puerto 6543 |
-| Autenticación | Google OAuth con Supabase Auth; la API valida JWT localmente mediante JWKS |
+| Autenticación | Supabase Auth (Email/Password y Google OAuth); la API valida JWT localmente mediante JWKS |
+| Correo transaccional | Zoho Mail (`smtp.zoho.eu:465` SSL), `info@buenchollotech.com` (from) y `contacto@` (reply-to) |
 | Procesos NAS | `buenchollo-api`, `buenchollo-scheduler` y `cloudflared` |
 | Despliegue web | Automático al hacer push a `main` mediante Cloudflare Workers Builds |
 | Despliegue API | Volumen del proyecto montado en Docker; migraciones Alembic al arrancar y reinicio controlado de API/scheduler |
@@ -27,7 +28,9 @@ DDNS se conservan solo como histórico dentro de la guía de despliegue.
 
 - Feed, detalle, búsqueda, categorías, favoritos y votación de chollos.
 - Comentarios y votos en comentarios.
-- Alertas personalizadas y notificaciones dentro de la aplicación.
+- Alertas personalizadas, notificaciones en la app y resumen diario por email (21:00).
+- Confirmación de cuenta en registro por email y recuperación de contraseña en login.
+- Correo oficial de bienvenida al registrarse / completar el perfil (idempotente).
 - Blog público con categorías, comentarios, votos, RSS y sitemap.
 - Contador público de lecturas de artículos validado por navegador y día.
 - Entrada `/telegram`, que atribuye el origen a Telegram y redirige a la portada.

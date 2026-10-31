@@ -8,6 +8,7 @@ import { PasswordInput } from "@/components/ui/PasswordInput";
 import { toast } from "sonner";
 import { z } from "zod";
 import { SITE_URL } from "@/lib/site";
+import { KeyRound, Mail, ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -44,6 +45,12 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Estados de recuperación de contraseña
+  const [showRecovery, setShowRecovery] = useState(false);
+  const [recoveryEmail, setRecoveryEmail] = useState("");
+  const [recoveryLoading, setRecoveryLoading] = useState(false);
+  const [recoverySent, setRecoverySent] = useState(false);
+
   if (user) {
     nav({ to: "/" });
     return null;
@@ -67,6 +74,26 @@ function LoginPage() {
     nav({ to: "/" });
   };
 
+  const onResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanEmail = recoveryEmail.trim();
+    if (!cleanEmail || !cleanEmail.includes("@")) {
+      toast.error("Introduce un correo válido");
+      return;
+    }
+    setRecoveryLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
+      redirectTo: `${window.location.origin}/perfil`,
+    });
+    setRecoveryLoading(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setRecoverySent(true);
+    toast.success("Enlace de recuperación enviado");
+  };
+
   const onGoogle = async () => {
     const { error } = await signInWithGoogle();
     if (error) {
@@ -74,6 +101,81 @@ function LoginPage() {
       return;
     }
   };
+
+  if (showRecovery) {
+    return (
+      <div className="min-h-dvh flex items-center justify-center bg-background px-4 py-12">
+        <div className="w-full max-w-md">
+          <Link to="/" className="flex justify-center mb-8">
+            <Logo />
+          </Link>
+          <div className="bg-surface-800 border border-surface-700 p-6 sm:p-8">
+            <button
+              onClick={() => {
+                setShowRecovery(false);
+                setRecoverySent(false);
+              }}
+              className="inline-flex items-center gap-1.5 text-xs font-mono text-muted-foreground hover:text-cyan-glow mb-4 transition-colors"
+            >
+              <ArrowLeft className="size-3.5" />
+              VOLVER AL LOGIN
+            </button>
+
+            <div className="font-mono text-cyan-glow text-xs mb-2">&gt; AUTH_PASSWORD_RESET</div>
+            <h1 className="text-2xl font-bold mb-1">Recuperar contraseña</h1>
+            <p className="text-sm text-muted-foreground mb-6">
+              Te enviaremos un correo con un enlace seguro para crear una nueva clave.
+            </p>
+
+            {recoverySent ? (
+              <div className="text-center py-4 space-y-4">
+                <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-cyan-glow/10 border border-cyan-glow/30 text-cyan-glow">
+                  <Mail className="size-6" />
+                </div>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Si existe una cuenta asociada a{" "}
+                  <strong className="text-foreground">{recoveryEmail}</strong>,
+                  recibirás un correo con las instrucciones en tu bandeja de entrada en unos instantes.
+                </p>
+                <button
+                  onClick={() => {
+                    setShowRecovery(false);
+                    setRecoverySent(false);
+                  }}
+                  className="w-full bg-cyan-glow text-surface-900 font-mono text-xs font-bold py-3 hover:bg-foreground transition-colors"
+                >
+                  VOLVER A INICIAR SESIÓN
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={onResetPassword} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-mono uppercase text-muted-foreground mb-1">
+                    Tu correo electrónico
+                  </label>
+                  <input
+                    type="email"
+                    value={recoveryEmail}
+                    onChange={(e) => setRecoveryEmail(e.target.value)}
+                    required
+                    placeholder="ejemplo@correo.com"
+                    className="w-full bg-surface-900 border border-surface-700 px-3 py-2.5 font-mono text-sm outline-none focus:border-cyan-glow text-foreground"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={recoveryLoading}
+                  className="w-full bg-cyan-glow text-surface-900 font-mono text-xs font-bold py-3 hover:bg-foreground transition-colors disabled:opacity-50"
+                >
+                  {recoveryLoading ? "ENVIANDO..." : "ENVIAR ENLACE DE RECUPERACIÓN"}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-dvh flex items-center justify-center bg-background px-4 py-12">
@@ -144,9 +246,18 @@ function LoginPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-mono uppercase text-muted-foreground mb-1">
-                Contraseña
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-mono uppercase text-muted-foreground">
+                  Contraseña
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowRecovery(true)}
+                  className="text-xs text-cyan-glow hover:underline font-mono"
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
+              </div>
               <PasswordInput
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

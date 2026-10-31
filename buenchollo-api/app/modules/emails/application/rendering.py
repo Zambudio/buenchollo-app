@@ -78,8 +78,9 @@ class EmailBranding:
     @property
     def assets(self) -> dict[str, str]:
         return {
-            "logo": f"{self.site_url}/email/logo-144.png",
-            "logo_small": f"{self.site_url}/email/logo-64.png",
+            "logo": f"{self.site_url}/logo-512.png",
+            "logo_small": f"{self.site_url}/favicon.png",
+            "telegram": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Telegram_logo.svg/120px-Telegram_logo.svg.png",
         }
 
     def links(self, campaign: str) -> dict[str, str]:
@@ -240,7 +241,8 @@ def render_auth_template(branding: EmailBranding, **content: str | None) -> str:
     que se copian tal cual."""
     ctx = _base_context(branding, "cuenta")
     ctx.update(
-        preheader=content.get("preheader") or content["intro"],
+        subject=content.get("subject") or content.get("title") or "BuenChollo Tech",
+        preheader=content.get("preheader") or content.get("intro") or "",
         header_tag="CUENTA",
         footer_reason=(
             "Has recibido este correo porque se solicitó esta acción en buenchollotech.com. "

@@ -59,7 +59,7 @@ TEMPLATES: dict[str, dict] = {
         "eyebrow": "Cambio de correo",
         "title": "Confirma tu nuevo correo",
         "intro": "Has pedido cambiar el correo de tu cuenta de BuenChollo Tech. Confírmalo para terminar:",
-        "detail": "{{ .Email }} &nbsp;→&nbsp; <strong style=\"color:#00ebff;\">{{ .NewEmail }}</strong>",
+        "detail": "{{ .Email }} &nbsp;→&nbsp; <strong style=\"color:#2563eb;\">{{ .NewEmail }}</strong>",
         "action_url": URL,
         "button_label": "Confirmar cambio",
         "expiry_note": EXPIRY,

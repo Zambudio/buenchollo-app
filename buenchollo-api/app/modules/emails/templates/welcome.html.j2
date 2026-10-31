@@ -1,15 +1,19 @@
 {% extends "_layout.html.j2" %}
 {% import "_components.html.j2" as ui with context %}
 
-{#- Tarjeta de "lo que ya puedes hacer". Solo funciones que existen hoy. -#}
-{% macro feature(icon, title, text, last=false) -%}
+{#- Macro para las 3 tarjetas de funcionalidad (inspiradas en las 3 cajas del correo de Mercadona) -#}
+{% macro feature_box(title, text, icon=none, image_url=none, last=false) -%}
 <td class="stack stack-gap" valign="top" width="33%" style="width:33%;padding-right:{{ 0 if last else 10 }}px;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" height="100%">
     <tr>
-      <td bgcolor="{{ t.bg }}" style="background:{{ t.bg }};border:1px solid {{ t.border }};border-radius:12px;padding:16px 14px;">
+      <td bgcolor="#f8fafc" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:18px 14px;text-align:center;">
+        {% if image_url %}
+        <img src="{{ image_url }}" width="28" height="28" alt="" style="display:block;width:28px;height:28px;margin:0 auto;border-radius:50%;">
+        {% else %}
         <div style="font-size:24px;line-height:28px;">{{ icon }}</div>
-        <div style="padding-top:10px;font-family:{{ t.sans }};font-size:15px;line-height:20px;font-weight:700;color:{{ t.text }};">{{ title }}</div>
-        <div style="padding-top:6px;font-family:{{ t.sans }};font-size:13px;line-height:20px;color:{{ t.muted }};">{{ text }}</div>
+        {% endif %}
+        <div style="padding-top:10px;font-family:{{ t.sans }};font-size:14px;line-height:19px;font-weight:700;color:{{ t.text }};">{{ title }}</div>
+        <div style="padding-top:6px;font-family:{{ t.sans }};font-size:12px;line-height:18px;color:{{ t.muted }};">{{ text }}</div>
       </td>
     </tr>
   </table>
@@ -17,84 +21,69 @@
 {%- endmacro %}
 
 {% block content %}
-        {% call ui.panel(padding="34px 28px 30px", glow=true) %}
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-            <tr>
-              <td align="center">
-                <img src="{{ assets.logo }}" width="112" height="112" alt="BuenChollo Tech" style="display:block;width:112px;height:112px;margin:0 auto;border-radius:50%;">
-                <div style="padding-top:18px;">{{ ui.eyebrow("Nuevo miembro") }}</div>
-                <h1 class="h1" style="margin:12px 0 0;font-family:{{ t.sans }};font-size:30px;line-height:37px;font-weight:700;letter-spacing:-.5px;color:{{ t.text }};">{% if name %}¡Hola, {{ name }}!<br>{% endif %}Te damos la bienvenida a BuenChollo<span style="color:{{ t.cyan }};">&nbsp;Tech</span></h1>
-                <p style="margin:14px auto 0;max-width:460px;font-family:{{ t.sans }};font-size:16px;line-height:26px;color:{{ t.text_soft }};">Ya formas parte de la comunidad que caza los mejores chollos de tecnología. Nos alegra mucho tenerte por aquí y esperamos que disfrutes de cada oferta que encontremos para ti.</p>
-              </td>
-            </tr>
-          </table>
-        {% endcall %}
-
-        {{ ui.spacer(18) }}
-
-        {#- "Terminal" con el estado del proyecto: la web está en desarrollo. -#}
+        {#- TARJETA PRINCIPAL DEL MENSAJE (Fondo blanco de máxima legibilidad) -#}
         <tr>
-          <td bgcolor="{{ t.terminal }}" style="background:{{ t.terminal }};border:1px solid {{ t.border }};border-radius:16px;">
+          <td class="px" bgcolor="#ffffff" style="background:#ffffff;border:1px solid #e2e8f0;border-top:0;border-radius:0 0 16px 16px;padding:32px 28px 32px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr>
-                <td style="padding:12px 18px;border-bottom:1px solid {{ t.border }};">
-                  <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:{{ t.red }};"></span>&nbsp;
-                  <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:{{ t.amber }};"></span>&nbsp;
-                  <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:{{ t.green }};"></span>
-                  <span style="padding-left:10px;font-family:{{ t.mono }};font-size:11px;color:{{ t.muted }};">buenchollo — estado</span>
-                </td>
-              </tr>
-              <tr>
-                <td class="px" style="padding:18px 22px 22px;font-family:{{ t.mono }};font-size:13px;line-height:23px;color:{{ t.text_soft }};">
-                  <span style="color:{{ t.green }};">$</span> buenchollo --estado<br>
-                  <span style="color:{{ t.cyan }};">▸</span> web en pleno desarrollo<br>
-                  <span style="color:{{ t.cyan }};">▸</span> muchas novedades en camino<br>
-                  <span style="color:{{ t.cyan }};">▸</span> tu opinión decide qué llega primero<span style="color:{{ t.cyan }};">&nbsp;▌</span>
-                  <p style="margin:16px 0 0;font-family:{{ t.sans }};font-size:15px;line-height:24px;color:{{ t.text_soft }};">La página está en desarrollo y cada poco llegan mejoras nuevas. Estamos preparando muchas implementaciones que esperamos sean de tu agrado. ¡Esto no ha hecho más que empezar!</p>
+                <td>
+                  {{ ui.eyebrow("Nuevo miembro") }}
+                  <h1 class="h1" style="margin:10px 0 0;font-family:{{ t.sans }};font-size:25px;line-height:33px;font-weight:700;letter-spacing:-.5px;color:{{ t.text }};">
+                    {% if name %}¡Hola, {{ name }}!{% else %}¡Te damos la bienvenida!{% endif %}
+                  </h1>
+                  <p style="margin:12px 0 0;font-family:{{ t.sans }};font-size:15px;line-height:24px;color:{{ t.text_soft }};">
+                    Ya formas parte de la comunidad de <strong>BuenChollo Tech</strong>. Nos alegra mucho tenerte por aquí y esperamos que disfrutes de cada oferta que rastreamos para ti.
+                  </p>
+
+                  {#- FILA DE 3 CAJAS CON FUNCIONALIDADES CLAVE (Estilo Mercadona, con logo oficial de Telegram) -#}
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:22px;">
+                    <tr>
+                      {{ feature_box("Chollos verificados", "Ofertas revisadas a diario, con histórico de precios y descuento real.", icon="🔥") }}
+                      {{ feature_box("Alertas a tu medida", "Dinos qué buscas y te avisamos en la web o por email al bajar de precio.", icon="🔔") }}
+                      {{ feature_box("Canal de Telegram", "Todos los chollos al momento, directamente en tu teléfono.", image_url=assets.telegram, last=true) }}
+                    </tr>
+                  </table>
+
+                  {#- BOTONES DE ACCIÓN: Disposición apilada vertical para evitar colisiones en móvil y máxima elegancia -#}
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:26px;">
+                    <tr>
+                      <td width="100%" style="width:100%;">
+                        {{ ui.button(links.new_alert, "Crear mi primera alerta", variant="primary", full=true) }}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="height:12px;line-height:12px;font-size:0;">&nbsp;</td>
+                    </tr>
+                    <tr>
+                      <td width="100%" style="width:100%;">
+                        {{ ui.button(links.explore, "Explorar chollos", variant="outline", full=true) }}
+                      </td>
+                    </tr>
+                  </table>
+
+                  {#- BLOQUE DE AYUDA Y CONTACTO (Estilo soporte de Mercadona) -#}
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:22px;">
+                    <tr>
+                      <td bgcolor="#f8fafc" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px 20px;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                          <tr>
+                            <td width="28" valign="top" style="width:28px;font-size:18px;line-height:22px;">💬</td>
+                            <td valign="top" style="font-family:{{ t.sans }};font-size:13px;line-height:20px;color:{{ t.muted }};">
+                              <strong>¿Dudas o sugerencias?</strong> Puedes escribirnos a <a href="mailto:{{ contact_email }}" style="color:{{ t.cta }};font-weight:600;text-decoration:none;">{{ contact_email }}</a> o responder directamente a este correo. Leemos todos los mensajes.
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+
+                  <p style="margin:24px 0 0;font-family:{{ t.sans }};font-size:14px;line-height:22px;color:{{ t.text_soft }};text-align:center;">
+                    ¡Nos vemos entre chollos!<br>
+                    <span style="font-family:{{ t.mono }};font-size:12px;color:{{ t.muted }};">— El equipo de BuenChollo Tech</span>
+                  </p>
                 </td>
               </tr>
             </table>
-          </td>
-        </tr>
-
-        {{ ui.spacer(18) }}
-
-        {% call ui.panel(padding="26px 24px") %}
-          {{ ui.eyebrow("Lo que ya puedes hacer") }}
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:16px;">
-            <tr>
-              {{ feature("🔥", "Chollos verificados", "Ofertas de tecnología revisadas cada día, con su precio anterior y descuento real.") }}
-              {{ feature("🔔", "Alertas a tu medida", "Dinos qué buscas y te avisamos en la web o con un resumen por correo cada noche.") }}
-              {{ feature("✈️", "Canal de Telegram", "Todos los chollos al momento, directamente en tu móvil.", last=true) }}
-            </tr>
-          </table>
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:22px;">
-            <tr>
-              <td class="stack stack-gap" width="50%" style="width:50%;padding-right:8px;">{{ ui.button(links.new_alert, "Crear mi primera alerta", full=true) }}</td>
-              <td class="stack" width="50%" style="width:50%;padding-left:8px;">{{ ui.button(links.explore, "Explorar chollos", variant="outline", full=true) }}</td>
-            </tr>
-          </table>
-        {% endcall %}
-
-        {{ ui.spacer(18) }}
-
-        {% call ui.panel(padding="24px 24px") %}
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-            <tr>
-              <td class="stack stack-gap" valign="middle" style="padding-right:16px;">
-                {{ ui.eyebrow("¿Dudas o sugerencias?") }}
-                <p style="margin:8px 0 0;font-family:{{ t.sans }};font-size:14px;line-height:22px;color:{{ t.text_soft }};">Escríbenos a <a href="mailto:{{ contact_email }}" style="color:{{ t.cyan }};font-weight:700;text-decoration:none;">{{ contact_email }}</a>. Leemos todos los mensajes y nos ayudan a decidir qué construir después.</p>
-              </td>
-              <td class="stack" align="right" valign="middle" width="170" style="width:170px;">{{ ui.button("mailto:" ~ contact_email, "Escríbenos", variant="outline", full=true) }}</td>
-            </tr>
-          </table>
-        {% endcall %}
-
-        {{ ui.spacer(22) }}
-        <tr>
-          <td align="center" style="font-family:{{ t.sans }};font-size:15px;line-height:24px;color:{{ t.text_soft }};">
-            ¡Nos vemos entre chollos!<br>
-            <span style="font-family:{{ t.mono }};font-size:12px;letter-spacing:1px;color:{{ t.muted }};">— El equipo de BuenChollo Tech</span>
           </td>
         </tr>
 {% endblock %}
