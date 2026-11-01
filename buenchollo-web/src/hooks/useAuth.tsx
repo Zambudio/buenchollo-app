@@ -33,6 +33,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const nextMe = await authApi.me();
       setMe(nextMe);
       setIsAdmin(nextMe.is_admin);
+
+      // Disparar bienvenida oficial (el endpoint es 100% idempotente y solo se envía una vez)
+      const userMeta = sess.user.user_metadata as Record<string, unknown> | undefined;
+      const displayName =
+        nextMe.display_name?.trim() ||
+        (userMeta?.full_name as string | undefined) ||
+        (userMeta?.name as string | undefined) ||
+        (userMeta?.display_name as string | undefined) ||
+        sess.user.email?.split("@")[0] ||
+        "Chollero";
+      void authApi.sendWelcomeEmail(displayName).catch(() => {});
     } catch {
       setMe(null);
       setIsAdmin(false);
