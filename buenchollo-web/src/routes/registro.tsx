@@ -10,7 +10,7 @@ import { z } from "zod";
 import { SITE_URL } from "@/lib/site";
 import { authApi } from "@/services/api/auth";
 import { translateAuthError } from "@/lib/errors";
-import { Mail, CheckCircle2, RefreshCw } from "lucide-react";
+import { Mail, RefreshCw } from "lucide-react";
 
 export const Route = createFileRoute("/registro")({
   component: RegisterPage,
@@ -136,8 +136,8 @@ function RegisterPage() {
             <h1 className="text-2xl font-bold mb-2">¡Revisa tu bandeja de entrada!</h1>
             <p className="text-sm text-muted-foreground leading-relaxed mb-6">
               Hemos enviado un enlace de confirmación a{" "}
-              <strong className="text-foreground">{confirmedEmail}</strong>.
-              Pulsa en el botón del correo para verificar tu cuenta y empezar a interceptar chollos.
+              <strong className="text-foreground">{confirmedEmail}</strong>. Pulsa en el botón del
+              correo para verificar tu cuenta y empezar a interceptar chollos.
             </p>
 
             <div className="space-y-3">
@@ -159,7 +159,8 @@ function RegisterPage() {
             </div>
 
             <p className="text-xs text-muted-foreground mt-6">
-              ¿No lo ves en tu bandeja principal? Recuerda revisar tu carpeta de correo no deseado o spam.
+              ¿No lo ves en tu bandeja principal? Recuerda revisar tu carpeta de correo no deseado o
+              spam.
             </p>
           </div>
         </div>

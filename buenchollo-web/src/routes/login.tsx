@@ -10,7 +10,7 @@ import { z } from "zod";
 import { SITE_URL } from "@/lib/site";
 import { authApi } from "@/services/api/auth";
 import { translateAuthError } from "@/lib/errors";
-import { KeyRound, Mail, ArrowLeft } from "lucide-react";
+import { Mail, ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -177,8 +177,8 @@ function LoginPage() {
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   Si existe una cuenta asociada a{" "}
-                  <strong className="text-foreground">{recoveryEmail}</strong>,
-                  recibirás un correo con las instrucciones en tu bandeja de entrada en unos instantes.
+                  <strong className="text-foreground">{recoveryEmail}</strong>, recibirás un correo
+                  con las instrucciones en tu bandeja de entrada en unos instantes.
                 </p>
                 <button
                   onClick={() => {

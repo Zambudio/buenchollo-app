@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "@/components/layout/Logo";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { toast } from "sonner";
-import { KeyRound, CheckCircle2, AlertTriangle, ArrowLeft } from "lucide-react";
+import { CheckCircle2, AlertTriangle, ArrowLeft } from "lucide-react";
 import { SITE_URL } from "@/lib/site";
 import { translateAuthError } from "@/lib/errors";
 
@@ -118,8 +118,8 @@ function ResetPasswordPage() {
               <div className="font-mono text-emerald-400 text-xs">&gt; CONTRASEÑA_RESTABLECIDA</div>
               <h1 className="text-2xl font-bold">¡Nueva contraseña guardada!</h1>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Tu clave ha sido actualizada correctamente. Te redirigimos al inicio de sesión en unos
-                instantes...
+                Tu clave ha sido actualizada correctamente. Te redirigimos al inicio de sesión en
+                unos instantes...
               </p>
               <Link
                 to="/login"
@@ -136,8 +136,8 @@ function ResetPasswordPage() {
               <div className="font-mono text-amber-400 text-xs">&gt; ENLACE_NO_VALIDO</div>
               <h1 className="text-2xl font-bold">Enlace caducado o no válido</h1>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                El enlace de recuperación ha caducado (duran 1 hora) o ya ha sido utilizado.
-                Por favor, solicita uno nuevo desde la pantalla de acceso.
+                El enlace de recuperación ha caducado (duran 1 hora) o ya ha sido utilizado. Por
+                favor, solicita uno nuevo desde la pantalla de acceso.
               </p>
               <Link
                 to="/login"

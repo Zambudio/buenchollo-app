@@ -34,16 +34,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setMe(nextMe);
       setIsAdmin(nextMe.is_admin);
 
-      // Disparar bienvenida oficial (el endpoint es 100% idempotente y solo se envía una vez)
+      // Disparar bienvenida oficial solo si no consta enviada y no es un usuario dummy de test
       const userMeta = sess.user.user_metadata as Record<string, unknown> | undefined;
-      const displayName =
-        nextMe.display_name?.trim() ||
-        (userMeta?.full_name as string | undefined) ||
-        (userMeta?.name as string | undefined) ||
-        (userMeta?.display_name as string | undefined) ||
-        sess.user.email?.split("@")[0] ||
-        "Chollero";
-      void authApi.sendWelcomeEmail(displayName).catch(() => {});
+      if (!userMeta?.welcome_email_sent_at && !sess.user.id.startsWith("00000000-")) {
+        const displayName =
+          nextMe.display_name?.trim() ||
+          (userMeta?.full_name as string | undefined) ||
+          (userMeta?.name as string | undefined) ||
+          (userMeta?.display_name as string | undefined) ||
+          sess.user.email?.split("@")[0] ||
+          "Chollero";
+        void authApi.sendWelcomeEmail(displayName).catch(() => {});
+      }
     } catch {
       setMe(null);
       setIsAdmin(false);
