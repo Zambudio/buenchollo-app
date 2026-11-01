@@ -1,11 +1,7 @@
 import { apiClient } from "./client";
 
 export type ScheduledDealStatus =
-  | "programado"
-  | "publicado"
-  | "cancelado_precio"
-  | "cancelado_stock"
-  | "error";
+  "programado" | "publicado" | "cancelado_precio" | "cancelado_stock" | "error";
 
 export interface ScheduledDealData {
   id: string;

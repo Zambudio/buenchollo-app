@@ -60,7 +60,9 @@ export const authApi = {
   deleteMyAccount: (): Promise<void> => apiClient.delete<void>("/auth/me"),
 
   /** Dispara el envío del correo de bienvenida oficial (idempotente). */
-  sendWelcomeEmail: (displayName?: string): Promise<{ success: boolean; sent: boolean; message: string }> =>
+  sendWelcomeEmail: (
+    displayName?: string,
+  ): Promise<{ success: boolean; sent: boolean; message: string }> =>
     apiClient.post("/auth/welcome", { display_name: displayName }),
 };
 
