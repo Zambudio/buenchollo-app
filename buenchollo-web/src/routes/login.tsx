@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { signInWithGoogle } from "@/lib/auth";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,6 +8,7 @@ import { PasswordInput } from "@/components/ui/PasswordInput";
 import { toast } from "sonner";
 import { z } from "zod";
 import { SITE_URL } from "@/lib/site";
+import { authApi } from "@/services/api/auth";
 import { KeyRound, Mail, ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
