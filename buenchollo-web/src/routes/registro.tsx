@@ -40,7 +40,7 @@ const schema = z.object({
 });
 
 function RegisterPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const nav = useNavigate();
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
@@ -50,8 +50,14 @@ function RegisterPage() {
   const [needsConfirmation, setNeedsConfirmation] = useState(false);
   const [confirmedEmail, setConfirmedEmail] = useState("");
 
+  useEffect(() => {
+    if (authLoading) return;
+    if (user) {
+      nav({ to: "/" });
+    }
+  }, [authLoading, user, nav]);
+
   if (user) {
-    nav({ to: "/" });
     return null;
   }
 

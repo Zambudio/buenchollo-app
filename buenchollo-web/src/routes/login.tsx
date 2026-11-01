@@ -39,7 +39,7 @@ const schema = z.object({
 });
 
 function LoginPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -51,18 +51,49 @@ function LoginPage() {
   const [recoveryLoading, setRecoveryLoading] = useState(false);
   const [recoverySent, setRecoverySent] = useState(false);
 
+  // Redirección segura fuera del render cuando hay sesión activa
+  useEffect(() => {
+    if (authLoading) return;
+    if (user) {
+      if (typeof window !== "undefined" && window.location.hash) {
+        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+      }
+      toast.success("¡Bienvenido a BuenChollo Tech!", { id: "welcome-toast" });
+      const name = user.user_metadata?.display_name || user.email?.split("@")[0] || "Chollero";
+      void authApi.sendWelcomeEmail(name).catch(() => {});
+      nav({ to: "/" });
+    }
+  }, [authLoading, user, nav]);
+
+  // Mensaje cuando la cuenta ha sido confirmada vía callback de Supabase
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     if (params.get("confirmed") === "1" || params.get("confirmed") === "true") {
       toast.success("¡Correo confirmado correctamente! Ya puedes iniciar sesión.", {
         duration: 6000,
+        id: "auth-confirmed",
       });
     }
   }, []);
 
+  // Manejo de enlaces expirados o ya consumidos si no hay sesión
+  useEffect(() => {
+    if (typeof window === "undefined" || authLoading) return;
+    const hash = window.location.hash;
+    if (!user && (hash.includes("otp_expired") || hash.includes("access_denied"))) {
+      toast.error(
+        "El enlace de confirmación ha caducado o ya ha sido utilizado. Si ya confirmaste tu cuenta, inicia sesión directamente.",
+        {
+          duration: 7000,
+          id: "auth-otp-expired",
+        },
+      );
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+  }, [authLoading, user]);
+
   if (user) {
-    nav({ to: "/" });
     return null;
   }
 
