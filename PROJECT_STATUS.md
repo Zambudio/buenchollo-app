@@ -18,23 +18,34 @@ con TypeScript strict + ESLint endurecido + TanStack Query + organización por f
 Las decisiones técnicas (Clean Architecture, DIP con Protocols, async/await, PgBouncer,
 API versionada `/v1`, ADR-002) son correctas y defendibles profesionalmente.
 
-### 1.1 Fotografía verificada — 2026-11-01 (Flujos de Confirmación y Ruta de Recuperación Dedicada)
+### 1.1 Fotografía verificada — 2026-11-01 (Sistema de Correos Zoho y Suite CI 100% en Verde)
 
-- Ruta dedicada de restablecimiento: Creada `/restablecer-password` con formulario aislado
+- **CI verde absoluto**: Run de GitHub Actions `41331100253` completado con éxito en los 5 jobs:
+  - `Backend (pytest)`: 278 pruebas unitarias pasando en 19s (7 tareas en scheduler).
+  - `Backend (integración + Postgres)`: 37 pruebas pasando en 43s.
+  - `Security audit`: 0 vulnerabilidades en `pip-audit`, `npm audit` y `gitleaks`.
+  - `Frontend (typecheck + lint + unit/integration)`: 187 pruebas Vitest con cobertura CORE ≥90%, ESLint y TypeScript sin errores.
+  - `E2E (Playwright)`: 17 pruebas E2E pasando en 39s sobre Chromium.
+  - Total: **519 pruebas automatizadas**.
+- **Estabilidad de testing**:
+  - Resuelto edge-case en `scheduled-deal-edit.spec.ts` (desbordamiento de semana/mes en FullCalendar en domingos) mediante `page.clock.setFixedTime`.
+  - Cobertura total de `translateAuthError` en `src/lib/errors.test.ts` (100% branches/lines).
+  - Mocks defensivos en `WelcomeProfileDialog.test.tsx` (`sendWelcomeEmail`).
+- **Ruta dedicada de restablecimiento**: Creada `/restablecer-password` con formulario aislado
   (nueva clave + confirmación) y listener global ante eventos `PASSWORD_RECOVERY` de Supabase Auth.
-- Flujo de confirmación de email: `Confirm email` configurado en Supabase Auth (`User Signups`);
+- **Flujo de confirmación de email**: `Confirm email` configurado en Supabase Auth (`User Signups`);
   los registros con contraseña requieren verificación previa vía correo, retornando a `/login?confirmed=1`
   con confirmación explícita, mientras que los accesos con Google OAuth entran de inmediato.
-- Correos transaccionales: Integración completa de Zoho Mail (`smtp.zoho.eu:465` SSL)
+- **Localización de errores Supabase**: `translateAuthError` traduce a español amigable todos los
+  mensajes de error de autenticación (rate limit con contador de segundos, credenciales, caducidad OTP).
+- **Correos transaccionales**: Integración completa de Zoho Mail (`smtp.zoho.eu:465` SSL)
   con `info@buenchollotech.com` como remitente oficial y `contacto@buenchollotech.com`
   como dirección de respuesta.
-- Flujos de negocio:
+- **Flujos de negocio**:
   - Correo oficial de bienvenida al registrarse / completar el perfil (`POST /v1/auth/welcome`),
     con control de idempotencia vía `welcome_email_sent_at` en metadatos de Supabase Auth.
   - Resumen nocturno de alertas a las 21:00 en el scheduler para usuarios con aviso activo,
     cumpliendo con cabecera `List-Unsubscribe` y disclaimer de Amazon Afiliados.
-- Calidad: 6 tests en `test_emails_service.py` verificando renderizado, envío simulado,
-  idempotencia y endpoint HTTP.
 
 ### 1.2 Fotografía verificada anterior — 2026-09-26
 

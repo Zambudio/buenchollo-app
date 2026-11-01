@@ -105,15 +105,13 @@ Los valores reales viven fuera de Git. `buenchollo-api/.env.example` y
 
 ## Calidad verificada
 
-La última ejecución completa de `main` terminó en verde en GitHub Actions tras el
-commit de producción `eee0a97`:
+La última ejecución completa de `main` terminó en verde en GitHub Actions (`41331100253`):
 
-- 272 pruebas backend sin BD y 37 pruebas backend de integración con PostgreSQL.
-- 186 pruebas Vitest de frontend.
-- 16 pruebas E2E Playwright en Chromium.
-- Total verificado: **511 pruebas automatizadas**.
-- TypeScript, ESLint, coverage, `pip-audit`, `npm audit` y gitleaks forman parte
-  de los gates del CI.
+- 278 pruebas backend sin BD y 37 pruebas backend de integración con PostgreSQL (incluyendo 7 tareas en el scheduler y suite de correos con Zoho).
+- 187 pruebas Vitest de frontend con cobertura superior al 90% en lógica de negocio (`src/lib/**`).
+- 17 pruebas E2E Playwright en Chromium con tiempo determinista congelado en reloj para aislamiento ante cambios de mes o fin de semana.
+- Total verificado: **519 pruebas automatizadas** en verde.
+- TypeScript, ESLint, Prettier, coverage, `pip-audit`, `npm audit` y gitleaks superados al 100%.
 
 Las cifras son una fotografía fechada, no un contrato. El workflow
 `.github/workflows/ci.yml` es la autoridad sobre qué se ejecuta actualmente.
