@@ -30,9 +30,8 @@ const title = "Cafetera programada editable";
 
 test("permite cambiar categoría y subcategoría de una publicación programada", async ({ page }) => {
   test.setTimeout(90_000);
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(11, 0, 0, 0);
+  await page.clock.setFixedTime(new Date("2026-06-10T10:00:00Z"));
+  const tomorrow = new Date("2026-06-11T11:00:00Z");
 
   let updatePayload: Record<string, unknown> | null = null;
   const scheduledDeal = {
