@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { SITE_URL } from "@/lib/site";
 import { authApi } from "@/services/api/auth";
+import { translateAuthError } from "@/lib/errors";
 import { KeyRound, Mail, ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
@@ -109,11 +110,7 @@ function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword(parsed.data);
     setLoading(false);
     if (error) {
-      if (error.message.toLowerCase().includes("email not confirmed")) {
-        toast.error("Debes confirmar tu correo electrónico antes de entrar. Revisa tu bandeja de entrada.");
-        return;
-      }
-      toast.error("Credenciales incorrectas");
+      toast.error(translateAuthError(error.message, "Credenciales incorrectas"));
       return;
     }
     toast.success("Sesión iniciada");
@@ -133,7 +130,7 @@ function LoginPage() {
     });
     setRecoveryLoading(false);
     if (error) {
-      toast.error(error.message);
+      toast.error(translateAuthError(error.message));
       return;
     }
     setRecoverySent(true);
@@ -143,7 +140,7 @@ function LoginPage() {
   const onGoogle = async () => {
     const { error } = await signInWithGoogle();
     if (error) {
-      toast.error("No se pudo iniciar sesión con Google");
+      toast.error(translateAuthError(error.message, "No se pudo iniciar sesión con Google"));
       return;
     }
   };

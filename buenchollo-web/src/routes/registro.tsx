@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { SITE_URL } from "@/lib/site";
 import { authApi } from "@/services/api/auth";
+import { translateAuthError } from "@/lib/errors";
 import { Mail, CheckCircle2, RefreshCw } from "lucide-react";
 
 export const Route = createFileRoute("/registro")({
@@ -79,7 +80,7 @@ function RegisterPage() {
     });
     setLoading(false);
     if (error) {
-      toast.error(error.message);
+      toast.error(translateAuthError(error.message));
       return;
     }
 
@@ -106,7 +107,7 @@ function RegisterPage() {
     });
     setResending(false);
     if (error) {
-      toast.error("No se pudo reenviar: " + error.message);
+      toast.error(translateAuthError(error.message));
     } else {
       toast.success("Correo de confirmación reenviado");
     }
@@ -115,7 +116,7 @@ function RegisterPage() {
   const onGoogle = async () => {
     const { error } = await signInWithGoogle();
     if (error) {
-      toast.error("No se pudo registrar con Google");
+      toast.error(translateAuthError(error.message, "No se pudo registrar con Google"));
       return;
     }
   };

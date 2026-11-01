@@ -6,6 +6,7 @@ import { PasswordInput } from "@/components/ui/PasswordInput";
 import { toast } from "sonner";
 import { KeyRound, CheckCircle2, AlertTriangle, ArrowLeft } from "lucide-react";
 import { SITE_URL } from "@/lib/site";
+import { translateAuthError } from "@/lib/errors";
 
 export const Route = createFileRoute("/restablecer-password")({
   component: ResetPasswordPage,
@@ -86,7 +87,7 @@ function ResetPasswordPage() {
     setLoading(false);
 
     if (error) {
-      toast.error("No se pudo actualizar la contraseña: " + error.message);
+      toast.error(translateAuthError(error.message, "No se pudo actualizar la contraseña"));
       return;
     }
 
