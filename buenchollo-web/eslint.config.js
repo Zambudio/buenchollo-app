@@ -7,7 +7,15 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   // Ignorar carpetas de build y archivos generados.
-  { ignores: ["dist", ".output", ".vinxi", "src/routeTree.gen.ts"] },
+  {
+    ignores: [
+      "dist",
+      ".output",
+      ".vinxi",
+      "src/routeTree.gen.ts",
+      "src/integrations/supabase/types.ts",
+    ],
+  },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
