@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   useAuth: vi.fn(),
   getMyProfile: vi.fn(),
   updateMyProfile: vi.fn(),
+  sendWelcomeEmail: vi.fn(),
   refreshMe: vi.fn(),
 }));
 
@@ -17,11 +18,13 @@ vi.mock("@/services/api/auth", () => ({
   authApi: {
     getMyProfile: mocks.getMyProfile,
     updateMyProfile: mocks.updateMyProfile,
+    sendWelcomeEmail: mocks.sendWelcomeEmail,
   },
 }));
 
 beforeEach(() => {
   mocks.refreshMe.mockResolvedValue(undefined);
+  mocks.sendWelcomeEmail.mockResolvedValue({ success: true, sent: true });
   mocks.getMyProfile.mockResolvedValue({
     user_id: "u-1",
     display_name: null,
@@ -78,6 +81,7 @@ describe("WelcomeProfileDialog", () => {
         bio: "",
         avatar_url: "https://example.com/avatar.png",
       });
+      expect(mocks.sendWelcomeEmail).toHaveBeenCalledWith("Pedro Google");
     });
     expect(mocks.refreshMe).toHaveBeenCalledOnce();
   });

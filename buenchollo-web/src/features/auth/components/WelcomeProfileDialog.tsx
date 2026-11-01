@@ -99,7 +99,7 @@ export function WelcomeProfileDialog() {
         bio,
         avatar_url: avatarUrl || null,
       });
-      void authApi.sendWelcomeEmail(displayName.slice(0, 50)).catch(() => {});
+      void authApi.sendWelcomeEmail?.(displayName.slice(0, 50))?.catch?.(() => {});
       await refreshMe();
       setDismissed(true);
       toast.success("Perfil preparado");
