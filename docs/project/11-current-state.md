@@ -66,12 +66,27 @@ DDNS se conservan solo como histórico dentro de la guía de despliegue.
 ## Módulos de backend activos
 
 `ai`, `alerts`, `analytics`, `blog`, `blog_comments`, `categories`, `comments`,
-`deals`, `notifications`, `products`, `scheduled_deals`, `scheduled_tasks`,
+`deals`, `emails`, `notifications`, `products`, `scheduled_deals`, `scheduled_tasks`,
 `stores`, `telegram` y `users`.
 
 Todos los routers de negocio se publican bajo `/v1`; `/health` y
 `/health/ready` quedan fuera de esa versión. El frontend accede a datos de negocio
 solo mediante la API; las excepciones deliberadas son Supabase Auth y Storage.
+
+### Correos transaccionales y autenticación (Zoho Mail SMTP)
+
+- **Proveedor SMTP**: Zoho Mail datacenter europeo (`smtp.zoho.eu:465` con SSL nativo).
+- **Remitente oficial**: `info@buenchollotech.com` (From) y `contacto@buenchollotech.com` (Reply-To).
+- **Flujo de Confirmación**: `Confirm email` activado en Supabase Auth (`Sign In / Providers > User Signups`).
+  El registro por email en `/registro` muestra la pantalla de espera de confirmación; al pulsar en el correo,
+  el usuario vuelve a `/login?confirmed=1` con confirmación explícita. Los registros vía Google OAuth
+  entran de forma directa sin requerir confirmación por correo.
+- **Flujo de Recuperación**: Enlace *"¿Olvidaste tu contraseña?"* en `/login` con redirección a la ruta
+  dedicada `/restablecer-password`. Se incluye un listener global para el evento `PASSWORD_RECOVERY` de Supabase
+  que garantiza que el usuario sea dirigido siempre a la pantalla de cambio de clave.
+- **Bienvenida e Idempotencia**: Correo de bienvenida enviado vía `POST /v1/auth/welcome` una única vez por cuenta
+  (guardando `welcome_email_sent_at` en metadatos de usuario).
+- **Resumen nocturno de alertas**: Job programado a las 21:00 con cabecera RFC 8058 `List-Unsubscribe` y enlaces con UTM.
 
 ## Integraciones y configuración crítica
 

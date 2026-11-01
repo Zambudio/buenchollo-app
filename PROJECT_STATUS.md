@@ -18,21 +18,22 @@ con TypeScript strict + ESLint endurecido + TanStack Query + organización por f
 Las decisiones técnicas (Clean Architecture, DIP con Protocols, async/await, PgBouncer,
 API versionada `/v1`, ADR-002) son correctas y defendibles profesionalmente.
 
-### 1.1 Fotografía verificada — 2026-10-31 (Sistema Integral de Correos Zoho Mail)
+### 1.1 Fotografía verificada — 2026-11-01 (Flujos de Confirmación y Ruta de Recuperación Dedicada)
 
+- Ruta dedicada de restablecimiento: Creada `/restablecer-password` con formulario aislado
+  (nueva clave + confirmación) y listener global ante eventos `PASSWORD_RECOVERY` de Supabase Auth.
+- Flujo de confirmación de email: `Confirm email` configurado en Supabase Auth (`User Signups`);
+  los registros con contraseña requieren verificación previa vía correo, retornando a `/login?confirmed=1`
+  con confirmación explícita, mientras que los accesos con Google OAuth entran de inmediato.
 - Correos transaccionales: Integración completa de Zoho Mail (`smtp.zoho.eu:465` SSL)
   con `info@buenchollotech.com` como remitente oficial y `contacto@buenchollotech.com`
   como dirección de respuesta.
-- Flujos de autenticación:
-  - Registro en `/registro` con estado visual de confirmación de correo y reenvío.
-  - Login en `/login` con recuperación de contraseña integrada (*"¿Olvidaste tu contraseña?"*).
-  - Supabase Auth configurado con Custom SMTP y plantillas personalizadas.
 - Flujos de negocio:
   - Correo oficial de bienvenida al registrarse / completar el perfil (`POST /v1/auth/welcome`),
     con control de idempotencia vía `welcome_email_sent_at` en metadatos de Supabase Auth.
   - Resumen nocturno de alertas a las 21:00 en el scheduler para usuarios con aviso activo,
     cumpliendo con cabecera `List-Unsubscribe` y disclaimer de Amazon Afiliados.
-- Calidad: 6 tests nuevos en `test_emails_service.py` verificando renderizado, envío simulado,
+- Calidad: 6 tests en `test_emails_service.py` verificando renderizado, envío simulado,
   idempotencia y endpoint HTTP.
 
 ### 1.2 Fotografía verificada anterior — 2026-09-26
