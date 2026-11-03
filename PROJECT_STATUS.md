@@ -1,5 +1,5 @@
 # PROJECT_STATUS — BuenCholloTech
-*Actualización de producción: 2026-11-03 — Programación Telegram con ficha web pendiente desplegada en API/scheduler; migración aplicada y CI de `main` en verde. Verificación del despliegue web en curso.*
+*Actualización de producción: 2026-11-03 — Programación Telegram con ficha web pendiente desplegada en web, API y scheduler; migración aplicada y CI de `main` en verde.*
 
 ## 2026-11-03 · Programación Telegram y web
 
@@ -7,9 +7,10 @@
 - El título ya no exige tres caracteres: solo que no esté vacío. Planificación muestra un aviso visible para las fichas pendientes.
 - El publicador envía Telegram sin activar la web incompleta. Con ASIN y precio mantiene la comprobación de stock y variación de precio; sin ellos conserva el texto aprobado por el administrador.
 - El contexto Docker de API/scheduler excluye `.env`, entornos virtuales y cachés. Imagen reconstruida y comprobada sin `/app/.env`; la configuración de producción sigue entrando mediante `env_file` y el volumen montado.
-- Merge `cc9c827` en `main`. Migración `20261103120000_telegram_web_readiness.py` aplicada en producción y confirmada como head en el contenedor API. API y scheduler reconstruidos y reiniciados; API saludable y `/health` público responde 200. CI de ese merge: cinco trabajos correctos, incluida integración con PostgreSQL, E2E de Playwright y auditoría de seguridad. En local: 282 pruebas backend, 202 frontend con cobertura, TypeScript, ESLint y build SSR correctos. El E2E usa `PLAYWRIGHT_PORT` y sondeo de archivos en unidades de red. Pendiente de comprobar la publicación del nuevo Worker web y de validar una programación real de Telegram sin enviar contenido de prueba al canal.
+- Merge funcional `cc9c827` y merge documental `3e6c1aa` en `main`. Migración `20261103120000_telegram_web_readiness.py` aplicada en producción y confirmada como head en el contenedor API. API y scheduler reconstruidos y reiniciados; API saludable y `/health` público responde 200. Los cinco trabajos de CI de ambos merges pasaron, incluida integración con PostgreSQL, E2E de Playwright y auditoría de seguridad. En local: 282 pruebas backend, 202 frontend con cobertura, TypeScript, ESLint y build SSR correctos. El E2E usa `PLAYWRIGHT_PORT` y sondeo de archivos en unidades de red.
+- Comprobación web de producción (2026-11-03): portada y `/admin/chollos` responden 200; el HTML público carga `admin.chollos-6oze5U6N.js` y ese archivo contiene el nuevo aviso `WEB PENDIENTE`. El Worker actualizado está publicado. No se ha creado una programación real ni enviado contenido de prueba al canal Telegram; esa prueba funcional queda pendiente.
 
-*Última actualización: 2026-10-27 (limpieza de advisories y cabeceras web; estado canónico en `docs/project/11-current-state.md`)*
+*Última actualización: 2026-11-03 (estado canónico en `docs/project/11-current-state.md`)*
 
 > La migración al dominio propio ya está completada. Este documento conserva la
 > cronología; para el estado operativo vigente consulta

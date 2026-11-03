@@ -1,9 +1,9 @@
 # 11 · Estado actual verificado
 
 > Fuente de verdad resumida del estado operativo y funcional de BuenCholloTech.
-> Última auditoría: **2026-09-26**. La versión funcional auditada y desplegada
-> corresponde al merge `eee0a97`; el historial detallado permanece en
-> `PROJECT_STATUS.md`.
+> Última comprobación operativa: **2026-11-03**. La auditoría integral del
+> **2026-09-26** corresponde al merge `eee0a97`; las verificaciones posteriores
+> y el historial detallado permanecen en `PROJECT_STATUS.md`.
 
 ## Producción
 
@@ -51,8 +51,10 @@ DDNS se conservan solo como histórico dentro de la guía de despliegue.
   build SSR y el E2E de completar la categoría pendiente. Los cinco trabajos
   de CI del merge pasan, incluida integración con PostgreSQL y auditoría de
   seguridad. Alembic `20261103120000` está aplicado en la API de producción;
-  API y scheduler se reiniciaron correctamente. Queda comprobar el nuevo Worker
-  web y una programación real de Telegram.
+  API y scheduler se reiniciaron correctamente. La portada, `/admin/chollos` y
+  `/health` responden 200; el bundle público `admin.chollos-6oze5U6N.js`
+  contiene el aviso `WEB PENDIENTE`, confirmando el Worker actualizado. Queda
+  por validar una programación real de Telegram sin enviar pruebas al canal.
 - Calendario de publicaciones programadas con edición integral de los datos web:
   ASIN, título, resumen, descripción, precios, tienda, categoría, subcategoría,
   marca, envío, enlaces, imágenes, caducidad y gráfica Keepa. El texto/canal de
