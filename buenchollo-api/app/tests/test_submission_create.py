@@ -20,6 +20,7 @@ from app.modules.submissions.api.router import get_category_repository
 from app.modules.submissions.domain.models import DealSubmission
 
 ASIN = "B0ABCDEFGH"
+SUB_ID = "11111111-1111-4111-8111-111111111111"
 URL = "/v1/submissions"
 BUCKET = "https://proj.supabase.co/storage/v1/object/public/deal-images/submissions/"
 AMAZON_IMG = "https://m.media-amazon.com/images/I/a.jpg"
@@ -52,7 +53,7 @@ class FakeRepo:
     async def add(self, sub):
         if self.add_error:
             raise self.add_error
-        sub.id = "sub-1"
+        sub.id = SUB_ID
         sub.created_at = datetime.now(timezone.utc)
         self.rows.append(sub)
         return sub
@@ -72,11 +73,14 @@ class FakeRepo:
 
 
 class FakeCategories:
-    def __init__(self, known=("cat-1",)):
-        self.known = set(known)
+    def __init__(self, known=("cat-1",), parents=None):
+        self.known = set(known) | set(parents or {})
+        self.parents = parents or {}
 
     async def get_by_id(self, category_id):
-        return SimpleNamespace(id=category_id) if category_id in self.known else None
+        if category_id not in self.known:
+            return None
+        return SimpleNamespace(id=category_id, parent_id=self.parents.get(category_id))
 
 
 class FakeProfileRepo:
@@ -165,14 +169,6 @@ def test_duplicate_pending(client, repo):
     assert resp.json()["reason"] == "in_review"
 
 
-def test_integrity_error_is_conflict(client, repo):
-    repo.add_error = IntegrityError("insert", {}, Exception("uq"))
-    resp = client.post(URL, json=body())
-    assert resp.status_code == 409
-    assert resp.json()["code"] == "SUBMISSION_DUPLICATE"
-    assert resp.json()["reason"] == "in_review"
-
-
 def test_quota_pending(client, repo):
     repo.pending_count = 5
     resp = client.post(URL, json=body())
@@ -206,6 +202,30 @@ def test_image_lookalike_hosts_rejected(client):
         assert client.post(URL, json=body(images=[bad], image_url=None)).status_code == 422, bad
 
 
+def test_image_bypass_attempts_rejected(client):
+    for bad in (
+        "https://evil.com\\@m.media-amazon.com/a.jpg",
+        "https://m.media-amazon.com\\.evil.com/a.jpg",
+        BUCKET + "../x.jpg",
+        BUCKET + "%2e%2e/x.jpg",
+        BUCKET + "%2E%2e/x.jpg",
+        BUCKET + "a/../../other/x.jpg",
+        "https://m.media-amazon.com:8443/a.jpg",
+        "https://user:pw@m.media-amazon.com/a.jpg",
+        "https://m.media-amazon.com/a b.jpg",
+        "https://m.media-amazon.com/a%5c.jpg",
+        "https://m.media-amazon.com/a\n.jpg",
+    ):
+        resp = client.post(URL, json=body(images=[bad], image_url=None))
+        assert resp.status_code == 422, bad
+
+
+def test_image_url_empty_is_none(client, repo):
+    resp = client.post(URL, json=body(image_url=""))
+    assert resp.status_code == 201, resp.text
+    assert repo.rows[0].image_url is None
+
+
 def test_image_url_must_be_in_images(client):
     resp = client.post(URL, json=body(image_url=BUCKET + "u/other.webp"))
     assert resp.status_code == 422
@@ -231,6 +251,45 @@ def test_unknown_category_is_400(client, repo):
     assert not repo.rows
 
 
+def _pending_error(constraint):
+    return IntegrityError(
+        "insert", {}, Exception(f'duplicate key value violates unique constraint "{constraint}"')
+    )
+
+
+@pytest.mark.parametrize(
+    "constraint",
+    ["uq_deal_submissions_pending_asin", "uq_deal_submissions_pending_canonical"],
+)
+def test_integrity_error_pending_constraints_are_conflict(client, repo, constraint):
+    repo.add_error = _pending_error(constraint)
+    resp = client.post(URL, json=body())
+    assert resp.status_code == 409
+    assert resp.json()["reason"] == "in_review"
+
+
+def test_other_integrity_error_is_not_swallowed(repo):
+    from app.modules.submissions.application.create_submission import CreateSubmissionUseCase
+
+    repo.add_error = _pending_error("fk_deal_submissions_user_id_fkey")
+    use_case = CreateSubmissionUseCase(repo, FakeCategories())
+    data = schemas.SubmissionCreate(**body())
+    import asyncio
+
+    with pytest.raises(IntegrityError):
+        asyncio.run(use_case.execute("u1", data, "tag-21"))
+
+
+def test_subcategory_must_belong_to_category(client, repo):
+    app.dependency_overrides[get_category_repository] = lambda: FakeCategories(
+        known=("cat-1", "cat-2"), parents={"sub-1": "cat-1", "sub-2": "cat-2"}
+    )
+    assert client.post(URL, json=body(subcategory_id="sub-2")).status_code == 400
+    assert client.post(URL, json=body(subcategory_id="cat-2")).status_code == 400
+    assert client.post(URL, json=body(subcategory_id="missing")).status_code == 400
+    assert client.post(URL, json=body(subcategory_id="sub-1")).status_code == 201
+
+
 def test_mine_only_own(client, repo):
     client.post(URL, json=body())
     other = make_row(user_id="u2")
@@ -238,7 +297,7 @@ def test_mine_only_own(client, repo):
     other.created_at = datetime.now(timezone.utc)
     repo.rows.append(other)
     out = client.get(f"{URL}/mine").json()
-    assert [s["id"] for s in out] == ["sub-1"]
+    assert [s["id"] for s in out] == [SUB_ID]
 
 
 def test_mine_includes_deal_slug_and_reason(client, repo):
@@ -257,21 +316,30 @@ def test_mine_includes_deal_slug_and_reason(client, repo):
 def test_withdraw_foreign_is_404(client, repo):
     client.post(URL, json=body())
     repo.rows[0].user_id = "u2"
-    assert client.delete(f"{URL}/sub-1").status_code == 404
+    assert client.delete(f"{URL}/{SUB_ID}").status_code == 404
 
 
 def test_withdraw_approved_is_409(client, repo):
     client.post(URL, json=body())
     repo.rows[0].status = "approved"
-    assert client.delete(f"{URL}/sub-1").status_code == 409
+    assert client.delete(f"{URL}/{SUB_ID}").status_code == 409
 
 
 def test_withdraw_own_pending(client, repo):
     client.post(URL, json=body())
-    resp = client.delete(f"{URL}/sub-1")
+    resp = client.delete(f"{URL}/{SUB_ID}")
     assert resp.status_code == 204
     assert repo.rows[0].status == "withdrawn"
 
 
 def test_withdraw_missing_is_404(client):
     assert client.delete(f"{URL}/nope").status_code == 404
+
+
+def test_withdraw_malformed_id_never_hits_repo(client, repo):
+    async def boom(id):
+        raise AssertionError("repo must not be called with a malformed id")
+
+    repo.get = boom
+    assert client.delete(f"{URL}/nope").status_code == 404
+    assert client.delete(f"{URL}/123").status_code == 404

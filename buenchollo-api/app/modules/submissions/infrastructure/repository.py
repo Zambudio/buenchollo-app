@@ -98,8 +98,9 @@ class SubmissionRepository:
         return int(result.scalar_one())
 
     async def add(self, sub: DealSubmission) -> DealSubmission:
-        self.session.add(sub)
-        await self.session.flush()
+        async with self.session.begin_nested():
+            self.session.add(sub)
+            await self.session.flush()
         return sub
 
     async def get(self, id: str) -> DealSubmission | None:

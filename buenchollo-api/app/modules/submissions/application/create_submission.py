@@ -14,6 +14,23 @@ if TYPE_CHECKING:
     from app.modules.submissions.api.schemas import SubmissionCreate
 
 
+PENDING_UNIQUE_CONSTRAINTS = (
+    "uq_deal_submissions_pending_asin",
+    "uq_deal_submissions_pending_canonical",
+)
+
+
+def _is_pending_conflict(exc: IntegrityError) -> bool:
+    orig = exc.orig
+    names = {
+        getattr(orig, "constraint_name", None),
+        getattr(getattr(orig, "__cause__", None), "constraint_name", None),
+    }
+    if names & set(PENDING_UNIQUE_CONSTRAINTS):
+        return True
+    return any(name in str(orig) for name in PENDING_UNIQUE_CONSTRAINTS)
+
+
 class CreateSubmissionUseCase:
     def __init__(
         self,
@@ -29,8 +46,12 @@ class CreateSubmissionUseCase:
     async def _ensure_categories(self, data: "SubmissionCreate") -> None:
         if await self.category_repo.get_by_id(data.category_id) is None:
             raise ValidationError("La categoría seleccionada no existe")
-        if data.subcategory_id and await self.category_repo.get_by_id(data.subcategory_id) is None:
-            raise ValidationError("La subcategoría seleccionada no existe")
+        if data.subcategory_id:
+            sub = await self.category_repo.get_by_id(data.subcategory_id)
+            if sub is None:
+                raise ValidationError("La subcategoría seleccionada no existe")
+            if str(sub.parent_id) != str(data.category_id):
+                raise ValidationError("La subcategoría no pertenece a la categoría seleccionada")
 
     async def execute(self, user_id: str, data: "SubmissionCreate", amazon_tag: str) -> DealSubmission:
         since = datetime.now(timezone.utc) - timedelta(hours=24)
@@ -77,4 +98,6 @@ class CreateSubmissionUseCase:
         try:
             return await self.repo.add(submission)
         except IntegrityError as exc:
+            if not _is_pending_conflict(exc):
+                raise
             raise SubmissionConflictError("in_review") from exc

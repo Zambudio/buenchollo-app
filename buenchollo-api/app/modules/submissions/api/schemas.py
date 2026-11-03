@@ -1,7 +1,8 @@
+import re
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Literal
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -51,17 +52,42 @@ AMAZON_IMAGE_HOSTS = frozenset({"m.media-amazon.com", "images-na.ssl-images-amaz
 BUCKET_PATH = "/storage/v1/object/public/deal-images/submissions/"
 
 
+_UNSAFE_CHARS = re.compile(r"[\\\s\x00-\x1f\x7f]")
+
+
 def allowed_bucket_prefix() -> str | None:
     base = (get_settings().supabase_url or "").strip().rstrip("/").removesuffix("/rest/v1").rstrip("/")
     return f"{base}{BUCKET_PATH}" if base else None
 
 
+def _has_dot_segments(path: str) -> bool:
+    return any(unquote(segment) in ("..", ".") for segment in path.split("/"))
+
+
 def is_allowed_image(url: str) -> bool:
-    prefix = allowed_bucket_prefix()
-    if prefix and url.startswith(prefix) and len(url) > len(prefix):
+    if _UNSAFE_CHARS.search(url) or "%5c" in url.lower():
+        return False
+    try:
+        parsed = urlparse(url)
+        port = parsed.port
+    except ValueError:
+        return False
+    if parsed.scheme != "https" or parsed.username or parsed.password or port not in (None, 443):
+        return False
+    if parsed.params or parsed.fragment or _has_dot_segments(parsed.path):
+        return False
+    host = (parsed.hostname or "").lower()
+    if host in AMAZON_IMAGE_HOSTS:
         return True
-    parsed = urlparse(url)
-    return parsed.scheme == "https" and (parsed.hostname or "").lower() in AMAZON_IMAGE_HOSTS
+    prefix = allowed_bucket_prefix()
+    if not prefix:
+        return False
+    allowed = urlparse(prefix)
+    return (
+        host == (allowed.hostname or "").lower()
+        and parsed.path.startswith(allowed.path)
+        and len(parsed.path) > len(allowed.path)
+    )
 
 
 def _aware(value: datetime) -> datetime:
@@ -83,6 +109,11 @@ class SubmissionCreate(BaseModel):
     expires_at: datetime | None = None
     images: list[str] = Field(default_factory=list, max_length=MAX_IMAGES)
     image_url: str | None = None
+
+    @field_validator("image_url", mode="after")
+    @classmethod
+    def _empty_image_url(cls, value: str | None) -> str | None:
+        return (value or "").strip() or None
 
     @field_validator("title", "coupon_code", "shipping_info", "store_name", "description", mode="before")
     @classmethod

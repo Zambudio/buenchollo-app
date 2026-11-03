@@ -1,3 +1,4 @@
+import uuid
 from typing import Any
 
 from app.core.exceptions import ConflictError, NotFoundError
@@ -17,6 +18,10 @@ class WithdrawSubmissionUseCase:
         self.repo = repo
 
     async def execute(self, user_id: str, submission_id: str) -> None:
+        try:
+            uuid.UUID(submission_id)
+        except ValueError:
+            raise NotFoundError("Propuesta no encontrada") from None
         submission = await self.repo.get(submission_id)
         if submission is None or submission.user_id != user_id:
             raise NotFoundError("Propuesta no encontrada")
