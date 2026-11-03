@@ -97,7 +97,7 @@ RLS: tabla con RLS activada **sin políticas** (solo accede el backend con servi
 - `coupon_code varchar(64) null` — se muestra en la ficha con botón copiar (y también se puede usar desde el formulario admin).
 - `canonical_url text null` + índice — clave de duplicados para tiendas sin ASIN. `DealService` lo rellena al crear/actualizar. Script one-off de backfill para los deals existentes.
 - `source = 'community'` (columna existente) identifica los chollos de la comunidad; `created_by` = el usuario autor. Solo cuando `source='community'` se muestra la autoría (los chollos del admin no muestran autor).
-- **Unicidad de ASIN solo entre chollos vivos** (decisión de Pedro: un producto que vuelve a estar de oferta es un chollo **nuevo**, con sus propios votos, comentarios y autor). El índice `uq_deals_external_id` (hoy único sobre todo `external_id` no nulo) se recrea como único parcial `WHERE external_id IS NOT NULL AND status IN ('active','scheduled','draft')`, en la misma migración (crear el nuevo antes de borrar el antiguo, en transacción). Es más permisivo que el actual, así que el código de producción sigue funcionando. `DealService._check_external_id_unique` pasa a mirar solo esos estados (beneficio colateral: el admin también puede republicar un producto caducado). El flujo admin de "sobrescribir el existente" ante 409 no cambia. El slug del deal nuevo no puede colisionar con el del antiguo (`auto_slug` debe garantizar unicidad).
+- **Producto caducado que se vuelve a compartir** (decisión de Pedro): es un chollo **nuevo**. Al aprobar, si existe un deal `expired` con el mismo ASIN (o la misma `canonical_url`), **se borra** dentro de la misma transacción y se crea el nuevo — es lo mismo que haría el limpiador (borra a los 2 días de caducar), solo que antes. Así **no se toca** el índice único `uq_deals_external_id` ni `DealService._check_external_id_unique`. El borrado se registra en `audit_log`. Si el deal existente está `active`/`scheduled`/`draft`, la aprobación falla con 409 `DUPLICATE_DEAL` (no se borra nada).
 - `starts_at` del usuario se mapea a `status='scheduled'` + `scheduled_for` si es futura (el trigger existente lo activará solo).
 
 ### 6.2 Backend — módulo nuevo `app/modules/submissions/`
@@ -201,7 +201,7 @@ Se aplica al crear la propuesta y **otra vez al aprobar** (por si el admin edita
   - Paso 1: campo enlace grande + "Comprobar". Estados: comprobando / ya publicado (tarjeta del deal) / en revisión / anteriormente publicado (aviso) / OK.
   - Paso 2: formulario (título, precio, precio anterior con % calculado en vivo, código de descuento, gastos de envío, tienda —autodetectada o texto—, categoría/subcategoría, fecha inicio/fin, descripción, imágenes). Vista previa de la tarjeta tal como se verá. Envío → pantalla de éxito ("Lo revisaremos pronto, te avisaremos por email").
   - Validación con zod (coherente con las reglas del backend), errores en línea.
-- **"Mis chollos"**: nueva pestaña en `/perfil?tab=chollos` (patrón de pestañas existente) con lista y estados; retirar pendientes.
+- **"Mis chollos"**: ruta nueva `/mis-chollos` (mismo patrón que `/favoritos` y `/alertas`; el perfil no tiene pestañas), enlazada desde el menú de usuario; lista con estados; retirar pendientes.
 - **Autoría**: `DealCard` y ficha muestran "Compartido por @username" con avatar cuando `source==='community'`. El backend añade `author {username, display_name, avatar_url}` a las respuestas de tarjeta/ficha (carga en la misma consulta, sin N+1).
 - **Código de descuento**: en la ficha, bloque con el código y botón copiar.
 - **Admin**: nueva entrada "Propuestas" en el sidebar con badge de pendientes; ruta `admin.propuestas.tsx` con la cola (más antiguas primero) y detalle que **reutiliza `DealFormPanel`** precargado desde la propuesta (el admin puede editar todo, cambiar categoría, imágenes, enlace…). Muestra avisos (enlace no afiliable, marketplace extranjero, deal expirado previo). Acciones: **Aprobar** (con check "Publicar también en Telegram" → tras aprobar abre el panel de Telegram existente precargado, mismo flujo que `admin.chollos`) y **Rechazar** (motivos predefinidos + texto libre).
@@ -230,7 +230,8 @@ Se aplica al crear la propuesta y **otra vez al aprobar** (por si el admin edita
 - Campos extra: **código de descuento, gastos de envío, fecha de inicio**.
 - Destino del aviso al admin: su **Gmail personal** (vía `ADMIN_NOTIFICATION_EMAIL`).
 - Afiliación: **de momento solo Amazon**, pensando en ampliar.
-- Producto ya publicado y caducado que se vuelve a compartir: **chollo nuevo** (unicidad de ASIN solo entre chollos vivos).
+- Producto ya publicado y caducado que se vuelve a compartir: **chollo nuevo**; al aprobarlo se borra automáticamente el caducado anterior.
+- Autorización: ejecutar el plan completo sin interrupciones, incluidas las migraciones aditivas en la BD compartida; dejarlo listo para desplegar (el merge a `main` lo decide Pedro).
 - Autorrelleno e importación de imágenes: **solo Amazon** por ahora.
 
 ## 8. Decisiones del diseñador (revisables)
@@ -243,7 +244,7 @@ Se aplica al crear la propuesta y **otra vez al aprobar** (por si el admin edita
 - Deal expirado previo no bloquea; publicado/programado/borrador/pendiente sí.
 - Solo `amazon.es` se reescribe con nuestro tag.
 - Texto del botón: "+ Publicar chollo".
-- "Mis chollos" como pestaña del perfil.
+- "Mis chollos" como ruta propia `/mis-chollos` enlazada desde el menú de usuario.
 
 ## 9. Lo que queda al constructor
 
