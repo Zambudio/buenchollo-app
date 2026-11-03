@@ -71,10 +71,15 @@ class SubmissionRepository:
         result = await self.session.execute(
             select(Store).where(Store.is_active.is_(True), Store.domain.is_not(None))
         )
+        best: Store | None = None
+        best_len = 0
         for store in result.scalars():
-            if _normalize_host(store.domain) == target:
-                return store
-        return None
+            domain = _normalize_host(store.domain)
+            if not domain or len(domain) <= best_len:
+                continue
+            if target == domain or target.endswith("." + domain):
+                best, best_len = store, len(domain)
+        return best
 
     async def count_pending_by_user(self, user_id: str) -> int:
         result = await self.session.execute(
@@ -114,6 +119,12 @@ class SubmissionRepository:
         stmt = (
             select(DealSubmission)
             .where(DealSubmission.user_id == user_id)
+            .options(
+                selectinload(DealSubmission.store),
+                selectinload(DealSubmission.category),
+                selectinload(DealSubmission.subcategory),
+                selectinload(DealSubmission.deal),
+            )
             .order_by(DealSubmission.created_at.desc())
             .limit(limit)
             .offset(offset)

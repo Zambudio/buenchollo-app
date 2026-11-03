@@ -121,3 +121,4 @@ class DealSubmission(Base):
     category = relationship("Category", foreign_keys=[category_id], lazy="raise")
     subcategory = relationship("Category", foreign_keys=[subcategory_id], lazy="raise")
     store = relationship("Store", lazy="raise")
+    deal = relationship("Deal", foreign_keys=[deal_id], lazy="raise")

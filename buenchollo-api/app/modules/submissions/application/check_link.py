@@ -6,13 +6,14 @@ from datetime import datetime
 from typing import Any, Literal
 
 from app.modules.affiliates.domain.links import (
+    CanonicalLink,
     InvalidLinkError,
     canonicalize,
     extract_url,
     is_amazon_host,
     is_amazon_short_host,
 )
-from app.modules.affiliates.domain.rewriters import rewrite_affiliate_link
+from app.modules.affiliates.domain.rewriters import RewriteResult, rewrite_affiliate_link
 from app.modules.products.application.preview_product_from_url import ProductPreviewProvider
 from app.modules.submissions.domain.rules import features_to_markdown
 
@@ -75,6 +76,82 @@ def _build_prefill(product: Any) -> SubmissionPrefill:
     )
 
 
+@dataclass
+class ResolvedLink:
+    status: LinkStatus
+    link: CanonicalLink
+    rewritten: RewriteResult
+    is_amazon: bool
+    store: Any | None
+    store_name: str | None
+    live_deal: Any | None = None
+    previously_published: bool = False
+
+
+async def _resolve_short_link(
+    url: str, asin_resolver: Callable[[str], str | None] | None
+) -> CanonicalLink:
+    asin = None
+    if asin_resolver is not None:
+        try:
+            asin = await asyncio.to_thread(asin_resolver, url)
+        except Exception:
+            logger.warning("No se pudo resolver el enlace corto de Amazon", exc_info=True)
+    if not asin:
+        raise InvalidLinkError("No hemos podido leer ese enlace de Amazon")
+    return canonicalize(f"https://www.amazon.es/dp/{asin}")
+
+
+async def resolve_link(
+    raw_url: str,
+    repo: Any,
+    *,
+    amazon_tag: str = "",
+    asin_resolver: Callable[[str], str | None] | None = None,
+) -> ResolvedLink:
+    url = extract_url(raw_url)
+    link = canonicalize(url)
+    if is_amazon_short_host(link.host):
+        link = await _resolve_short_link(url, asin_resolver)
+
+    is_amazon = is_amazon_host(link.host)
+    rewritten = rewrite_affiliate_link(link, amazon_tag=amazon_tag)
+    store = await repo.find_store_by_host(link.host)
+    resolved = ResolvedLink(
+        status="ok",
+        link=link,
+        rewritten=rewritten,
+        is_amazon=is_amazon,
+        store=store,
+        store_name=store.name if store else ("Amazon" if is_amazon else None),
+    )
+
+    live = await repo.find_live_deal(link.asin, link.canonical_url)
+    if live is not None:
+        resolved.status = "published" if live.status == "active" else "upcoming"
+        resolved.live_deal = live
+        return resolved
+
+    if await repo.find_pending(link.asin, link.canonical_url) is not None:
+        resolved.status = "in_review"
+        return resolved
+
+    resolved.previously_published = (
+        await repo.find_expired_deal(link.asin, link.canonical_url) is not None
+    )
+    return resolved
+
+
+def existing_deal_summary(deal: Any) -> dict[str, Any]:
+    return {
+        "id": deal.id,
+        "slug": deal.slug,
+        "title": deal.title,
+        "image_url": deal.image_url,
+        "current_price": float(deal.current_price),
+    }
+
+
 class CheckLinkUseCase:
     def __init__(
         self,
@@ -88,17 +165,6 @@ class CheckLinkUseCase:
         self.product_provider = product_provider
         self.amazon_tag = amazon_tag
         self.asin_resolver = asin_resolver
-
-    async def _resolve_short_link(self, url: str):
-        asin = None
-        if self.asin_resolver is not None:
-            try:
-                asin = await asyncio.to_thread(self.asin_resolver, url)
-            except Exception:
-                logger.warning("No se pudo resolver el enlace corto de Amazon", exc_info=True)
-        if not asin:
-            raise InvalidLinkError("No hemos podido leer ese enlace de Amazon")
-        return canonicalize(f"https://www.amazon.es/dp/{asin}")
 
     async def _fetch_prefill(self, link) -> SubmissionPrefill | None:
         if self.product_provider is None:
@@ -115,49 +181,23 @@ class CheckLinkUseCase:
         return _build_prefill(product)
 
     async def execute(self, raw_url: str) -> LinkCheckResult:
-        url = extract_url(raw_url)
-        link = canonicalize(url)
-        if is_amazon_short_host(link.host):
-            link = await self._resolve_short_link(url)
-
-        is_amazon = is_amazon_host(link.host)
-        rewritten = rewrite_affiliate_link(link, amazon_tag=self.amazon_tag)
-        store = await self.repo.find_store_by_host(link.host)
-        store_name = store.name if store else ("Amazon" if is_amazon else None)
-
+        resolved = await resolve_link(
+            raw_url, self.repo, amazon_tag=self.amazon_tag, asin_resolver=self.asin_resolver
+        )
+        link = resolved.link
         result = LinkCheckResult(
-            status="ok",
+            status=resolved.status,
             canonical_url=link.canonical_url,
-            affiliate_url=rewritten.url,
+            affiliate_url=resolved.rewritten.url,
             asin=link.asin,
-            store_id=store.id if store else None,
-            store_name=store_name,
-            is_amazon=is_amazon,
-            warnings=list(rewritten.warnings),
+            store_id=resolved.store.id if resolved.store else None,
+            store_name=resolved.store_name,
+            is_amazon=resolved.is_amazon,
+            previously_published=resolved.previously_published,
+            warnings=list(resolved.rewritten.warnings),
         )
-
-        live = await self.repo.find_live_deal(link.asin, link.canonical_url)
-        if live is not None:
-            if live.status == "active":
-                result.status = "published"
-                result.existing_deal = {
-                    "id": live.id,
-                    "slug": live.slug,
-                    "title": live.title,
-                    "image_url": live.image_url,
-                    "current_price": float(live.current_price),
-                }
-            else:
-                result.status = "upcoming"
-            return result
-
-        if await self.repo.find_pending(link.asin, link.canonical_url) is not None:
-            result.status = "in_review"
-            return result
-
-        result.previously_published = (
-            await self.repo.find_expired_deal(link.asin, link.canonical_url) is not None
-        )
-        if is_amazon:
+        if resolved.status == "published":
+            result.existing_deal = existing_deal_summary(resolved.live_deal)
+        elif resolved.status == "ok" and resolved.is_amazon:
             result.prefill = await self._fetch_prefill(link)
         return result

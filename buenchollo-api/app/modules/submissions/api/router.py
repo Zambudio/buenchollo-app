@@ -1,8 +1,11 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request, Response, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.database import get_db
 from app.core.config import Settings, get_settings
 from app.core.rate_limit import limiter
 from app.core.security import AuthenticatedUser
+from app.modules.categories.infrastructure.repository import CategoryRepository
 from app.modules.products.api.router import get_amazon_client
 from app.modules.products.application.preview_product_from_url import ProductPreviewProvider
 from app.modules.products.infrastructure.amazon_client import extract_asin_from_url
@@ -10,8 +13,19 @@ from app.modules.submissions.api.dependencies import (
     get_submission_repository,
     require_complete_profile,
 )
-from app.modules.submissions.api.schemas import CheckLinkRequest, LinkCheckResponse
+from app.modules.submissions.api.schemas import (
+    CheckLinkRequest,
+    LinkCheckResponse,
+    SubmissionCreate,
+    SubmissionResponse,
+    to_submission_response,
+)
 from app.modules.submissions.application.check_link import CheckLinkUseCase
+from app.modules.submissions.application.create_submission import CreateSubmissionUseCase
+from app.modules.submissions.application.user_submissions import (
+    ListMySubmissionsUseCase,
+    WithdrawSubmissionUseCase,
+)
 from app.modules.submissions.infrastructure.repository import SubmissionRepository
 
 router = APIRouter(prefix="/submissions", tags=["submissions"])
@@ -44,3 +58,59 @@ async def check_link(
 ) -> LinkCheckResponse:
     result = await use_case.execute(payload.url)
     return LinkCheckResponse.model_validate(result, from_attributes=True)
+
+
+def get_category_repository(db: AsyncSession = Depends(get_db)) -> CategoryRepository:
+    return CategoryRepository(db)
+
+
+def get_create_submission_use_case(
+    repo: SubmissionRepository = Depends(get_submission_repository),
+    category_repo: CategoryRepository = Depends(get_category_repository),
+) -> CreateSubmissionUseCase:
+    return CreateSubmissionUseCase(repo, category_repo, asin_resolver=extract_asin_from_url)
+
+
+def get_list_my_submissions_use_case(
+    repo: SubmissionRepository = Depends(get_submission_repository),
+) -> ListMySubmissionsUseCase:
+    return ListMySubmissionsUseCase(repo)
+
+
+def get_withdraw_submission_use_case(
+    repo: SubmissionRepository = Depends(get_submission_repository),
+) -> WithdrawSubmissionUseCase:
+    return WithdrawSubmissionUseCase(repo)
+
+
+@router.post("", response_model=SubmissionResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
+async def create_submission(
+    request: Request,
+    payload: SubmissionCreate,
+    user: AuthenticatedUser = Depends(require_complete_profile),
+    use_case: CreateSubmissionUseCase = Depends(get_create_submission_use_case),
+    settings: Settings = Depends(get_settings),
+) -> SubmissionResponse:
+    submission = await use_case.execute(user.id, payload, settings.amazon_affiliate_tag or "")
+    return to_submission_response(submission)
+
+
+@router.get("/mine", response_model=list[SubmissionResponse])
+async def list_my_submissions(
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    user: AuthenticatedUser = Depends(require_complete_profile),
+    use_case: ListMySubmissionsUseCase = Depends(get_list_my_submissions_use_case),
+) -> list[SubmissionResponse]:
+    return [to_submission_response(s) for s in await use_case.execute(user.id, limit, offset)]
+
+
+@router.delete("/{submission_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def withdraw_submission(
+    submission_id: str,
+    user: AuthenticatedUser = Depends(require_complete_profile),
+    use_case: WithdrawSubmissionUseCase = Depends(get_withdraw_submission_use_case),
+) -> Response:
+    await use_case.execute(user.id, submission_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
