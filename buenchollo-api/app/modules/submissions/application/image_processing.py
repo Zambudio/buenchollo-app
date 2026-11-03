@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from io import BytesIO
 
-from PIL import Image, ImageOps, UnidentifiedImageError, features
+from PIL import Image, ImageOps, features
 
 from app.modules.submissions.domain.exceptions import InvalidImageError
 
@@ -10,6 +10,8 @@ MAX_IMAGE_PIXELS = 40_000_000
 MAX_SIDE = 1600
 WEBP_QUALITY = 82
 
+# Backstop: Pillow solo lanza error por encima de 2x este valor; el límite real
+# se comprueba explícitamente en process_image.
 Image.MAX_IMAGE_PIXELS = MAX_IMAGE_PIXELS
 
 
@@ -32,6 +34,8 @@ def process_image(data: bytes) -> ProcessedImage:
         with Image.open(BytesIO(data)) as probe:
             if probe.format not in _allowed_formats():
                 raise InvalidImageError()
+            if probe.width * probe.height > MAX_IMAGE_PIXELS:
+                raise InvalidImageError("La imagen es demasiado grande")
             probe.verify()
         with Image.open(BytesIO(data)) as opened:
             opened.seek(0)
@@ -47,5 +51,5 @@ def process_image(data: bytes) -> ProcessedImage:
         raise
     except Image.DecompressionBombError as exc:
         raise InvalidImageError("La imagen es demasiado grande") from exc
-    except (UnidentifiedImageError, OSError, ValueError, SyntaxError, EOFError) as exc:
+    except Exception as exc:
         raise InvalidImageError() from exc

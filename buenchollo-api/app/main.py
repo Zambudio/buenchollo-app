@@ -17,6 +17,7 @@ from app.core.exceptions import DomainError
 from app.core.health import router as health_router
 from app.core.logging import configure_logging
 from app.core.rate_limit import limiter, rate_limit_exceeded_handler
+from app.core.body_limit import BodyLimitMiddleware
 from app.core.cache_headers import CacheHeadersMiddleware
 from app.core.request_id import REQUEST_ID_HEADER, RequestIdMiddleware, get_request_id
 from app.core.security_headers import SecurityHeadersMiddleware
@@ -121,6 +122,9 @@ app.add_middleware(
 app.add_middleware(CacheHeadersMiddleware)
 app.add_middleware(GZipMiddleware, minimum_size=500)
 app.add_middleware(RequestIdMiddleware)
+# Límite de cuerpo en la subida de imágenes: se registra el último (más externo)
+# para cortar antes de que Starlette parsee el multipart.
+app.add_middleware(BodyLimitMiddleware, limits={"/v1/submissions/images": 5_767_168})
 
 
 def _with_request_id_header(headers: dict[str, str] | None = None) -> dict[str, str]:

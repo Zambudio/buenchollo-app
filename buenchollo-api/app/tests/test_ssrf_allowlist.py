@@ -81,3 +81,28 @@ def test_extract_no_hace_fetch_a_ip_privada():
         result = extract_asin_from_url("http://192.168.1.1/dp")
         assert result is None
         mock_urlopen.assert_not_called()
+
+
+# ── rangos no globales (CGNAT/Tailscale, multicast, IETF) ────────────────────
+
+import pytest
+
+
+@pytest.mark.parametrize("ip", ["100.64.0.1", "100.100.100.100", "224.0.0.1", "192.0.0.8", "::ffff:127.0.0.1", "::ffff:100.64.0.1"])
+def test_ips_no_globales_bloqueadas(ip):
+    host = f"[{ip}]" if ":" in ip else ip
+    assert _resolves_to_private_ip(f"http://{host}/x") is True
+
+
+def test_host_con_una_ip_publica_y_otra_privada_se_bloquea():
+    answers = [
+        (2, 1, 6, "", ("93.184.216.34", 0)),
+        (2, 1, 6, "", ("10.0.0.5", 0)),
+    ]
+    with patch("app.core.ssrf.socket.getaddrinfo", return_value=answers):
+        assert _resolves_to_private_ip("http://mixto.example/x") is True
+
+
+def test_host_solo_publico_se_permite():
+    with patch("app.core.ssrf.socket.getaddrinfo", return_value=[(2, 1, 6, "", ("93.184.216.34", 0))]):
+        assert _resolves_to_private_ip("http://publico.example/x") is False

@@ -1,11 +1,11 @@
 """Tests for secure image ingestion (Pillow -> WebP), fetcher and storage."""
 
 import asyncio
-import functools
 import struct
 import zlib
 from io import BytesIO
 from types import SimpleNamespace
+from unittest.mock import patch
 
 import httpx
 import pytest
@@ -27,14 +27,6 @@ from app.modules.submissions.infrastructure import image_fetcher
 from app.modules.submissions.infrastructure.image_fetcher import ImageFetcher
 from app.modules.submissions.infrastructure.storage import SubmissionImageStorage
 
-
-
-def run_async(fn):
-    @functools.wraps(fn)
-    def wrapper(*args, **kwargs):
-        return asyncio.run(fn(*args, **kwargs))
-
-    return wrapper
 
 
 URL = "/v1/submissions/images"
@@ -124,6 +116,28 @@ def test_imagen_de_mas_de_40_megapixeles_es_rechazada():
     assert "demasiado grande" in str(exc.value)
 
 
+def test_png_de_50_megapixeles_reales_es_rechazado():
+    out = BytesIO()
+    Image.new("L", (7100, 7040), 7).save(out, format="PNG")
+    assert len(out.getvalue()) < 5 * 1024 * 1024
+    with pytest.raises(InvalidImageError) as exc:
+        process_image(out.getvalue())
+    assert "demasiado grande" in str(exc.value)
+
+
+def test_png_justo_bajo_el_limite_se_acepta():
+    out = BytesIO()
+    Image.new("L", (6000, 6000), 7).save(out, format="PNG")
+    assert process_image(out.getvalue()).width == 1600
+
+
+@pytest.mark.parametrize("error", [struct.error("x"), IndexError(), TypeError(), ZeroDivisionError()])
+def test_excepcion_inesperada_de_pillow_es_invalid_image(error):
+    with patch("app.modules.submissions.application.image_processing.Image.open", side_effect=error):
+        with pytest.raises(InvalidImageError):
+            process_image(b"whatever")
+
+
 # -- ImageFetcher ----------------------------------------------------------
 
 
@@ -136,13 +150,13 @@ def fetcher(handler):
     return ImageFetcher(transport=httpx.MockTransport(handler))
 
 
-@run_async
+@pytest.mark.asyncio
 async def test_fetch_devuelve_bytes(public_dns):
     f = fetcher(lambda req: httpx.Response(200, content=b"abc"))
     assert await f.fetch("https://example.com/a.jpg") == b"abc"
 
 
-@run_async
+@pytest.mark.asyncio
 async def test_fetch_redirect_a_loopback_es_rechazado():
     calls = []
 
@@ -155,7 +169,7 @@ async def test_fetch_redirect_a_loopback_es_rechazado():
     assert calls == ["http://93.184.216.34/a.jpg"]
 
 
-@run_async
+@pytest.mark.asyncio
 async def test_fetch_metadata_cloud_es_rechazado():
     def handler(req):
         raise AssertionError("no debe hacerse la peticion")
@@ -164,7 +178,7 @@ async def test_fetch_metadata_cloud_es_rechazado():
         await fetcher(handler).fetch("http://169.254.169.254/latest/meta-data/")
 
 
-@run_async
+@pytest.mark.asyncio
 async def test_fetch_respuesta_de_6mb_es_rechazada(public_dns):
     f = fetcher(lambda req: httpx.Response(200, content=b"0" * (6 * 1024 * 1024)))
     with pytest.raises(InvalidImageError) as exc:
@@ -172,7 +186,7 @@ async def test_fetch_respuesta_de_6mb_es_rechazada(public_dns):
     assert "5 MB" in str(exc.value)
 
 
-@run_async
+@pytest.mark.asyncio
 async def test_fetch_corta_en_streaming_sin_content_length(public_dns):
     async def chunks():
         for _ in range(7):
@@ -183,14 +197,14 @@ async def test_fetch_corta_en_streaming_sin_content_length(public_dns):
         await f.fetch("https://example.com/a.jpg")
 
 
-@run_async
+@pytest.mark.asyncio
 async def test_fetch_demasiadas_redirecciones(public_dns):
     f = fetcher(lambda req: httpx.Response(302, headers={"location": "https://example.com/n"}))
     with pytest.raises(InvalidImageError):
         await f.fetch("https://example.com/a.jpg")
 
 
-@run_async
+@pytest.mark.asyncio
 async def test_fetch_sigue_redireccion_valida(public_dns):
     def handler(req):
         if req.url.path == "/a":
@@ -211,7 +225,7 @@ async def test_fetch_sigue_redireccion_valida(public_dns):
         "https://example.com/a b.jpg",
     ],
 )
-@run_async
+@pytest.mark.asyncio
 async def test_fetch_url_insegura_es_rechazada(public_dns, url):
     def handler(req):
         raise AssertionError("no debe hacerse la peticion")
@@ -220,19 +234,51 @@ async def test_fetch_url_insegura_es_rechazada(public_dns, url):
         await fetcher(handler).fetch(url)
 
 
-@run_async
+@pytest.mark.asyncio
 async def test_fetch_estado_no_200_es_error(public_dns):
     with pytest.raises(InvalidImageError):
         await fetcher(lambda req: httpx.Response(404)).fetch("https://example.com/a.jpg")
 
 
-@run_async
+@pytest.mark.asyncio
 async def test_fetch_error_de_red_es_error_de_dominio(public_dns):
     def handler(req):
         raise httpx.ConnectError("boom")
 
     with pytest.raises(InvalidImageError):
         await fetcher(handler).fetch("https://example.com/a.jpg")
+
+
+@pytest.mark.asyncio
+async def test_fetch_rechaza_content_encoding_no_identity(public_dns):
+    f = fetcher(lambda req: httpx.Response(200, content=b"abc", headers={"content-encoding": "gzip"}))
+    with pytest.raises(InvalidImageError):
+        await f.fetch("https://example.com/a.jpg")
+
+
+@pytest.mark.asyncio
+async def test_fetch_pide_encoding_identity(public_dns):
+    seen = {}
+
+    def handler(req):
+        seen.update(req.headers)
+        return httpx.Response(200, content=b"abc")
+
+    await fetcher(handler).fetch("https://example.com/a.jpg")
+    assert seen["accept-encoding"] == "identity"
+
+
+@pytest.mark.asyncio
+async def test_fetch_deadline_total(public_dns):
+    async def slow():
+        for _ in range(100):
+            await asyncio.sleep(0.05)
+            yield b"0"
+
+    f = ImageFetcher(transport=httpx.MockTransport(lambda req: httpx.Response(200, content=slow())), deadline=0.2)
+    with pytest.raises(InvalidImageError) as exc:
+        await f.fetch("https://example.com/a.jpg")
+    assert "tardado" in str(exc.value)
 
 
 # -- Storage ---------------------------------------------------------------
@@ -252,7 +298,7 @@ def fake_client(bucket):
     return SimpleNamespace(storage=SimpleNamespace(from_=lambda name: (bucket, name)[0]))
 
 
-@run_async
+@pytest.mark.asyncio
 async def test_storage_sube_con_ruta_y_cabeceras():
     bucket = FakeBucket()
     storage = SubmissionImageStorage(lambda: fake_client(bucket), "https://proj.supabase.co")
@@ -265,7 +311,7 @@ async def test_storage_sube_con_ruta_y_cabeceras():
     assert url == f"https://proj.supabase.co/storage/v1/object/public/deal-images/{path}"
 
 
-@run_async
+@pytest.mark.asyncio
 async def test_storage_fallo_es_503_de_dominio():
     storage = SubmissionImageStorage(
         lambda: fake_client(FakeBucket(RuntimeError("secret detail"))), "https://proj.supabase.co"
@@ -280,7 +326,7 @@ async def test_storage_fallo_es_503_de_dominio():
     "supabase_url",
     ["https://proj.supabase.co", "https://proj.supabase.co/", "https://proj.supabase.co/rest/v1/"],
 )
-@run_async
+@pytest.mark.asyncio
 async def test_url_devuelta_pasa_is_allowed_image(monkeypatch, supabase_url):
     monkeypatch.setattr(schemas, "get_settings", lambda: SimpleNamespace(supabase_url=supabase_url))
     storage = SubmissionImageStorage(lambda: fake_client(FakeBucket()), supabase_url)
@@ -409,3 +455,61 @@ def test_from_url_privada_es_400(client):
     app.dependency_overrides[get_image_fetcher] = lambda: ImageFetcher()
     r = client.post(f"{URL}/from-url", json={"url": "http://169.254.169.254/"})
     assert r.status_code == 400
+
+
+# -- Límite de cuerpo --------------------------------------------------------
+
+
+MULTIPART_HEAD = (
+    b"--b\r\nContent-Disposition: form-data; name=\"file\"; filename=\"a.png\"\r\n\r\n"
+)
+
+
+def _asgi_post(path, headers, chunks):
+    import app.main as main
+
+    sent = []
+    queue = [{"type": "http.request", "body": c, "more_body": True} for c in chunks]
+    queue.append({"type": "http.request", "body": b"", "more_body": False})
+
+    async def receive():
+        return queue.pop(0) if queue else {"type": "http.disconnect"}
+
+    async def send(message):
+        sent.append(message)
+
+    scope = {
+        "type": "http", "asgi": {"version": "3.0"}, "http_version": "1.1", "method": "POST",
+        "path": path, "raw_path": path.encode(), "query_string": b"", "root_path": "",
+        "scheme": "http", "server": ("test", 80), "client": ("1.2.3.4", 1),
+        "headers": [(k.encode(), v.encode()) for k, v in headers.items()],
+    }
+    asyncio.run(main.app(scope, receive, send))
+    return sent
+
+
+def test_content_length_excesivo_da_413_sin_llegar_al_handler(client, storage):
+    r = client.post(
+        URL,
+        content=b"x",
+        headers={"content-type": "multipart/form-data; boundary=b", "content-length": str(6 * 1024 * 1024)},
+    )
+    assert r.status_code == 413
+    assert "5 MB" in r.json()["detail"]
+    assert storage.uploads == []
+
+
+def test_cuerpo_chunked_excesivo_da_413(client, storage):
+    sent = _asgi_post(
+        URL,
+        {"content-type": "multipart/form-data; boundary=b", "host": "test"},
+        [MULTIPART_HEAD]
+        + [b"0" * (1024 * 1024)] * 7,
+    )
+    assert sent[0]["status"] == 413
+    assert storage.uploads == []
+
+
+def test_limite_de_cuerpo_no_afecta_a_from_url(client):
+    r = client.post(f"{URL}/from-url", json={"url": "https://m.media-amazon.com/images/I/a.jpg"})
+    assert r.status_code == 200
