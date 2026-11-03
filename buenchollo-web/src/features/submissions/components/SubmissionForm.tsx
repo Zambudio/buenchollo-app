@@ -241,13 +241,13 @@ export function SubmissionForm({
     mutation.mutate(values);
   };
 
-  const [title, currentRaw, previousRaw, categoryId, description, coupon] = watch([
+  const [title, currentRaw, previousRaw, categoryId, description, typedStore] = watch([
     "title",
     "current_price",
     "previous_price",
     "category_id",
     "description",
-    "coupon_code",
+    "store_name",
   ]);
   const current = parsePrice(currentRaw);
   const previous = parsePrice(previousRaw);
@@ -346,13 +346,17 @@ export function SubmissionForm({
               />
               {discount != null && discount > 0 && (
                 <span
-                  id="sub-discount"
-                  aria-live="polite"
+                  aria-hidden="true"
+                  data-testid="discount-badge"
                   className="badge-discount absolute right-2 top-1/2 -translate-y-1/2"
                 >
                   -{discount}%
                 </span>
               )}
+              {/* Región viva siempre montada: solo cambia su texto. */}
+              <span id="sub-discount" aria-live="polite" className="sr-only">
+                {discount ? `Descuento del ${discount}%` : ""}
+              </span>
             </div>
           </Field>
         </div>
@@ -538,9 +542,8 @@ export function SubmissionForm({
           title={title}
           currentPrice={currentNum}
           previousPrice={previousNum}
-          image={uploads.cover}
-          storeName={detectedStore}
-          couponCode={coupon}
+          images={uploads.images}
+          storeName={detectedStore ?? typedStore}
         />
 
         {submitError && (

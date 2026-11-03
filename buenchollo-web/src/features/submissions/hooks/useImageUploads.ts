@@ -46,6 +46,7 @@ export function useImageUploads(initial: string[]) {
   const sources = useRef(new Map<string, string>());
   const objectUrls = useRef(new Map<string, string>());
   const queue = useRef<Job[]>([]);
+  const jobs = useRef(new Map<string, Job["run"]>());
   const active = useRef(0);
   const mounted = useRef(true);
 
@@ -80,6 +81,7 @@ export function useImageUploads(initial: string[]) {
           if (mounted.current) setAnnouncement("Imagen añadida");
         })
         .catch((error: unknown) => {
+          if (!itemsRef.current.some((i) => i.id === job.id)) return;
           const message = uploadErrorMessage(error);
           commit((items) =>
             items.map((i) => (i.id === job.id ? { ...i, status: "error", error: message } : i)),
@@ -103,6 +105,7 @@ export function useImageUploads(initial: string[]) {
     (entries: { item: UploadItem; run: () => Promise<UploadedImage> }[]) => {
       if (!entries.length) return;
       commit((items) => [...items, ...entries.map((e) => e.item)]);
+      for (const e of entries) jobs.current.set(e.item.id, e.run);
       queue.current.push(...entries.map((e) => ({ id: e.item.id, run: e.run })));
       setAnnouncement(
         entries.length === 1 ? "Subiendo 1 imagen" : `Subiendo ${entries.length} imágenes`,
@@ -169,11 +172,27 @@ export function useImageUploads(initial: string[]) {
       if (objectUrl) URL.revokeObjectURL(objectUrl);
       objectUrls.current.delete(id);
       sources.current.delete(id);
+      jobs.current.delete(id);
       queue.current = queue.current.filter((job) => job.id !== id);
       commit((items) => items.filter((i) => i.id !== id));
       setAnnouncement("Imagen quitada");
     },
     [commit],
+  );
+
+  const retry = useCallback(
+    (id: string) => {
+      const run = jobs.current.get(id);
+      const item = itemsRef.current.find((i) => i.id === id);
+      if (!run || item?.status !== "error") return;
+      commit((items) =>
+        items.map((i) => (i.id === id ? { ...i, status: "uploading", error: undefined } : i)),
+      );
+      queue.current.push({ id, run });
+      setAnnouncement("Reintentando la subida");
+      pump();
+    },
+    [commit, pump],
   );
 
   const move = useCallback(
@@ -216,6 +235,7 @@ export function useImageUploads(initial: string[]) {
     addFiles,
     addUrls,
     remove,
+    retry,
     move,
     setCover,
   };

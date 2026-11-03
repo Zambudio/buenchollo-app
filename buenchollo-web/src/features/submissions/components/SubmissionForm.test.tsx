@@ -271,4 +271,22 @@ describe("SubmissionForm", () => {
     await userEvent.click(screen.getByRole("button", { name: /cambiar enlace/i }));
     expect(props.onBack).toHaveBeenCalled();
   });
+  it("la región viva del descuento está siempre montada y solo cambia el texto", async () => {
+    renderForm(amazonResult({ prefill: null }));
+    const live = document.getElementById("sub-discount")!;
+    expect(live).toHaveAttribute("aria-live", "polite");
+    expect(live).toHaveTextContent("");
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText(/^precio \(€\)/i), "50");
+    await user.type(screen.getByLabelText(/^precio anterior/i), "100");
+    expect(document.getElementById("sub-discount")).toBe(live);
+    expect(live).toHaveTextContent("Descuento del 50%");
+  });
+
+  it("la vista previa usa la tienda escrita si no se detectó", async () => {
+    renderForm(amazonResult({ store_name: null, store_id: null, is_amazon: false }));
+    await userEvent.type(screen.getByLabelText(/^tienda/i), "PcComponentes");
+    const preview = screen.getByRole("figure", { name: /vista previa/i });
+    expect(within(preview).getAllByText("PcComponentes").length).toBeGreaterThan(0);
+  });
 });

@@ -6,6 +6,7 @@ import {
   ClipboardPaste,
   ImagePlus,
   Loader2,
+  RotateCcw,
   Star,
   X,
 } from "lucide-react";
@@ -40,6 +41,7 @@ export function ImageUploader({ initial = [], onChange }: ImageUploaderProps) {
   const ids = useId();
   const [dragging, setDragging] = useState(false);
   const dragDepth = useRef(0);
+  const dropzoneRef = useRef<HTMLDivElement>(null);
   const [imageUrl, setImageUrl] = useState("");
   const [canPaste, setCanPaste] = useState(false);
 
@@ -67,8 +69,31 @@ export function ImageUploader({ initial = [], onChange }: ImageUploaderProps) {
       if (files.length) addFiles(files);
       if (pastedUrls.length) addUrls(pastedUrls);
     };
+    // Soltar un fichero fuera de la zona haría que el navegador lo abriera y
+    // se perdiera el formulario: se evita en todo el documento y, si trae
+    // imágenes, se añaden igual. Soltar texto en un campo de texto sigue funcionando.
+    const onDragOver = (e: DragEvent) => {
+      if (isTextEntryElement(e.target as Element | null)) return;
+      e.preventDefault();
+    };
+    const onDocDrop = (e: DragEvent) => {
+      const target = e.target as Node | null;
+      if (isTextEntryElement(target as Element | null)) return;
+      e.preventDefault();
+      if (target && dropzoneRef.current?.contains(target)) return;
+      if (!e.dataTransfer) return;
+      const { files, urls: droppedUrls } = extractClipboardItems(e.dataTransfer);
+      if (files.length) addFiles(files);
+      if (droppedUrls.length) addUrls(droppedUrls);
+    };
     document.addEventListener("paste", onPaste);
-    return () => document.removeEventListener("paste", onPaste);
+    document.addEventListener("dragover", onDragOver);
+    document.addEventListener("drop", onDocDrop);
+    return () => {
+      document.removeEventListener("paste", onPaste);
+      document.removeEventListener("dragover", onDragOver);
+      document.removeEventListener("drop", onDocDrop);
+    };
   }, [addFiles, addUrls]);
 
   const pasteFromClipboard = async () => {
@@ -122,6 +147,7 @@ export function ImageUploader({ initial = [], onChange }: ImageUploaderProps) {
       </div>
 
       <div
+        ref={dropzoneRef}
         role="group"
         aria-describedby={helpId}
         data-testid="image-dropzone"
@@ -257,6 +283,14 @@ export function ImageUploader({ initial = [], onChange }: ImageUploaderProps) {
                       <span id={errorId} className="text-[11px] leading-tight text-foreground">
                         {item.error}
                       </span>
+                      <button
+                        type="button"
+                        onClick={() => uploads.retry(item.id)}
+                        className="mt-1 inline-flex items-center gap-1 border border-cyan-glow/60 px-2 py-1 font-mono text-[11px] font-bold text-cyan-glow hover:bg-cyan-glow hover:text-surface-900 transition-colors"
+                      >
+                        <RotateCcw className="size-3" aria-hidden="true" />
+                        Reintentar
+                      </button>
                     </div>
                   )}
                   {isCover && (

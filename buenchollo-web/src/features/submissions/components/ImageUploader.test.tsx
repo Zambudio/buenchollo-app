@@ -246,4 +246,74 @@ describe("ImageUploader", () => {
       Reflect.deleteProperty(navigator, "clipboard");
     }
   });
+  it("Reintentar vuelve a lanzar la misma subida", async () => {
+    mocks.uploadImage
+      .mockRejectedValueOnce(new ApiError(503, "caído", null))
+      .mockResolvedValueOnce({ url: "https://cdn.bc/ok.webp", width: 1, height: 1 });
+    const { last } = setup();
+    const file = png("r.png");
+    paste({}, [file]);
+    const retry = await screen.findByRole("button", { name: "Reintentar" });
+    await userEvent.click(retry);
+    expect(mocks.uploadImage).toHaveBeenCalledTimes(2);
+    expect(mocks.uploadImage.mock.calls[1]).toEqual([file, "r.png"]);
+    await waitFor(() => expect(last().images).toEqual(["https://cdn.bc/ok.webp"]));
+    expect(last().hasErrors).toBe(false);
+  });
+
+  it("Reintentar una URL vuelve a llamar a importImageUrl", async () => {
+    mocks.importImageUrl.mockRejectedValueOnce(new ApiError(400, "No es una imagen", null));
+    setup();
+    paste({ "text/plain": "https://x.es/z.png" });
+    await userEvent.click(await screen.findByRole("button", { name: "Reintentar" }));
+    expect(mocks.importImageUrl).toHaveBeenCalledTimes(2);
+    expect(mocks.importImageUrl).toHaveBeenLastCalledWith("https://x.es/z.png");
+  });
+
+  it("una subida que falla tras quitar la imagen no anuncia error", async () => {
+    let reject: (e: unknown) => void = () => {};
+    mocks.uploadImage.mockReturnValue(new Promise((_, r) => (reject = r)));
+    const { container } = render(<ImageUploader onChange={vi.fn()} />);
+    paste({}, [png()]);
+    await userEvent.click(screen.getByRole("button", { name: "Quitar imagen" }));
+    await act(async () => reject(new ApiError(400, "mal", null)));
+    const live = container.querySelector('[aria-live="polite"]')!;
+    expect(live.textContent).not.toMatch(/no se pudo/i);
+    expect(screen.queryAllByTestId("image-item")).toHaveLength(0);
+  });
+
+  it("un drop fuera de la zona se previene y añade las imágenes", async () => {
+    const { last } = setup();
+    const file = png("fuera.png");
+    const over = new Event("dragover", { bubbles: true, cancelable: true });
+    document.body.dispatchEvent(over);
+    expect(over.defaultPrevented).toBe(true);
+    const drop = new Event("drop", { bubbles: true, cancelable: true });
+    Object.defineProperty(drop, "dataTransfer", {
+      value: { files: [file], items: [], types: ["Files"], getData: () => "" },
+    });
+    act(() => {
+      document.body.dispatchEvent(drop);
+    });
+    expect(drop.defaultPrevented).toBe(true);
+    expect(mocks.uploadImage).toHaveBeenCalledWith(file, "fuera.png");
+    await waitFor(() => expect(last().images).toHaveLength(1));
+  });
+
+  it("un drop dentro de la zona no se añade dos veces", () => {
+    setup();
+    fireEvent.drop(screen.getByTestId("image-dropzone"), {
+      dataTransfer: { files: [png()], items: [], types: ["Files"], getData: () => "" },
+    });
+    expect(mocks.uploadImage).toHaveBeenCalledTimes(1);
+  });
+
+  it("al desmontar quita los listeners del documento", () => {
+    const { unmount } = render(<ImageUploader onChange={vi.fn()} />);
+    unmount();
+    const drop = new Event("drop", { bubbles: true, cancelable: true });
+    document.body.dispatchEvent(drop);
+    expect(drop.defaultPrevented).toBe(false);
+    expect(paste({}, [png()]).defaultPrevented).toBe(false);
+  });
 });
