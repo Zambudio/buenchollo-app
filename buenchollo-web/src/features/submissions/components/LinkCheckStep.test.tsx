@@ -173,4 +173,32 @@ describe("LinkCheckStep", () => {
     await waitFor(() => expect(mocks.refreshMe).toHaveBeenCalled());
     expect(onProfileIncomplete).toHaveBeenCalled();
   });
+  it("published sin existing_deal sigue mostrando el aviso", async () => {
+    mocks.checkLink.mockResolvedValue(result({ status: "published", existing_deal: null }));
+    renderWithProviders(<LinkCheckStep onContinue={vi.fn()} />);
+    await check();
+    expect(await screen.findByText(/ya está publicado/i)).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Ver y votar" })).not.toBeInTheDocument();
+  });
+
+  it("editar el enlace tras un resultado lo borra", async () => {
+    mocks.checkLink.mockResolvedValue(result({ status: "in_review" }));
+    renderWithProviders(<LinkCheckStep onContinue={vi.fn()} />);
+    await check();
+    expect(await screen.findByText(/ya está en revisión/i)).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText(/enlace del chollo/i), "x");
+    expect(screen.queryByText(/ya está en revisión/i)).not.toBeInTheDocument();
+  });
+
+  it("muestra el resultado inicial recibido (409 del paso 2)", () => {
+    renderWithProviders(
+      <LinkCheckStep
+        initialUrl="https://www.amazon.es/dp/B0"
+        initialResult={result({ status: "upcoming" })}
+        onContinue={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/programado y se publicará/i)).toBeInTheDocument();
+    expect(mocks.checkLink).not.toHaveBeenCalled();
+  });
 });

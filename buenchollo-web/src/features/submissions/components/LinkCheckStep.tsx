@@ -15,6 +15,8 @@ import { loginSearch } from "@/lib/safe-redirect";
 
 interface LinkCheckStepProps {
   initialUrl?: string;
+  /** Resultado a mostrar al montar (p. ej. tras un 409 al enviar el paso 2). */
+  initialResult?: LinkCheckResult | null;
   onContinue: (result: LinkCheckResult, url: string) => void;
   onProfileIncomplete?: () => void;
 }
@@ -23,6 +25,7 @@ const MAX_URL = 2048;
 
 export function LinkCheckStep({
   initialUrl = "",
+  initialResult = null,
   onContinue,
   onProfileIncomplete,
 }: LinkCheckStepProps) {
@@ -30,8 +33,8 @@ export function LinkCheckStep({
   const { refreshMe } = useAuth();
   const [url, setUrl] = useState(initialUrl);
   const [inlineError, setInlineError] = useState<string | null>(null);
-  const [result, setResult] = useState<LinkCheckResult | null>(null);
-  const [checkedUrl, setCheckedUrl] = useState("");
+  const [result, setResult] = useState<LinkCheckResult | null>(initialResult);
+  const [checkedUrl, setCheckedUrl] = useState(initialResult ? initialUrl : "");
 
   useEffect(() => {
     setUrl(initialUrl);
@@ -99,7 +102,11 @@ export function LinkCheckStep({
           autoFocus
           autoComplete="off"
           value={url}
-          onChange={(e) => setUrl(e.target.value)}
+          onChange={(e) => {
+            setUrl(e.target.value);
+            setResult(null);
+            setInlineError(null);
+          }}
           placeholder="https://www.amazon.es/..."
           aria-invalid={inlineError ? true : undefined}
           aria-describedby={inlineError ? "publish-url-error" : undefined}
@@ -127,35 +134,39 @@ export function LinkCheckStep({
         </div>
       )}
 
-      {result?.status === "published" && existing && (
-        <div className="border border-surface-700 bg-surface-800 p-4 space-y-3">
+      {result?.status === "published" && (
+        <div role="status" className="border border-surface-700 bg-surface-800 p-4 space-y-3">
           <p className="text-sm">Este chollo ya está publicado.</p>
-          <div className="flex items-center gap-3">
-            {existing.image_url && (
-              <img
-                src={existing.image_url}
-                alt=""
-                className="size-16 object-contain bg-white shrink-0"
-                loading="lazy"
-              />
-            )}
-            <div className="min-w-0">
-              <p className="font-bold text-sm line-clamp-2">{existing.title}</p>
-              <p className="font-mono text-cyan-glow">{formatPrice(existing.current_price)}</p>
-            </div>
-          </div>
-          <Link
-            to="/chollo/$slug"
-            params={{ slug: existing.slug }}
-            className="inline-block text-cyan-glow font-mono text-xs font-bold hover:underline"
-          >
-            Ver y votar
-          </Link>
+          {existing && (
+            <>
+              <div className="flex items-center gap-3">
+                {existing.image_url && (
+                  <img
+                    src={existing.image_url}
+                    alt=""
+                    className="size-16 object-contain bg-white shrink-0"
+                    loading="lazy"
+                  />
+                )}
+                <div className="min-w-0">
+                  <p className="font-bold text-sm line-clamp-2">{existing.title}</p>
+                  <p className="font-mono text-cyan-glow">{formatPrice(existing.current_price)}</p>
+                </div>
+              </div>
+              <Link
+                to="/chollo/$slug"
+                params={{ slug: existing.slug }}
+                className="inline-block text-cyan-glow font-mono text-xs font-bold hover:underline"
+              >
+                Ver y votar
+              </Link>
+            </>
+          )}
         </div>
       )}
 
       {result?.status === "upcoming" && (
-        <div className="flex gap-3 border border-surface-700 bg-surface-800 p-4">
+        <div role="status" className="flex gap-3 border border-surface-700 bg-surface-800 p-4">
           <Clock className="size-5 shrink-0 text-cyan-glow" aria-hidden="true" />
           <p className="text-sm">
             Este chollo está programado y se publicará próximamente. No hace falta que lo envíes.
@@ -164,7 +175,7 @@ export function LinkCheckStep({
       )}
 
       {result?.status === "in_review" && (
-        <div className="flex gap-3 border border-surface-700 bg-surface-800 p-4">
+        <div role="status" className="flex gap-3 border border-surface-700 bg-surface-800 p-4">
           <Eye className="size-5 shrink-0 text-cyan-glow" aria-hidden="true" />
           <p className="text-sm">
             Este chollo ya está en revisión. Gracias por compartirlo, lo revisaremos pronto.

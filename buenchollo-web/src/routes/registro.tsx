@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { signInWithGoogle } from "@/lib/auth";
 import { useAuth } from "@/hooks/useAuth";
@@ -49,7 +49,14 @@ function RegisterPage() {
   const router = useRouter();
   const { redirect } = Route.useSearch();
   const target = safeRedirect(redirect);
-  const goAfterRegister = useCallback(() => router.history.push(target), [router, target]);
+  // El submit y el efecto de "ya hay sesión" pueden dispararse ambos: se
+  // navega una sola vez y con replace para no dejar /registro en el historial.
+  const navigated = useRef(false);
+  const goAfterRegister = useCallback(() => {
+    if (navigated.current) return;
+    navigated.current = true;
+    router.history.replace(target);
+  }, [router, target]);
   const confirmUrl = `${typeof window === "undefined" ? "" : window.location.origin}/login?confirmed=1${
     target === "/" ? "" : `&redirect=${encodeURIComponent(target)}`
   }`;

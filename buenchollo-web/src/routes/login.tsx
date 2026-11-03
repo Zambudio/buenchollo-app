@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { signInWithGoogle } from "@/lib/auth";
 import { useAuth } from "@/hooks/useAuth";
@@ -49,7 +49,14 @@ function LoginPage() {
   const router = useRouter();
   const { redirect } = Route.useSearch();
   const target = safeRedirect(redirect);
-  const goAfterLogin = useCallback(() => router.history.push(target), [router, target]);
+  // El submit y el efecto de "ya hay sesión" pueden dispararse ambos: se
+  // navega una sola vez y con replace para no dejar /login en el historial.
+  const navigated = useRef(false);
+  const goAfterLogin = useCallback(() => {
+    if (navigated.current) return;
+    navigated.current = true;
+    router.history.replace(target);
+  }, [router, target]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
