@@ -24,6 +24,24 @@ describe("signInWithGoogle", () => {
     });
   });
 
+  it("añade la ruta de redirect segura al redirectTo", async () => {
+    signInWithOAuth.mockResolvedValue({ data: {}, error: null });
+    await signInWithGoogle("/publicar?url=x");
+    expect(signInWithOAuth).toHaveBeenCalledWith({
+      provider: "google",
+      options: { redirectTo: window.location.origin + "/publicar?url=x" },
+    });
+  });
+
+  it("ignora redirects inseguros", async () => {
+    signInWithOAuth.mockResolvedValue({ data: {}, error: null });
+    await signInWithGoogle("//evil.com");
+    expect(signInWithOAuth).toHaveBeenCalledWith({
+      provider: "google",
+      options: { redirectTo: window.location.origin },
+    });
+  });
+
   it("propaga el resultado devuelto por supabase", async () => {
     const result = { data: { provider: "google", url: "https://x" }, error: null };
     signInWithOAuth.mockResolvedValue(result);

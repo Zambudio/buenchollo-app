@@ -1,6 +1,12 @@
 import logoBcTech from "@/assets/logo-bctech.png";
 
-export function Logo({ className = "" }: { className?: string }) {
+export function Logo({
+  className = "",
+  hideTextOnMobile = false,
+}: {
+  className?: string;
+  hideTextOnMobile?: boolean;
+}) {
   return (
     <div className={`flex items-center gap-2 ${className}`}>
       <img
@@ -10,7 +16,11 @@ export function Logo({ className = "" }: { className?: string }) {
         loading="eager"
         decoding="async"
       />
-      <div className="font-bold text-lg sm:text-xl tracking-tighter text-foreground">
+      <div
+        className={`font-bold text-lg sm:text-xl tracking-tighter text-foreground ${
+          hideTextOnMobile ? "hidden sm:block" : ""
+        }`}
+      >
         BuenChollo<span className="text-cyan-glow"> Tech</span>
       </div>
     </div>

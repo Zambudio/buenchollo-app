@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { googleAvatarUrl } from "@/lib/google-profile";
 import { NotificationsPopover } from "@/features/notifications/components/NotificationsPopover";
 import { CategoriesDrawer } from "./CategoriesDrawer";
+import { PublishDealButton } from "@/features/submissions/components/PublishDealButton";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,7 +38,7 @@ export function Header() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 shrink-0">
             <Link to="/">
-              <Logo />
+              <Logo hideTextOnMobile />
             </Link>
             <button
               type="button"
@@ -74,7 +75,8 @@ export function Header() {
             </div>
           </form>
 
-          <div className="flex items-center gap-4 text-muted-foreground">
+          <div className="flex items-center gap-2 sm:gap-4 text-muted-foreground">
+            <PublishDealButton />
             <span className="hidden sm:block">
               <ThemeToggle />
             </span>
@@ -114,6 +116,9 @@ export function Header() {
                   <DropdownMenuContent align="end" className="w-52">
                     <DropdownMenuItem asChild>
                       <Link to="/perfil">Mi perfil</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/mis-chollos">Mis chollos</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link to="/favoritos">Favoritos</Link>
@@ -192,6 +197,16 @@ export function Header() {
             >
               CATEGORÍAS
             </Link>
+            <PublishDealButton variant="menu" onNavigate={() => setMobileOpen(false)} />
+            {user && (
+              <Link
+                to="/mis-chollos"
+                className="block font-mono text-sm hover:text-cyan-glow"
+                onClick={() => setMobileOpen(false)}
+              >
+                MIS CHOLLOS
+              </Link>
+            )}
             {user && (
               <Link
                 to="/alertas"

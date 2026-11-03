@@ -1,5 +1,5 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { signInWithGoogle } from "@/lib/auth";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,9 +11,13 @@ import { SITE_URL } from "@/lib/site";
 import { authApi } from "@/services/api/auth";
 import { translateAuthError } from "@/lib/errors";
 import { Mail, RefreshCw } from "lucide-react";
+import { loginSearch, safeRedirect } from "@/lib/safe-redirect";
 
 export const Route = createFileRoute("/registro")({
   component: RegisterPage,
+  validateSearch: (s: Record<string, unknown>): { redirect?: string } => ({
+    redirect: typeof s.redirect === "string" ? s.redirect : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Crear cuenta · BuenChollo Tech" },
@@ -42,7 +46,13 @@ const schema = z.object({
 
 function RegisterPage() {
   const { user, loading: authLoading } = useAuth();
-  const nav = useNavigate();
+  const router = useRouter();
+  const { redirect } = Route.useSearch();
+  const target = safeRedirect(redirect);
+  const goAfterRegister = useCallback(() => router.history.push(target), [router, target]);
+  const confirmUrl = `${typeof window === "undefined" ? "" : window.location.origin}/login?confirmed=1${
+    target === "/" ? "" : `&redirect=${encodeURIComponent(target)}`
+  }`;
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -54,9 +64,9 @@ function RegisterPage() {
   useEffect(() => {
     if (authLoading) return;
     if (user) {
-      nav({ to: "/" });
+      goAfterRegister();
     }
-  }, [authLoading, user, nav]);
+  }, [authLoading, user, goAfterRegister]);
 
   if (user) {
     return null;
@@ -74,7 +84,7 @@ function RegisterPage() {
       email: parsed.data.email,
       password: parsed.data.password,
       options: {
-        emailRedirectTo: `${window.location.origin}/login?confirmed=1`,
+        emailRedirectTo: confirmUrl,
         data: { display_name: parsed.data.displayName },
       },
     });
@@ -92,7 +102,7 @@ function RegisterPage() {
 
     toast.success("Cuenta creada. Bienvenido a BuenChollo Tech.");
     void authApi.sendWelcomeEmail(parsed.data.displayName).catch(() => {});
-    nav({ to: "/" });
+    goAfterRegister();
   };
 
   const handleResend = async () => {
@@ -102,7 +112,7 @@ function RegisterPage() {
       type: "signup",
       email: confirmedEmail,
       options: {
-        emailRedirectTo: `${window.location.origin}/login?confirmed=1`,
+        emailRedirectTo: confirmUrl,
       },
     });
     setResending(false);
@@ -114,7 +124,7 @@ function RegisterPage() {
   };
 
   const onGoogle = async () => {
-    const { error } = await signInWithGoogle();
+    const { error } = await signInWithGoogle(target);
     if (error) {
       toast.error(translateAuthError(error.message, "No se pudo registrar con Google"));
       return;
@@ -152,6 +162,7 @@ function RegisterPage() {
 
               <Link
                 to="/login"
+                search={loginSearch(redirect)}
                 className="block w-full bg-cyan-glow text-surface-900 font-mono text-xs font-bold py-3 hover:bg-foreground transition-colors text-center"
               >
                 IR A INICIAR SESIÓN
@@ -271,7 +282,11 @@ function RegisterPage() {
 
           <p className="text-center text-sm text-muted-foreground mt-6">
             ¿Ya tienes cuenta?{" "}
-            <Link to="/login" className="text-cyan-glow hover:underline">
+            <Link
+              to="/login"
+              search={loginSearch(redirect)}
+              className="text-cyan-glow hover:underline"
+            >
               Acceder
             </Link>
           </p>

@@ -9,55 +9,117 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TerminosYCondicionesRouteImport } from './routes/terminos-y-condiciones'
-import { Route as TelegramRouteImport } from './routes/telegram'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AlertasRouteImport } from './routes/alertas'
+import { Route as BlogRouteImport } from './routes/blog'
+import { Route as CategoriasRouteImport } from './routes/categorias'
+import { Route as ContactoRouteImport } from './routes/contacto'
+import { Route as ExplorarRouteImport } from './routes/explorar'
+import { Route as FavoritosRouteImport } from './routes/favoritos'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as MisChollosRouteImport } from './routes/mis-chollos'
+import { Route as NotificacionesRouteImport } from './routes/notificaciones'
+import { Route as PerfilRouteImport } from './routes/perfil'
+import { Route as PoliticaDeCookiesRouteImport } from './routes/politica-de-cookies'
+import { Route as PoliticaDePrivacidadRouteImport } from './routes/politica-de-privacidad'
+import { Route as PublicarRouteImport } from './routes/publicar'
 import { Route as RegistroRouteImport } from './routes/registro'
 import { Route as RestablecerPasswordRouteImport } from './routes/restablecer-password'
-import { Route as PoliticaDePrivacidadRouteImport } from './routes/politica-de-privacidad'
-import { Route as PoliticaDeCookiesRouteImport } from './routes/politica-de-cookies'
-import { Route as PerfilRouteImport } from './routes/perfil'
-import { Route as NotificacionesRouteImport } from './routes/notificaciones'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as FavoritosRouteImport } from './routes/favoritos'
-import { Route as ExplorarRouteImport } from './routes/explorar'
-import { Route as ContactoRouteImport } from './routes/contacto'
-import { Route as CategoriasRouteImport } from './routes/categorias'
-import { Route as BlogRouteImport } from './routes/blog'
-import { Route as AlertasRouteImport } from './routes/alertas'
-import { Route as AdminRouteImport } from './routes/admin'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as TelegramRouteImport } from './routes/telegram'
+import { Route as TerminosYCondicionesRouteImport } from './routes/terminos-y-condiciones'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as CholloSlugRouteImport } from './routes/chollo.$slug'
-import { Route as CategoriaSlugRouteImport } from './routes/categoria.$slug'
-import { Route as BlogSlugRouteImport } from './routes/blog_.$slug'
-import { Route as BlogRssDotxmlRouteImport } from './routes/blog.rss[.]xml'
-import { Route as AlertasNuevaRouteImport } from './routes/alertas_.nueva'
-import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
-import { Route as AdminTiendasRouteImport } from './routes/admin.tiendas'
-import { Route as AdminTareasProgramadasRouteImport } from './routes/admin.tareas-programadas'
-import { Route as AdminChollosRouteImport } from './routes/admin.chollos'
-import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
-import { Route as AdminBlogRouteImport } from './routes/admin.blog'
 import { Route as AdminAnaliticaRouteImport } from './routes/admin.analitica'
-import { Route as AdminBlogNuevoRouteImport } from './routes/admin.blog_.nuevo'
-import { Route as AdminBlogCategoriasRouteImport } from './routes/admin.blog_.categorias'
+import { Route as AdminBlogRouteImport } from './routes/admin.blog'
+import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
+import { Route as AdminChollosRouteImport } from './routes/admin.chollos'
+import { Route as AdminTareasProgramadasRouteImport } from './routes/admin.tareas-programadas'
+import { Route as AdminTiendasRouteImport } from './routes/admin.tiendas'
+import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
+import { Route as AlertasNuevaRouteImport } from './routes/alertas_.nueva'
+import { Route as BlogRssDotxmlRouteImport } from './routes/blog.rss[.]xml'
+import { Route as BlogSlugRouteImport } from './routes/blog_.$slug'
+import { Route as CategoriaSlugRouteImport } from './routes/categoria.$slug'
+import { Route as CholloSlugRouteImport } from './routes/chollo.$slug'
 import { Route as AdminBlogPostIdRouteImport } from './routes/admin.blog_.$postId'
+import { Route as AdminBlogCategoriasRouteImport } from './routes/admin.blog_.categorias'
+import { Route as AdminBlogNuevoRouteImport } from './routes/admin.blog_.nuevo'
 import { Route as AdminBlogPostIdPreviewRouteImport } from './routes/admin.blog_.$postId_.preview'
 
-const TerminosYCondicionesRoute = TerminosYCondicionesRouteImport.update({
-  id: '/terminos-y-condiciones',
-  path: '/terminos-y-condiciones',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TelegramRoute = TelegramRouteImport.update({
-  id: '/telegram',
-  path: '/telegram',
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
+const AlertasRoute = AlertasRouteImport.update({
+  id: '/alertas',
+  path: '/alertas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogRoute = BlogRouteImport.update({
+  id: '/blog',
+  path: '/blog',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CategoriasRoute = CategoriasRouteImport.update({
+  id: '/categorias',
+  path: '/categorias',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactoRoute = ContactoRouteImport.update({
+  id: '/contacto',
+  path: '/contacto',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExplorarRoute = ExplorarRouteImport.update({
+  id: '/explorar',
+  path: '/explorar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FavoritosRoute = FavoritosRouteImport.update({
+  id: '/favoritos',
+  path: '/favoritos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MisChollosRoute = MisChollosRouteImport.update({
+  id: '/mis-chollos',
+  path: '/mis-chollos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificacionesRoute = NotificacionesRouteImport.update({
+  id: '/notificaciones',
+  path: '/notificaciones',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PerfilRoute = PerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PoliticaDeCookiesRoute = PoliticaDeCookiesRouteImport.update({
+  id: '/politica-de-cookies',
+  path: '/politica-de-cookies',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PoliticaDePrivacidadRoute = PoliticaDePrivacidadRouteImport.update({
+  id: '/politica-de-privacidad',
+  path: '/politica-de-privacidad',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PublicarRoute = PublicarRouteImport.update({
+  id: '/publicar',
+  path: '/publicar',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegistroRoute = RegistroRouteImport.update({
@@ -70,69 +132,19 @@ const RestablecerPasswordRoute = RestablecerPasswordRouteImport.update({
   path: '/restablecer-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PoliticaDePrivacidadRoute = PoliticaDePrivacidadRouteImport.update({
-  id: '/politica-de-privacidad',
-  path: '/politica-de-privacidad',
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PoliticaDeCookiesRoute = PoliticaDeCookiesRouteImport.update({
-  id: '/politica-de-cookies',
-  path: '/politica-de-cookies',
+const TelegramRoute = TelegramRouteImport.update({
+  id: '/telegram',
+  path: '/telegram',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PerfilRoute = PerfilRouteImport.update({
-  id: '/perfil',
-  path: '/perfil',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NotificacionesRoute = NotificacionesRouteImport.update({
-  id: '/notificaciones',
-  path: '/notificaciones',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FavoritosRoute = FavoritosRouteImport.update({
-  id: '/favoritos',
-  path: '/favoritos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ExplorarRoute = ExplorarRouteImport.update({
-  id: '/explorar',
-  path: '/explorar',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ContactoRoute = ContactoRouteImport.update({
-  id: '/contacto',
-  path: '/contacto',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CategoriasRoute = CategoriasRouteImport.update({
-  id: '/categorias',
-  path: '/categorias',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BlogRoute = BlogRouteImport.update({
-  id: '/blog',
-  path: '/blog',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AlertasRoute = AlertasRouteImport.update({
-  id: '/alertas',
-  path: '/alertas',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const TerminosYCondicionesRoute = TerminosYCondicionesRouteImport.update({
+  id: '/terminos-y-condiciones',
+  path: '/terminos-y-condiciones',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -140,54 +152,9 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
-const CholloSlugRoute = CholloSlugRouteImport.update({
-  id: '/chollo/$slug',
-  path: '/chollo/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CategoriaSlugRoute = CategoriaSlugRouteImport.update({
-  id: '/categoria/$slug',
-  path: '/categoria/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BlogSlugRoute = BlogSlugRouteImport.update({
-  id: '/blog_/$slug',
-  path: '/blog/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BlogRssDotxmlRoute = BlogRssDotxmlRouteImport.update({
-  id: '/rss.xml',
-  path: '/rss.xml',
-  getParentRoute: () => BlogRoute,
-} as any)
-const AlertasNuevaRoute = AlertasNuevaRouteImport.update({
-  id: '/alertas_/nueva',
-  path: '/alertas/nueva',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminUsuariosRoute = AdminUsuariosRouteImport.update({
-  id: '/usuarios',
-  path: '/usuarios',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminTiendasRoute = AdminTiendasRouteImport.update({
-  id: '/tiendas',
-  path: '/tiendas',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminTareasProgramadasRoute = AdminTareasProgramadasRouteImport.update({
-  id: '/tareas-programadas',
-  path: '/tareas-programadas',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminChollosRoute = AdminChollosRouteImport.update({
-  id: '/chollos',
-  path: '/chollos',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminCategoriasRoute = AdminCategoriasRouteImport.update({
-  id: '/categorias',
-  path: '/categorias',
+const AdminAnaliticaRoute = AdminAnaliticaRouteImport.update({
+  id: '/analitica',
+  path: '/analitica',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminBlogRoute = AdminBlogRouteImport.update({
@@ -195,14 +162,59 @@ const AdminBlogRoute = AdminBlogRouteImport.update({
   path: '/blog',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminAnaliticaRoute = AdminAnaliticaRouteImport.update({
-  id: '/analitica',
-  path: '/analitica',
+const AdminCategoriasRoute = AdminCategoriasRouteImport.update({
+  id: '/categorias',
+  path: '/categorias',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminBlogNuevoRoute = AdminBlogNuevoRouteImport.update({
-  id: '/blog_/nuevo',
-  path: '/blog/nuevo',
+const AdminChollosRoute = AdminChollosRouteImport.update({
+  id: '/chollos',
+  path: '/chollos',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTareasProgramadasRoute = AdminTareasProgramadasRouteImport.update({
+  id: '/tareas-programadas',
+  path: '/tareas-programadas',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTiendasRoute = AdminTiendasRouteImport.update({
+  id: '/tiendas',
+  path: '/tiendas',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUsuariosRoute = AdminUsuariosRouteImport.update({
+  id: '/usuarios',
+  path: '/usuarios',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AlertasNuevaRoute = AlertasNuevaRouteImport.update({
+  id: '/alertas_/nueva',
+  path: '/alertas/nueva',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogRssDotxmlRoute = BlogRssDotxmlRouteImport.update({
+  id: '/rss.xml',
+  path: '/rss.xml',
+  getParentRoute: () => BlogRoute,
+} as any)
+const BlogSlugRoute = BlogSlugRouteImport.update({
+  id: '/blog_/$slug',
+  path: '/blog/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CategoriaSlugRoute = CategoriaSlugRouteImport.update({
+  id: '/categoria/$slug',
+  path: '/categoria/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CholloSlugRoute = CholloSlugRouteImport.update({
+  id: '/chollo/$slug',
+  path: '/chollo/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminBlogPostIdRoute = AdminBlogPostIdRouteImport.update({
+  id: '/blog_/$postId',
+  path: '/blog/$postId',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminBlogCategoriasRoute = AdminBlogCategoriasRouteImport.update({
@@ -210,9 +222,9 @@ const AdminBlogCategoriasRoute = AdminBlogCategoriasRouteImport.update({
   path: '/blog/categorias',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminBlogPostIdRoute = AdminBlogPostIdRouteImport.update({
-  id: '/blog_/$postId',
-  path: '/blog/$postId',
+const AdminBlogNuevoRoute = AdminBlogNuevoRouteImport.update({
+  id: '/blog_/nuevo',
+  path: '/blog/nuevo',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminBlogPostIdPreviewRoute = AdminBlogPostIdPreviewRouteImport.update({
@@ -231,10 +243,12 @@ export interface FileRoutesByFullPath {
   '/explorar': typeof ExplorarRoute
   '/favoritos': typeof FavoritosRoute
   '/login': typeof LoginRoute
+  '/mis-chollos': typeof MisChollosRoute
   '/notificaciones': typeof NotificacionesRoute
   '/perfil': typeof PerfilRoute
   '/politica-de-cookies': typeof PoliticaDeCookiesRoute
   '/politica-de-privacidad': typeof PoliticaDePrivacidadRoute
+  '/publicar': typeof PublicarRoute
   '/registro': typeof RegistroRoute
   '/restablecer-password': typeof RestablecerPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -267,10 +281,12 @@ export interface FileRoutesByTo {
   '/explorar': typeof ExplorarRoute
   '/favoritos': typeof FavoritosRoute
   '/login': typeof LoginRoute
+  '/mis-chollos': typeof MisChollosRoute
   '/notificaciones': typeof NotificacionesRoute
   '/perfil': typeof PerfilRoute
   '/politica-de-cookies': typeof PoliticaDeCookiesRoute
   '/politica-de-privacidad': typeof PoliticaDePrivacidadRoute
+  '/publicar': typeof PublicarRoute
   '/registro': typeof RegistroRoute
   '/restablecer-password': typeof RestablecerPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -305,10 +321,12 @@ export interface FileRoutesById {
   '/explorar': typeof ExplorarRoute
   '/favoritos': typeof FavoritosRoute
   '/login': typeof LoginRoute
+  '/mis-chollos': typeof MisChollosRoute
   '/notificaciones': typeof NotificacionesRoute
   '/perfil': typeof PerfilRoute
   '/politica-de-cookies': typeof PoliticaDeCookiesRoute
   '/politica-de-privacidad': typeof PoliticaDePrivacidadRoute
+  '/publicar': typeof PublicarRoute
   '/registro': typeof RegistroRoute
   '/restablecer-password': typeof RestablecerPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -344,10 +362,12 @@ export interface FileRouteTypes {
     | '/explorar'
     | '/favoritos'
     | '/login'
+    | '/mis-chollos'
     | '/notificaciones'
     | '/perfil'
     | '/politica-de-cookies'
     | '/politica-de-privacidad'
+    | '/publicar'
     | '/registro'
     | '/restablecer-password'
     | '/sitemap.xml'
@@ -380,10 +400,12 @@ export interface FileRouteTypes {
     | '/explorar'
     | '/favoritos'
     | '/login'
+    | '/mis-chollos'
     | '/notificaciones'
     | '/perfil'
     | '/politica-de-cookies'
     | '/politica-de-privacidad'
+    | '/publicar'
     | '/registro'
     | '/restablecer-password'
     | '/sitemap.xml'
@@ -417,10 +439,12 @@ export interface FileRouteTypes {
     | '/explorar'
     | '/favoritos'
     | '/login'
+    | '/mis-chollos'
     | '/notificaciones'
     | '/perfil'
     | '/politica-de-cookies'
     | '/politica-de-privacidad'
+    | '/publicar'
     | '/registro'
     | '/restablecer-password'
     | '/sitemap.xml'
@@ -455,10 +479,12 @@ export interface RootRouteChildren {
   ExplorarRoute: typeof ExplorarRoute
   FavoritosRoute: typeof FavoritosRoute
   LoginRoute: typeof LoginRoute
+  MisChollosRoute: typeof MisChollosRoute
   NotificacionesRoute: typeof NotificacionesRoute
   PerfilRoute: typeof PerfilRoute
   PoliticaDeCookiesRoute: typeof PoliticaDeCookiesRoute
   PoliticaDePrivacidadRoute: typeof PoliticaDePrivacidadRoute
+  PublicarRoute: typeof PublicarRoute
   RegistroRoute: typeof RegistroRoute
   RestablecerPasswordRoute: typeof RestablecerPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -472,25 +498,109 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/terminos-y-condiciones': {
-      id: '/terminos-y-condiciones'
-      path: '/terminos-y-condiciones'
-      fullPath: '/terminos-y-condiciones'
-      preLoaderRoute: typeof TerminosYCondicionesRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/telegram': {
-      id: '/telegram'
-      path: '/telegram'
-      fullPath: '/telegram'
-      preLoaderRoute: typeof TelegramRouteImport
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
+    '/alertas': {
+      id: '/alertas'
+      path: '/alertas'
+      fullPath: '/alertas'
+      preLoaderRoute: typeof AlertasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog': {
+      id: '/blog'
+      path: '/blog'
+      fullPath: '/blog'
+      preLoaderRoute: typeof BlogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/categorias': {
+      id: '/categorias'
+      path: '/categorias'
+      fullPath: '/categorias'
+      preLoaderRoute: typeof CategoriasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contacto': {
+      id: '/contacto'
+      path: '/contacto'
+      fullPath: '/contacto'
+      preLoaderRoute: typeof ContactoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/explorar': {
+      id: '/explorar'
+      path: '/explorar'
+      fullPath: '/explorar'
+      preLoaderRoute: typeof ExplorarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/favoritos': {
+      id: '/favoritos'
+      path: '/favoritos'
+      fullPath: '/favoritos'
+      preLoaderRoute: typeof FavoritosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mis-chollos': {
+      id: '/mis-chollos'
+      path: '/mis-chollos'
+      fullPath: '/mis-chollos'
+      preLoaderRoute: typeof MisChollosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notificaciones': {
+      id: '/notificaciones'
+      path: '/notificaciones'
+      fullPath: '/notificaciones'
+      preLoaderRoute: typeof NotificacionesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/perfil': {
+      id: '/perfil'
+      path: '/perfil'
+      fullPath: '/perfil'
+      preLoaderRoute: typeof PerfilRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/politica-de-cookies': {
+      id: '/politica-de-cookies'
+      path: '/politica-de-cookies'
+      fullPath: '/politica-de-cookies'
+      preLoaderRoute: typeof PoliticaDeCookiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/politica-de-privacidad': {
+      id: '/politica-de-privacidad'
+      path: '/politica-de-privacidad'
+      fullPath: '/politica-de-privacidad'
+      preLoaderRoute: typeof PoliticaDePrivacidadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/publicar': {
+      id: '/publicar'
+      path: '/publicar'
+      fullPath: '/publicar'
+      preLoaderRoute: typeof PublicarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/registro': {
@@ -507,95 +617,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RestablecerPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/politica-de-privacidad': {
-      id: '/politica-de-privacidad'
-      path: '/politica-de-privacidad'
-      fullPath: '/politica-de-privacidad'
-      preLoaderRoute: typeof PoliticaDePrivacidadRouteImport
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/politica-de-cookies': {
-      id: '/politica-de-cookies'
-      path: '/politica-de-cookies'
-      fullPath: '/politica-de-cookies'
-      preLoaderRoute: typeof PoliticaDeCookiesRouteImport
+    '/telegram': {
+      id: '/telegram'
+      path: '/telegram'
+      fullPath: '/telegram'
+      preLoaderRoute: typeof TelegramRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/perfil': {
-      id: '/perfil'
-      path: '/perfil'
-      fullPath: '/perfil'
-      preLoaderRoute: typeof PerfilRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/notificaciones': {
-      id: '/notificaciones'
-      path: '/notificaciones'
-      fullPath: '/notificaciones'
-      preLoaderRoute: typeof NotificacionesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/favoritos': {
-      id: '/favoritos'
-      path: '/favoritos'
-      fullPath: '/favoritos'
-      preLoaderRoute: typeof FavoritosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/explorar': {
-      id: '/explorar'
-      path: '/explorar'
-      fullPath: '/explorar'
-      preLoaderRoute: typeof ExplorarRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/contacto': {
-      id: '/contacto'
-      path: '/contacto'
-      fullPath: '/contacto'
-      preLoaderRoute: typeof ContactoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/categorias': {
-      id: '/categorias'
-      path: '/categorias'
-      fullPath: '/categorias'
-      preLoaderRoute: typeof CategoriasRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/blog': {
-      id: '/blog'
-      path: '/blog'
-      fullPath: '/blog'
-      preLoaderRoute: typeof BlogRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/alertas': {
-      id: '/alertas'
-      path: '/alertas'
-      fullPath: '/alertas'
-      preLoaderRoute: typeof AlertasRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/terminos-y-condiciones': {
+      id: '/terminos-y-condiciones'
+      path: '/terminos-y-condiciones'
+      fullPath: '/terminos-y-condiciones'
+      preLoaderRoute: typeof TerminosYCondicionesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -605,74 +645,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/chollo/$slug': {
-      id: '/chollo/$slug'
-      path: '/chollo/$slug'
-      fullPath: '/chollo/$slug'
-      preLoaderRoute: typeof CholloSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/categoria/$slug': {
-      id: '/categoria/$slug'
-      path: '/categoria/$slug'
-      fullPath: '/categoria/$slug'
-      preLoaderRoute: typeof CategoriaSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/blog_/$slug': {
-      id: '/blog_/$slug'
-      path: '/blog/$slug'
-      fullPath: '/blog/$slug'
-      preLoaderRoute: typeof BlogSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/blog/rss.xml': {
-      id: '/blog/rss.xml'
-      path: '/rss.xml'
-      fullPath: '/blog/rss.xml'
-      preLoaderRoute: typeof BlogRssDotxmlRouteImport
-      parentRoute: typeof BlogRoute
-    }
-    '/alertas_/nueva': {
-      id: '/alertas_/nueva'
-      path: '/alertas/nueva'
-      fullPath: '/alertas/nueva'
-      preLoaderRoute: typeof AlertasNuevaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/usuarios': {
-      id: '/admin/usuarios'
-      path: '/usuarios'
-      fullPath: '/admin/usuarios'
-      preLoaderRoute: typeof AdminUsuariosRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/tiendas': {
-      id: '/admin/tiendas'
-      path: '/tiendas'
-      fullPath: '/admin/tiendas'
-      preLoaderRoute: typeof AdminTiendasRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/tareas-programadas': {
-      id: '/admin/tareas-programadas'
-      path: '/tareas-programadas'
-      fullPath: '/admin/tareas-programadas'
-      preLoaderRoute: typeof AdminTareasProgramadasRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/chollos': {
-      id: '/admin/chollos'
-      path: '/chollos'
-      fullPath: '/admin/chollos'
-      preLoaderRoute: typeof AdminChollosRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/categorias': {
-      id: '/admin/categorias'
-      path: '/categorias'
-      fullPath: '/admin/categorias'
-      preLoaderRoute: typeof AdminCategoriasRouteImport
+    '/admin/analitica': {
+      id: '/admin/analitica'
+      path: '/analitica'
+      fullPath: '/admin/analitica'
+      preLoaderRoute: typeof AdminAnaliticaRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/blog': {
@@ -682,18 +659,81 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBlogRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/analitica': {
-      id: '/admin/analitica'
-      path: '/analitica'
-      fullPath: '/admin/analitica'
-      preLoaderRoute: typeof AdminAnaliticaRouteImport
+    '/admin/categorias': {
+      id: '/admin/categorias'
+      path: '/categorias'
+      fullPath: '/admin/categorias'
+      preLoaderRoute: typeof AdminCategoriasRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/blog_/nuevo': {
-      id: '/admin/blog_/nuevo'
-      path: '/blog/nuevo'
-      fullPath: '/admin/blog/nuevo'
-      preLoaderRoute: typeof AdminBlogNuevoRouteImport
+    '/admin/chollos': {
+      id: '/admin/chollos'
+      path: '/chollos'
+      fullPath: '/admin/chollos'
+      preLoaderRoute: typeof AdminChollosRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/tareas-programadas': {
+      id: '/admin/tareas-programadas'
+      path: '/tareas-programadas'
+      fullPath: '/admin/tareas-programadas'
+      preLoaderRoute: typeof AdminTareasProgramadasRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/tiendas': {
+      id: '/admin/tiendas'
+      path: '/tiendas'
+      fullPath: '/admin/tiendas'
+      preLoaderRoute: typeof AdminTiendasRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/usuarios': {
+      id: '/admin/usuarios'
+      path: '/usuarios'
+      fullPath: '/admin/usuarios'
+      preLoaderRoute: typeof AdminUsuariosRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/alertas_/nueva': {
+      id: '/alertas_/nueva'
+      path: '/alertas/nueva'
+      fullPath: '/alertas/nueva'
+      preLoaderRoute: typeof AlertasNuevaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog/rss.xml': {
+      id: '/blog/rss.xml'
+      path: '/rss.xml'
+      fullPath: '/blog/rss.xml'
+      preLoaderRoute: typeof BlogRssDotxmlRouteImport
+      parentRoute: typeof BlogRoute
+    }
+    '/blog_/$slug': {
+      id: '/blog_/$slug'
+      path: '/blog/$slug'
+      fullPath: '/blog/$slug'
+      preLoaderRoute: typeof BlogSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/categoria/$slug': {
+      id: '/categoria/$slug'
+      path: '/categoria/$slug'
+      fullPath: '/categoria/$slug'
+      preLoaderRoute: typeof CategoriaSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chollo/$slug': {
+      id: '/chollo/$slug'
+      path: '/chollo/$slug'
+      fullPath: '/chollo/$slug'
+      preLoaderRoute: typeof CholloSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/blog_/$postId': {
+      id: '/admin/blog_/$postId'
+      path: '/blog/$postId'
+      fullPath: '/admin/blog/$postId'
+      preLoaderRoute: typeof AdminBlogPostIdRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/blog_/categorias': {
@@ -703,11 +743,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBlogCategoriasRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/blog_/$postId': {
-      id: '/admin/blog_/$postId'
-      path: '/blog/$postId'
-      fullPath: '/admin/blog/$postId'
-      preLoaderRoute: typeof AdminBlogPostIdRouteImport
+    '/admin/blog_/nuevo': {
+      id: '/admin/blog_/nuevo'
+      path: '/blog/nuevo'
+      fullPath: '/admin/blog/nuevo'
+      preLoaderRoute: typeof AdminBlogNuevoRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/blog_/$postId_/preview': {
@@ -772,10 +812,12 @@ const rootRouteChildren: RootRouteChildren = {
   ExplorarRoute: ExplorarRoute,
   FavoritosRoute: FavoritosRoute,
   LoginRoute: LoginRoute,
+  MisChollosRoute: MisChollosRoute,
   NotificacionesRoute: NotificacionesRoute,
   PerfilRoute: PerfilRoute,
   PoliticaDeCookiesRoute: PoliticaDeCookiesRoute,
   PoliticaDePrivacidadRoute: PoliticaDePrivacidadRoute,
+  PublicarRoute: PublicarRoute,
   RegistroRoute: RegistroRoute,
   RestablecerPasswordRoute: RestablecerPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
@@ -791,10 +833,11 @@ export const routeTree = rootRouteImport
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
+import type { startInstance } from './start.ts'
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
     router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }
