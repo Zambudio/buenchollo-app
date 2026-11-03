@@ -183,7 +183,7 @@ export function DealCardView({
 
         <div className="deal-price flex items-end gap-3 mb-3">
           <span className="price-now product-price card-price font-mono tabular-nums leading-none">
-            {deal.current_price > 0 ? formatPrice(deal.current_price) : "— €"}
+            {preview && !(deal.current_price > 0) ? "— €" : formatPrice(deal.current_price)}
           </span>
           {deal.previous_price && deal.previous_price > deal.current_price && (
             <span className="price-old previous-price font-mono tabular-nums pb-1">

@@ -72,13 +72,25 @@ export function ImageUploader({ initial = [], onChange }: ImageUploaderProps) {
     // Soltar un fichero fuera de la zona haría que el navegador lo abriera y
     // se perdiera el formulario: se evita en todo el documento y, si trae
     // imágenes, se añaden igual. Soltar texto en un campo de texto sigue funcionando.
+    // Sobre un campo de texto solo se intercepta si se arrastran FICHEROS (el
+    // navegador abriría el fichero y se perdería el formulario); el texto no se toca.
+    const carriesFiles = (e: DragEvent) =>
+      Array.from(e.dataTransfer?.types ?? []).includes("Files");
     const onDragOver = (e: DragEvent) => {
-      if (isTextEntryElement(e.target as Element | null)) return;
+      if (isTextEntryElement(e.target as Element | null) && !carriesFiles(e)) return;
       e.preventDefault();
     };
     const onDocDrop = (e: DragEvent) => {
       const target = e.target as Node | null;
-      if (isTextEntryElement(target as Element | null)) return;
+      if (isTextEntryElement(target as Element | null)) {
+        if (!carriesFiles(e)) return;
+        e.preventDefault();
+        if (e.dataTransfer) {
+          const { files } = extractClipboardItems(e.dataTransfer);
+          if (files.length) addFiles(files);
+        }
+        return;
+      }
       e.preventDefault();
       if (target && dropzoneRef.current?.contains(target)) return;
       if (!e.dataTransfer) return;

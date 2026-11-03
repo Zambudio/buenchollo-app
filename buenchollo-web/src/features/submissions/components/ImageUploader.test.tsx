@@ -300,6 +300,46 @@ describe("ImageUploader", () => {
     await waitFor(() => expect(last().images).toHaveLength(1));
   });
 
+  it("en un campo de texto, un drop de ficheros se previene y uno de texto no", () => {
+    render(
+      <>
+        <input aria-label="titulo" />
+        <ImageUploader onChange={vi.fn()} />
+      </>,
+    );
+    const input = screen.getByLabelText("titulo");
+    const dropOn = (dataTransfer: object) => {
+      const ev = new Event("drop", { bubbles: true, cancelable: true });
+      Object.defineProperty(ev, "dataTransfer", { value: dataTransfer });
+      act(() => {
+        input.dispatchEvent(ev);
+      });
+      return ev;
+    };
+    const overOn = (types: string[]) => {
+      const ev = new Event("dragover", { bubbles: true, cancelable: true });
+      Object.defineProperty(ev, "dataTransfer", { value: { types } });
+      input.dispatchEvent(ev);
+      return ev;
+    };
+
+    expect(overOn(["text/plain"]).defaultPrevented).toBe(false);
+    const textDrop = dropOn({
+      files: [],
+      items: [],
+      types: ["text/plain"],
+      getData: (t: string) => (t === "text/plain" ? "https://x.es/a.png" : ""),
+    });
+    expect(textDrop.defaultPrevented).toBe(false);
+    expect(mocks.importImageUrl).not.toHaveBeenCalled();
+
+    expect(overOn(["Files"]).defaultPrevented).toBe(true);
+    const file = png("en-input.png");
+    const fileDrop = dropOn({ files: [file], items: [], types: ["Files"], getData: () => "" });
+    expect(fileDrop.defaultPrevented).toBe(true);
+    expect(mocks.uploadImage).toHaveBeenCalledWith(file, "en-input.png");
+  });
+
   it("un drop dentro de la zona no se añade dos veces", () => {
     setup();
     fireEvent.drop(screen.getByTestId("image-dropzone"), {
