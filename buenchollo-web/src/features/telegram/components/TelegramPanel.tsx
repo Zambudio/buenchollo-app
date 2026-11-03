@@ -284,6 +284,10 @@ export function TelegramPanel({
 
   const handleSchedule = async () => {
     if (!onSchedule || !text.trim()) return;
+    if (text.length > 4096) {
+      toast.error("El mensaje de Telegram supera los 4096 caracteres");
+      return;
+    }
     if (!channelId) {
       toast.error("Selecciona un canal");
       return;
@@ -612,7 +616,8 @@ export function TelegramPanel({
                 Se publicará en{" "}
                 {channels.find((channel) => channel.id === channelId)?.name ??
                   "el canal seleccionado"}{" "}
-                y en la web tras verificar precio y stock.
+                tras verificar precio y stock cuando sea posible. La web se programará si sus datos
+                están completos; si faltan datos podrás corregirlos después en Planificación.
               </p>
               <button
                 type="button"

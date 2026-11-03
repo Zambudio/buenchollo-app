@@ -41,7 +41,7 @@ const optionalPositiveNumberFromString = z
 
 export const dealFormSchema = z
   .object({
-    title: trimmedString.min(3, "Mínimo 3 caracteres").max(200, "Máximo 200"),
+    title: trimmedString.min(1, "El título no puede estar vacío").max(200, "Máximo 200"),
     affiliate_url: trimmedString.url("URL de afiliado inválida"),
     current_price: requiredPositiveNumberFromString,
     previous_price: optionalPositiveNumberFromString,

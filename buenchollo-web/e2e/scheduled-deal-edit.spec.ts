@@ -28,8 +28,8 @@ const newSubcategoryId = "30000000-0000-4000-8000-000000000002";
 const newStoreId = "50000000-0000-4000-8000-000000000002";
 const title = "Cafetera programada editable";
 
-test("permite cambiar categoría y subcategoría de una publicación programada", async ({ page }) => {
-  test.setTimeout(90_000);
+test("permite completar la categoría web tras programar Telegram", async ({ page }) => {
+  test.setTimeout(180_000);
   await page.clock.setFixedTime(new Date("2026-06-10T10:00:00Z"));
   const tomorrow = new Date("2026-06-11T11:00:00Z");
 
@@ -38,6 +38,7 @@ test("permite cambiar categoría y subcategoría de una publicación programada"
     id: scheduledId,
     deal_id: "40000000-0000-4000-8000-000000000001",
     asin: "B0H7X5D6QN",
+    web_ready: false,
     title,
     description_web: "Descripción web",
     short_description: "Descripción corta",
@@ -51,8 +52,8 @@ test("permite cambiar categoría y subcategoría de una publicación programada"
     affiliate_url: "https://link.amazon/B0dy09Zws",
     store_name: "Amazon",
     store_id: "50000000-0000-4000-8000-000000000001",
-    category_id: currentCategoryId,
-    subcategory_id: currentSubcategoryId,
+    category_id: null as string | null,
+    subcategory_id: null as string | null,
     scheduled_at: tomorrow.toISOString(),
     expires_at: null,
     status: "programado",
@@ -165,7 +166,8 @@ test("permite cambiar categoría y subcategoría de una publicación programada"
       request.method() === "PUT"
     ) {
       updatePayload = request.postDataJSON();
-      return route.fulfill({ json: { ...scheduledDeal, ...updatePayload } });
+      Object.assign(scheduledDeal, updatePayload, { web_ready: true });
+      return route.fulfill({ json: scheduledDeal });
     }
     if (url.pathname.endsWith("/telegram/channels")) return route.fulfill({ json: [] });
     if (url.pathname.endsWith("/telegram/categories")) {
@@ -200,8 +202,11 @@ test("permite cambiar categoría y subcategoría de una publicación programada"
   const privacyAcknowledgement = page.getByRole("button", { name: "ENTENDIDO" });
   if (await privacyAcknowledgement.isVisible()) await privacyAcknowledgement.click();
 
+  await expect(page.getByRole("alert").filter({ hasText: "Web pendiente" })).toBeVisible();
+
   await page.locator(".fc-event").filter({ hasText: title }).click();
   await expect(page.getByText("Vista previa y edición")).toBeVisible();
+  await expect(page.getByRole("dialog").getByRole("alert")).toBeVisible();
 
   await expect(page.getByLabel("Categoría web", { exact: true })).toBeVisible({ timeout: 5_000 });
   await expect(page.getByLabel("Subcategoría web")).toBeVisible({ timeout: 5_000 });
@@ -228,4 +233,5 @@ test("permite cambiar categoría y subcategoría de una publicación programada"
     show_keepa_chart: true,
     telegram_text: "Texto Telegram",
   });
+  await expect(page.getByRole("alert").filter({ hasText: "Web pendiente" })).toHaveCount(0);
 });

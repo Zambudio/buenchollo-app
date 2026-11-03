@@ -7,22 +7,22 @@ from app.modules.scheduled_deals.domain.models import ScheduledDealStatus
 
 
 class ScheduledDealCreate(BaseModel):
-    asin: str = Field(min_length=10, max_length=10, pattern=r"^[A-Z0-9]{10}$")
-    title: str = Field(min_length=3, max_length=200)
+    asin: str | None = Field(default=None, min_length=10, max_length=10, pattern=r"^[A-Z0-9]{10}$")
+    title: str = Field(min_length=1, max_length=200)
     slug: str | None = Field(default=None, max_length=200)
     description_web: str = Field(default="", max_length=10_000)
     short_description: str | None = Field(default=None, max_length=300)
     telegram_text: str = Field(default="", max_length=4096)
     telegram_channel_id: str | None = Field(default=None, min_length=1, max_length=100)
-    offer_price: float = Field(gt=0)
+    offer_price: float = Field(ge=0)
     regular_price: float | None = Field(default=None, gt=0)
     discount_percentage: int = Field(default=0, ge=0, le=100)
     image_url: str | None = Field(default=None, max_length=2048)
     images: list[str] = Field(default_factory=list, max_length=20)
-    affiliate_url: str = Field(min_length=1, max_length=2048)
+    affiliate_url: str = Field(max_length=2048)
     store_name: str = Field(default="Amazon", max_length=100)
     store_id: str | None = None
-    category_id: str
+    category_id: str | None = None
     subcategory_id: str | None = None
     brand: str | None = Field(default=None, max_length=100)
     shipping_info: str | None = Field(default=None, max_length=200)
@@ -30,26 +30,34 @@ class ScheduledDealCreate(BaseModel):
     scheduled_at: datetime
     source: str = Field(default="manual", max_length=16)
     show_keepa_chart: bool = False
+    web_ready: bool = True
 
     @field_validator("asin", mode="before")
     @classmethod
-    def normalize_asin(cls, value: str) -> str:
-        return value.strip().upper()
+    def normalize_asin(cls, value: str | None) -> str | None:
+        return value.strip().upper() if value else None
+
+    @field_validator("title")
+    @classmethod
+    def title_not_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("El título no puede estar vacío")
+        return value.strip()
 
 
 class ScheduledDealUpdate(BaseModel):
     asin: str | None = Field(default=None, min_length=10, max_length=10, pattern=r"^[A-Z0-9]{10}$")
-    title: str | None = Field(default=None, min_length=3, max_length=200)
+    title: str | None = Field(default=None, min_length=1, max_length=200)
     description_web: str | None = Field(default=None, max_length=10_000)
     short_description: str | None = Field(default=None, max_length=300)
     telegram_text: str | None = Field(default=None, max_length=4096)
     telegram_channel_id: str | None = Field(default=None, min_length=1, max_length=100)
-    offer_price: float | None = Field(default=None, gt=0)
+    offer_price: float | None = Field(default=None, ge=0)
     regular_price: float | None = Field(default=None, gt=0)
     discount_percentage: int | None = Field(default=None, ge=0, le=100)
     image_url: str | None = Field(default=None, max_length=2048)
     images: list[str] | None = Field(default=None, max_length=20)
-    affiliate_url: str | None = Field(default=None, min_length=1, max_length=2048)
+    affiliate_url: str | None = Field(default=None, max_length=2048)
     store_name: str | None = Field(default=None, max_length=100)
     store_id: str | None = None
     category_id: str | None = None
@@ -65,6 +73,13 @@ class ScheduledDealUpdate(BaseModel):
     def normalize_asin(cls, value: str | None) -> str | None:
         return value.strip().upper() if value else value
 
+    @field_validator("title")
+    @classmethod
+    def title_not_blank(cls, value: str | None) -> str | None:
+        if value is not None and not value.strip():
+            raise ValueError("El título no puede estar vacío")
+        return value.strip() if value is not None else None
+
 
 class ScheduledDateUpdate(BaseModel):
     scheduled_at: datetime
@@ -79,7 +94,8 @@ class ScheduledDealResponse(BaseModel):
 
     id: str
     deal_id: str
-    asin: str
+    asin: str | None
+    web_ready: bool
     title: str
     description_web: str
     short_description: str | None = Field(
@@ -95,7 +111,7 @@ class ScheduledDealResponse(BaseModel):
     affiliate_url: str
     store_name: str
     store_id: str | None = Field(default=None, validation_alias=AliasPath("deal", "store_id"))
-    category_id: str
+    category_id: str | None
     subcategory_id: str | None = Field(
         default=None, validation_alias=AliasPath("deal", "subcategory_id")
     )

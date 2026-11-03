@@ -19,7 +19,9 @@ export default defineConfig(({ command, mode }) => {
   return {
     server: {
       host: "::",
-      port: 8080,
+      port: Number(process.env.PLAYWRIGHT_PORT) || 8080,
+      strictPort: Boolean(process.env.PLAYWRIGHT_PORT),
+      watch: process.env.PLAYWRIGHT_PORT ? { usePolling: true, interval: 1000 } : undefined,
       proxy: apiProxyTarget
         ? {
             "/nas-api": {

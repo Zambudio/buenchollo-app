@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from enum import Enum
 
-from sqlalchemy import DateTime, Enum as SqlEnum, ForeignKey, Index, Integer, Numeric, String, Text, Uuid
+from sqlalchemy import Boolean, DateTime, Enum as SqlEnum, ForeignKey, Index, Integer, Numeric, String, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -37,7 +37,8 @@ class ScheduledDeal(Base):
         nullable=False,
         unique=True,
     )
-    asin: Mapped[str] = mapped_column(String(10), nullable=False)
+    asin: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    web_ready: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     description_web: Mapped[str] = mapped_column(Text, default="", nullable=False)
     telegram_text: Mapped[str] = mapped_column(Text, default="", nullable=False)
@@ -48,10 +49,10 @@ class ScheduledDeal(Base):
     image_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     affiliate_url: Mapped[str] = mapped_column(String(2048), nullable=False)
     store_name: Mapped[str] = mapped_column(String(100), default="Amazon", nullable=False)
-    category_id: Mapped[str] = mapped_column(
+    category_id: Mapped[str | None] = mapped_column(
         Uuid(as_uuid=False),
         ForeignKey("categories.id", ondelete="RESTRICT"),
-        nullable=False,
+        nullable=True,
     )
     scheduled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     status: Mapped[ScheduledDealStatus] = mapped_column(
