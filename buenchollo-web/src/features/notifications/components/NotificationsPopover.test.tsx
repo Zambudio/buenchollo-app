@@ -179,4 +179,32 @@ describe("NotificationsPopover", () => {
     expect(mocks.mockNavigate).toHaveBeenCalledWith({ to: "/chollo/polaroid" });
     expect(mockMutateOne).not.toHaveBeenCalled();
   });
+  it.each([
+    ["submission_approved", "Tu chollo ha sido publicado", "/chollo/mi-chollo"],
+    ["submission_rejected", "Tu chollo ha sido rechazado", "/mis-chollos"],
+  ])("renderiza %s y navega a su enlace", async (type, title, link) => {
+    const user = userEvent.setup();
+    mocks.useNotificationsList.mockReturnValue({
+      data: [
+        {
+          id: "n-s",
+          type,
+          title,
+          body: "Detalle",
+          link_url: link,
+          deal_id: null,
+          is_read: false,
+          created_at: "2026-11-03T08:00:00Z",
+        },
+      ],
+      isLoading: false,
+    });
+
+    renderWithProviders(<NotificationsPopover />);
+    await user.click(screen.getByRole("button", { name: /notificaciones/i }));
+    await user.click(screen.getByRole("button", { name: new RegExp(title, "i") }));
+
+    expect(mocks.mockNavigate).toHaveBeenCalledWith({ to: link });
+    expect(mockMutateOne).toHaveBeenCalledWith("n-s");
+  });
 });
