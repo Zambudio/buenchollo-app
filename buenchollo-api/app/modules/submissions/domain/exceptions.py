@@ -45,3 +45,10 @@ class ImageStorageUnavailableError(ServiceUnavailableError):
         self, message: str = "No se pudo guardar la imagen. Inténtalo de nuevo en unos minutos."
     ) -> None:
         super().__init__(message)
+
+
+class SubmissionNotPendingError(ConflictError):
+    """La propuesta ya no está pendiente (aprobada, rechazada o retirada)."""
+
+    def __init__(self, message: str = "La propuesta ya no está pendiente de revisión") -> None:
+        super().__init__(message)

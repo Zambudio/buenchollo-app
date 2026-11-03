@@ -7,6 +7,7 @@ from urllib.parse import unquote, urlparse
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.core.config import get_settings
+from app.modules.deals.api.schemas import AuthorBasic
 from app.modules.submissions.domain.models import APPROVED, DealSubmission
 from app.modules.submissions.domain.rules import MAX_IMAGES
 
@@ -191,4 +192,27 @@ def to_submission_response(sub: DealSubmission) -> SubmissionResponse:
     response = SubmissionResponse.model_validate(sub)
     if sub.status == APPROVED and sub.deal_id:
         response.deal_slug = sub.deal.slug
+    return response
+
+
+class AdminSubmissionResponse(SubmissionResponse):
+    author: AuthorBasic | None = None
+    previously_published: bool = False
+
+
+class RejectRequest(BaseModel):
+    reason: str = Field(..., min_length=3, max_length=500)
+
+    @field_validator("reason", mode="before")
+    @classmethod
+    def _strip(cls, value: object) -> object:
+        return value.strip() if isinstance(value, str) else value
+
+
+def to_admin_submission_response(
+    sub: DealSubmission, previously_published: bool = False
+) -> AdminSubmissionResponse:
+    response = AdminSubmissionResponse.model_validate(to_submission_response(sub), from_attributes=True)
+    response.author = AuthorBasic.model_validate(sub.user) if sub.user is not None else None
+    response.previously_published = previously_published
     return response

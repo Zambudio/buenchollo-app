@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import case, func, select, update
+from sqlalchemy import case, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -134,15 +134,43 @@ class SubmissionRepository:
         return list((await self.session.execute(stmt)).scalars().all())
 
     async def list_by_status(self, status: str, limit: int, offset: int) -> list[DealSubmission]:
+        order = (
+            DealSubmission.created_at.asc()
+            if status == PENDING
+            else DealSubmission.created_at.desc()
+        )
         stmt = (
             select(DealSubmission)
             .where(DealSubmission.status == status)
-            .options(selectinload(DealSubmission.user))
-            .order_by(DealSubmission.created_at.asc())
+            .options(selectinload(DealSubmission.user), selectinload(DealSubmission.deal))
+            .order_by(order, DealSubmission.id)
             .limit(limit)
             .offset(offset)
         )
         return list((await self.session.execute(stmt)).scalars().all())
+
+    async def expired_submission_ids(self, submissions: list[DealSubmission]) -> set[str]:
+        asins = {s.asin for s in submissions if s.asin}
+        urls = {s.canonical_url for s in submissions if s.canonical_url}
+        conditions = []
+        if asins:
+            conditions.append(Deal.external_id.in_(asins))
+        if urls:
+            conditions.append(Deal.canonical_url.in_(urls))
+        if not conditions:
+            return set()
+        rows = (
+            await self.session.execute(
+                select(Deal.external_id, Deal.canonical_url).where(
+                    Deal.status == "expired", or_(*conditions)
+                )
+            )
+        ).all()
+        found_asins = {r[0] for r in rows if r[0]}
+        found_urls = {r[1] for r in rows if r[1]}
+        return {
+            s.id for s in submissions if s.asin in found_asins or s.canonical_url in found_urls
+        }
 
     async def count_by_status(self, status: str) -> int:
         result = await self.session.execute(
