@@ -8,6 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.exc import IntegrityError
 
+from app.core.database import get_db
 from app.core.security import AuthenticatedUser, get_current_user
 from app.core.rate_limit import limiter
 from app.main import app
@@ -89,6 +90,10 @@ class FakeProfileRepo:
         return SimpleNamespace(display_name="Pedro")
 
 
+async def _noop_commit():
+    return None
+
+
 async def _noop(submission_id):
     return None
 
@@ -135,6 +140,7 @@ def repo():
     app.dependency_overrides[get_submission_notifier] = lambda: SimpleNamespace(
         notify_admin_new=_noop
     )
+    app.dependency_overrides[get_db] = lambda: SimpleNamespace(commit=_noop_commit)
     yield r
     app.dependency_overrides.clear()
 

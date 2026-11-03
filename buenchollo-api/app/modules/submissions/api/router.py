@@ -103,8 +103,12 @@ async def create_submission(
     use_case: CreateSubmissionUseCase = Depends(get_create_submission_use_case),
     settings: Settings = Depends(get_settings),
     notifier: SubmissionNotifier = Depends(get_submission_notifier),
+    db: AsyncSession = Depends(get_db),
 ) -> SubmissionResponse:
     submission = await use_case.execute(user.id, payload, settings.amazon_affiliate_tag or "")
+    # Las background tasks se ejecutan ANTES del commit de get_db (teardown de la
+    # dependencia): sin este commit el notifier no vería la propuesta.
+    await db.commit()
     background_tasks.add_task(notifier.notify_admin_new, submission.id)
     return to_submission_response(submission)
 

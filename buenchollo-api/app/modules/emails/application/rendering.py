@@ -168,6 +168,10 @@ def render_welcome(branding: EmailBranding, *, name: str | None) -> RenderedEmai
     return _render("welcome", ctx)
 
 
+def _one_line(text: str) -> str:
+    return " ".join(text.split())
+
+
 def render_submission_admin(
     branding: EmailBranding,
     *,
@@ -182,7 +186,7 @@ def render_submission_admin(
 ) -> RenderedEmail:
     ctx = _base_context(branding, "propuestas")
     ctx.update(
-        subject=f"🆕 Nueva propuesta de chollo: {title[:60]}",
+        subject=f"🆕 Nueva propuesta de chollo: {_one_line(title)[:60]}",
         preheader=f"{title} · {price} · por {author}",
         header_tag="ADMIN",
         title=title,

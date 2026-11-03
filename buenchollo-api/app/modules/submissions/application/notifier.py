@@ -62,6 +62,7 @@ class SubmissionNotifier:
             async with self.session_factory() as session:
                 sub = await SubmissionRepository(session).get(submission_id)
                 if sub is None:
+                    logger.warning("Propuesta %s no encontrada: aviso al admin omitido", submission_id)
                     return
                 rendered = render_submission_admin(
                     self.branding,
@@ -82,10 +83,16 @@ class SubmissionNotifier:
         try:
             async with self.session_factory() as session:
                 sub = await SubmissionRepository(session).get(submission_id)
-                if sub is None or sub.status not in (APPROVED, REJECTED):
+                if sub is None:
+                    logger.warning("Propuesta %s no encontrada: notificación al usuario omitida", submission_id)
+                    return
+                if sub.status not in (APPROVED, REJECTED):
                     return
                 name = sub.user.display_name or sub.user.username
                 if sub.status == APPROVED:
+                    if sub.deal is None:
+                        logger.warning("Propuesta aprobada %s sin chollo asociado: notificación omitida", submission_id)
+                        return
                     slug = sub.deal.slug
                     notification = {
                         "user_id": sub.user_id,

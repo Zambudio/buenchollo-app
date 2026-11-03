@@ -9,6 +9,7 @@ import functools
 import pytest
 from fastapi.testclient import TestClient
 
+from app.core.database import get_db
 from app.core.rate_limit import limiter
 from app.core.security import AuthenticatedUser, get_current_user
 from app.main import app
@@ -296,25 +297,96 @@ async def test_session_failure_never_raises():
     await notifier.notify_user_decision(SUB_ID)
 
 
-def test_create_endpoint_schedules_admin_notification(monkeypatch):
-    monkeypatch.setattr(
-        schemas, "get_settings", lambda: SimpleNamespace(supabase_url="https://proj.supabase.co/")
-    )
+def _setup_endpoint(events, repo=None, error=None):
     limiter.reset()
-    calls = []
 
     class SpyNotifier:
         async def notify_admin_new(self, submission_id):
-            calls.append(submission_id)
+            events.append(("task", submission_id))
 
+    class SpyDb:
+        async def commit(self):
+            events.append(("commit", None))
+
+    repo = repo or FakeRepo()
     app.dependency_overrides[get_current_user] = lambda: AuthenticatedUser(id="u1", email="a@b.c")
     app.dependency_overrides[get_profile_repository] = lambda: FakeProfileRepo()
-    app.dependency_overrides[get_submission_repository] = lambda: FakeRepo()
+    app.dependency_overrides[get_submission_repository] = lambda: repo
     app.dependency_overrides[get_category_repository] = lambda: FakeCategories()
     app.dependency_overrides[get_submission_notifier] = lambda: SpyNotifier()
-    try:
-        resp = TestClient(app).post("/v1/submissions", json=body())
-    finally:
-        app.dependency_overrides.clear()
+    app.dependency_overrides[get_db] = lambda: SpyDb()
+
+
+@pytest.fixture
+def endpoint_settings(monkeypatch):
+    monkeypatch.setattr(
+        schemas, "get_settings", lambda: SimpleNamespace(supabase_url="https://proj.supabase.co/")
+    )
+    yield
+    app.dependency_overrides.clear()
+
+
+def test_create_endpoint_commits_before_scheduling_admin_notification(endpoint_settings):
+    events = []
+    _setup_endpoint(events)
+    resp = TestClient(app).post("/v1/submissions", json=body())
     assert resp.status_code == 201, resp.text
-    assert calls == [SUB_ID]
+    assert events == [("commit", None), ("task", SUB_ID)]
+
+
+@pytest.mark.parametrize(
+    "repo_kwargs, payload, status",
+    [
+        (dict(live=SimpleNamespace(id="d1", slug="x", title="T", image_url=None, current_price=9.5, status="active")), {}, 409),
+        (dict(pending_count=5), {}, 429),
+        (dict(day_count=15), {}, 429),
+        (dict(), dict(category_id="missing"), 400),
+    ],
+)
+def test_create_endpoint_failure_schedules_nothing(endpoint_settings, repo_kwargs, payload, status):
+    events = []
+    _setup_endpoint(events, repo=FakeRepo(**repo_kwargs))
+    resp = TestClient(app).post("/v1/submissions", json=body(**payload))
+    assert resp.status_code == status, resp.text
+    assert events == []
+
+
+def test_admin_subject_collapses_crlf_and_is_sendable():
+    from email.message import EmailMessage
+
+    mail = render_submission_admin(
+        BRANDING, title="a\r\nBcc: x", price="1,00 €", previous_price=None, store=None,
+        author="p", image_url=None, review_url="u", warnings=[],
+    )
+    assert "\r" not in mail.subject and "\n" not in mail.subject
+    assert mail.subject == "🆕 Nueva propuesta de chollo: a Bcc: x"
+    msg = EmailMessage()
+    msg["Subject"] = mail.subject
+
+
+@sync
+async def test_crlf_title_reaches_sender(env):
+    env.repo.sub = make_sub(title="a\r\nBcc: x")
+    sender = FakeSender()
+    await make_notifier(env, sender).notify_admin_new(SUB_ID)
+    assert len(sender.sent) == 1 and "\n" not in sender.sent[0].subject
+
+
+@sync
+async def test_missing_submission_logs_warning(env, caplog):
+    env.repo.sub = None
+    sender = FakeSender()
+    notifier = make_notifier(env, sender)
+    await notifier.notify_admin_new(SUB_ID)
+    await notifier.notify_user_decision(SUB_ID)
+    assert caplog.text.count("no encontrada") == 2
+    assert sender.sent == []
+
+
+@sync
+async def test_approved_without_deal_logs_warning(env, caplog):
+    env.repo.sub = make_sub("approved", deal=None)
+    sender = FakeSender()
+    await make_notifier(env, sender).notify_user_decision(SUB_ID)
+    assert "sin chollo asociado" in caplog.text
+    assert env.created == [] and sender.sent == []
