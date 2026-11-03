@@ -55,7 +55,7 @@ def make_sub(**over):
 class FakeRepo:
     def __init__(self, subs=None, live=None, expired=None, log=None):
         self.subs = {s.id: s for s in (subs or [])}
-        self.live, self.expired = live, expired
+        self.live, self.expired = live, expired or []
         self.log = log if log is not None else []
         self.expired_ids: set[str] = set()
 
@@ -70,7 +70,7 @@ class FakeRepo:
     async def find_live_deal(self, asin, canonical_url):
         return self.live
 
-    async def find_expired_deal(self, asin, canonical_url):
+    async def find_expired_deals(self, asin, canonical_url):
         return self.expired
 
     async def list_by_status(self, status, limit, offset):
@@ -93,6 +93,7 @@ class FakeDealService:
     async def create_deal(self, data, user_id):
         if self.error:
             raise self.error
+        self.log.append("create_deal")
         self.created.append((dict(data), user_id))
         return SimpleNamespace(
             id="55555555-5555-4555-8555-555555555555",
@@ -197,11 +198,11 @@ def test_reject_commits_before_notifying(client, env):
 
 
 def test_approve_replaces_expired_deal(client, env):
-    env.repo.expired = SimpleNamespace(id="old-deal", slug="old", title="Old")
+    env.repo.expired = [SimpleNamespace(id="old-deal", slug="old", title="Old")]
     resp = client.post(f"{BASE}/{SUB_ID}/approve", json=deal_body())
     assert resp.status_code == 200, resp.text
     assert env.service.deleted == ["old-deal"]
-    assert env.log.index("delete_deal") < len(env.log)
+    assert env.log.index("delete_deal") < env.log.index("create_deal")
     delete_audit = next(a for a in env.audits if a["action"] == "deal.delete")
     assert delete_audit["payload"] == {
         "reason": "replaced_by_submission",
@@ -257,7 +258,8 @@ def test_approve_future_scheduled_for_becomes_scheduled(client, env):
 
 def test_approve_past_scheduled_for_keeps_admin_status(client, env):
     past = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
-    client.post(f"{BASE}/{SUB_ID}/approve", json=deal_body(scheduled_for=past))
+    resp = client.post(f"{BASE}/{SUB_ID}/approve", json=deal_body(scheduled_for=past))
+    assert resp.status_code == 200, resp.text
     assert env.service.created[0][0]["status"] == "active"
 
 
@@ -328,6 +330,70 @@ def test_detail(client, env):
     assert resp.json()["id"] == SUB_ID
     assert resp.json()["previously_published"] is False
     assert client.get(f"{BASE}/{OTHER_ID}").status_code == 404
+
+
+def test_approve_replaces_all_expired_matches(client, env):
+    env.repo.expired = [
+        SimpleNamespace(id="old-by-asin", slug="a", title="A"),
+        SimpleNamespace(id="old-by-url", slug="b", title="B"),
+    ]
+    resp = client.post(f"{BASE}/{SUB_ID}/approve", json=deal_body())
+    assert resp.status_code == 200, resp.text
+    assert env.service.deleted == ["old-by-asin", "old-by-url"]
+    deletes = [a for a in env.audits if a["action"] == "deal.delete"]
+    assert [d["target_id"] for d in deletes] == ["old-by-asin", "old-by-url"]
+    assert env.log.index("delete_deal") < env.log.index("create_deal")
+
+
+class FakeDealsRepo:
+    """Solo contiene chollos reales; las propuestas viven en otra tabla."""
+
+    def __init__(self):
+        self.deals = [
+            SimpleNamespace(
+                id="d1", title="Chollo real", slug="chollo-real", image_url=None, images=[],
+                current_price=5.0, previous_price=None, discount_percentage=None, temperature=1,
+                affiliate_url=None, comment_count=0, published_at=None, created_at=None,
+                source="manual", public_author=None, store=None, category=None, subcategory=None,
+                status="active", description=None, short_description=None,
+            )
+        ]
+
+    async def get_latest_active(self, limit):
+        return self.deals
+
+    async def search_active(self, search=None, **kwargs):
+        return [d for d in self.deals if not search or search.lower() in d.title.lower()]
+
+    async def count_active(self, search=None, **kwargs):
+        return len(await self.search_active(search=search))
+
+    async def get_by_slug(self, slug):
+        return next((d for d in self.deals if d.slug == slug), None)
+
+
+def test_pending_submission_does_not_leak_into_public_deals(env):
+    title = "Auriculares Secretos Pendientes"
+    env.repo.subs[SUB_ID].title = title
+    from app.modules.deals.api.router import get_deal_repository
+
+    app.dependency_overrides[get_deal_repository] = lambda: FakeDealsRepo()
+    c = TestClient(app)
+    assert env.repo.subs[SUB_ID].status == "pending"
+    for url in (
+        "/v1/deals/latest",
+        "/v1/deals/page",
+        "/v1/deals/page?search=Secretos",
+        f"/v1/deals?q={title}",
+        f"/v1/deals?search={title}",
+    ):
+        resp = c.get(url)
+        assert resp.status_code == 200, (url, resp.text)
+        assert "Secretos" not in resp.text, url
+        assert "chollo-real" in resp.text or "search" in url or "q=" in url
+    assert c.get("/v1/deals/page").json()["total"] == 1
+    assert c.get("/v1/deals/auriculares-secretos-pendientes").status_code == 404
+    assert c.get("/v1/deals/chollo-real").status_code == 200
 
 
 def test_public_deal_queries_never_touch_submissions():

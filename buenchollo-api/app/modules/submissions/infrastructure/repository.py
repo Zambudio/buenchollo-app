@@ -53,6 +53,17 @@ class SubmissionRepository:
         )
         return (await self.session.execute(stmt)).scalars().first()
 
+    async def find_expired_deals(self, asin: str | None, canonical_url: str) -> list[Deal]:
+        stmt = (
+            select(Deal)
+            .where(
+                Deal.status == "expired",
+                self._match(Deal.external_id, Deal.canonical_url, asin, canonical_url),
+            )
+            .order_by(Deal.published_at.desc())
+        )
+        return list((await self.session.execute(stmt)).scalars().all())
+
     async def find_pending(self, asin: str | None, canonical_url: str) -> DealSubmission | None:
         stmt = (
             select(DealSubmission)

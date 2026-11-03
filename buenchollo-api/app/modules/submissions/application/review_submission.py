@@ -67,8 +67,7 @@ class ReviewSubmissionUseCase:
                 existing_id=live.id, existing_slug=live.slug, existing_title=live.title
             )
 
-        expired = await self.repo.find_expired_deal(external_id, link.canonical_url)
-        if expired is not None:
+        for expired in await self.repo.find_expired_deals(external_id, link.canonical_url):
             await self.deal_service.delete_deal(expired.id)
             if self.audit is not None:
                 await self.audit(
