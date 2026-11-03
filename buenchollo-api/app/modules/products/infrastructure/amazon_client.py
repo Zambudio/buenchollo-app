@@ -1,9 +1,7 @@
 """Amazon Creators API adapter — HTTP directo con requests, sin SDK externo."""
 
-import ipaddress
 import logging
 import re
-import socket
 import time
 import urllib.parse
 import urllib.request
@@ -12,6 +10,7 @@ from typing import Any
 import requests
 
 from app.core.config import Settings
+from app.core.ssrf import resolves_to_private_ip as _resolves_to_private_ip
 from app.modules.products.application.preview_product_from_url import ProductProviderUnavailableError
 from app.modules.products.domain.entities import ProductPreview
 
@@ -47,25 +46,6 @@ def _is_allowed_host(url: str) -> bool:
     host = (parsed.hostname or "").lower()
     return host in _ALLOWED_HOSTS
 
-
-def _resolves_to_private_ip(url: str) -> bool:
-    """True si el host del URL resuelve a una IP privada/loopback/reservada.
-
-    Bloqueo SSRF: evita que un atacante engañe el resolver para tocar
-    servicios internos del NAS (192.168.x.x, 10.x.x.x, 127.0.0.1).
-    """
-    try:
-        parsed = urllib.parse.urlparse(url)
-        host = parsed.hostname
-        if not host:
-            return True  # rechazar por defecto si no podemos analizar
-        for family, _type, _proto, _canon, sockaddr in socket.getaddrinfo(host, None):
-            ip = ipaddress.ip_address(sockaddr[0])
-            if ip.is_private or ip.is_loopback or ip.is_reserved or ip.is_link_local:
-                return True
-    except (socket.gaierror, ValueError, OSError):
-        return True  # si el DNS falla, rechazamos por defecto
-    return False
 
 RESOURCES = [
     "itemInfo.title",

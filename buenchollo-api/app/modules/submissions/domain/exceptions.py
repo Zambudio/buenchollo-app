@@ -1,4 +1,9 @@
-from app.core.exceptions import ConflictError, ForbiddenError
+from app.core.exceptions import (
+    ConflictError,
+    ForbiddenError,
+    ServiceUnavailableError,
+    ValidationError,
+)
 
 
 class ProfileIncompleteError(ForbiddenError):
@@ -24,3 +29,19 @@ class SubmissionConflictError(ConflictError):
             "reason": reason,
             "existing_deal": existing_deal,
         }
+
+
+class InvalidImageError(ValidationError):
+    """La imagen subida o descargada no es válida o supera los límites."""
+
+    def __init__(self, message: str = "El archivo no es una imagen válida") -> None:
+        super().__init__(message)
+
+
+class ImageStorageUnavailableError(ServiceUnavailableError):
+    """El almacenamiento de imágenes no está disponible."""
+
+    def __init__(
+        self, message: str = "No se pudo guardar la imagen. Inténtalo de nuevo en unos minutos."
+    ) -> None:
+        super().__init__(message)

@@ -15,6 +15,16 @@ class CheckLinkRequest(BaseModel):
     url: str = Field(..., max_length=2048)
 
 
+class ImageFromUrlRequest(BaseModel):
+    url: str = Field(..., min_length=1, max_length=2048)
+
+
+class ImageUploadResponse(BaseModel):
+    url: str
+    width: int
+    height: int
+
+
 class ExistingDealOut(BaseModel):
     id: str
     slug: str

@@ -6,10 +6,11 @@ Ver SECURITY_AUDIT.md SEC-06.
 """
 from unittest.mock import patch
 
+from app.core.ssrf import resolves_to_private_ip as _resolves_to_private_ip
+
 from app.modules.products.infrastructure.amazon_client import (
     extract_asin_from_url,
     _is_allowed_host,
-    _resolves_to_private_ip,
 )
 
 

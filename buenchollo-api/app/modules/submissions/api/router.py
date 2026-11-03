@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends, Query, Request, Response, status
+from fastapi import APIRouter, Depends, Query, Request, Response, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.config import Settings, get_settings
 from app.core.rate_limit import limiter
-from app.core.security import AuthenticatedUser
+from app.core.security import AuthenticatedUser, _clean_supabase_url, get_supabase_client
 from app.modules.categories.infrastructure.repository import CategoryRepository
 from app.modules.products.api.router import get_amazon_client
 from app.modules.products.application.preview_product_from_url import ProductPreviewProvider
@@ -15,18 +15,26 @@ from app.modules.submissions.api.dependencies import (
 )
 from app.modules.submissions.api.schemas import (
     CheckLinkRequest,
+    ImageFromUrlRequest,
+    ImageUploadResponse,
     LinkCheckResponse,
     SubmissionCreate,
     SubmissionResponse,
+    is_allowed_image,
     to_submission_response,
 )
 from app.modules.submissions.application.check_link import CheckLinkUseCase
 from app.modules.submissions.application.create_submission import CreateSubmissionUseCase
+from app.modules.submissions.application.image_processing import MAX_IMAGE_BYTES
+from app.modules.submissions.application.ingest_image import IngestImageUseCase
 from app.modules.submissions.application.user_submissions import (
     ListMySubmissionsUseCase,
     WithdrawSubmissionUseCase,
 )
+from app.modules.submissions.domain.exceptions import InvalidImageError
+from app.modules.submissions.infrastructure.image_fetcher import ImageFetcher
 from app.modules.submissions.infrastructure.repository import SubmissionRepository
+from app.modules.submissions.infrastructure.storage import SubmissionImageStorage
 
 router = APIRouter(prefix="/submissions", tags=["submissions"])
 
@@ -114,3 +122,54 @@ async def withdraw_submission(
 ) -> Response:
     await use_case.execute(user.id, submission_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+def get_image_fetcher() -> ImageFetcher:
+    return ImageFetcher()
+
+
+def get_image_storage(settings: Settings = Depends(get_settings)) -> SubmissionImageStorage:
+    return SubmissionImageStorage(
+        lambda: get_supabase_client(settings), _clean_supabase_url(settings)
+    )
+
+
+def get_ingest_image_use_case(
+    fetcher: ImageFetcher = Depends(get_image_fetcher),
+    storage: SubmissionImageStorage = Depends(get_image_storage),
+) -> IngestImageUseCase:
+    return IngestImageUseCase(fetcher, storage, is_trusted_url=is_allowed_image)
+
+
+async def _read_limited(file: UploadFile) -> bytes:
+    buffer = bytearray()
+    while len(buffer) <= MAX_IMAGE_BYTES:
+        chunk = await file.read(min(64 * 1024, MAX_IMAGE_BYTES + 1 - len(buffer)))
+        if not chunk:
+            return bytes(buffer)
+        buffer.extend(chunk)
+    raise InvalidImageError("La imagen supera el máximo de 5 MB")
+
+
+@router.post("/images", response_model=ImageUploadResponse)
+@limiter.limit("30/minute")
+async def upload_image(
+    request: Request,
+    file: UploadFile,
+    user: AuthenticatedUser = Depends(require_complete_profile),
+    use_case: IngestImageUseCase = Depends(get_ingest_image_use_case),
+) -> ImageUploadResponse:
+    url, width, height = await use_case.from_bytes(user.id, await _read_limited(file))
+    return ImageUploadResponse(url=url, width=width, height=height)
+
+
+@router.post("/images/from-url", response_model=ImageUploadResponse)
+@limiter.limit("30/minute")
+async def upload_image_from_url(
+    request: Request,
+    payload: ImageFromUrlRequest,
+    user: AuthenticatedUser = Depends(require_complete_profile),
+    use_case: IngestImageUseCase = Depends(get_ingest_image_use_case),
+) -> ImageUploadResponse:
+    url, width, height = await use_case.from_url(user.id, payload.url)
+    return ImageUploadResponse(url=url, width=width, height=height)
