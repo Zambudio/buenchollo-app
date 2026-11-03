@@ -12,12 +12,13 @@ class DealRepository:
     @staticmethod
     def _base_deal_query():
         """Select(Deal) con las relaciones que casi todo endpoint necesita precargadas
-        (category, subcategory, store). Centraliza el selectinload para evitar
+        (category, subcategory, store, author). Centraliza el selectinload para evitar
         repetirlo en cada query."""
         return select(Deal).options(
             selectinload(Deal.category),
             selectinload(Deal.subcategory),
             selectinload(Deal.store),
+            selectinload(Deal.author),
         )
 
     async def get_by_id(self, deal_id: str) -> Deal | None:

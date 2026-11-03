@@ -47,7 +47,9 @@ class Deal(Base):
     external_id: Mapped[str | None] = mapped_column(String, nullable=True)
     duplicate_hash: Mapped[str | None] = mapped_column(String, nullable=True)
     show_keepa_chart: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    
+    coupon_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    canonical_url: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+
     # Foreign keys
     category_id: Mapped[str | None] = mapped_column(ForeignKey("categories.id", ondelete="SET NULL"), type_=Uuid(as_uuid=False), nullable=True)
     subcategory_id: Mapped[str | None] = mapped_column(ForeignKey("categories.id", ondelete="SET NULL"), type_=Uuid(as_uuid=False), nullable=True)
@@ -64,6 +66,16 @@ class Deal(Base):
     category = relationship("Category", foreign_keys=[category_id])
     subcategory = relationship("Category", foreign_keys=[subcategory_id])
     store = relationship("Store")
+    author = relationship(
+        "Profile",
+        primaryjoin="Deal.created_by == Profile.user_id",
+        foreign_keys="Deal.created_by",
+        viewonly=True,
+    )
+
+    @property
+    def public_author(self):
+        return self.author if self.source == "community" else None
 
 
 class DealVote(Base):
