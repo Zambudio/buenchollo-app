@@ -147,10 +147,11 @@ export function buildDealPayload(
   const mainImage = allImages[0] ?? null;
   const current = +form.current_price;
   const previous = form.previous_price ? +form.previous_price : null;
+  const titleSlug = slugify(form.title).slice(0, 180) || "chollo";
 
   const payload: DealCreatePayload = {
     title: form.title.slice(0, 200),
-    slug: editing?.slug ?? slugify(form.title) + "-" + Date.now().toString(36),
+    slug: editing?.slug ?? titleSlug + "-" + Date.now().toString(36),
     short_description: form.short_description?.slice(0, 300) || null,
     description: form.description || null,
     image_url: mainImage,

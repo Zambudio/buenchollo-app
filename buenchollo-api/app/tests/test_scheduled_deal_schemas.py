@@ -1,8 +1,20 @@
 from datetime import datetime, timezone
 from types import SimpleNamespace
+import pytest
+from pydantic import ValidationError
 
-from app.modules.scheduled_deals.api.schemas import ScheduledDealResponse
+from app.modules.scheduled_deals.api.schemas import ScheduledDealCreate, ScheduledDealResponse
 from app.modules.scheduled_deals.domain.models import ScheduledDealStatus
+
+
+def test_short_title_is_allowed_but_blank_title_is_rejected():
+    payload = {
+        "title": "TV", "offer_price": 0, "affiliate_url": "",
+        "category_id": None, "scheduled_at": datetime.now(timezone.utc),
+    }
+    assert ScheduledDealCreate.model_validate(payload).title == "TV"
+    with pytest.raises(ValidationError):
+        ScheduledDealCreate.model_validate({**payload, "title": "  "})
 
 
 def test_scheduled_deal_response_exposes_all_editable_web_fields():
@@ -21,6 +33,7 @@ def test_scheduled_deal_response_exposes_all_editable_web_fields():
         id="scheduled-id",
         deal_id="deal-id",
         asin="B0H7X5D6QN",
+        web_ready=True,
         title="Producto",
         description_web="Descripción web",
         telegram_text="Texto Telegram",
@@ -53,3 +66,11 @@ def test_scheduled_deal_response_exposes_all_editable_web_fields():
         "show_keepa_chart": True,
     }
     assert {key: response.get(key) for key in expected_web_fields} == expected_web_fields
+
+    scheduled.asin = None
+    scheduled.category_id = None
+    scheduled.web_ready = False
+    pending_response = ScheduledDealResponse.model_validate(scheduled)
+    assert pending_response.asin is None
+    assert pending_response.category_id is None
+    assert pending_response.web_ready is False

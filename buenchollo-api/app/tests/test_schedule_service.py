@@ -11,6 +11,48 @@ from app.modules.scheduled_deals.infrastructure.repository import ScheduledDealR
 
 
 @pytest.mark.asyncio
+async def test_telegram_schedule_keeps_web_as_draft_when_category_is_missing():
+    scheduled_at = (datetime.now(timezone.utc) + timedelta(days=1)).replace(
+        minute=0, second=0, microsecond=0
+    )
+    deal = SimpleNamespace(id="deal-id")
+    deal_service = SimpleNamespace(create_deal=AsyncMock(return_value=deal))
+    repo = SimpleNamespace(create=AsyncMock(side_effect=lambda value: value))
+    service = ScheduleService(repo, deal_service)
+    result = await service.create(
+        {
+            "asin": "B0D9WH9WLD", "title": "TV", "category_id": None,
+            "offer_price": 20, "affiliate_url": "https://amazon.es/dp/B0D9WH9WLD",
+            "telegram_text": "TV por 20 €", "scheduled_at": scheduled_at,
+        },
+        "user-id",
+    )
+    assert result.web_ready is False
+    assert result.category_id is None
+    created_web = deal_service.create_deal.await_args.args[0]
+    assert created_web["status"] == "draft"
+    assert created_web["scheduled_for"] is None
+
+
+@pytest.mark.asyncio
+async def test_completed_web_fields_activate_linked_schedule():
+    scheduled_at = (datetime.now(timezone.utc) + timedelta(days=1)).replace(
+        minute=0, second=0, microsecond=0
+    )
+    scheduled = SimpleNamespace(
+        id="schedule-id", deal_id="deal-id", status=ScheduledDealStatus.SCHEDULED,
+        scheduled_at=scheduled_at, deal=SimpleNamespace(expires_at=None),
+        asin="B0D9WH9WLD", category_id=None, affiliate_url="https://amazon.es",
+        offer_price=20, regular_price=None, web_ready=False,
+    )
+    repo = SimpleNamespace(get_by_id=AsyncMock(return_value=scheduled), update=AsyncMock(side_effect=lambda value: value))
+    deal_service = SimpleNamespace(update_deal=AsyncMock())
+    await ScheduleService(repo, deal_service).update("schedule-id", {"category_id": "cat-id"})
+    assert scheduled.web_ready is True
+    assert deal_service.update_deal.await_args.args[1]["status"] == "scheduled"
+
+
+@pytest.mark.asyncio
 async def test_reschedule_updates_queue_and_linked_web_deal():
     now = datetime.now(timezone.utc)
     minutes_to_boundary = 5 - (now.minute % 5)

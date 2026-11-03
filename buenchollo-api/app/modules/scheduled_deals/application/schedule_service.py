@@ -1,5 +1,6 @@
 from datetime import datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
+from urllib.parse import urlparse
 
 from app.modules.deals.application.deal_service import DealService
 from app.modules.scheduled_deals.domain.exceptions import (
@@ -56,11 +57,27 @@ class ScheduleService:
             expires_at=data.get("expires_at").isoformat() if data.get("expires_at") else None,
         )
 
+    @staticmethod
+    def _web_ready(data: dict) -> bool:
+        affiliate_url = urlparse(data.get("affiliate_url") or "")
+        return bool(
+            data.get("asin")
+            and data.get("category_id")
+            and affiliate_url.scheme in {"http", "https"}
+            and affiliate_url.netloc
+            and float(data.get("offer_price") or 0) > 0
+            and (
+                data.get("regular_price") is None
+                or float(data["regular_price"]) > float(data["offer_price"])
+            )
+        )
+
     async def create(self, data: dict, user_id: str) -> ScheduledDeal:
         data = dict(data)
         data["scheduled_at"] = self._validate_future(data["scheduled_at"])
         self._validate_before_expiry(data["scheduled_at"], data.get("expires_at"))
         data["telegram_text"] = self._telegram_text(data)
+        web_ready = bool(data.get("web_ready", True)) and self._web_ready(data)
 
         deal_data = {
             "title": data["title"],
@@ -75,21 +92,22 @@ class ScheduleService:
             "shipping_info": data.get("shipping_info"),
             "affiliate_url": data["affiliate_url"],
             "store_id": data.get("store_id"),
-            "category_id": data["category_id"],
+            "category_id": data.get("category_id"),
             "subcategory_id": data.get("subcategory_id"),
             "brand": data.get("brand"),
-            "status": "scheduled",
+            "status": "scheduled" if web_ready else "draft",
             "expires_at": data.get("expires_at"),
-            "scheduled_for": data["scheduled_at"],
+            "scheduled_for": data["scheduled_at"] if web_ready else None,
             "source": data.get("source", "manual"),
-            "external_id": data["asin"],
+            "external_id": data.get("asin"),
             "show_keepa_chart": data.get("show_keepa_chart", False),
         }
         deal = await self.deal_service.create_deal(deal_data, user_id)
         scheduled = ScheduledDeal(
             deal=deal,
             deal_id=deal.id,
-            asin=data["asin"],
+            asin=data.get("asin"),
+            web_ready=web_ready,
             title=data["title"],
             description_web=data.get("description_web", ""),
             telegram_text=data["telegram_text"],
@@ -100,7 +118,7 @@ class ScheduleService:
             image_url=data.get("image_url"),
             affiliate_url=data["affiliate_url"],
             store_name=data.get("store_name", "Amazon"),
-            category_id=data["category_id"],
+            category_id=data.get("category_id"),
             scheduled_at=data["scheduled_at"],
         )
         return await self.repo.create(scheduled)
@@ -170,6 +188,17 @@ class ScheduleService:
         for field in schedule_fields & changes.keys():
             setattr(scheduled, field, changes[field])
 
+        if changes.keys() & {"asin", "category_id", "affiliate_url", "offer_price", "regular_price"}:
+            candidate = {
+                "asin": scheduled.asin,
+                "category_id": scheduled.category_id,
+                "affiliate_url": scheduled.affiliate_url,
+                "offer_price": scheduled.offer_price,
+                "regular_price": scheduled.regular_price,
+            }
+            candidate.update(changes)
+            scheduled.web_ready = self._web_ready(candidate)
+
         deal_changes = {}
         mapping = {
             "asin": "external_id",
@@ -195,6 +224,9 @@ class ScheduleService:
             if source in changes:
                 deal_changes[target] = changes[source]
         if deal_changes:
+            if changes.keys() & {"asin", "category_id", "affiliate_url", "offer_price", "regular_price"}:
+                deal_changes["status"] = "scheduled" if scheduled.web_ready else "draft"
+                deal_changes["scheduled_for"] = candidate_scheduled_at if scheduled.web_ready else None
             await self.deal_service.update_deal(scheduled.deal_id, deal_changes)
         return await self.repo.update(scheduled)
 

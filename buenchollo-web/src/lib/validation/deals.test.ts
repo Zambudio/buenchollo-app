@@ -26,11 +26,16 @@ describe("dealFormSchema", () => {
     }
   });
 
-  it("title con menos de 3 caracteres falla", () => {
+  it("acepta títulos de uno o dos caracteres", () => {
     const result = dealFormSchema.safeParse({ ...valido, title: "ab" });
+    expect(result.success).toBe(true);
+  });
+
+  it("rechaza un título vacío o con solo espacios", () => {
+    const result = dealFormSchema.safeParse({ ...valido, title: "  " });
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.issues[0]?.message).toBe("Mínimo 3 caracteres");
+      expect(result.error.issues[0]?.message).toBe("El título no puede estar vacío");
     }
   });
 

@@ -12,9 +12,8 @@
  */
 import { defineConfig, devices } from "@playwright/test";
 
-// El servidor de dev de Vite está configurado en 8080 (ver vite.config.ts).
-// Si está ocupado salta al siguiente; en CI siempre está libre.
-const PORT = 8080;
+// Permite aislar el servidor E2E de otros proyectos que usen 8080.
+const PORT = Number(process.env.PLAYWRIGHT_PORT) || 8080;
 
 export default defineConfig({
   testDir: "./e2e",
@@ -35,7 +34,7 @@ export default defineConfig({
   webServer: {
     command: "npm run dev",
     url: `http://localhost:${PORT}`,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
     timeout: 120_000,
   },
   projects: [

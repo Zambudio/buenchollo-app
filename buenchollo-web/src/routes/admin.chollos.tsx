@@ -8,7 +8,7 @@
  *  guardar (con conflicto 409) → Telegram.
  */
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, lazy, Suspense } from "react";
+import { useCallback, useEffect, useState, lazy, Suspense } from "react";
 import {
   dealsService,
   isDuplicateDealError,
@@ -88,6 +88,11 @@ function AdminDeals() {
   });
   const images = useDealImages(form, setForm, user?.id);
   const nav = useNavigate();
+  const handleCalendarOpen = useCallback(() => setCalendarDealId(null), []);
+  const handleCalendarChanged = useCallback(() => {
+    load();
+    setCalendarRefresh((value) => value + 1);
+  }, [load]);
 
   const handleAiProviderChange = (newProvider: string) => {
     setAiProvider(newProvider);
@@ -276,8 +281,8 @@ function AdminDeals() {
       short_description: form.short_description,
       description: form.description,
     });
-    if (!parsed.success) {
-      toast.error(parsed.error.issues[0]?.message ?? "Datos inválidos");
+    if (!form.title.trim()) {
+      toast.error("El título no puede estar vacío");
       return false;
     }
     const categorySelection = resolveCategorySelection(
@@ -287,10 +292,10 @@ function AdminDeals() {
       subcats,
     );
     const asin = form.external_id.trim().toUpperCase();
-    if (!/^[A-Z0-9]{10}$/.test(asin)) {
-      toast.error("Para programar se necesita un ASIN de Amazon válido (10 caracteres)");
-      return false;
-    }
+    const validAsin = /^[A-Z0-9]{10}$/.test(asin);
+    const categoryExists = cats.some((cat) => cat.id === categorySelection.category_id);
+    const webReady =
+      parsed.success && validAsin && categoryExists && form.affiliate_url.length <= 2048;
 
     // Usamos la lista editada en el panel (fotos eliminadas, recortadas o volteadas
     // ya sustituidas) para no sumar la versión editada a las originales.
@@ -310,40 +315,54 @@ function AdminDeals() {
       images: selectedImages,
     };
     const payload = buildDealPayload(scheduledForm, null);
+    const offerPrice = Number(form.current_price);
+    const regularPrice = form.previous_price ? Number(form.previous_price) : null;
     const storeName = stores.find((store) => store.id === form.store_id)?.name ?? "Amazon";
     const scheduledPayload: ScheduledDealCreatePayload = {
-      asin,
+      asin: validAsin ? asin : null,
       title: payload.title,
       slug: payload.slug,
-      description_web: payload.description ?? "",
+      description_web: (payload.description ?? "").slice(0, 10_000),
       short_description: payload.short_description,
       telegram_text: request.text,
       telegram_channel_id: request.telegram_channel_id,
-      offer_price: payload.current_price,
-      regular_price: payload.previous_price,
-      discount_percentage: payload.discount_percentage ?? 0,
-      image_url: payload.image_url,
-      images: payload.images,
-      affiliate_url: payload.affiliate_url,
-      store_name: storeName,
-      store_id: payload.store_id,
-      category_id: categorySelection.category_id,
-      subcategory_id: categorySelection.subcategory_id,
-      brand: payload.brand,
-      shipping_info: payload.shipping_info,
+      offer_price: Number.isFinite(offerPrice) && offerPrice > 0 ? offerPrice : 0,
+      regular_price:
+        regularPrice && Number.isFinite(regularPrice) && regularPrice > 0 ? regularPrice : null,
+      discount_percentage: Number.isFinite(payload.discount_percentage ?? 0)
+        ? Math.max(0, Math.min(100, payload.discount_percentage ?? 0))
+        : 0,
+      image_url: payload.image_url && payload.image_url.length <= 2048 ? payload.image_url : null,
+      images: (payload.images ?? []).filter((image) => image.length <= 2048).slice(0, 20),
+      affiliate_url: payload.affiliate_url.slice(0, 2048),
+      store_name: storeName.slice(0, 100),
+      store_id: stores.some((store) => store.id === payload.store_id) ? payload.store_id : null,
+      category_id: categoryExists ? categorySelection.category_id : null,
+      subcategory_id: categoryExists ? categorySelection.subcategory_id : null,
+      brand: payload.brand?.slice(0, 100) ?? null,
+      shipping_info: payload.shipping_info?.slice(0, 200) ?? null,
       expires_at: payload.expires_at,
       scheduled_at: request.scheduled_at,
       source: "manual",
       show_keepa_chart: payload.show_keepa_chart,
+      web_ready: webReady,
     };
 
     try {
-      await scheduledDealsService.create(scheduledPayload);
+      const scheduled = await scheduledDealsService.create(scheduledPayload);
       setForm(scheduledForm);
       setShowForm(false);
       setCalendarRefresh((value) => value + 1);
       load();
-      toast.success("Telegram y web programados correctamente");
+      if (scheduled.web_ready) {
+        toast.success("Telegram y web programados correctamente");
+      } else {
+        setCalendarDealId(scheduled.deal_id);
+        toast.warning(
+          "TELEGRAM PROGRAMADO · WEB PENDIENTE: corrige el título, la categoría u otros datos en Planificación antes de la hora programada.",
+          { duration: 15000 },
+        );
+      }
       return true;
     } catch (error) {
       if (error instanceof ApiError && error.status === 404) {
@@ -534,11 +553,8 @@ function AdminDeals() {
         cats={cats}
         subcats={subcats}
         openDealId={calendarDealId}
-        onOpenHandled={() => setCalendarDealId(null)}
-        onChanged={() => {
-          load();
-          setCalendarRefresh((value) => value + 1);
-        }}
+        onOpenHandled={handleCalendarOpen}
+        onChanged={handleCalendarChanged}
       />
 
       {showForm && (

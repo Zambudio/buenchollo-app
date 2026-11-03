@@ -79,7 +79,7 @@ interface EditorState {
 
 function editorFromDeal(deal: ScheduledDealData): EditorState {
   return {
-    asin: deal.asin,
+    asin: deal.asin ?? "",
     title: deal.title,
     description_web: deal.description_web,
     short_description: deal.short_description ?? "",
@@ -91,7 +91,7 @@ function editorFromDeal(deal: ScheduledDealData): EditorState {
     images: deal.images.join("\n"),
     affiliate_url: deal.affiliate_url,
     store_id: deal.store_id ?? "",
-    category_id: deal.category_id,
+    category_id: deal.category_id ?? "",
     subcategory_id: deal.subcategory_id ?? "",
     brand: deal.brand ?? "",
     shipping_info: deal.shipping_info ?? "",
@@ -190,7 +190,7 @@ export function ScheduledDealsCalendar({
     () =>
       deals.map((deal) => ({
         id: deal.id,
-        title: `${deal.title} · ${deal.offer_price.toFixed(2)} €`,
+        title: `${deal.web_ready ? "" : "⚠ WEB PENDIENTE · "}${deal.title} · ${deal.offer_price.toFixed(2)} €`,
         start: deal.scheduled_at,
         backgroundColor: STATUS_COLORS[deal.status],
         borderColor: STATUS_COLORS[deal.status],
@@ -269,6 +269,15 @@ export function ScheduledDealsCalendar({
       toast.error("El ASIN debe tener 10 letras o números");
       return;
     }
+    if (
+      !editor.title.trim() ||
+      !Number.isFinite(current) ||
+      current <= 0 ||
+      !editor.affiliate_url.trim()
+    ) {
+      toast.error("Completa el título, el precio y el enlace de afiliado para publicar en la web");
+      return;
+    }
     if (!editor.category_id) {
       toast.error("Selecciona una categoría web");
       return;
@@ -289,7 +298,7 @@ export function ScheduledDealsCalendar({
     const selectedStore = stores.find((store) => store.id === editor.store_id);
     setSaving(true);
     try {
-      await scheduledDealsService.update(selected.id, {
+      const updated = await scheduledDealsService.update(selected.id, {
         asin,
         title: editor.title,
         description_web: editor.description_web,
@@ -312,6 +321,14 @@ export function ScheduledDealsCalendar({
         show_keepa_chart: editor.show_keepa_chart,
         scheduled_at: scheduledAt.toISOString(),
       });
+      if (!updated.web_ready) {
+        setSelected(updated);
+        setEditor(editorFromDeal(updated));
+        toast.warning("Telegram sigue programado, pero la web aún tiene datos pendientes");
+        await load();
+        onChanged();
+        return;
+      }
       closeModal();
       toast.success("Programación actualizada");
       await load();
@@ -355,6 +372,21 @@ export function ScheduledDealsCalendar({
           <span className="text-alert-red">● Cancelado / error</span>
         </div>
       </div>
+
+      {deals.some((deal) => deal.status === "programado" && !deal.web_ready) && (
+        <div
+          role="alert"
+          className="mb-4 border-2 border-alert-red bg-alert-red/10 p-4 text-alert-red"
+        >
+          <p className="font-mono text-sm font-bold uppercase">
+            Telegram programado · Web pendiente
+          </p>
+          <p className="mt-1 text-sm">
+            Abre las publicaciones marcadas como pendientes y completa sus datos web antes de la
+            hora programada. Si no lo haces, se enviarán solo a Telegram.
+          </p>
+        </div>
+      )}
 
       <FullCalendar
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, multiMonthPlugin]}
@@ -408,6 +440,15 @@ export function ScheduledDealsCalendar({
                 <h4 id="scheduled-deal-editor-title" className="font-mono text-sm mt-1">
                   Vista previa y edición
                 </h4>
+                {!selected.web_ready && (
+                  <p
+                    role="alert"
+                    className="mt-3 border-2 border-alert-red bg-alert-red/10 p-3 text-sm font-bold text-alert-red"
+                  >
+                    TELEGRAM PROGRAMADO · WEB PENDIENTE. Corrige y guarda los datos web antes de la
+                    publicación.
+                  </p>
+                )}
               </div>
               <button onClick={closeModal} className="p-1 hover:text-red-500" aria-label="Cerrar">
                 <X className="size-4" />

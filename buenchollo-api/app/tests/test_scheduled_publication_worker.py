@@ -57,6 +57,7 @@ def scheduled_deal():
     return SimpleNamespace(
         id="schedule-id",
         asin="B0D9WH9WLD",
+        web_ready=True,
         title="Producto",
         offer_price=Decimal("100.00"),
         regular_price=Decimal("125.00"),
@@ -83,6 +84,37 @@ def worker_for(scheduled, product, bot=None):
         admin_chat_id="123-admin",
     )
     return worker, bot
+
+
+@pytest.mark.asyncio
+async def test_telegram_only_publishes_without_activating_incomplete_web_deal():
+    scheduled = scheduled_deal()
+    scheduled.web_ready = False
+    scheduled.asin = None
+    scheduled.offer_price = Decimal("0")
+    scheduled.deal.status = "draft"
+    worker, bot = worker_for(scheduled, None)
+
+    await worker.process_due(datetime.now(timezone.utc))
+
+    assert scheduled.status == ScheduledDealStatus.PUBLISHED
+    assert scheduled.deal.status == "draft"
+    assert len(bot.posts) == 1
+
+
+@pytest.mark.asyncio
+async def test_missing_web_category_still_sends_telegram_after_product_verification():
+    scheduled = scheduled_deal()
+    scheduled.web_ready = False
+    scheduled.deal.status = "draft"
+    product = ProductPreview(current_price=100.0, in_stock=True)
+    worker, bot = worker_for(scheduled, product)
+
+    await worker.process_due(datetime.now(timezone.utc))
+
+    assert scheduled.status == ScheduledDealStatus.PUBLISHED
+    assert scheduled.deal.status == "draft"
+    assert len(bot.posts) == 1
 
 
 @pytest.mark.asyncio

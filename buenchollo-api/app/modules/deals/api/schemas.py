@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing import Literal
 from datetime import datetime
 
@@ -84,7 +84,7 @@ class VoteResponse(BaseModel):
     my_vote: int  # -1, 0 o 1
 
 class DealCreate(BaseModel):
-    title: str = Field(min_length=3, max_length=_TITLE_MAX)
+    title: str = Field(min_length=1, max_length=_TITLE_MAX)
     slug: str | None = Field(default=None, max_length=_SLUG_MAX)
     short_description: str | None = Field(default=None, max_length=_SHORT_DESC_MAX)
     description: str | None = Field(default=None, max_length=_DESC_MAX)
@@ -107,8 +107,15 @@ class DealCreate(BaseModel):
     external_id: str | None = Field(default=None, max_length=_EXTERNAL_ID_MAX)
     show_keepa_chart: bool = False
 
+    @field_validator("title")
+    @classmethod
+    def title_not_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("El título no puede estar vacío")
+        return value.strip()
+
 class DealUpdate(BaseModel):
-    title: str | None = Field(default=None, min_length=3, max_length=_TITLE_MAX)
+    title: str | None = Field(default=None, min_length=1, max_length=_TITLE_MAX)
     slug: str | None = Field(default=None, max_length=_SLUG_MAX)
     short_description: str | None = Field(default=None, max_length=_SHORT_DESC_MAX)
     description: str | None = Field(default=None, max_length=_DESC_MAX)
@@ -129,3 +136,10 @@ class DealUpdate(BaseModel):
     published_at: datetime | None = None
     external_id: str | None = Field(default=None, max_length=_EXTERNAL_ID_MAX)
     show_keepa_chart: bool | None = None
+
+    @field_validator("title")
+    @classmethod
+    def title_not_blank(cls, value: str | None) -> str | None:
+        if value is not None and not value.strip():
+            raise ValueError("El título no puede estar vacío")
+        return value.strip() if value is not None else None

@@ -106,6 +106,12 @@ describe("buildDealPayload", () => {
     const p = buildDealPayload(form, null);
     expect(p.title).toHaveLength(200);
     expect(p.short_description).toHaveLength(300);
+    expect(p.slug?.length).toBeLessThanOrEqual(200);
+  });
+
+  it("genera un slug útil cuando el título solo contiene símbolos", () => {
+    const payload = buildDealPayload(formWith({ title: "!", current_price: "10" }), null);
+    expect(payload.slug).toMatch(/^chollo-/);
   });
 });
 

@@ -1,4 +1,14 @@
 # PROJECT_STATUS — BuenCholloTech
+*Actualización de desarrollo: 2026-11-03 — Programación Telegram con ficha web pendiente en `develop`; pendiente de despliegue y validación con base de datos real.*
+
+## 2026-11-03 · Programación Telegram y web
+
+- Telegram puede guardarse aunque falten datos para la web. El chollo enlazado queda en borrador y se marca `web_ready=false` hasta corregirlo desde Planificación.
+- El título ya no exige tres caracteres: solo que no esté vacío. Planificación muestra un aviso visible para las fichas pendientes.
+- El publicador envía Telegram sin activar la web incompleta. Con ASIN y precio mantiene la comprobación de stock y variación de precio; sin ellos conserva el texto aprobado por el administrador.
+- El contexto Docker de API/scheduler excluye `.env`, entornos virtuales y cachés. Imagen reconstruida y comprobada sin `/app/.env`; la configuración de producción sigue entrando mediante `env_file` y el volumen montado.
+- Implementación en `develop`, migración `20261103120000_telegram_web_readiness.py` confirmada como único head de Alembic. Revisión completa: 282 pruebas backend, 202 frontend con cobertura, TypeScript, ESLint, build SSR y E2E de corrección de categoría web correctos. El E2E usa `PLAYWRIGHT_PORT` para aislarse de otros servidores y sondeo de archivos en unidades de red. Pendiente: migración y validación con base de datos y Telegram reales antes de despliegue.
+
 *Última actualización: 2026-10-27 (limpieza de advisories y cabeceras web; estado canónico en `docs/project/11-current-state.md`)*
 
 > La migración al dominio propio ya está completada. Este documento conserva la

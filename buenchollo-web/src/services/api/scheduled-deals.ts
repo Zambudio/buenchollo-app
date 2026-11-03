@@ -10,7 +10,8 @@ export type ScheduledDealStatus =
 export interface ScheduledDealData {
   id: string;
   deal_id: string;
-  asin: string;
+  asin: string | null;
+  web_ready: boolean;
   title: string;
   description_web: string;
   short_description: string | null;
@@ -24,7 +25,7 @@ export interface ScheduledDealData {
   affiliate_url: string;
   store_name: string;
   store_id: string | null;
-  category_id: string;
+  category_id: string | null;
   subcategory_id: string | null;
   brand: string | null;
   shipping_info: string | null;
@@ -38,7 +39,7 @@ export interface ScheduledDealData {
 }
 
 export interface ScheduledDealCreatePayload {
-  asin: string;
+  asin?: string | null;
   title: string;
   slug?: string | null;
   description_web: string;
@@ -53,7 +54,7 @@ export interface ScheduledDealCreatePayload {
   affiliate_url: string;
   store_name: string;
   store_id?: string | null;
-  category_id: string;
+  category_id?: string | null;
   subcategory_id?: string | null;
   brand?: string | null;
   shipping_info?: string | null;
@@ -61,6 +62,7 @@ export interface ScheduledDealCreatePayload {
   scheduled_at: string;
   source?: string;
   show_keepa_chart?: boolean;
+  web_ready?: boolean;
 }
 
 export type ScheduledDealUpdatePayload = Partial<

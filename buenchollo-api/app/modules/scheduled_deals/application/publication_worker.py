@@ -66,6 +66,16 @@ class ScheduledPublicationWorker:
         return len(pending)
 
     async def _process_one(self, scheduled: ScheduledDeal, now: datetime) -> None:
+        # Una ficha web incompleta sigue siendo una programación válida de Telegram.
+        # Sin ASIN/precio verificables se conserva el texto aprobado por el admin.
+        if not scheduled.asin or scheduled.offer_price <= 0:
+            if scheduled.web_ready:
+                raise RuntimeError("Programación web sin ASIN o precio válido")
+            if scheduled.scheduled_at > now:
+                return
+            await self._send_telegram_only(scheduled)
+            return
+
         product = self.product_verifier.get_product_preview(scheduled.asin)
         if product is None or not product.in_stock or product.current_price is None:
             scheduled.status = ScheduledDealStatus.CANCELLED_STOCK
@@ -97,7 +107,7 @@ class ScheduledPublicationWorker:
         if not destination_channel_id:
             raise RuntimeError("TELEGRAM_MAIN_CHANNEL_ID no configurado")
 
-        if current_price != old_price:
+        if current_price != old_price and scheduled.web_ready:
             scheduled.offer_price = current_price
             scheduled.discount_percentage = self._discount(
                 current_price, scheduled.regular_price
@@ -114,6 +124,10 @@ class ScheduledPublicationWorker:
 
         if scheduled.scheduled_at > now:
             await self.repo.update(scheduled)
+            return
+
+        if not scheduled.web_ready:
+            await self._send_telegram_only(scheduled)
             return
 
         entities = self.generator.build_entities(scheduled.telegram_text)
@@ -134,6 +148,21 @@ class ScheduledPublicationWorker:
         scheduled.deal.shipping_info = product.shipping_type or scheduled.deal.shipping_info
         scheduled.deal.status = "active"
         scheduled.deal.published_at = now
+        scheduled.status = ScheduledDealStatus.PUBLISHED
+        scheduled.cancellation_reason = None
+        await self.repo.update(scheduled)
+
+    async def _send_telegram_only(self, scheduled: ScheduledDeal) -> None:
+        destination = scheduled.telegram_channel_id or self.main_channel_id
+        if not destination:
+            raise RuntimeError("TELEGRAM_MAIN_CHANNEL_ID no configurado")
+        if not self.bot.send_preformatted(
+            text=scheduled.telegram_text,
+            entities=self.generator.build_entities(scheduled.telegram_text),
+            image_url=scheduled.image_url,
+            chat_id=destination,
+        ):
+            raise RuntimeError("Telegram rechazo la publicacion")
         scheduled.status = ScheduledDealStatus.PUBLISHED
         scheduled.cancellation_reason = None
         await self.repo.update(scheduled)
