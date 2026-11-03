@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { ShareDialog } from "@/features/deals/components/ShareBox";
 import { DealVoteControl } from "@/features/deals/components/DealVoteControl";
 import { StoreAvailability } from "@/features/deals/components/StoreAvailability";
+import type { DealAuthor } from "@/services/api/submissions";
 
 export interface DealCardData {
   id: string;
@@ -29,6 +30,8 @@ export interface DealCardData {
   scheduled_for?: string | null;
   store?: { id: string; name: string; slug: string } | null;
   category?: { name: string; slug: string } | null;
+  source?: string;
+  author?: DealAuthor | null;
 }
 
 export function DealCard({

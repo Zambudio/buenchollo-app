@@ -58,6 +58,7 @@ async function buildApiError(response: Response): Promise<ApiError> {
 // si el backend (NAS) no responde; se puede sobrescribir pasando `signal`
 // en las options (p. ej. para uploads largos).
 const DEFAULT_TIMEOUT_MS = 15_000;
+const UPLOAD_TIMEOUT_MS = 60_000;
 
 async function fetchWithAuth<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_URL}${endpoint}`;
@@ -66,8 +67,11 @@ async function fetchWithAuth<T>(endpoint: string, options: RequestInit = {}): Pr
     data: { session },
   } = await supabase.auth.getSession();
 
+  // Con FormData el navegador fija multipart/form-data con su boundary;
+  // forzar application/json rompería la subida.
+  const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
+    ...(isFormData ? {} : { "Content-Type": "application/json" }),
     ...(options.headers as Record<string, string>),
   };
 
@@ -117,6 +121,15 @@ export const apiClient = {
       ...options,
       method: "PATCH",
       body: JSON.stringify(data),
+    }),
+
+  /** POST multipart. Timeout de 60 s salvo que el caller pase su propio `signal`. */
+  upload: <T>(endpoint: string, formData: FormData, options?: RequestInit): Promise<T> =>
+    fetchWithAuth<T>(endpoint, {
+      ...options,
+      signal: options?.signal ?? AbortSignal.timeout(UPLOAD_TIMEOUT_MS),
+      method: "POST",
+      body: formData,
     }),
 
   delete: <T = void>(endpoint: string, options?: RequestInit): Promise<T> =>
