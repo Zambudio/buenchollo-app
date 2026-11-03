@@ -43,13 +43,16 @@ DDNS se conservan solo como histórico dentro de la guía de despliegue.
   `https://link.amazon/...`, `amzn.*` y dominios Amazon admitidos.
 - Enriquecimiento con Amazon Creators API, Keepa y el motor de IA unificado.
 - Preparación, previsualización, envío inmediato y programación de Telegram.
-- En `develop` (pendiente de desplegar): la programación de Telegram puede
+- Desde el merge `cc9c827` en `main`, la programación de Telegram puede
   guardarse con la ficha web incompleta. El registro queda marcado como
   `web_ready=false`, la ficha web permanece en borrador y Planificación avisa
   para corregirla antes de la hora prevista. El título admite un carácter
   no blanco. Pasan 282 pruebas backend, 202 frontend, TypeScript, ESLint,
-  build SSR y el E2E de completar la categoría pendiente. Requiere la migración
-  Alembic `20261103120000` y validación real.
+  build SSR y el E2E de completar la categoría pendiente. Los cinco trabajos
+  de CI del merge pasan, incluida integración con PostgreSQL y auditoría de
+  seguridad. Alembic `20261103120000` está aplicado en la API de producción;
+  API y scheduler se reiniciaron correctamente. Queda comprobar el nuevo Worker
+  web y una programación real de Telegram.
 - Calendario de publicaciones programadas con edición integral de los datos web:
   ASIN, título, resumen, descripción, precios, tienda, categoría, subcategoría,
   marca, envío, enlaces, imágenes, caducidad y gráfica Keepa. El texto/canal de

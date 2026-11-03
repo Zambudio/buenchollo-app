@@ -1,5 +1,5 @@
 # PROJECT_STATUS — BuenCholloTech
-*Actualización de desarrollo: 2026-11-03 — Programación Telegram con ficha web pendiente en `develop`; pendiente de despliegue y validación con base de datos real.*
+*Actualización de producción: 2026-11-03 — Programación Telegram con ficha web pendiente desplegada en API/scheduler; migración aplicada y CI de `main` en verde. Verificación del despliegue web en curso.*
 
 ## 2026-11-03 · Programación Telegram y web
 
@@ -7,7 +7,7 @@
 - El título ya no exige tres caracteres: solo que no esté vacío. Planificación muestra un aviso visible para las fichas pendientes.
 - El publicador envía Telegram sin activar la web incompleta. Con ASIN y precio mantiene la comprobación de stock y variación de precio; sin ellos conserva el texto aprobado por el administrador.
 - El contexto Docker de API/scheduler excluye `.env`, entornos virtuales y cachés. Imagen reconstruida y comprobada sin `/app/.env`; la configuración de producción sigue entrando mediante `env_file` y el volumen montado.
-- Implementación en `develop`, migración `20261103120000_telegram_web_readiness.py` confirmada como único head de Alembic. Revisión completa: 282 pruebas backend, 202 frontend con cobertura, TypeScript, ESLint, build SSR y E2E de corrección de categoría web correctos. El E2E usa `PLAYWRIGHT_PORT` para aislarse de otros servidores y sondeo de archivos en unidades de red. Pendiente: migración y validación con base de datos y Telegram reales antes de despliegue.
+- Merge `cc9c827` en `main`. Migración `20261103120000_telegram_web_readiness.py` aplicada en producción y confirmada como head en el contenedor API. API y scheduler reconstruidos y reiniciados; API saludable y `/health` público responde 200. CI de ese merge: cinco trabajos correctos, incluida integración con PostgreSQL, E2E de Playwright y auditoría de seguridad. En local: 282 pruebas backend, 202 frontend con cobertura, TypeScript, ESLint y build SSR correctos. El E2E usa `PLAYWRIGHT_PORT` y sondeo de archivos en unidades de red. Pendiente de comprobar la publicación del nuevo Worker web y de validar una programación real de Telegram sin enviar contenido de prueba al canal.
 
 *Última actualización: 2026-10-27 (limpieza de advisories y cabeceras web; estado canónico en `docs/project/11-current-state.md`)*
 
