@@ -5,6 +5,9 @@ Uso:
     python scripts/send_test_email.py --type alert_digest
     python scripts/send_test_email.py --type confirmation
     python scripts/send_test_email.py --type recovery
+    python scripts/send_test_email.py --type submission_admin
+    python scripts/send_test_email.py --type submission_approved
+    python scripts/send_test_email.py --type submission_rejected
     python scripts/send_test_email.py --type all
 """
 import argparse
@@ -24,7 +27,11 @@ from app.modules.emails.application.rendering import (  # noqa: E402
     EmailBranding,
     build_digest_deal,
     render_alert_digest,
+    format_eur,
     render_auth_template,
+    render_submission_admin,
+    render_submission_approved,
+    render_submission_rejected,
     render_welcome,
 )
 
@@ -174,6 +181,36 @@ def send_preview(email_type: str, to_email: str, smtp_user: str, smtp_password: 
         subject = "[VISTA PREVIA] Tu código de verificación · BuenChollo Tech"
         _send_email(to_email, smtp_user, smtp_password, subject, html, "Tu código de verificación es 842 195.")
 
+    elif email_type == "submission_admin":
+        rendered = render_submission_admin(
+            branding,
+            title="Auriculares Sony WH-1000XM5 <b>con cancelación</b> de ruido",
+            price=format_eur(279),
+            previous_price=format_eur(379),
+            store="Amazon España",
+            author=name,
+            image_url="https://m.media-amazon.com/images/I/51SKmu2G9FL._AC_SL1200_.jpg",
+            review_url=f"{branding.site_url}/admin/propuestas?id=00000000-0000-4000-8000-000000000000",
+            warnings=["Se eliminó un enlace de afiliado ajeno", "Tienda sin afiliación"],
+        )
+        _send_email(to_email, smtp_user, smtp_password, f"[VISTA PREVIA] {rendered.subject}", rendered.html, rendered.text)
+
+    elif email_type == "submission_approved":
+        rendered = render_submission_approved(
+            branding, name=name, title="Auriculares Sony WH-1000XM5", deal_url=f"{branding.site_url}/chollo/auriculares-sony-wh-1000xm5"
+        )
+        _send_email(to_email, smtp_user, smtp_password, f"[VISTA PREVIA] {rendered.subject}", rendered.html, rendered.text)
+
+    elif email_type == "submission_rejected":
+        rendered = render_submission_rejected(
+            branding,
+            name=name,
+            title="Auriculares Sony WH-1000XM5",
+            reason="El precio ya no está vigente en la tienda.",
+            my_deals_url=f"{branding.site_url}/mis-chollos",
+        )
+        _send_email(to_email, smtp_user, smtp_password, f"[VISTA PREVIA] {rendered.subject}", rendered.html, rendered.text)
+
     else:
         print(f"Tipo desconocido: {email_type}")
 
@@ -181,7 +218,7 @@ def send_preview(email_type: str, to_email: str, smtp_user: str, smtp_password: 
 def main() -> None:
     _load_env_file()
     parser = argparse.ArgumentParser(description="Envía correos de prueba")
-    parser.add_argument("--type", default="all", choices=["all", "welcome", "alert_digest", "confirmation", "recovery", "reauthentication"])
+    parser.add_argument("--type", default="all", choices=["all", "welcome", "alert_digest", "confirmation", "recovery", "reauthentication", "submission_admin", "submission_approved", "submission_rejected"])
     parser.add_argument("--to", default=os.environ.get("TEST_RECIPIENT", "pjzambudio@gmail.com"))
     parser.add_argument("--name", default="Pedro")
     args = parser.parse_args()

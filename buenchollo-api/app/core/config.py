@@ -195,6 +195,9 @@ class Settings(BaseSettings):
     # blog, además de los ya soportados por defecto (ver domain/affiliate_domains.py).
     blog_affiliate_domains: str = ""
 
+    # Destinatario de los avisos de nuevas propuestas de usuarios. Vacío = sin aviso.
+    admin_notification_email: str = ""
+
     # ── Configuración de Correo Electrónico (Zoho Mail / SMTP) ──
     smtp_host: str = "smtp.zoho.eu"
     smtp_port: int = 465

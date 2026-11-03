@@ -1,0 +1,18 @@
+Nueva propuesta de chollo
+
+{{ title }}
+Precio: {{ price }}{% if previous_price %} (antes {{ previous_price }}){% endif %}
+
+{% if store %}
+Tienda: {{ store }}
+{% endif %}
+Autor: {{ author }}
+{% if warnings %}
+
+Avisos:
+{% for w in warnings %}
+- {{ w }}
+{% endfor %}
+{% endif %}
+
+Revisar: {{ review_url }}

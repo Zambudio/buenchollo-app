@@ -109,6 +109,12 @@ del siguiente intervalo y vuelve a verificarlas en la hora programada antes de
 publicar. Requiere también `DATABASE_URL`, las credenciales de Amazon y los tres
 valores de Telegram; sin ellos la programación queda en `error` y no se activa.
 
+### 📬 Propuestas de usuarios (opcional)
+
+| Variable | Descripción |
+|---|---|
+| `ADMIN_NOTIFICATION_EMAIL` | Correo que recibe un aviso por cada nueva propuesta de chollo (vacío = sin aviso). Requiere SMTP configurado |
+
 ### 📝 Blog (opcional)
 
 | Variable | Default | Descripción |

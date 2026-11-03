@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, Request, Response, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, Request, Response, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -10,6 +10,7 @@ from app.modules.products.api.router import get_amazon_client
 from app.modules.products.application.preview_product_from_url import ProductPreviewProvider
 from app.modules.products.infrastructure.amazon_client import extract_asin_from_url
 from app.modules.submissions.api.dependencies import (
+    get_submission_notifier,
     get_submission_repository,
     require_complete_profile,
 )
@@ -25,6 +26,7 @@ from app.modules.submissions.api.schemas import (
 )
 from app.modules.submissions.application.check_link import CheckLinkUseCase
 from app.modules.submissions.application.create_submission import CreateSubmissionUseCase
+from app.modules.submissions.application.notifier import SubmissionNotifier
 from app.modules.submissions.application.image_processing import MAX_IMAGE_BYTES
 from app.modules.submissions.application.ingest_image import IngestImageUseCase
 from app.modules.submissions.application.user_submissions import (
@@ -96,11 +98,14 @@ def get_withdraw_submission_use_case(
 async def create_submission(
     request: Request,
     payload: SubmissionCreate,
+    background_tasks: BackgroundTasks,
     user: AuthenticatedUser = Depends(require_complete_profile),
     use_case: CreateSubmissionUseCase = Depends(get_create_submission_use_case),
     settings: Settings = Depends(get_settings),
+    notifier: SubmissionNotifier = Depends(get_submission_notifier),
 ) -> SubmissionResponse:
     submission = await use_case.execute(user.id, payload, settings.amazon_affiliate_tag or "")
+    background_tasks.add_task(notifier.notify_admin_new, submission.id)
     return to_submission_response(submission)
 
 

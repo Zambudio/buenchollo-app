@@ -1,8 +1,15 @@
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import Settings, get_settings
 from app.core.database import get_db
 from app.core.security import AuthenticatedUser, get_current_user
+from app.modules.emails.application.rendering import EmailBranding
+from app.modules.emails.infrastructure.smtp import get_email_sender
+from app.modules.submissions.application.notifier import (
+    SubmissionNotifier,
+    supabase_user_email_lookup,
+)
 from app.modules.submissions.domain.exceptions import ProfileIncompleteError
 from app.modules.submissions.domain.rules import is_profile_complete
 from app.modules.submissions.infrastructure.repository import SubmissionRepository
@@ -25,3 +32,9 @@ async def require_complete_profile(
     if not is_profile_complete(profile):
         raise ProfileIncompleteError()
     return user
+
+
+def get_submission_notifier(settings: Settings = Depends(get_settings)) -> SubmissionNotifier:
+    return SubmissionNotifier(
+        get_email_sender(), EmailBranding(), settings, supabase_user_email_lookup(settings)
+    )

@@ -112,6 +112,7 @@ class SubmissionRepository:
                 selectinload(DealSubmission.category),
                 selectinload(DealSubmission.subcategory),
                 selectinload(DealSubmission.store),
+                selectinload(DealSubmission.deal),
             )
         )
         return (await self.session.execute(stmt)).scalars().first()

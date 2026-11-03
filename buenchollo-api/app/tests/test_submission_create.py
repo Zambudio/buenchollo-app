@@ -14,6 +14,7 @@ from app.main import app
 from app.modules.submissions.api import schemas
 from app.modules.submissions.api.dependencies import (
     get_profile_repository,
+    get_submission_notifier,
     get_submission_repository,
 )
 from app.modules.submissions.api.router import get_category_repository
@@ -88,6 +89,10 @@ class FakeProfileRepo:
         return SimpleNamespace(display_name="Pedro")
 
 
+async def _noop(submission_id):
+    return None
+
+
 def body(**over):
     data = {
         "url": f"https://www.amazon.es/dp/{ASIN}?tag=otro-21",
@@ -127,6 +132,9 @@ def repo():
     app.dependency_overrides[get_profile_repository] = lambda: FakeProfileRepo()
     app.dependency_overrides[get_submission_repository] = lambda: r
     app.dependency_overrides[get_category_repository] = lambda: FakeCategories()
+    app.dependency_overrides[get_submission_notifier] = lambda: SimpleNamespace(
+        notify_admin_new=_noop
+    )
     yield r
     app.dependency_overrides.clear()
 

@@ -1,0 +1,21 @@
+{% extends "_layout.html.j2" %}
+{% import "_components.html.j2" as ui with context %}
+
+{% block content %}
+        <tr>
+          <td class="px" bgcolor="#ffffff" style="background:#ffffff;border:1px solid #e2e8f0;border-top:0;border-radius:0 0 16px 16px;padding:32px 28px 32px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td>
+                  {{ ui.eyebrow("Chollo publicado") }}
+                  <h1 class="h1" style="margin:10px 0 0;font-family:{{ t.sans }};font-size:25px;line-height:33px;font-weight:700;letter-spacing:-.5px;color:{{ t.text }};">{% if name %}¡Enhorabuena, {{ name }}!{% else %}¡Enhorabuena!{% endif %}</h1>
+                  <p style="margin:12px 0 0;font-family:{{ t.sans }};font-size:15px;line-height:24px;color:{{ t.text_soft }};">Tu propuesta <strong>{{ title }}</strong> ya está publicada en BuenChollo Tech. Gracias por compartir chollos con la comunidad.</p>
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:24px;">
+                    <tr><td width="100%">{{ ui.button(deal_url, "Ver mi chollo", variant="primary", full=true) }}</td></tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+{% endblock %}
