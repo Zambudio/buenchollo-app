@@ -63,7 +63,7 @@ export const submissionFormSchema = z
       .trim()
       .min(1, "El título no puede estar vacío")
       .max(200, "Máximo 200 caracteres"),
-    description: z.string(),
+    description: z.string().max(10_000, "Máximo 10.000 caracteres"),
     current_price: z.string(),
     previous_price: z.string(),
     coupon_code: z.string().trim().max(64, "Máximo 64 caracteres"),
