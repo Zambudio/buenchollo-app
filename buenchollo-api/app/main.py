@@ -101,6 +101,10 @@ if _allow_all and settings.app_env == "production":
         "SECURITY: CORS_ORIGINS contiene '*' en producción. "
         "Configura la lista exacta de dominios en .env (ver SECURITY_AUDIT.md SEC-04)."
     )
+# Límite de cuerpo en la subida de imágenes: se registra ANTES que CORS (queda
+# dentro de él) para que el 413 lleve cabeceras CORS, pero sigue cortando antes
+# del routing y de que Starlette parsee el multipart.
+app.add_middleware(BodyLimitMiddleware, limits={"/v1/submissions/images": 5_767_168})
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"] if _allow_all else cors_origins,
@@ -123,9 +127,6 @@ app.add_middleware(
 app.add_middleware(CacheHeadersMiddleware)
 app.add_middleware(GZipMiddleware, minimum_size=500)
 app.add_middleware(RequestIdMiddleware)
-# Límite de cuerpo en la subida de imágenes: se registra el último (más externo)
-# para cortar antes de que Starlette parsee el multipart.
-app.add_middleware(BodyLimitMiddleware, limits={"/v1/submissions/images": 5_767_168})
 
 
 def _with_request_id_header(headers: dict[str, str] | None = None) -> dict[str, str]:

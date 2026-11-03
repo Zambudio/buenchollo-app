@@ -513,3 +513,18 @@ def test_cuerpo_chunked_excesivo_da_413(client, storage):
 def test_limite_de_cuerpo_no_afecta_a_from_url(client):
     r = client.post(f"{URL}/from-url", json={"url": "https://m.media-amazon.com/images/I/a.jpg"})
     assert r.status_code == 200
+
+
+def test_413_lleva_cabeceras_cors_para_origen_permitido(client, storage):
+    origin = "https://buenchollotech.com"
+    r = client.post(
+        URL,
+        content=b"x",
+        headers={
+            "content-type": "multipart/form-data; boundary=b",
+            "content-length": str(6 * 1024 * 1024),
+            "origin": origin,
+        },
+    )
+    assert r.status_code == 413
+    assert r.headers["access-control-allow-origin"] in (origin, "*")

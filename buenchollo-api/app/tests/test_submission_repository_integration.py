@@ -15,8 +15,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from app.core.config import get_settings
+from app.modules.categories.domain.models import Category
 from app.modules.deals.domain.models import Deal
 from app.modules.submissions.domain.models import PENDING, WITHDRAWN, DealSubmission
+from app.modules.users.domain.models import Profile
 from app.modules.submissions.infrastructure.repository import SubmissionRepository
 
 pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
@@ -43,8 +45,21 @@ def _tag() -> str:
 
 
 async def _existing_ids(session: AsyncSession) -> tuple[str, str]:
-    user_id = (await session.execute(text("SELECT user_id FROM profiles LIMIT 1"))).scalar_one()
-    category_id = (await session.execute(text("SELECT id FROM categories LIMIT 1"))).scalar_one()
+    """Reutiliza un perfil/categoría existentes (BD real, donde profiles.user_id
+    puede tener FK a auth.users) y, si no hay (Postgres vanilla del CI), los crea
+    dentro de la transacción que se revierte."""
+    user_id = (await session.execute(text("SELECT user_id FROM profiles LIMIT 1"))).scalar()
+    if user_id is None:
+        profile = Profile(user_id=str(uuid.uuid4()), username=f"it-{_tag()}")
+        session.add(profile)
+        await session.flush()
+        user_id = profile.user_id
+    category_id = (await session.execute(text("SELECT id FROM categories LIMIT 1"))).scalar()
+    if category_id is None:
+        category = Category(name="Test integración", slug=f"it-{_tag()}")
+        session.add(category)
+        await session.flush()
+        category_id = category.id
     return str(user_id), str(category_id)
 
 
