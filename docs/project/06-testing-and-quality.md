@@ -26,9 +26,10 @@
   Total: 511 tests (verificado 2026-09-26 · Python 3.11 + Node 20)
 ```
 
-> Fotografía posterior (2026-11-04, tras chollos de usuarios): backend **537** unit,
-> **42** de integración en Postgres desechable, frontend **433** y los 16 tests E2E de
-> `community-submission` + `admin-submissions` en verde. La autoridad sigue siendo `ci.yml`.
+> Verificado 2026-11-04 (chollos de usuarios): la CI de la PR #64 pasó todos los trabajos;
+> en local, backend **537** no integración, frontend **433** y **16** E2E de
+> `community-submission` + `admin-submissions`. Las cifras del diagrama de arriba son de
+> 2026-09-26 y no se han recalculado; la autoridad es `ci.yml`.
 
 ---
 

@@ -127,10 +127,9 @@ La última ejecución completa de `main` terminó en verde en GitHub Actions (`4
 - Total verificado: **519 pruebas automatizadas** en verde.
 - TypeScript, ESLint, Prettier, coverage, `pip-audit`, `npm audit` y gitleaks superados al 100%.
 
-Verificación de la rama `develop` con chollos de usuarios (2026-11-04): 537 pruebas
-backend unitarias, 42 de integración en Postgres desechable, 433 de frontend y 16 E2E
-del flujo de propuestas y moderación; `pip-audit` sin vulnerabilidades. Aún no es una
-fotografía de CI de `main`.
+Verificación de `develop` con chollos de usuarios (2026-11-04): la CI de la PR #64 pasó
+todos los trabajos. En local: 537 pruebas backend no integración, 433 de frontend y 16
+E2E de los dos specs nuevos; `pip-audit` sin vulnerabilidades.
 
 Las cifras son una fotografía fechada, no un contrato. El workflow
 `.github/workflows/ci.yml` es la autoridad sobre qué se ejecuta actualmente.
@@ -158,9 +157,9 @@ operativos conocidos:
 3. Hacer que los fallos de cableado del worker de tareas programadas propaguen a
    la observabilidad en lugar de terminar como una ejecución aparentemente válida.
 
-Tras el cierre de chollos de usuarios se añaden TD-23 a TD-30 (preview sin auth,
+Tras el cierre de chollos de usuarios se añaden TD-23 a TD-35 (preview sin auth,
 imágenes huérfanas, DNS rebinding, digest nocturno, `TelegramPanel` a 375 px, rate limit
-en memoria, cuota no atómica y menores). Pendiente operativo: seguir la checklist de
+en memoria, cuota no atómica, runtime del NAS acoplado a la copia de trabajo y menores). **Aviso operativo:** la copia de trabajo (que montan los contenedores) está en `develop` y la BD en la revisión `20261103140000`; un reinicio de la API antes de desplegar la dejaría caída (sin `Pillow` en la imagen) y volver a `main` falla en Alembic. Desplegar pronto, ver TD-31. Pendiente operativo: seguir la checklist de
 [`08-deployment.md`](08-deployment.md#-checklist-de-despliegue--chollos-de-usuarios).
 
 No se consideran pendientes las funciones ya desplegadas de analítica,

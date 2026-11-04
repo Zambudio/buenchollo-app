@@ -38,7 +38,7 @@ es falsificable (ver recomendación en `08-deployment.md`).
 | `POST /v1/deals/comments` | 10/min |
 | `POST /v1/deals/{id}/vote` | 30/min |
 | `POST /v1/deals/{id}/click` | 60/min |
-| `POST /v1/products/preview` | 10/min |
+| `POST /v1/products/preview-from-url` | 10/min |
 | `POST /v1/telegram/publish` | 5/min |
 | `POST /v1/submissions/check-link` | 20/min **por usuario** |
 | `POST /v1/submissions` | 10/min **por usuario** |
@@ -90,6 +90,8 @@ startup si producción tiene `*`.
 
 `extract_asin_from_url` con allowlist Amazon + bloqueo IPs privadas
 (RFC1918, loopback, link-local).
+La comprobación vive en `core/ssrf.py` (también CGNAT y multicast) y la usan el cliente de
+Amazon y el fetcher de imágenes; ver la sección "Contenido de usuarios" más abajo.
 
 ### 📝 Validación y sanitización
 
@@ -115,7 +117,7 @@ Decisiones en [ADR-015](../adr/ADR-015-ingesta-imagenes-backend.md) y
 | Open redirect tras login | El parámetro `redirect` solo admite rutas internas (sanitizador en el frontend, con tests de variantes codificadas) |
 | Spam / abuso | 5 pendientes por usuario y 15 / 24 h; perfil completo obligatorio; rate limit por usuario; máx. 8 imágenes |
 | Fuga de propuestas no aprobadas | Tabla `deal_submissions` separada con RLS activado; los listados públicos nunca la consultan |
-| Inyección en correos | HTML de los correos escapa el texto del usuario; CR/LF en el título no rompe la cabecera |
+| Inyección en correos | Plantillas `.html.j2` con autoescape de Jinja (`_env` en `emails/application/rendering.py`); el asunto colapsa espacios y saltos de línea con `_one_line` (mismo fichero) |
 
 Deuda abierta relacionada: TD-23 (preview de Amazon sin autenticación), TD-24
 (imágenes huérfanas), TD-25 (DNS rebinding), TD-29 (cuota no atómica).

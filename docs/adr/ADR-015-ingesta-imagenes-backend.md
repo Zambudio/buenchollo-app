@@ -26,7 +26,7 @@ sube directamente a Supabase.
   parser de Pillow se traduce a 400. La re-codificación descarta metadatos y cargas útiles
   embebidas.
 - **Destino**: bucket público `deal-images`, ruta `submissions/{user_id}/{uuid}.webp`. Una
-  propuesta solo acepta URLs que empiecen por el prefijo público de ese bucket (allowlist
+  propuesta solo acepta URLs que empiecen por `{supabase_url}/storage/v1/object/public/deal-images/submissions/` (allowlist
   con tests contra bypasses con `\`, `../` y userinfo).
 - **Importar por URL** (`POST /submissions/images/from-url`) usa un fetcher endurecido
   (`submissions/infrastructure/image_fetcher.py`): solo http(s); comprobación SSRF en

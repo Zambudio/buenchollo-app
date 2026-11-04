@@ -4,7 +4,7 @@
 > Solo items **abiertos**: cuando uno se cierra, se elimina de aquí (el histórico
 > resuelto vive en [`PROJECT_STATUS.md`](../../PROJECT_STATUS.md)). Para consultar el diseño de arquitectura, ver [`docs/master/`](../master/00-index.md).
 
-Última revisión: **2026-11-04** (cierre de chollos de usuarios: TD-23 a TD-30).
+Última revisión: **2026-11-04** (cierre de chollos de usuarios: TD-23 a TD-35).
 
 ---
 
@@ -55,15 +55,34 @@
   los índices únicos parciales (mismo producto) lo acotan. Impacto bajo, con rate limit
   por usuario delante.
 
-- **TD-30 — Menores diferidos de la revisión.** Sin reintento si falla el correo al
-  usuario (solo se registra); `previously_published` pasa a verdadero para aprobadas cuya
-  ficha ya expiró; el helper `_canonical_url_for` está duplicado entre `deal_service.py` y
-  `scripts/backfill_canonical_urls.py`, y `storage.py` duplica `_clean_supabase_url`.
-  Además: al aprobar, el `external_id` de tiendas no Amazon se pasa a mayúsculas (puede
-  no detectar un duplicado con SKU en minúsculas; `canonical_url` sí lo detecta); los
-  acortadores `amzn.asia` y `amzn.com` no se resuelven; y las peticiones sin autenticar
-  a los 4 endpoints de propuestas se rechazan con 401 antes de que cuente el límite por
-  usuario (aceptable: el JWT se verifica en local).
+- **TD-30 — Sin reintento si falla el correo al usuario.** El notificador de propuestas
+  solo registra el fallo; el usuario conserva la notificación in-app.
+
+- **TD-31 — El runtime del NAS depende de la copia de trabajo de desarrollo.** Los
+  contenedores montan `.:/app` y el NAS ve la misma carpeta que `Z:`: la rama activa al
+  reiniciar o reconstruir es lo que ejecuta producción. Trabajar en `develop` cambia en
+  silencio lo que correría tras un reinicio (a 2026-11-04 la API se caería: sin `Pillow` en
+  la imagen y, al volver a `main`, Alembic no encuentra la revisión). Proponer desplegar
+  desde un checkout o tag separado en el NAS, o copiar el código a la imagen en lugar de
+  montarlo. Mientras tanto, ver el aviso en `08-deployment.md`.
+
+- **TD-32 — Duplicación menor de lógica.** El cálculo de `canonical_url` está duplicado entre
+  `DealService._canonical_url_for` (`deal_service.py`) y `compute_canonical`
+  (`scripts/backfill_canonical_urls.py`); `submissions/infrastructure/storage.py` repite en
+  línea la limpieza de la URL de Supabase (`split("/rest/v1")[0].rstrip("/")`) que ya existe
+  como `_clean_supabase_url` en `core/security.py`.
+
+- **TD-33 — `external_id` no Amazon en mayúsculas al aprobar.** Puede no detectar un
+  duplicado con SKU en minúsculas (`canonical_url` sí lo detecta).
+
+- **TD-34 — Acortadores sin resolver.** `amzn.asia` y `amzn.com` no se resuelven (los
+  acortadores genéricos se rechazan; los de Amazon `amzn.to`/`amzn.eu`/`a.co`/`link.amazon`
+  sí se resuelven).
+
+- **TD-35 — Menores de la revisión.** `previously_published` pasa a verdadero para
+  aprobadas cuya ficha ya expiró; las peticiones sin autenticar a los endpoints de
+  propuestas se rechazan con 401 antes de que cuente el límite por usuario (aceptable: el
+  JWT se verifica en local).
 
 ## 🟡 Baja — observabilidad y hardening de cuenta
 
