@@ -92,6 +92,18 @@ export function fulfillCommon(route: Route, opts: { isAdmin: boolean }): boolean
     void json(route, { count: 0 });
     return true;
   }
+  if (pathname.endsWith("/deals/page")) {
+    void json(route, { items: [], page: 1, page_size: 30, total: 0, total_pages: 1 });
+    return true;
+  }
+  if (pathname.endsWith("/deals/my-votes")) {
+    void json(route, {});
+    return true;
+  }
+  if (/\/deals\/(latest|popular|favorites)$/.test(pathname)) {
+    void json(route, []);
+    return true;
+  }
   if (pathname.endsWith("/v1/categories")) {
     void json(route, categories);
     return true;
@@ -143,4 +155,17 @@ export async function loginAndGoto(page: Page, path: string) {
 /** Píxeles de desbordamiento horizontal del documento (<= 0 es correcto). */
 export function horizontalOverflow(page: Page): Promise<number> {
   return page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+}
+
+/** Recoge los errores no capturados de la página; el test debe comprobar que queda vacío.
+ *  Se ignora el aviso de hidratación: el SSR del servidor Node consulta la API real
+ *  (fuera del alcance de page.route) y su HTML difiere del cliente mockeado; React lo
+ *  recupera solo. Cualquier otro error sí cuenta. */
+export function collectPageErrors(page: Page): string[] {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => {
+    if (/Hydration failed/i.test(error.message)) return;
+    errors.push(error.message);
+  });
+  return errors;
 }

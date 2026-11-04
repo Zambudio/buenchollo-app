@@ -5,6 +5,7 @@ import { expect, test, type Page } from "@playwright/test";
 import {
   CATEGORY_ID,
   VIEWPORTS,
+  collectPageErrors,
   fulfillCommon,
   horizontalOverflow,
   json,
@@ -154,32 +155,32 @@ for (const { name, viewport } of VIEWPORTS) {
     test.describe.configure({ timeout: 120_000 });
 
     test("anónimo pulsa Publicar chollo y ve el diálogo de cuenta", async ({ page }) => {
-      // Se parte de /publicar (sin loader SSR, que no se puede mockear con page.route);
-      // el header es el mismo que en el resto de páginas públicas.
+      const pageErrors = collectPageErrors(page);
       await setup(page);
-      await page.goto("/publicar");
+      await page.goto("/");
       const dialog = page.getByRole("dialog", { name: "Comparte un chollo" });
-      await expect(dialog).toBeVisible();
-      await page.keyboard.press("Escape");
-      await expect(dialog).toBeHidden();
-
-      await page
+      const publish = page
         .getByRole("button", { name: "Publicar chollo" })
         .and(page.locator(":visible"))
-        .first()
-        .click();
-      await expect(dialog).toBeVisible();
+        .first();
+      // El primer clic puede llegar antes de la hidratación de React en el dev server en frío.
+      await expect(async () => {
+        if (!(await dialog.isVisible())) await publish.click({ timeout: 3_000 });
+        await expect(dialog).toBeVisible({ timeout: 3_000 });
+      }).toPass({ timeout: 30_000 });
       await expect(
         dialog.getByText("Para compartir chollos con la comunidad necesitas una cuenta."),
       ).toBeVisible();
       await expect(dialog.getByRole("link", { name: "Crear cuenta" })).toBeVisible();
       await expect(dialog.getByRole("link", { name: "Iniciar sesión" })).toBeVisible();
       expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
+      expect(pageErrors).toEqual([]);
     });
 
     test("pega enlace, completa el formulario con imágenes y lo ve En revisión", async ({
       page,
     }) => {
+      const pageErrors = collectPageErrors(page);
       const calls = await setup(page);
       await loginAndGoto(page, "/publicar");
 
@@ -237,6 +238,7 @@ for (const { name, viewport } of VIEWPORTS) {
       await expect(page).toHaveURL(/\/mis-chollos/);
       await expect(page.getByText("En revisión")).toBeVisible();
       await expect(page.getByText(EDITED_TITLE)).toBeVisible();
+      expect(pageErrors).toEqual([]);
       expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
     });
 

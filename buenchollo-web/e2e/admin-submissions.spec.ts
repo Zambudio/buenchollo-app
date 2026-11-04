@@ -7,6 +7,7 @@ import {
   STORE_ID,
   SUBCATEGORY_ID,
   VIEWPORTS,
+  collectPageErrors,
   fulfillCommon,
   horizontalOverflow,
   json,
@@ -188,6 +189,7 @@ for (const { name, viewport } of VIEWPORTS) {
     });
 
     test("aprueba con el título editado y abre el panel de Telegram", async ({ page }) => {
+      const pageErrors = collectPageErrors(page);
       const calls = await setup(page);
       await loginAndGoto(page, "/admin/propuestas");
 
@@ -222,9 +224,34 @@ for (const { name, viewport } of VIEWPORTS) {
       });
       expect(typeof calls.approve[0].body.current_price).toBe("number");
 
-      // Sin comprobar overflow aquí: el panel de Telegram (componente previo, compartido con
-      // /admin/chollos) desborda 8 px a 375 px de ancho; queda como deuda fuera de esta feature.
       await expect(page.getByText("Publicar o programar Telegram")).toBeVisible();
+      test.info().annotations.push({
+        type: "known-issue",
+        description: "TelegramPanel overflows ~8px at 375px (pre-existing)",
+      });
+      expect(await horizontalOverflow(page)).toBeLessThanOrEqual(8);
+      expect(pageErrors).toEqual([]);
+    });
+
+    test("aprueba sin marcar Telegram y no abre el panel de Telegram", async ({ page }) => {
+      const pageErrors = collectPageErrors(page);
+      const calls = await setup(page);
+      await loginAndGoto(page, "/admin/propuestas");
+
+      await page
+        .getByRole("region", { name: "Cola de propuestas" })
+        .getByRole("button", { name: APROBAR_TITLE })
+        .click();
+      const review = page.getByRole("region", { name: APROBAR_TITLE });
+      await expect(review.getByLabel("Publicar también en Telegram")).not.toBeChecked();
+      await review.getByRole("button", { name: "Aprobar y publicar" }).click();
+
+      await expect(page.getByText("Propuesta aprobada y publicada")).toBeVisible();
+      expect(calls.approve).toHaveLength(1);
+      expect(calls.approve[0].body).toMatchObject({ title: APROBAR_TITLE });
+      await expect(page.getByRole("region", { name: APROBAR_TITLE })).toHaveCount(0);
+      await expect(page.getByText("Publicar o programar Telegram")).toHaveCount(0);
+      expect(pageErrors).toEqual([]);
     });
   });
 }
