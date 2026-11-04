@@ -10,7 +10,7 @@ from decimal import Decimal
 
 import pytest
 import pytest_asyncio
-from sqlalchemy import text
+from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
@@ -157,3 +157,21 @@ async def test_pending_counts_unique_and_listing(session):
     assert await repo.claim_pending(sub.id, WITHDRAWN) is False
     assert await repo.find_pending(sub.asin, sub.canonical_url) is None
     assert await repo.count_pending_by_user(user_id) == before_pending
+
+
+async def test_deal_author_unloaded_access_fails_loudly(session):
+    from sqlalchemy.exc import InvalidRequestError
+
+    user_id, category_id = await _existing_ids(session)
+    tag = _tag()
+    deal = _deal(tag, "active", category_id, None, f"https://example.com/{tag}")
+    deal.source = "community"
+    deal.created_by = user_id
+    session.add(deal)
+    await session.flush()
+    loaded = (
+        await session.execute(select(Deal).where(Deal.id == deal.id).execution_options(populate_existing=True))
+    ).scalars().one()
+    session.expire(loaded, ["author"])
+    with pytest.raises(InvalidRequestError, match="raise_on_sql"):
+        loaded.public_author

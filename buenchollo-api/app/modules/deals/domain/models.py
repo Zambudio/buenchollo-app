@@ -71,6 +71,9 @@ class Deal(Base):
         primaryjoin="Deal.created_by == Profile.user_id",
         foreign_keys="Deal.created_by",
         viewonly=True,
+        # Solo se serializa vía `public_author`: si una query futura olvida el
+        # selectinload, que falle en los tests en vez de un lazy-load async.
+        lazy="raise_on_sql",
     )
 
     @property
