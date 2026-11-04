@@ -9,9 +9,11 @@ from app.core.security import get_supabase_client
 from app.modules.emails.application.rendering import (
     EmailBranding,
     format_eur,
+    format_short_datetime,
     render_submission_admin,
     render_submission_approved,
     render_submission_rejected,
+    submission_approved_headline,
 )
 from app.modules.emails.domain.messages import OutgoingEmail, RenderedEmail
 from app.modules.emails.infrastructure.smtp import EmailSenderProtocol
@@ -93,20 +95,30 @@ class SubmissionNotifier:
                     if sub.deal is None:
                         logger.warning("Propuesta aprobada %s sin chollo asociado: notificación omitida", submission_id)
                         return
-                    slug = sub.deal.slug
+                    deal = sub.deal
+                    # Programado o borrador: aún no es visible, así que ni el
+                    # texto dice "publicado" ni se enlaza a una ficha inexistente.
+                    published = deal.status == "active"
+                    publish_at = (
+                        format_short_datetime(deal.scheduled_for)
+                        if deal.status == "scheduled" and deal.scheduled_for
+                        else None
+                    )
                     notification = {
                         "user_id": sub.user_id,
                         "type": "submission_approved",
-                        "title": "Tu chollo ya está publicado",
-                        "body": sub.title,
-                        "link_url": f"/chollo/{slug}",
+                        "title": submission_approved_headline(deal.status, publish_at),
+                        "body": deal.title,
+                        "link_url": f"/chollo/{deal.slug}" if published else "/mis-chollos",
                         "deal_id": sub.deal_id,
                     }
                     rendered = render_submission_approved(
                         self.branding,
                         name=name,
-                        title=sub.title,
-                        deal_url=f"{self.branding.site_url}/chollo/{slug}",
+                        title=deal.title,
+                        deal_url=f"{self.branding.site_url}/chollo/{deal.slug}",
+                        deal_status=deal.status,
+                        publish_at=publish_at,
                     )
                 else:
                     notification = {

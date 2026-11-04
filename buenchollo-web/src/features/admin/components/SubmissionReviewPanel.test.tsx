@@ -165,6 +165,26 @@ describe("SubmissionReviewPanel", () => {
     await waitFor(() => expect(onApproved).toHaveBeenCalledWith(deal, true));
   });
 
+  it("Telegram solo se ofrece si el chollo se publica ya (estado activo)", async () => {
+    const user = userEvent.setup();
+    const { onApproved } = renderPanel();
+    await user.click(screen.getByRole("checkbox", { name: "Publicar también en Telegram" }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Estado" }), "draft");
+    expect(
+      screen.queryByRole("checkbox", { name: "Publicar también en Telegram" }),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Aprobar y publicar" }));
+    await waitFor(() => expect(onApproved).toHaveBeenCalledWith(deal, false));
+  });
+
+  it("propuesta programada no ofrece Telegram", () => {
+    const startsAt = new Date(Date.now() + 3 * 24 * 3600_000).toISOString();
+    renderPanel({ starts_at: startsAt });
+    expect(
+      screen.queryByRole("checkbox", { name: "Publicar también en Telegram" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("propuesta programada envía status scheduled y scheduled_for", async () => {
     const user = userEvent.setup();
     const startsAt = new Date(Date.now() + 3 * 24 * 3600_000);

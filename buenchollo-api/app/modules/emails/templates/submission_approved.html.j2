@@ -7,12 +7,14 @@
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr>
                 <td>
-                  {{ ui.eyebrow("Chollo publicado") }}
+                  {{ ui.eyebrow("Chollo publicado" if deal_url else "Chollo aprobado") }}
                   <h1 class="h1" style="margin:10px 0 0;font-family:{{ t.sans }};font-size:25px;line-height:33px;font-weight:700;letter-spacing:-.5px;color:{{ t.text }};">{% if name %}¡Enhorabuena, {{ name }}!{% else %}¡Enhorabuena!{% endif %}</h1>
-                  <p style="margin:12px 0 0;font-family:{{ t.sans }};font-size:15px;line-height:24px;color:{{ t.text_soft }};">Tu propuesta <strong>{{ title }}</strong> ya está publicada en BuenChollo Tech. Gracias por compartir chollos con la comunidad.</p>
+                  <p style="margin:12px 0 0;font-family:{{ t.sans }};font-size:15px;line-height:24px;color:{{ t.text_soft }};">Tu propuesta <strong>{{ title }}</strong> {% if deal_url %}ya está publicada en BuenChollo Tech{% elif deal_status == "scheduled" and publish_at %}está aprobada y se publicará el {{ publish_at }}{% elif deal_status == "scheduled" %}está aprobada y se publicará pronto{% else %}está aprobada; la publicaremos en breve{% endif %}. Gracias por compartir chollos con la comunidad.</p>
+                  {% if deal_url %}
                   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:24px;">
                     <tr><td width="100%">{{ ui.button(deal_url, "Ver mi chollo", variant="primary", full=true) }}</td></tr>
                   </table>
+                  {% endif %}
                 </td>
               </tr>
             </table>

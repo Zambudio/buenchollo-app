@@ -80,6 +80,8 @@ const deal = {
   id: "d-1",
   slug: "monitor-27",
   title: "Monitor 27 pulgadas",
+  status: "active",
+  scheduled_for: null,
   current_price: 149.9,
   previous_price: null,
   discount_percentage: null,
@@ -169,6 +171,33 @@ describe("SubmissionsAdminPage", () => {
       to: "/chollo/$slug",
       params: { slug: "monitor-27" },
     });
+  });
+
+  it("aprobar como programado: toast con la fecha, sin enlace ni Telegram", async () => {
+    const user = userEvent.setup();
+    mocks.approve.mockResolvedValue({
+      ...deal,
+      status: "scheduled",
+      scheduled_for: "2026-12-01T09:30:00Z",
+    });
+    renderWithProviders(<SubmissionsAdminPage selectedId="s-1" onSelect={vi.fn()} />);
+    await user.click(await screen.findByRole("button", { name: "Aprobar y publicar" }));
+    await waitFor(() => expect(mocks.toastSuccess).toHaveBeenCalled());
+    const [message, options] = mocks.toastSuccess.mock.calls[0] ?? [];
+    expect(message).toMatch(/^Propuesta aprobada y programada para .*1.*dic/);
+    expect(options.action).toBeUndefined();
+    expect(screen.queryByTestId("telegram-panel")).not.toBeInTheDocument();
+  });
+
+  it("aprobar como borrador: toast de borrador", async () => {
+    const user = userEvent.setup();
+    mocks.approve.mockResolvedValue({ ...deal, status: "draft" });
+    renderWithProviders(<SubmissionsAdminPage selectedId="s-1" onSelect={vi.fn()} />);
+    await user.click(await screen.findByRole("button", { name: "Aprobar y publicar" }));
+    await waitFor(() => expect(mocks.toastSuccess).toHaveBeenCalled());
+    const [message, options] = mocks.toastSuccess.mock.calls[0] ?? [];
+    expect(message).toBe("Propuesta aprobada y guardada como borrador");
+    expect(options.action).toBeUndefined();
   });
 
   it("aprobar sin Telegram no abre el panel", async () => {

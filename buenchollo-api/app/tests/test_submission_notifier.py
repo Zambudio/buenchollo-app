@@ -1,5 +1,6 @@
 """Emails and in-app notifications for user submissions."""
 
+from datetime import datetime, timezone
 from decimal import Decimal
 from types import SimpleNamespace
 
@@ -155,6 +156,17 @@ def make_sub(status="pending", **over):
     return SimpleNamespace(**data)
 
 
+def make_deal(**over):
+    data = dict(
+        slug="auriculares-x",
+        title="Auriculares Pro (título editado)",
+        status="active",
+        scheduled_for=None,
+    )
+    data.update(over)
+    return SimpleNamespace(**data)
+
+
 @pytest.fixture
 def env(monkeypatch):
     session = FakeSession()
@@ -228,7 +240,7 @@ async def test_notify_admin_falls_back_to_username_and_store_name(env):
 
 @sync
 async def test_notify_user_approved_creates_notification_and_email(env):
-    env.repo.sub = make_sub("approved", deal_id="d1", deal=SimpleNamespace(slug="auriculares-x"))
+    env.repo.sub = make_sub("approved", deal_id="d1", deal=make_deal())
     sender = FakeSender()
     await make_notifier(env, sender).notify_user_decision(SUB_ID)
     assert env.created == [
@@ -236,7 +248,7 @@ async def test_notify_user_approved_creates_notification_and_email(env):
             "user_id": "u1",
             "type": "submission_approved",
             "title": "Tu chollo ya está publicado",
-            "body": "Auriculares",
+            "body": "Auriculares Pro (título editado)",
             "link_url": "/chollo/auriculares-x",
             "deal_id": "d1",
         }
@@ -393,3 +405,59 @@ async def test_approved_without_deal_logs_warning(env, caplog):
     await make_notifier(env, sender).notify_user_decision(SUB_ID)
     assert "sin chollo asociado" in caplog.text
     assert env.created == [] and sender.sent == []
+
+
+@sync
+async def test_approved_email_uses_deal_title(env):
+    env.repo.sub = make_sub("approved", deal_id="d1", deal=make_deal())
+    sender = FakeSender()
+    await make_notifier(env, sender).notify_user_decision(SUB_ID)
+    assert "Auriculares Pro (título editado)" in sender.sent[0].text
+    assert "«Auriculares»" not in sender.sent[0].text
+
+
+@sync
+async def test_notify_user_scheduled_deal_says_when_without_link(env):
+    when = datetime(2026, 11, 12, 9, 30, tzinfo=timezone.utc)  # 10:30 en Madrid
+    env.repo.sub = make_sub(
+        "approved", deal_id="d1", deal=make_deal(status="scheduled", scheduled_for=when)
+    )
+    sender = FakeSender()
+    await make_notifier(env, sender).notify_user_decision(SUB_ID)
+    notification = env.created[0]
+    assert notification["type"] == "submission_approved"
+    assert notification["title"] == "Tu chollo se publicará el 12 nov, 10:30"
+    assert notification["link_url"] == "/mis-chollos"
+    assert notification["deal_id"] == "d1"
+    mail = sender.sent[0]
+    assert mail.subject == "✅ Tu chollo se publicará el 12 nov, 10:30"
+    assert "/chollo/auriculares-x" not in mail.html
+    assert "/chollo/auriculares-x" not in mail.text
+    assert "12 nov, 10:30" in mail.html and "12 nov, 10:30" in mail.text
+
+
+@sync
+async def test_notify_user_draft_deal_is_approved_not_published(env):
+    env.repo.sub = make_sub("approved", deal_id="d1", deal=make_deal(status="draft"))
+    sender = FakeSender()
+    await make_notifier(env, sender).notify_user_decision(SUB_ID)
+    notification = env.created[0]
+    assert notification["title"] == "Tu chollo ha sido aprobado"
+    assert notification["link_url"] == "/mis-chollos"
+    mail = sender.sent[0]
+    assert mail.subject == "✅ Tu chollo ha sido aprobado"
+    assert "ya está publicada" not in mail.html
+    assert "/chollo/auriculares-x" not in mail.html
+
+
+def test_render_approved_variants():
+    active = render_submission_approved(
+        BRANDING, name="Ana", title="T", deal_url="https://x.test/chollo/t"
+    )
+    assert "Ver mi chollo" in active.html
+    scheduled = render_submission_approved(
+        BRANDING, name="Ana", title="T", deal_url="https://x.test/chollo/t",
+        deal_status="scheduled", publish_at="12 nov, 10:30",
+    )
+    assert "Ver mi chollo" not in scheduled.html
+    assert "se publicará el 12 nov, 10:30" in scheduled.text

@@ -66,6 +66,8 @@ export function SubmissionReviewPanel({
   const approve = useApproveSubmission();
   const reject = useRejectSubmission();
   const pending = s.status === "pending";
+  // Telegram solo tiene sentido si el chollo queda publicado al aprobar.
+  const publishesNow = form.status === "active";
 
   const handleApprove = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,7 +97,7 @@ export function SubmissionReviewPanel({
     const payload = buildDealPayload({ ...form, ...categorySelection }, null);
     try {
       const deal = await approve.mutateAsync({ id: s.id, payload });
-      onApproved(deal, publishTelegram);
+      onApproved(deal, publishTelegram && publishesNow);
     } catch (err: unknown) {
       if (isDuplicateDealError(err)) {
         const { slug } = err.data.existing_deal;
@@ -181,15 +183,17 @@ export function SubmissionReviewPanel({
           submitLabel={approve.isPending ? "PUBLICANDO..." : "Aprobar y publicar"}
           showTelegramButton={false}
           footer={
-            <label className="flex items-center gap-2 font-mono text-xs cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={publishTelegram}
-                onChange={(e) => setPublishTelegram(e.target.checked)}
-                className="accent-cyan-500"
-              />
-              Publicar también en Telegram
-            </label>
+            publishesNow ? (
+              <label className="flex items-center gap-2 font-mono text-xs cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={publishTelegram}
+                  onChange={(e) => setPublishTelegram(e.target.checked)}
+                  className="accent-cyan-500"
+                />
+                Publicar también en Telegram
+              </label>
+            ) : null
           }
           extraActions={
             <button

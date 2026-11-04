@@ -202,17 +202,41 @@ def render_submission_admin(
     return _render("submission_admin", ctx)
 
 
+def submission_approved_headline(deal_status: str, publish_at: str | None) -> str:
+    """Titular común a correo y notificación según el estado del chollo creado."""
+    if deal_status == "active":
+        return "Tu chollo ya está publicado"
+    if deal_status == "scheduled":
+        return f"Tu chollo se publicará el {publish_at}" if publish_at else "Tu chollo se publicará pronto"
+    return "Tu chollo ha sido aprobado"
+
+
 def render_submission_approved(
-    branding: EmailBranding, *, name: str | None, title: str, deal_url: str
+    branding: EmailBranding,
+    *,
+    name: str | None,
+    title: str,
+    deal_url: str,
+    deal_status: str = "active",
+    publish_at: str | None = None,
 ) -> RenderedEmail:
     ctx = _base_context(branding, "propuestas")
+    published = deal_status == "active"
+    if published:
+        preheader = f"{title} ya está en BuenChollo Tech."
+    elif deal_status == "scheduled" and publish_at:
+        preheader = f"{title} se publicará el {publish_at}."
+    else:
+        preheader = f"Hemos aprobado «{title}»."
     ctx.update(
-        subject="✅ Tu chollo ya está publicado",
-        preheader=f"{title} ya está en BuenChollo Tech.",
+        subject=f"✅ {submission_approved_headline(deal_status, publish_at)}",
+        preheader=preheader,
         header_tag="PROPUESTAS",
         name=(name or "").strip() or None,
         title=title,
-        deal_url=deal_url,
+        deal_url=deal_url if published else None,
+        deal_status=deal_status,
+        publish_at=publish_at,
         footer_reason="Recibes este correo porque propusiste un chollo en BuenChollo Tech.",
     )
     return _render("submission_approved", ctx)

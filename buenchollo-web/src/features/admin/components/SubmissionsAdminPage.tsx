@@ -16,6 +16,23 @@ interface Props {
   readonly onSelect: (id: string | undefined) => void;
 }
 
+function approvedMessage(deal: DealDetailData): string {
+  if (deal.status === "active") return "Propuesta aprobada y publicada";
+  if (deal.status === "scheduled") {
+    const when = deal.scheduled_for
+      ? new Date(deal.scheduled_for).toLocaleString("es-ES", {
+          day: "numeric",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "más adelante";
+    return `Propuesta aprobada y programada para ${when}`;
+  }
+  if (deal.status === "draft") return "Propuesta aprobada y guardada como borrador";
+  return "Propuesta aprobada";
+}
+
 export function SubmissionsAdminPage({ selectedId, onSelect }: Props) {
   const nav = useNavigate();
   const [status, setStatus] = useState<SubmissionStatus>("pending");
@@ -32,15 +49,18 @@ export function SubmissionsAdminPage({ selectedId, onSelect }: Props) {
   }, [selectedId, detail.isError, onSelect]);
 
   const handleApproved = (deal: DealDetailData, publishTelegram: boolean) => {
-    toast.success("Propuesta aprobada y publicada", {
+    const published = deal.status === "active";
+    toast.success(approvedMessage(deal), {
       description: deal.title,
-      action: {
-        label: "Ver chollo",
-        onClick: () => nav({ to: "/chollo/$slug", params: { slug: deal.slug } }),
-      },
+      action: published
+        ? {
+            label: "Ver chollo",
+            onClick: () => nav({ to: "/chollo/$slug", params: { slug: deal.slug } }),
+          }
+        : undefined,
     });
     onSelect(undefined);
-    if (publishTelegram) telegram.openFromDeal(deal);
+    if (publishTelegram && published) telegram.openFromDeal(deal);
   };
 
   const submission = selectedId && detail.data?.id === selectedId ? detail.data : undefined;
