@@ -308,6 +308,9 @@ def _setup_endpoint(events, repo=None, error=None):
         async def commit(self):
             events.append(("commit", None))
 
+        async def rollback(self):
+            return None
+
     repo = repo or FakeRepo()
     app.dependency_overrides[get_current_user] = lambda: AuthenticatedUser(id="u1", email="a@b.c")
     app.dependency_overrides[get_profile_repository] = lambda: FakeProfileRepo()

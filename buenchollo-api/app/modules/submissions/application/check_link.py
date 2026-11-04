@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Literal
@@ -102,17 +102,27 @@ async def _resolve_short_link(
     return canonicalize(f"https://www.amazon.es/dp/{asin}")
 
 
+async def canonical_link(
+    raw_url: str, asin_resolver: Callable[[str], str | None] | None = None
+) -> CanonicalLink:
+    """Normaliza el enlace sin tocar la BD (puede hacer red: enlaces cortos)."""
+    url = extract_url(raw_url)
+    link = canonicalize(url)
+    if is_amazon_short_host(link.host):
+        link = await _resolve_short_link(url, asin_resolver)
+    return link
+
+
 async def resolve_link(
     raw_url: str,
     repo: Any,
     *,
     amazon_tag: str = "",
     asin_resolver: Callable[[str], str | None] | None = None,
+    link: CanonicalLink | None = None,
 ) -> ResolvedLink:
-    url = extract_url(raw_url)
-    link = canonicalize(url)
-    if is_amazon_short_host(link.host):
-        link = await _resolve_short_link(url, asin_resolver)
+    if link is None:
+        link = await canonical_link(raw_url, asin_resolver)
 
     is_amazon = is_amazon_host(link.host)
     rewritten = rewrite_affiliate_link(link, amazon_tag=amazon_tag)
@@ -160,11 +170,13 @@ class CheckLinkUseCase:
         *,
         amazon_tag: str = "",
         asin_resolver: Callable[[str], str | None] | None = None,
+        release_db: Callable[[], Awaitable[None]] | None = None,
     ) -> None:
         self.repo = repo
         self.product_provider = product_provider
         self.amazon_tag = amazon_tag
         self.asin_resolver = asin_resolver
+        self.release_db = release_db
 
     async def _fetch_prefill(self, link) -> SubmissionPrefill | None:
         if self.product_provider is None:
@@ -199,5 +211,10 @@ class CheckLinkUseCase:
         if resolved.status == "published":
             result.existing_deal = existing_deal_summary(resolved.live_deal)
         elif resolved.status == "ok" and resolved.is_amazon:
+            # Libera la conexión antes de la llamada lenta a Amazon. Tras el
+            # rollback los objetos ORM quedan expirados: el resultado ya está
+            # construido solo con escalares.
+            if self.release_db is not None:
+                await self.release_db()
             result.prefill = await self._fetch_prefill(link)
         return result

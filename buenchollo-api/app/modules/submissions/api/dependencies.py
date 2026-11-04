@@ -27,9 +27,15 @@ async def get_profile_repository(db: AsyncSession = Depends(get_db)) -> ProfileR
 async def require_complete_profile(
     user: AuthenticatedUser = Depends(get_current_user),
     profile_repo: ProfileRepository = Depends(get_profile_repository),
+    db: AsyncSession = Depends(get_db),
 ) -> AuthenticatedUser:
     profile = await profile_repo.get_by_user_id(user.id)
-    if not is_profile_complete(profile):
+    complete = is_profile_complete(profile)
+    # Cierra la transacción de solo lectura: la conexión vuelve al pool (3+2 por
+    # worker, TD-11) en vez de quedar retenida durante la E/S externa del
+    # endpoint (Amazon, Pillow, Storage). La siguiente consulta la re-adquiere.
+    await db.rollback()
+    if not complete:
         raise ProfileIncompleteError()
     return user
 

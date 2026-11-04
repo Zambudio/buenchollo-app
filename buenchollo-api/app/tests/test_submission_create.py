@@ -140,7 +140,9 @@ def repo():
     app.dependency_overrides[get_submission_notifier] = lambda: SimpleNamespace(
         notify_admin_new=_noop
     )
-    app.dependency_overrides[get_db] = lambda: SimpleNamespace(commit=_noop_commit)
+    app.dependency_overrides[get_db] = lambda: SimpleNamespace(
+        commit=_noop_commit, rollback=_noop_commit
+    )
     yield r
     app.dependency_overrides.clear()
 

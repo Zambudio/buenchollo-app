@@ -49,12 +49,14 @@ def get_check_link_use_case(
     repo: SubmissionRepository = Depends(get_submission_repository),
     provider: ProductPreviewProvider = Depends(get_product_provider),
     settings: Settings = Depends(get_settings),
+    db: AsyncSession = Depends(get_db),
 ) -> CheckLinkUseCase:
     return CheckLinkUseCase(
         repo,
         provider,
         amazon_tag=settings.amazon_affiliate_tag or "",
         asin_resolver=extract_asin_from_url,
+        release_db=db.rollback,
     )
 
 

@@ -5,7 +5,11 @@ from typing import TYPE_CHECKING, Any
 from sqlalchemy.exc import IntegrityError
 
 from app.core.exceptions import ValidationError
-from app.modules.submissions.application.check_link import existing_deal_summary, resolve_link
+from app.modules.submissions.application.check_link import (
+    canonical_link,
+    existing_deal_summary,
+    resolve_link,
+)
 from app.modules.submissions.domain.exceptions import SubmissionConflictError
 from app.modules.submissions.domain.models import PENDING, DealSubmission
 from app.modules.submissions.domain.rules import ensure_quota
@@ -54,15 +58,17 @@ class CreateSubmissionUseCase:
                 raise ValidationError("La subcategoría no pertenece a la categoría seleccionada")
 
     async def execute(self, user_id: str, data: "SubmissionCreate", amazon_tag: str) -> DealSubmission:
+        # Primero la parte sin BD (puede resolver un enlace corto por red), para
+        # no retener una conexión del pool durante esa espera.
+        link = await canonical_link(data.url, self.asin_resolver)
+
         since = datetime.now(timezone.utc) - timedelta(hours=24)
         ensure_quota(
             await self.repo.count_pending_by_user(user_id),
             await self.repo.count_since(user_id, since),
         )
 
-        resolved = await resolve_link(
-            data.url, self.repo, amazon_tag=amazon_tag, asin_resolver=self.asin_resolver
-        )
+        resolved = await resolve_link(data.url, self.repo, amazon_tag=amazon_tag, link=link)
         if resolved.status in ("published", "upcoming", "in_review"):
             existing = (
                 existing_deal_summary(resolved.live_deal) if resolved.status == "published" else None
@@ -71,7 +77,6 @@ class CreateSubmissionUseCase:
 
         await self._ensure_categories(data)
 
-        link = resolved.link
         submission = DealSubmission(
             user_id=user_id,
             status=PENDING,
