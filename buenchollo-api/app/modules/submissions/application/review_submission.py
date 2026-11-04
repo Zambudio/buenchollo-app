@@ -9,7 +9,7 @@ from app.modules.affiliates.domain.rewriters import rewrite_affiliate_link
 from app.modules.deals.api.schemas import DealCreate
 from app.modules.deals.domain.exceptions import DuplicateDealError
 from app.modules.deals.domain.models import Deal
-from app.modules.submissions.domain.exceptions import SubmissionNotPendingError
+from app.modules.submissions.domain.exceptions import AsinMismatchError, SubmissionNotPendingError
 from app.modules.submissions.domain.models import (
     APPROVED,
     PENDING,
@@ -48,8 +48,12 @@ class ReviewSubmissionUseCase:
         self, submission_id: str, admin_id: str, deal_in: DealCreate, amazon_tag: str
     ) -> Deal:
         submission = await self._load_pending(submission_id)
-        external_id = deal_in.external_id or submission.asin
-        link = canonicalize(extract_url(deal_in.affiliate_url), asin=external_id)
+        external_id = (deal_in.external_id or submission.asin or "").strip().upper() or None
+        url = extract_url(deal_in.affiliate_url)
+        url_asin = canonicalize(url).asin
+        if external_id and url_asin and url_asin != external_id:
+            raise AsinMismatchError(external_id, url_asin)
+        link = canonicalize(url, asin=external_id)
         ensure_not_shortened(link)
 
         if not await self.repo.claim_pending(submission_id, APPROVED):

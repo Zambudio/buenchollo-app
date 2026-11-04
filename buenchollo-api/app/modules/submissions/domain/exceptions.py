@@ -52,3 +52,15 @@ class SubmissionNotPendingError(ConflictError):
 
     def __init__(self, message: str = "La propuesta ya no está pendiente de revisión") -> None:
         super().__init__(message)
+
+
+class AsinMismatchError(ValidationError):
+    """El ASIN indicado no coincide con el del enlace de afiliado. → 422."""
+
+    http_status = 422
+
+    def __init__(self, external_id: str, url_asin: str) -> None:
+        super().__init__(
+            f"El ASIN indicado ({external_id}) no coincide con el del enlace ({url_asin}). "
+            "Corrige el ASIN o el enlace antes de publicar."
+        )

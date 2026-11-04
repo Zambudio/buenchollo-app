@@ -409,3 +409,32 @@ def test_approve_rejects_generic_shortener_without_claiming(client, env):
     assert resp.json()["detail"] == "Pega el enlace directo del producto, sin acortadores"
     assert env.service.created == []
     assert not any(entry.startswith("claim") for entry in env.log)
+
+
+def test_approve_asin_mismatch_is_422_and_not_claimed(client, env):
+    resp = client.post(
+        f"{BASE}/{SUB_ID}/approve",
+        json=deal_body(
+            affiliate_url="https://www.amazon.es/dp/B0ZZZZZZZZ", external_id=ASIN
+        ),
+    )
+    assert resp.status_code == 422
+    assert "ASIN" in resp.json()["detail"]
+    assert env.service.created == []
+    assert not any(entry.startswith("claim") for entry in env.log)
+
+
+def test_approve_edited_url_mismatching_submission_asin_is_422(client, env):
+    resp = client.post(
+        f"{BASE}/{SUB_ID}/approve",
+        json=deal_body(affiliate_url="https://www.amazon.es/dp/B0ZZZZZZZZ"),
+    )
+    assert resp.status_code == 422
+
+
+def test_approve_matching_asin_case_insensitive_ok(client, env):
+    resp = client.post(
+        f"{BASE}/{SUB_ID}/approve",
+        json=deal_body(external_id=ASIN.lower()),
+    )
+    assert resp.status_code == 200, resp.text

@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any
 from sqlalchemy.exc import IntegrityError
 
 from app.core.exceptions import ValidationError
+from app.modules.affiliates.domain.links import extract_url
 from app.modules.submissions.application.check_link import (
     canonical_link,
     existing_deal_summary,
@@ -80,7 +81,7 @@ class CreateSubmissionUseCase:
         submission = DealSubmission(
             user_id=user_id,
             status=PENDING,
-            original_url=data.url,
+            original_url=extract_url(data.url),
             canonical_url=link.canonical_url,
             affiliate_url=resolved.rewritten.url,
             asin=link.asin,

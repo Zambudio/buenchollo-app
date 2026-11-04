@@ -368,3 +368,10 @@ def test_create_rejects_generic_shortener(client, repo):
     assert resp.status_code == 400
     assert resp.json()["detail"] == "Pega el enlace directo del producto, sin acortadores"
     assert repo.rows == []
+
+
+def test_original_url_stores_the_extracted_link_not_the_pasted_text(client, repo):
+    pasted = f"Mira este chollo: https://www.amazon.es/dp/{ASIN}?tag=otro-21 !!"
+    resp = client.post(URL, json=body(url=pasted))
+    assert resp.status_code == 201, resp.text
+    assert repo.rows[0].original_url == f"https://www.amazon.es/dp/{ASIN}?tag=otro-21"
