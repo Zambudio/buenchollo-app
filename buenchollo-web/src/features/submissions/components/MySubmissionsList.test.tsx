@@ -139,5 +139,6 @@ describe("MySubmissionsList", () => {
       "href",
       "/publicar",
     );
+    expect(screen.getByText("Publicar chollo").className).not.toMatch(/hidden/);
   });
 });

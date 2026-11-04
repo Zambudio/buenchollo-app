@@ -138,7 +138,7 @@ export function MySubmissionsList() {
           Todavía no has publicado ningún chollo.
         </p>
         <div className="flex justify-center">
-          <PublishDealButton />
+          <PublishDealButton variant="cta" />
         </div>
       </div>
     );

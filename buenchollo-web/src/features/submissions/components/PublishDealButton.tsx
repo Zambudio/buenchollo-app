@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { AuthRequiredDialog } from "./AuthRequiredDialog";
 
 interface PublishDealButtonProps {
-  variant?: "header" | "menu";
+  variant?: "header" | "menu" | "cta";
   onNavigate?: () => void;
 }
 
@@ -14,13 +14,16 @@ export function PublishDealButton({ variant = "header", onNavigate }: PublishDea
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const isMenu = variant === "menu";
-  const className = isMenu
-    ? "flex items-center gap-2 font-mono text-sm text-cyan-glow hover:text-foreground"
-    : "inline-flex items-center justify-center gap-1.5 shrink-0 size-9 sm:size-auto sm:px-4 sm:py-1.5 rounded-full bg-cyan-glow text-surface-900 font-mono text-xs sm:text-sm font-bold hover:bg-foreground transition-colors";
+  const isCta = variant === "cta";
+  const className = isCta
+    ? "inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-full bg-cyan-glow text-surface-900 font-mono text-sm font-bold hover:bg-foreground transition-colors"
+    : isMenu
+      ? "flex items-center gap-2 font-mono text-sm text-cyan-glow hover:text-foreground"
+      : "inline-flex items-center justify-center gap-1.5 shrink-0 size-9 sm:size-auto sm:px-4 sm:py-1.5 rounded-full bg-cyan-glow text-surface-900 font-mono text-xs sm:text-sm font-bold hover:bg-foreground transition-colors";
   const content = (
     <>
       <Plus className="size-4" aria-hidden="true" />
-      <span className={isMenu ? "" : "hidden sm:inline whitespace-nowrap"}>
+      <span className={isMenu || isCta ? "" : "hidden sm:inline whitespace-nowrap"}>
         {isMenu ? "PUBLICAR CHOLLO" : "Publicar chollo"}
       </span>
     </>
@@ -31,7 +34,7 @@ export function PublishDealButton({ variant = "header", onNavigate }: PublishDea
       {user ? (
         <Link
           to="/publicar"
-          aria-label={isMenu ? undefined : "Publicar chollo"}
+          aria-label={isMenu || isCta ? undefined : "Publicar chollo"}
           className={className}
           onClick={onNavigate}
         >
@@ -40,7 +43,7 @@ export function PublishDealButton({ variant = "header", onNavigate }: PublishDea
       ) : (
         <button
           type="button"
-          aria-label={isMenu ? undefined : "Publicar chollo"}
+          aria-label={isMenu || isCta ? undefined : "Publicar chollo"}
           className={className}
           onClick={() => setDialogOpen(true)}
         >

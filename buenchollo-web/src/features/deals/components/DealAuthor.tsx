@@ -7,8 +7,9 @@ interface DealAuthorProps {
 }
 
 export function DealAuthor({ author, size = "md" }: DealAuthorProps) {
-  const [broken, setBroken] = useState(false);
+  const [brokenUrl, setBrokenUrl] = useState<string | null>(null);
   if (!author) return null;
+  const broken = brokenUrl !== null && brokenUrl === author.avatar_url;
 
   const name = author.display_name || author.username || "la comunidad";
   const sm = size === "sm";
@@ -24,7 +25,7 @@ export function DealAuthor({ author, size = "md" }: DealAuthorProps) {
           alt=""
           referrerPolicy="no-referrer"
           loading="lazy"
-          onError={() => setBroken(true)}
+          onError={() => setBrokenUrl(author.avatar_url)}
           className={`${boxCls} shrink-0 rounded-full object-cover`}
         />
       ) : (

@@ -61,4 +61,27 @@ describe("PublishDealButton", () => {
     );
     expect(screen.queryByText(/necesitas una cuenta/)).not.toBeInTheDocument();
   });
+
+  it("variant cta muestra siempre el texto, sin clases responsive que lo oculten", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<PublishDealButton variant="cta" />);
+
+    const label = screen.getByText("Publicar chollo");
+    expect(label.className).not.toMatch(/hidden/);
+    await user.click(screen.getByRole("button", { name: /publicar chollo/i }));
+    expect(
+      await screen.findByText("Para compartir chollos con la comunidad necesitas una cuenta."),
+    ).toBeInTheDocument();
+  });
+
+  it("variant cta con sesión es un enlace con texto visible", () => {
+    mocks.useAuth.mockReturnValue({ user: { id: "u-1" }, me: null, loading: false });
+    renderWithProviders(<PublishDealButton variant="cta" />);
+
+    expect(screen.getByRole("link", { name: /publicar chollo/i })).toHaveAttribute(
+      "href",
+      "/publicar",
+    );
+    expect(screen.getByText("Publicar chollo").className).not.toMatch(/hidden/);
+  });
 });

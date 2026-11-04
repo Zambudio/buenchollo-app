@@ -40,4 +40,15 @@ describe("DealAuthor", () => {
     expect(container.querySelector("img")).toBeNull();
     expect(screen.getByTestId("author-initial")).toBeInTheDocument();
   });
+
+  it("reintenta el avatar cuando cambia avatar_url tras un fallo", () => {
+    const mk = (url: string) => (
+      <DealAuthor size="sm" author={{ username: "ana", display_name: null, avatar_url: url }} />
+    );
+    const { container, rerender } = render(mk("https://a.test/x.png"));
+    fireEvent.error(container.querySelector("img")!);
+    expect(container.querySelector("img")).toBeNull();
+    rerender(mk("https://a.test/y.png"));
+    expect(container.querySelector("img")).toHaveAttribute("src", "https://a.test/y.png");
+  });
 });

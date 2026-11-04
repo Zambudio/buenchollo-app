@@ -749,7 +749,7 @@ function DealDetail() {
                 </div>
               )}
 
-              <CouponCode code={deal.coupon_code} />
+              {!isExpired && <CouponCode code={deal.coupon_code} />}
 
               <a
                 href={deal.affiliate_url ?? undefined}
