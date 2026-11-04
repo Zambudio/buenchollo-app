@@ -232,6 +232,7 @@ no se modifica.
 | Puerto ocupado | Otro proceso en `8000`/`8080`/`54329`/`1025`/`8025` | Cambia puertos en `config.local.json` (`api_port`, `web_port`, …). |
 | La 1ª carga de la web tarda ~30 s | Vite compila en frío sobre el share | Normal; las siguientes son rápidas. En un clon local es más rápido. |
 | La API no recoge los cambios del código | En shares SMB no llegan eventos de cambio | Ya resuelto: el lanzador pone `WATCHFILES_FORCE_POLLING=true` (tarda ~1 s en detectar). Si dudas, `restart`. |
+| La web carga pero "No se pudo comprobar el enlace" / sin datos | La API (u otro servicio) ha muerto. Antes pasaba al cerrar el terminal o la sesión del agente que lanzó `start`: Windows mata todo su *job* | Ya resuelto (`spawn.py` lanza fuera del job). Comprueba con `status` y vuelve a `start` (solo arranca lo que falte). |
 | `psql`: *invalid byte sequence for encoding "UTF8"* | La consola usa la página de códigos de Windows | `$env:PGCLIENTENCODING='UTF8'` antes de `psql`. |
 
 **Desinstalar**: `stop` y borrar `%LOCALAPPDATA%\BuenCholloLocal`.

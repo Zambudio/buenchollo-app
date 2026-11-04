@@ -128,10 +128,20 @@ function Get-SavedPid([string]$name) {
   return $null
 }
 
-function Test-Running([string]$name) {
+# El PID guardado solo cuenta si sigue siendo nuestro python/node y no un
+# proceso cualquiera que haya reutilizado el número tras morir el servicio.
+function Get-OwnProcess([string]$name) {
   $savedPid = Get-SavedPid $name
-  if (-not $savedPid) { return $false }
-  return [bool](Get-Process -Id $savedPid -ErrorAction SilentlyContinue)
+  if (-not $savedPid) { return $null }
+  $proc = Get-Process -Id $savedPid -ErrorAction SilentlyContinue
+  if (-not $proc -or $proc.ProcessName -notin @('python', 'node')) { return $null }
+  $stamp = (Get-Item (Join-Path $PidDir "$name.pid")).LastWriteTime
+  if ($proc.StartTime -gt $stamp.AddSeconds(5)) { return $null }
+  return $proc
+}
+
+function Test-Running([string]$name) {
+  return [bool](Get-OwnProcess $name)
 }
 
 function Start-Svc([string]$name, [string]$exe, [string[]]$arguments, [string]$workDir, [hashtable]$vars) {
@@ -169,11 +179,11 @@ function Resolve-DrivePath([string]$path) {
 }
 
 function Stop-Svc([string]$name) {
-  $savedPid = Get-SavedPid $name
-  if ($savedPid -and (Get-Process -Id $savedPid -ErrorAction SilentlyContinue)) {
+  $proc = Get-OwnProcess $name
+  if ($proc) {
     # Árbol de procesos de ESE PID (uvicorn --reload y vite lanzan hijos).
     # Nunca matar por nombre de imagen: mataría otros python/node del PC.
-    taskkill /PID $savedPid /T /F | Out-Null
+    taskkill /PID $proc.Id /T /F | Out-Null
     Write-Ok "$name parado"
   }
   Remove-Item -Force (Join-Path $PidDir "$name.pid") -ErrorAction SilentlyContinue
