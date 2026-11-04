@@ -51,10 +51,7 @@ export function extractAsin(url: string): string {
   return match?.[1] ? match[1].toUpperCase() : "";
 }
 
-export function submissionToDealForm(
-  s: AdminSubmission,
-  now: Date = new Date(),
-): DealForm {
+export function submissionToDealForm(s: AdminSubmission, now: Date = new Date()): DealForm {
   const images = s.images.filter(Boolean);
   if (s.image_url) {
     const index = images.indexOf(s.image_url);
