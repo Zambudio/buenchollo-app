@@ -214,6 +214,9 @@ no se modifica.
   ahí es lo que producción carga al reiniciarse. **No cambies de rama en el
   share para probar otra cosa**: clona el repo en un disco local (§4) y prueba
   allí. El entorno local en sí no afecta a los contenedores.
+- **Para el entorno local (`stop`) antes de cambiar de rama o mergear en el share.** Vite
+  mantiene abiertos ficheros del repo y Windows no deja borrarlos: el `git merge`/`checkout`
+  falla a medias con *Permission denied* (pasó en el despliegue del 2026-11-04).
 - **Probar otra rama** (en un clon local): `git checkout <rama>`, después
   `reset-db` si trae migraciones (se aplican con `alembic upgrade head`) y
   `restart`.

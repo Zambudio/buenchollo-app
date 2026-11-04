@@ -312,7 +312,14 @@ docker run -d \
 > en cuanto se reinician o reconstruyen.** No hay `tar`/`scp` ni despliegue separado.
 > El comando de la API es `alembic upgrade head && uvicorn ...`.
 >
-> **Situación a 2026-11-04.** Los contenedores siguen ejecutando en memoria el código de
+> ✅ **Desplegado el 2026-11-04 (~21:55 CET)**: merge `9772ddd` en `main`, copia de
+> trabajo en `main`, `docker-compose build && up -d` en el NAS (Pillow 13.0.0), web
+> desplegada por Workers Builds (~6 min) y CI de `main` en verde. `ADMIN_NOTIFICATION_EMAIL`
+> y `AMAZON_AFFILIATE_TAG` ya estaban en el `.env` del NAS; el backfill no tenía nada
+> pendiente. Queda el paso 6 (Redirect URLs de Supabase) por confirmar en el panel.
+> El aviso siguiente se conserva como contexto de por qué había que desplegar.
+>
+> **Situación a 2026-11-04 (antes del despliegue).** Los contenedores siguen ejecutando en memoria el código de
 > `main` (arrancados el 2026-11-03 15:53 UTC), pero la copia de trabajo está en `develop`
 > y la BD compartida ya está en la revisión Alembic `20261103140000`. Consecuencias:
 >

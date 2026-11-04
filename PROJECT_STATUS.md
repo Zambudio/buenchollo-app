@@ -1,5 +1,10 @@
 # PROJECT_STATUS — BuenCholloTech
-*Actualización de producción: 2026-11-03 — Programación Telegram con ficha web pendiente desplegada en web, API y scheduler; migración aplicada y CI de `main` en verde. Chollos de usuarios cerrado en `develop` (2026-11-04), pendiente de desplegar.*
+*Actualización de producción: 2026-11-04 — Chollos de usuarios desplegado en web, API y scheduler (merge `9772ddd`), con los arreglos de la prueba exhaustiva (XSS en JSON-LD, ASIN en minúsculas, estado de chollo, enlaces internos) y el entorno local `local-env/`. CI de `main` en verde.*
+
+## 2026-11-04 · Despliegue a producción
+
+- Merge `develop`→`main` (`9772ddd`), copia de trabajo del share en `main`, rebuild en el NAS (`docker-compose build && up -d`: Pillow 13.0.0, `alembic upgrade head` sin cambios), web por Workers Builds en ~6 min, CI de `main` en verde. Comprobado: `/health` y `/health/ready` OK, `check-link` sin sesión → 401, `/publicar` 200, botón "Publicar chollo" en la home, JSON-LD de las fichas escapado. Backfill de `canonical_url`: 0 pendientes. Pendiente de confirmar: Redirect URL `https://buenchollotech.com/**` en Supabase Auth.
+- Incidencia menor: el primer `git merge` falló con *Permission denied* porque el Vite del entorno local tenía abierto un directorio del share; se paró el entorno local y el segundo intento fue limpio. Lección en `docs/guides/LOCAL-ENV.md`: parar el entorno local antes de cambiar de rama o mergear en el share.
 
 ## 2026-11-04 · Entorno local de pruebas y prueba exhaustiva de `develop`
 
