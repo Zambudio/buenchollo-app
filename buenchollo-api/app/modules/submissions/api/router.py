@@ -1,9 +1,9 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, Query, Request, Response, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, Response, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.config import Settings, get_settings
-from app.core.rate_limit import limiter
+from app.core.rate_limit import user_rate_limit
 from app.core.security import AuthenticatedUser, _clean_supabase_url, get_supabase_client
 from app.modules.categories.infrastructure.repository import CategoryRepository
 from app.modules.products.api.router import get_amazon_client
@@ -58,10 +58,12 @@ def get_check_link_use_case(
     )
 
 
-@router.post("/check-link", response_model=LinkCheckResponse)
-@limiter.limit("20/minute")
+@router.post(
+    "/check-link",
+    response_model=LinkCheckResponse,
+    dependencies=[Depends(user_rate_limit("20/minute", "submissions:check-link"))],
+)
 async def check_link(
-    request: Request,
     payload: CheckLinkRequest,
     _user: AuthenticatedUser = Depends(require_complete_profile),
     use_case: CheckLinkUseCase = Depends(get_check_link_use_case),
@@ -93,10 +95,13 @@ def get_withdraw_submission_use_case(
     return WithdrawSubmissionUseCase(repo)
 
 
-@router.post("", response_model=SubmissionResponse, status_code=status.HTTP_201_CREATED)
-@limiter.limit("10/minute")
+@router.post(
+    "",
+    response_model=SubmissionResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(user_rate_limit("10/minute", "submissions:create"))],
+)
 async def create_submission(
-    request: Request,
     payload: SubmissionCreate,
     background_tasks: BackgroundTasks,
     user: AuthenticatedUser = Depends(require_complete_profile),
@@ -160,10 +165,12 @@ async def _read_limited(file: UploadFile) -> bytes:
     raise InvalidImageError("La imagen supera el máximo de 5 MB")
 
 
-@router.post("/images", response_model=ImageUploadResponse)
-@limiter.limit("30/minute")
+@router.post(
+    "/images",
+    response_model=ImageUploadResponse,
+    dependencies=[Depends(user_rate_limit("30/minute", "submissions:images"))],
+)
 async def upload_image(
-    request: Request,
     file: UploadFile,
     user: AuthenticatedUser = Depends(require_complete_profile),
     use_case: IngestImageUseCase = Depends(get_ingest_image_use_case),
@@ -172,10 +179,12 @@ async def upload_image(
     return ImageUploadResponse(url=url, width=width, height=height)
 
 
-@router.post("/images/from-url", response_model=ImageUploadResponse)
-@limiter.limit("30/minute")
+@router.post(
+    "/images/from-url",
+    response_model=ImageUploadResponse,
+    dependencies=[Depends(user_rate_limit("30/minute", "submissions:images-from-url"))],
+)
 async def upload_image_from_url(
-    request: Request,
     payload: ImageFromUrlRequest,
     user: AuthenticatedUser = Depends(require_complete_profile),
     use_case: IngestImageUseCase = Depends(get_ingest_image_use_case),

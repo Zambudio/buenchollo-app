@@ -230,6 +230,8 @@ def test_image_bypass_attempts_rejected(client):
         "https://m.media-amazon.com/a%5c.jpg",
         "https://m.media-amazon.com/a\n.jpg",
     ):
+        # El límite por usuario (10/min) también cuenta las peticiones inválidas.
+        limiter.reset()
         resp = client.post(URL, json=body(images=[bad], image_url=None))
         assert resp.status_code == 422, bad
 
