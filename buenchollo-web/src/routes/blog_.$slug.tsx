@@ -15,6 +15,7 @@ import { BlogViewCount } from "@/features/blog/components/public/BlogViewCount";
 import { ShareDialog } from "@/features/deals/components/ShareBox";
 import { useAuth } from "@/hooks/useAuth";
 import { errorMessage } from "@/lib/errors";
+import { serializeJsonLd } from "@/lib/json-ld";
 
 const SITE = "https://buenchollotech.com";
 
@@ -110,7 +111,7 @@ export const Route = createFileRoute("/blog_/$slug")({
         ...post.tags.map((tag) => ({ property: "article:tag", content: tag })),
       ],
       links: [{ rel: "canonical", href: canonical }],
-      scripts: [{ type: "application/ld+json", children: JSON.stringify(jsonLd) }],
+      scripts: [{ type: "application/ld+json", children: serializeJsonLd(jsonLd) }],
     };
   },
 });

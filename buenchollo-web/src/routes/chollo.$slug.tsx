@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
+import { serializeJsonLd } from "@/lib/json-ld";
 
 const SITE = "https://buenchollotech.com";
 
@@ -143,7 +144,7 @@ export const Route = createFileRoute("/chollo/$slug")({
       scripts: [
         {
           type: "application/ld+json",
-          children: JSON.stringify({
+          children: serializeJsonLd({
             "@context": "https://schema.org",
             "@graph": [
               productSchema,

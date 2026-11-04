@@ -6,6 +6,7 @@ import { DealCard, type DealCardData } from "@/features/deals/components/DealCar
 import { useMyVotes } from "@/features/deals/hooks/useMyVotes";
 import { categoriesService, type Category } from "@/services/api/categories";
 import { dealsService } from "@/services/api/deals";
+import { serializeJsonLd } from "@/lib/json-ld";
 
 const SITE = "https://buenchollotech.com";
 
@@ -38,7 +39,7 @@ export const Route = createFileRoute("/categoria/$slug")({
       scripts: [
         {
           type: "application/ld+json",
-          children: JSON.stringify({
+          children: serializeJsonLd({
             "@context": "https://schema.org",
             "@type": "CollectionPage",
             name: `Chollos de ${name}`,
