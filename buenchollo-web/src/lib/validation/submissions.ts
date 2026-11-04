@@ -20,15 +20,52 @@ export const computeDiscount = calculateDiscount;
 const MAX_IMAGES = 8;
 const MAX_PRICE = 100_000;
 
+/** Precio escrito por el usuario → parte entera y decimal, o null si no es válido.
+ *
+ *  Reglas (formato español, tolerante con el punto decimal):
+ *  - Solo coma: es el decimal ("299,99").
+ *  - Solo punto: si los grupos tras el punto tienen exactamente 3 cifras y el
+ *    primero no empieza por 0, son miles ("1.299", "1.299.999"); si no, es el
+ *    decimal ("299.99", "0.999").
+ *  - Ambos: el último es el decimal y debe ser la coma ("1.299,99"). El
+ *    formato inglés ("1,299.99") se rechaza: con la coma como decimal habitual
+ *    es ambiguo y preferimos pedirlo bien a adivinar.
+ */
+function splitPrice(raw: string): { whole: string; decimals: string } | null {
+  const s = raw.trim();
+  if (!/^[\d.,]+$/.test(s)) return null;
+  const hasDot = s.includes(".");
+  const hasComma = s.includes(",");
+  let match: RegExpExecArray | null;
+  if (hasDot && hasComma) {
+    match = /^([1-9]\d{0,2}(?:\.\d{3})+),(\d+)$/.exec(s);
+    return match ? { whole: match[1]!.replace(/\./g, ""), decimals: match[2]! } : null;
+  }
+  if (hasComma) {
+    match = /^(\d+),(\d+)$/.exec(s);
+    return match ? { whole: match[1]!, decimals: match[2]! } : null;
+  }
+  if (hasDot) {
+    if (/^[1-9]\d{0,2}(?:\.\d{3})+$/.test(s)) return { whole: s.replace(/\./g, ""), decimals: "" };
+    match = /^(\d+)\.(\d+)$/.exec(s);
+    return match ? { whole: match[1]!, decimals: match[2]! } : null;
+  }
+  return /^\d+$/.test(s) ? { whole: s, decimals: "" } : null;
+}
+
+function isEnglishFormat(raw: string): boolean {
+  const s = raw.trim();
+  return s.includes(",") && s.includes(".") && s.lastIndexOf(".") > s.lastIndexOf(",");
+}
+
 export function parsePrice(raw: string): number {
-  const normalized = raw.trim().replace(",", ".");
-  if (!/^\d+(\.\d+)?$/.test(normalized)) return Number.NaN;
-  return Number(normalized);
+  const parts = splitPrice(raw);
+  if (!parts) return Number.NaN;
+  return Number(parts.decimals ? `${parts.whole}.${parts.decimals}` : parts.whole);
 }
 
 function hasMoreThanTwoDecimals(raw: string): boolean {
-  const decimals = raw.trim().replace(",", ".").split(".")[1];
-  return decimals !== undefined && decimals.length > 2;
+  return (splitPrice(raw)?.decimals.length ?? 0) > 2;
 }
 
 function checkPrice(
@@ -43,7 +80,10 @@ function checkPrice(
   }
   const n = parsePrice(raw);
   let message: string | null = null;
-  if (!Number.isFinite(n)) message = "Introduce un número válido";
+  if (!Number.isFinite(n))
+    message = isEnglishFormat(raw)
+      ? "Formato no válido: escribe 1299,99 o 1.299,99"
+      : "Introduce un número válido";
   else if (n <= 0) message = "Debe ser mayor que 0";
   else if (n > MAX_PRICE) message = "Máximo 100.000 €";
   else if (hasMoreThanTwoDecimals(raw)) message = "Máximo 2 decimales";

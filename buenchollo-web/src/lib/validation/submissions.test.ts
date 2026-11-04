@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  parsePrice,
   submissionFormSchema,
   toSubmissionPayload,
   type SubmissionFormValues,
@@ -32,7 +33,70 @@ function message(values: Partial<SubmissionFormValues>, path: string) {
   return r.error.issues.find((i) => i.path[0] === path)?.message ?? null;
 }
 
+describe("parsePrice (formato español)", () => {
+  it.each([
+    ["299", 299],
+    ["299,99", 299.99],
+    ["299.99", 299.99],
+    ["299,9", 299.9],
+    ["1.299", 1299],
+    ["12.345", 12345],
+    ["1.299.999", 1299999],
+    ["1.299,99", 1299.99],
+    ["12.345,5", 12345.5],
+    ["  49,99  ", 49.99],
+    ["0,5", 0.5],
+    ["0.50", 0.5],
+  ])("%s → %d", (raw, expected) => {
+    expect(parsePrice(raw)).toBe(expected);
+  });
+
+  it.each([
+    "",
+    "abc",
+    "1,299.99",
+    "1.29,99",
+    "1.2999,99",
+    "1,299,999",
+    "1.299.99",
+    "12..5",
+    ",5",
+    "5,",
+    "-5",
+    "1 299",
+    "1e3",
+  ])("%s → NaN", (raw) => {
+    expect(parsePrice(raw)).toBeNaN();
+  });
+
+  it("decimales de más se detectan pero el número se lee", () => {
+    expect(parsePrice("10,999")).toBe(10.999);
+    expect(parsePrice("1.2345")).toBe(1.2345);
+  });
+});
+
 describe("submissionFormSchema", () => {
+  it("acepta separador de miles español", () => {
+    const r = submissionFormSchema.safeParse({
+      ...valido,
+      current_price: "1.299",
+      previous_price: "1.499,99",
+    });
+    expect(r.success).toBe(true);
+    expect(
+      toSubmissionPayload(
+        { ...valido, current_price: "1.299", previous_price: "1.499,99" },
+        "https://www.amazon.es/dp/B0ABCDEF12",
+      ),
+    ).toMatchObject({ current_price: 1299, previous_price: 1499.99 });
+  });
+
+  it("formato inglés (coma de miles y punto decimal) se rechaza con un mensaje claro", () => {
+    expect(message({ current_price: "1,299.99" }, "current_price")).toBe(
+      "Formato no válido: escribe 1299,99 o 1.299,99",
+    );
+  });
+
   it("acepta un payload válido", () => {
     expect(submissionFormSchema.safeParse(valido).success).toBe(true);
   });
@@ -43,7 +107,8 @@ describe("submissionFormSchema", () => {
   it("rechaza precio <= 0, > 100000, con más de 2 decimales, vacío o no numérico", () => {
     expect(message({ current_price: "0" }, "current_price")).toBeTruthy();
     expect(message({ current_price: "100000.01" }, "current_price")).toBeTruthy();
-    expect(message({ current_price: "10.999" }, "current_price")).toBeTruthy();
+    expect(message({ current_price: "10,999" }, "current_price")).toBe("Máximo 2 decimales");
+    expect(message({ current_price: "0.999" }, "current_price")).toBe("Máximo 2 decimales");
     expect(message({ current_price: "" }, "current_price")).toBeTruthy();
     expect(message({ current_price: "abc" }, "current_price")).toBeTruthy();
   });
