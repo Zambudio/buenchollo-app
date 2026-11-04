@@ -8,7 +8,8 @@ import { formatPrice, formatRelativeTime, calculateDiscount } from "@/lib/format
 import { ShareDialog } from "@/features/deals/components/ShareBox";
 import { DealVoteControl } from "@/features/deals/components/DealVoteControl";
 import { StoreAvailability } from "@/features/deals/components/StoreAvailability";
-import type { DealAuthor } from "@/services/api/submissions";
+import { DealAuthor } from "@/features/deals/components/DealAuthor";
+import type { DealAuthor as DealAuthorData } from "@/services/api/submissions";
 
 export interface DealCardData {
   id: string;
@@ -30,7 +31,7 @@ export interface DealCardData {
   store?: { id: string; name: string; slug: string } | null;
   category?: { name: string; slug: string } | null;
   source?: string;
-  author?: DealAuthor | null;
+  author?: DealAuthorData | null;
 }
 
 export interface DealCardViewProps {
@@ -193,6 +194,12 @@ export function DealCardView({
         </div>
 
         {deal.store && <StoreAvailability store={deal.store} linked={!preview} />}
+
+        {deal.author && (
+          <div className="mb-3 min-w-0">
+            <DealAuthor author={deal.author} size="sm" />
+          </div>
+        )}
 
         <div className="mt-auto flex items-center justify-between gap-3">
           <span className="posted-date font-mono uppercase tracking-wider">

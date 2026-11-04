@@ -37,6 +37,28 @@ describe("emptyForm", () => {
   });
 });
 
+describe("coupon_code", () => {
+  it("emptyForm arranca sin cupón", () => {
+    expect(emptyForm().coupon_code).toBe("");
+  });
+
+  it("dealToForm lo rellena y null pasa a cadena vacía", () => {
+    expect(dealToForm({ ...baseDeal, coupon_code: "SONY10" }).coupon_code).toBe("SONY10");
+    expect(dealToForm({ ...baseDeal, coupon_code: null }).coupon_code).toBe("");
+    expect(dealToForm(baseDeal).coupon_code).toBe("");
+  });
+
+  it("buildDealPayload lo recorta, limita a 64 y vacío va como null", () => {
+    expect(buildDealPayload(formWith({ coupon_code: "  SONY10 " }), null).coupon_code).toBe(
+      "SONY10",
+    );
+    expect(
+      buildDealPayload(formWith({ coupon_code: "x".repeat(80) }), null).coupon_code,
+    ).toHaveLength(64);
+    expect(buildDealPayload(formWith({ coupon_code: "  " }), null).coupon_code).toBeNull();
+  });
+});
+
 describe("dealToForm", () => {
   it("convierte precios a string y nulls a cadena vacía", () => {
     const f = dealToForm(baseDeal);

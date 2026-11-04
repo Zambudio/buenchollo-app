@@ -84,6 +84,23 @@ describe("DealCard", () => {
     expect(screen.getByText(/299,99/)).toBeInTheDocument(); // precio tachado
   });
 
+  it("muestra el autor solo en chollos de la comunidad", () => {
+    const { unmount } = renderWithProviders(<DealCard deal={buildDeal()} />);
+    expect(screen.queryByText(/compartido por/i)).not.toBeInTheDocument();
+    unmount();
+
+    renderWithProviders(
+      <DealCard
+        deal={buildDeal({
+          source: "community",
+          author: { username: "pepe", display_name: "Pepe G", avatar_url: null },
+        })}
+      />,
+    );
+    expect(screen.getByText(/compartido por/i)).toBeInTheDocument();
+    expect(screen.getByText("Pepe G")).toBeInTheDocument();
+  });
+
   it("muestra el descuento calculado en negativo", () => {
     renderWithProviders(<DealCard deal={buildDeal()} />);
     // (199.99/299.99) → 33% de descuento

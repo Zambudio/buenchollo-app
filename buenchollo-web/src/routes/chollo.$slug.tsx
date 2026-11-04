@@ -10,6 +10,8 @@ import { RecommendedAlertsBlock } from "@/features/alerts/components/Recommended
 import { ShareDialog } from "@/features/deals/components/ShareBox";
 import { DealVoteControl } from "@/features/deals/components/DealVoteControl";
 import { StoreAvailability } from "@/features/deals/components/StoreAvailability";
+import { DealAuthor } from "@/features/deals/components/DealAuthor";
+import { CouponCode } from "@/features/deals/components/CouponCode";
 import {
   Carousel,
   CarouselContent,
@@ -733,6 +735,12 @@ function DealDetail() {
                 <p className="product-availability meta font-mono mb-3">📦 {deal.shipping_info}</p>
               )}
 
+              {deal.author && (
+                <div className="mb-4">
+                  <DealAuthor author={deal.author} size="md" />
+                </div>
+              )}
+
               {/* Fecha de fin de oferta destacada */}
               {deal.expires_at && !isExpired && (
                 <div className="product-countdown countdown mb-4 px-3 py-2 font-mono text-sm">
@@ -740,6 +748,8 @@ function DealDetail() {
                   <span>{fmtDateTime(deal.expires_at)}</span>
                 </div>
               )}
+
+              <CouponCode code={deal.coupon_code} />
 
               <a
                 href={deal.affiliate_url ?? undefined}

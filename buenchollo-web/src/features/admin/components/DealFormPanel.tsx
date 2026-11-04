@@ -192,6 +192,13 @@ export function DealFormPanel({
         className={inputCls}
       />
       <input
+        placeholder="Código de descuento (opcional)"
+        maxLength={64}
+        value={form.coupon_code}
+        onChange={(e) => setForm({ ...form, coupon_code: e.target.value })}
+        className={inputCls}
+      />
+      <input
         placeholder="Enlace afiliado *"
         required
         value={form.affiliate_url}
