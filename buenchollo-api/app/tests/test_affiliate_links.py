@@ -140,3 +140,35 @@ def test_rewrite_generic_tag_param_counts_for_non_amazon():
     res = rewrite_affiliate_link(canonicalize("https://tienda.com/p?tag=zz"), amazon_tag=TAG)
     assert THIRD_PARTY_AFFILIATE_REMOVED in res.warnings
     assert res.url == "https://tienda.com/p"
+
+
+@pytest.mark.parametrize(
+    "host",
+    [
+        "bit.ly", "www.bit.ly", "tinyurl.com", "t.co", "s.click.aliexpress.com", "amzlink.to",
+        "goo.gl", "ow.ly", "buff.ly", "rebrand.ly", "shorturl.at", "cutt.ly", "is.gd",
+        "BIT.LY",
+    ],
+)
+def test_generic_shorteners_are_detected(host):
+    from app.modules.affiliates.domain.links import is_generic_shortener_host
+
+    assert is_generic_shortener_host(host)
+
+
+@pytest.mark.parametrize(
+    "host", ["amazon.es", "amzn.to", "amzn.eu", "a.co", "pccomponentes.com", "aliexpress.com"]
+)
+def test_direct_and_amazon_short_hosts_are_not_generic_shorteners(host):
+    from app.modules.affiliates.domain.links import is_generic_shortener_host
+
+    assert not is_generic_shortener_host(host)
+
+
+def test_ensure_not_shortened_raises_spanish_400():
+    from app.modules.affiliates.domain.links import ensure_not_shortened
+
+    with pytest.raises(InvalidLinkError) as exc:
+        ensure_not_shortened(canonicalize("https://bit.ly/3abc"))
+    assert str(exc.value) == "Pega el enlace directo del producto, sin acortadores"
+    ensure_not_shortened(canonicalize("https://www.amazon.es/dp/B0ABCDEFGH"))

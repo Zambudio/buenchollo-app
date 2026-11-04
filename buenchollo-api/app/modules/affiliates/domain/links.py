@@ -8,6 +8,35 @@ MAX_URL_LENGTH = 2048
 
 AMAZON_SHORT_HOSTS = frozenset({"amzn.to", "amzn.eu", "a.co", "link.amazon"})
 
+# Acortadores genéricos: ocultan el destino real y saltarían la reescritura de
+# afiliación (y la detección de duplicados). Los de Amazon se resuelven aparte.
+GENERIC_SHORTENER_HOSTS = frozenset(
+    {
+        "bit.ly",
+        "bitly.com",
+        "tinyurl.com",
+        "t.co",
+        "goo.gl",
+        "ow.ly",
+        "buff.ly",
+        "rebrand.ly",
+        "shorturl.at",
+        "cutt.ly",
+        "is.gd",
+        "v.gd",
+        "t.ly",
+        "rb.gy",
+        "tiny.cc",
+        "bl.ink",
+        "lnkd.in",
+        "amzlink.to",
+        "s.click.aliexpress.com",
+        "a.aliexpress.com",
+        "ebay.us",
+    }
+)
+SHORTENER_NOT_ALLOWED = "Pega el enlace directo del producto, sin acortadores"
+
 _AMAZON_HOST_RE = re.compile(r"^(?:www\.)?amazon\.(?P<tld>[a-z]{2,3}(?:\.[a-z]{2})?)$")
 _AMAZON_ASIN_PATH_RE = re.compile(r"/(?:dp|gp/product|gp/aw/d|product)/([A-Z0-9]{10})(?:[/?#]|$)")
 _ASIN_RE = re.compile(r"^[A-Z0-9]{10}$")
@@ -66,6 +95,10 @@ def is_amazon_short_host(host: str) -> bool:
     return host.lower().removeprefix("www.") in AMAZON_SHORT_HOSTS
 
 
+def is_generic_shortener_host(host: str) -> bool:
+    return host.lower().removeprefix("www.") in GENERIC_SHORTENER_HOSTS
+
+
 def is_tracking_param(name: str) -> bool:
     lowered = name.lower()
     return lowered in _TRACKING_EXACT or lowered.startswith(_TRACKING_PREFIXES)
@@ -107,6 +140,11 @@ def clean_url(url: str) -> str:
 def extract_asin(path: str) -> str | None:
     match = _AMAZON_ASIN_PATH_RE.search(path)
     return match.group(1) if match else None
+
+
+def ensure_not_shortened(link: CanonicalLink) -> None:
+    if is_generic_shortener_host(link.host):
+        raise InvalidLinkError(SHORTENER_NOT_ALLOWED)
 
 
 def canonicalize(url: str, *, asin: str | None = None) -> CanonicalLink:

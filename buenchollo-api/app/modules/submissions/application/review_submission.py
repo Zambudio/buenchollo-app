@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from app.core.exceptions import NotFoundError, ValidationError
-from app.modules.affiliates.domain.links import canonicalize, extract_url
+from app.modules.affiliates.domain.links import canonicalize, ensure_not_shortened, extract_url
 from app.modules.affiliates.domain.rewriters import rewrite_affiliate_link
 from app.modules.deals.api.schemas import DealCreate
 from app.modules.deals.domain.exceptions import DuplicateDealError
@@ -48,14 +48,16 @@ class ReviewSubmissionUseCase:
         self, submission_id: str, admin_id: str, deal_in: DealCreate, amazon_tag: str
     ) -> Deal:
         submission = await self._load_pending(submission_id)
+        external_id = deal_in.external_id or submission.asin
+        link = canonicalize(extract_url(deal_in.affiliate_url), asin=external_id)
+        ensure_not_shortened(link)
+
         if not await self.repo.claim_pending(submission_id, APPROVED):
             raise SubmissionNotPendingError()
         # claim_pending es un UPDATE masivo: el objeto cargado queda desfasado.
         submission.status = APPROVED
 
         payload = deal_in.model_dump(exclude_none=True)
-        external_id = deal_in.external_id or submission.asin
-        link = canonicalize(extract_url(deal_in.affiliate_url), asin=external_id)
         payload["source"] = "community"
         payload["affiliate_url"] = rewrite_affiliate_link(link, amazon_tag=amazon_tag).url
         if external_id:

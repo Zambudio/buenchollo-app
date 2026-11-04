@@ -9,6 +9,7 @@ from app.modules.affiliates.domain.links import (
     CanonicalLink,
     InvalidLinkError,
     canonicalize,
+    ensure_not_shortened,
     extract_url,
     is_amazon_host,
     is_amazon_short_host,
@@ -108,6 +109,7 @@ async def canonical_link(
     """Normaliza el enlace sin tocar la BD (puede hacer red: enlaces cortos)."""
     url = extract_url(raw_url)
     link = canonicalize(url)
+    ensure_not_shortened(link)
     if is_amazon_short_host(link.host):
         link = await _resolve_short_link(url, asin_resolver)
     return link

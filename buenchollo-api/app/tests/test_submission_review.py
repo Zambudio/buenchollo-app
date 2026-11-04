@@ -399,3 +399,13 @@ def test_pending_submission_does_not_leak_into_public_deals(env):
 def test_public_deal_queries_never_touch_submissions():
     src = (Path(__file__).parents[1] / "modules" / "deals").rglob("*.py")
     assert not [p for p in src if "DealSubmission" in p.read_text(encoding="utf-8")]
+
+
+def test_approve_rejects_generic_shortener_without_claiming(client, env):
+    resp = client.post(
+        f"{BASE}/{SUB_ID}/approve", json=deal_body(affiliate_url="https://bit.ly/3abc")
+    )
+    assert resp.status_code == 400
+    assert resp.json()["detail"] == "Pega el enlace directo del producto, sin acortadores"
+    assert env.service.created == []
+    assert not any(entry.startswith("claim") for entry in env.log)

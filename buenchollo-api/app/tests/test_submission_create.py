@@ -361,3 +361,10 @@ def test_withdraw_malformed_id_never_hits_repo(client, repo):
     repo.get = boom
     assert client.delete(f"{URL}/nope").status_code == 404
     assert client.delete(f"{URL}/123").status_code == 404
+
+
+def test_create_rejects_generic_shortener(client, repo):
+    resp = client.post(URL, json=body(url="https://tinyurl.com/abc"))
+    assert resp.status_code == 400
+    assert resp.json()["detail"] == "Pega el enlace directo del producto, sin acortadores"
+    assert repo.rows == []

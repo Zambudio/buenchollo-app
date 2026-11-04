@@ -195,3 +195,14 @@ def test_short_link_resolved(client):
     body = post(client, "https://amzn.to/abc123").json()
     assert body["asin"] == ASIN
     assert body["status"] == "published"
+
+
+@pytest.mark.parametrize(
+    "url",
+    ["https://bit.ly/3abcd", "https://tinyurl.com/xyz", "https://t.co/abc", "https://s.click.aliexpress.com/e/_abc"],
+)
+def test_generic_shortener_is_400(client, url):
+    setup()
+    resp = post(client, url)
+    assert resp.status_code == 400
+    assert resp.json()["detail"] == "Pega el enlace directo del producto, sin acortadores"
