@@ -396,3 +396,8 @@ def test_blank_subcategory_is_none(client, repo):
     resp = client.post(URL, json=body(subcategory_id=""))
     assert resp.status_code == 201, resp.text
     assert repo.rows[0].subcategory_id is None
+
+
+def test_response_exposes_asin(client, repo):
+    resp = client.post(URL, json=body())
+    assert resp.json()["asin"] == ASIN

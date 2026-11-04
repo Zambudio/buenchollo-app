@@ -52,7 +52,7 @@ export function extractAsin(url: string): string {
 }
 
 export function submissionToDealForm(
-  s: AdminSubmission & { asin?: string | null },
+  s: AdminSubmission,
   now: Date = new Date(),
 ): DealForm {
   const images = s.images.filter(Boolean);

@@ -48,6 +48,7 @@ function submission(over: Partial<AdminSubmission> = {}): AdminSubmission {
     description: "Panel IPS",
     original_url: "https://www.amazon.es/dp/B0ABCDEF12?tag=otro-21",
     affiliate_url: "https://www.amazon.es/dp/B0ABCDEF12?tag=buenchollo-21",
+    asin: "B0ABCDEF12",
     current_price: 149.9,
     previous_price: 199,
     coupon_code: "MONI10",

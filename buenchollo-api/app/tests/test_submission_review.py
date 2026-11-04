@@ -438,3 +438,9 @@ def test_approve_matching_asin_case_insensitive_ok(client, env):
         json=deal_body(external_id=ASIN.lower()),
     )
     assert resp.status_code == 200, resp.text
+
+
+def test_admin_detail_exposes_asin(client, env):
+    resp = client.get(f"{BASE}/{SUB_ID}")
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["asin"] == ASIN

@@ -100,6 +100,7 @@ async function setup(page: Page, scenario: Scenario = {}) {
         description: body.description ?? null,
         original_url: body.url,
         affiliate_url: AFFILIATE_URL,
+        asin: null,
         current_price: body.current_price,
         previous_price: body.previous_price ?? null,
         coupon_code: null,

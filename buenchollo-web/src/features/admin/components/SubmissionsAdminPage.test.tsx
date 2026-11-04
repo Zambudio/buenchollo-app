@@ -54,6 +54,7 @@ function submission(over: Partial<AdminSubmission> = {}): AdminSubmission {
     description: null,
     original_url: "https://www.amazon.de/dp/B0ABCDEF12",
     affiliate_url: "https://www.amazon.de/dp/B0ABCDEF12",
+    asin: "B0ABCDEF12",
     current_price: 149.9,
     previous_price: null,
     coupon_code: null,

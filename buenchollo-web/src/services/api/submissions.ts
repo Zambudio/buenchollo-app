@@ -71,6 +71,8 @@ export interface Submission {
   description: string | null;
   original_url: string;
   affiliate_url: string;
+  /** ASIN detectado por el backend (null si no es un producto de Amazon). */
+  asin: string | null;
   current_price: number;
   previous_price: number | null;
   coupon_code: string | null;

@@ -44,6 +44,7 @@ function sub(over: Partial<Submission>): Submission {
     description: null,
     original_url: "https://x.es/p",
     affiliate_url: "https://x.es/p",
+    asin: null,
     current_price: 499.9,
     previous_price: null,
     coupon_code: null,

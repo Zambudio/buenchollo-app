@@ -28,6 +28,7 @@ function makeSubmission(id: string, title: string, price: number) {
     description: "Descripción de la propuesta",
     original_url: "https://www.amazon.es/dp/B0AAAAAAAA",
     affiliate_url: "https://www.amazon.es/dp/B0AAAAAAAA?tag=buenchollo-21",
+    asin: "B0AAAAAAAA",
     current_price: price,
     previous_price: price * 2,
     coupon_code: null,

@@ -184,6 +184,7 @@ class SubmissionResponse(BaseModel):
     description: str | None = None
     original_url: str
     affiliate_url: str
+    asin: str | None = None
     current_price: float
     previous_price: float | None = None
     coupon_code: str | None = None
