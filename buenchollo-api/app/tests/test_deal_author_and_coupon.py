@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from pydantic import ValidationError
 
-from app.modules.deals.api.schemas import DealCardResponse, DealCreate, DealDetailResponse
+from app.modules.deals.api.schemas import DealCardResponse, DealCreate, DealDetailResponse, DealUpdate
 from app.modules.deals.application.deal_service import DealService
 from app.modules.deals.domain.models import Deal
 from app.modules.users.domain.models import Profile
@@ -95,3 +95,16 @@ async def test_update_deal_recomputes_canonical_and_tolerates_invalid():
     assert deal.canonical_url == "https://www.amazon.es/dp/B0ZZZZZZZZ"
     await service.update_deal("id", {"affiliate_url": "sin enlace"})
     assert deal.canonical_url is None
+
+
+@pytest.mark.parametrize("status", ["lo-que-sea", "ACTIVE", "", "published"])
+def test_deal_status_must_be_a_known_value(status):
+    with pytest.raises(ValidationError):
+        DealCreate(title="t", current_price=1, affiliate_url="https://x.es/p", status=status)
+    with pytest.raises(ValidationError):
+        DealUpdate(status=status)
+
+
+@pytest.mark.parametrize("status", ["active", "expired", "scheduled", "draft"])
+def test_deal_status_accepts_known_values(status):
+    assert DealCreate(title="t", current_price=1, affiliate_url="https://x.es/p", status=status).status == status

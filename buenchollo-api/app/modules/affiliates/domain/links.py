@@ -1,3 +1,4 @@
+import ipaddress
 import re
 from dataclasses import dataclass
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
@@ -39,6 +40,7 @@ SHORTENER_NOT_ALLOWED = "Pega el enlace directo del producto, sin acortadores"
 
 _AMAZON_HOST_RE = re.compile(r"^(?:www\.)?amazon\.(?P<tld>[a-z]{2,3}(?:\.[a-z]{2})?)$")
 _AMAZON_ASIN_PATH_RE = re.compile(r"/(?:dp|gp/product|gp/aw/d|product)/([A-Z0-9]{10})(?:[/?#]|$)")
+_AMAZON_ASIN_PATH_CI_RE = re.compile(r"/(?:dp|gp/product|gp/aw/d|product)/([a-z0-9]{10})(?:[/?#]|$)", re.IGNORECASE)
 _ASIN_RE = re.compile(r"^[A-Z0-9]{10}$")
 
 _TRACKING_EXACT = frozenset(
@@ -124,7 +126,36 @@ def extract_url(raw: str) -> str:
     host = _normalize_host(parts.netloc)
     if parts.scheme not in ("http", "https") or "." not in host:
         raise InvalidLinkError("No se ha encontrado ningún enlace válido.")
+    if not _is_public_store_netloc(parts.netloc):
+        raise InvalidLinkError(PUBLIC_STORE_REQUIRED)
     return candidate
+
+
+PUBLIC_STORE_REQUIRED = "El enlace debe ser la página pública de una tienda"
+_INTERNAL_SUFFIXES = (".local", ".localhost", ".internal", ".lan", ".home", ".corp", ".test", ".invalid", ".example")
+_TLD_RE = re.compile(r"^(?:[a-z]{2,63}|xn--[a-z0-9-]{1,59})$")
+
+
+def _is_public_store_netloc(netloc: str) -> bool:
+    """Un chollo enlaza a la web pública de una tienda: ni IPs, ni hosts internos,
+    ni credenciales en la URL (`https://www.amazon.es@otra-web.com`), ni puertos raros."""
+    if "@" in netloc:
+        return False
+    try:
+        port = urlsplit(f"//{netloc}").port
+    except ValueError:
+        return False
+    if port not in (None, 80, 443):
+        return False
+    host = netloc.split(":", 1)[0].lower().rstrip(".")
+    if not host or host.startswith("[") or host == "localhost" or host.endswith(_INTERNAL_SUFFIXES):
+        return False
+    try:
+        ipaddress.ip_address(host)
+        return False
+    except ValueError:
+        pass
+    return _TLD_RE.match(host.rsplit(".", 1)[-1]) is not None
 
 
 def clean_url(url: str) -> str:
@@ -138,8 +169,14 @@ def clean_url(url: str) -> str:
 
 
 def extract_asin(path: str) -> str | None:
-    match = _AMAZON_ASIN_PATH_RE.search(path)
-    return match.group(1) if match else None
+    # Amazon acepta el ASIN en minúsculas (`/dp/b09b8x9rgm`); sin normalizarlo
+    # el enlace se quedaba sin tag de afiliado y saltaba la detección de
+    # duplicados. Se exige un dígito para no confundir palabras de la ruta.
+    match = _AMAZON_ASIN_PATH_RE.search(path) or _AMAZON_ASIN_PATH_CI_RE.search(path)
+    if not match:
+        return None
+    asin = match.group(1).upper()
+    return asin if any(c.isdigit() for c in asin) else None
 
 
 def ensure_not_shortened(link: CanonicalLink) -> None:

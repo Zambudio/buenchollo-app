@@ -93,6 +93,11 @@ class VoteResponse(BaseModel):
     votes_down: int
     my_vote: int  # -1, 0 o 1
 
+# Estados válidos de un chollo (mismos que DealStatus del panel admin). Texto
+# libre dejaba guardar chollos con un estado que ningún listado muestra.
+DealStatus = Literal["active", "expired", "scheduled", "draft"]
+
+
 class DealCreate(BaseModel):
     title: str = Field(min_length=1, max_length=_TITLE_MAX)
     slug: str | None = Field(default=None, max_length=_SLUG_MAX)
@@ -109,7 +114,7 @@ class DealCreate(BaseModel):
     category_id: str | None = None
     subcategory_id: str | None = None
     brand: str | None = Field(default=None, max_length=_BRAND_MAX)
-    status: str = Field(default="active", max_length=_STATUS_MAX)
+    status: DealStatus = "active"
     expires_at: datetime | None = None
     scheduled_for: datetime | None = None
     published_at: datetime | None = None
@@ -141,7 +146,7 @@ class DealUpdate(BaseModel):
     category_id: str | None = None
     subcategory_id: str | None = None
     brand: str | None = Field(default=None, max_length=_BRAND_MAX)
-    status: str | None = Field(default=None, max_length=_STATUS_MAX)
+    status: DealStatus | None = None
     expires_at: datetime | None = None
     scheduled_for: datetime | None = None
     published_at: datetime | None = None

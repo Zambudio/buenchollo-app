@@ -47,6 +47,50 @@ def test_extract_url_invalid(raw):
         extract_url(raw)
 
 
+@pytest.mark.parametrize(
+    "raw",
+    [
+        "http://127.0.0.1:8000/health",
+        "https://192.168.1.10/producto",
+        "https://169.254.169.254/latest/meta-data/",
+        "https://localhost.es.localhost/x",
+        "https://tienda.local/oferta",
+        "https://servidor.internal/oferta",
+        "https://www.amazon.es@otra-web.com/dp/B0ABCDEFGH",
+        "https://www.pccomponentes.com:8443/portatil",
+        "https://tienda.123/oferta",
+        "https://127.1/x",
+    ],
+)
+def test_extract_url_rejects_non_public_store_hosts(raw):
+    with pytest.raises(InvalidLinkError):
+        extract_url(raw)
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        "https://www.pccomponentes.com:443/portatil",
+        "http://www.mediamarkt.es:80/es/product/x.html",
+        "https://link.amazon/B0ABCDEFGH",
+        "https://www.xn--tienda-espaa-9db.es/producto",
+        "https://www.amazon.co.uk/dp/B0ABCDEFGH",
+    ],
+)
+def test_extract_url_keeps_public_store_hosts(raw):
+    assert extract_url(raw) == raw
+
+
+def test_lowercase_asin_is_normalised_and_gets_canonical_url():
+    link = canonicalize("https://www.amazon.es/dp/b09b8x9rgm?tag=otro-21")
+    assert link.asin == "B09B8X9RGM"
+    assert link.canonical_url == "https://www.amazon.es/dp/B09B8X9RGM"
+
+
+def test_lowercase_path_word_is_not_an_asin():
+    assert canonicalize("https://www.amazon.es/gp/product/accesorios").asin is None
+
+
 def test_invalid_link_error_is_validation_error():
     assert issubclass(InvalidLinkError, ValidationError)
 
