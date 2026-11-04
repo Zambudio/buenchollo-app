@@ -4,7 +4,7 @@ import json
 from functools import lru_cache
 from typing import Annotated
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
@@ -133,6 +133,14 @@ class Settings(BaseSettings):
     ai_timeout_seconds: float = 25.0
     # Intentos fallidos o respuestas vacías del proveedor gratuito antes de enrutar a OpenAI
     ai_max_empty_responses: int = 3
+
+    @model_validator(mode="after")
+    def require_affiliate_tag_in_production(self) -> "Settings":
+        # Sin tag, los enlaces de Amazon se publicarían sin afiliación (M8).
+        self.amazon_affiliate_tag = (self.amazon_affiliate_tag or "").strip()
+        if self.app_env == "production" and not self.amazon_affiliate_tag:
+            raise ValueError("AMAZON_AFFILIATE_TAG es obligatorio con APP_ENV=production")
+        return self
 
     @field_validator("ai_fallback_models", mode="before")
     @classmethod

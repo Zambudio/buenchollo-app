@@ -172,3 +172,29 @@ def test_ensure_not_shortened_raises_spanish_400():
         ensure_not_shortened(canonicalize("https://bit.ly/3abc"))
     assert str(exc.value) == "Pega el enlace directo del producto, sin acortadores"
     ensure_not_shortened(canonicalize("https://www.amazon.es/dp/B0ABCDEFGH"))
+
+
+@pytest.mark.parametrize("tag", ["", "  "])
+def test_amazon_es_without_tag_never_emits_empty_tag(tag):
+    result = rewrite_affiliate_link(
+        canonicalize("https://www.amazon.es/dp/B0ABCDEFGH?tag=otro-21"), amazon_tag=tag
+    )
+    assert result.url == "https://www.amazon.es/dp/B0ABCDEFGH"
+    assert "tag=" not in result.url
+    assert result.warnings == (NOT_AFFILIABLE,)
+
+
+def test_foreign_amazon_without_asin_is_cleaned_and_not_affiliable():
+    result = rewrite_affiliate_link(
+        canonicalize("https://www.amazon.de/s?k=monitor&tag=otro-21&utm_source=x"), amazon_tag=TAG
+    )
+    assert result.url == "https://www.amazon.de/s?k=monitor"
+    assert result.warnings == (NOT_AFFILIABLE,)
+
+
+def test_explicit_asin_on_amazon_es_overrides_path():
+    link = canonicalize("https://www.amazon.es/some-product-name/s?k=x", asin="b0zzzzzzzz")
+    assert link.asin == "B0ZZZZZZZZ"
+    result = rewrite_affiliate_link(link, amazon_tag=TAG)
+    assert result.url == f"https://www.amazon.es/dp/B0ZZZZZZZZ?tag={TAG}"
+    assert result.warnings == ()

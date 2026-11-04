@@ -44,10 +44,11 @@ def _has_affiliate_param(link: CanonicalLink) -> bool:
 
 class AmazonEsRewriter:
     def __init__(self, tag: str) -> None:
-        self._tag = tag
+        self._tag = (tag or "").strip()
 
     def matches(self, link: CanonicalLink) -> bool:
-        return link.host == "amazon.es" and link.asin is not None
+        # Sin tag nunca se emite "?tag=": cae en AmazonOtherRewriter (not_affiliable).
+        return bool(self._tag) and link.host == "amazon.es" and link.asin is not None
 
     def rewrite(self, link: CanonicalLink) -> str:
         return f"{link.canonical_url}?tag={self._tag}"
