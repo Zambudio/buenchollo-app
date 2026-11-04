@@ -156,6 +156,24 @@ describe("SubmissionReviewPanel", () => {
     await waitFor(() => expect(onApproved).toHaveBeenCalledWith(deal, false));
   });
 
+  it("mientras se aprueba, aprobar y rechazar quedan desactivados (doble clic = 1 llamada)", async () => {
+    const user = userEvent.setup();
+    mocks.approve.mockReturnValue(new Promise(() => undefined));
+    renderPanel();
+    await user.dblClick(screen.getByRole("button", { name: "Aprobar y publicar" }));
+    await waitFor(() => expect(mocks.approve).toHaveBeenCalledTimes(1));
+    expect(await screen.findByRole("button", { name: "PUBLICANDO..." })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Rechazar" })).toBeDisabled();
+    expect(mocks.approve).toHaveBeenCalledTimes(1);
+  });
+
+  it("Enter en un campo de texto no aprueba: hay que pulsar el botón", async () => {
+    const user = userEvent.setup();
+    renderPanel();
+    await user.type(screen.getByPlaceholderText("Título *"), " nuevo{Enter}");
+    expect(mocks.approve).not.toHaveBeenCalled();
+  });
+
   it("con Telegram marcado lo comunica al aprobar", async () => {
     const user = userEvent.setup();
     const { onApproved } = renderPanel();

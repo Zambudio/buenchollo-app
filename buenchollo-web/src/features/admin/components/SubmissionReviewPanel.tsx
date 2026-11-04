@@ -1,7 +1,7 @@
 /** Revisión de una propuesta: enlaces, avisos y DealFormPanel precargado
  *  con acciones de aprobar (opcionalmente con Telegram) y rechazar. */
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -66,12 +66,14 @@ export function SubmissionReviewPanel({
   const approve = useApproveSubmission();
   const reject = useRejectSubmission();
   const pending = s.status === "pending";
+  // Guarda síncrona: dos clics seguidos llegan antes de que isPending se refleje.
+  const approving = useRef(false);
   // Telegram solo tiene sentido si el chollo queda publicado al aprobar.
   const publishesNow = form.status === "active";
 
   const handleApprove = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (approve.isPending) return;
+    if (approve.isPending || approving.current) return;
     const parsed = dealFormSchema.safeParse({
       title: form.title,
       affiliate_url: form.affiliate_url,
@@ -95,6 +97,7 @@ export function SubmissionReviewPanel({
       subcats,
     );
     const payload = buildDealPayload({ ...form, ...categorySelection }, null);
+    approving.current = true;
     try {
       const deal = await approve.mutateAsync({ id: s.id, payload });
       onApproved(deal, publishTelegram && publishesNow);
@@ -111,6 +114,8 @@ export function SubmissionReviewPanel({
         return;
       }
       toast.error(errorMessage(err, "No se pudo aprobar la propuesta"));
+    } finally {
+      approving.current = false;
     }
   };
 
@@ -181,6 +186,8 @@ export function SubmissionReviewPanel({
           onOpenTelegram={() => undefined}
           heading="Revisar y publicar"
           submitLabel={approve.isPending ? "PUBLICANDO..." : "Aprobar y publicar"}
+          submitDisabled={approve.isPending}
+          preventImplicitSubmit
           showTelegramButton={false}
           footer={
             publishesNow ? (
@@ -199,7 +206,8 @@ export function SubmissionReviewPanel({
             <button
               type="button"
               onClick={() => setRejectOpen(true)}
-              className="border border-alert-red/60 text-alert-red font-mono text-xs px-4 py-2 hover:bg-alert-red/10"
+              disabled={approve.isPending}
+              className="border border-alert-red/60 text-alert-red font-mono text-xs px-4 py-2 hover:bg-alert-red/10 disabled:opacity-50"
             >
               Rechazar
             </button>

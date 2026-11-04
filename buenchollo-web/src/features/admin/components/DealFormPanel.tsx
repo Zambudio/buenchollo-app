@@ -23,6 +23,10 @@ interface Props {
   readonly showTelegramButton?: boolean;
   readonly footer?: ReactNode;
   readonly extraActions?: ReactNode;
+  /** Desactiva el botón de envío (p. ej. mientras la petición está en curso). */
+  readonly submitDisabled?: boolean;
+  /** Evita el envío implícito al pulsar Enter en un input: hay que usar el botón. */
+  readonly preventImplicitSubmit?: boolean;
 }
 
 export function DealFormPanel({
@@ -41,6 +45,8 @@ export function DealFormPanel({
   showTelegramButton = true,
   footer,
   extraActions,
+  submitDisabled = false,
+  preventImplicitSubmit = false,
 }: Props) {
   const { uploading, fileRef, addImageUrl, handleFiles, removeImage, moveImage } = images;
   const filteredSubcats = subcats.filter((s) => s.parent_id === form.category_id);
@@ -48,6 +54,13 @@ export function DealFormPanel({
   return (
     <form
       onSubmit={onSubmit}
+      onKeyDown={
+        preventImplicitSubmit
+          ? (e) => {
+              if (e.key === "Enter" && e.target instanceof HTMLInputElement) e.preventDefault();
+            }
+          : undefined
+      }
       className="bg-surface-800 border border-surface-700 p-5 mb-6 space-y-3"
     >
       <h3 className="font-mono text-xs uppercase text-cyan-glow">
@@ -345,7 +358,8 @@ export function DealFormPanel({
       <div className="flex flex-wrap gap-2">
         <button
           type="submit"
-          className="bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-4 py-2"
+          disabled={submitDisabled}
+          className="bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-4 py-2 disabled:opacity-50"
         >
           {submitLabel}
         </button>
