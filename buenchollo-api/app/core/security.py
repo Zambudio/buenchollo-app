@@ -22,6 +22,11 @@ _ASYMMETRIC_ALGS = ("ES256", "RS256")
 # Audiencia estándar de los access tokens de Supabase Auth.
 _SUPABASE_AUD = "authenticated"
 
+# Margen para el desfase de reloj entre este host y Supabase: sin él, un token
+# recién emitido se rechaza con "not yet valid (iat)" si el reloj local va
+# unos segundos por detrás.
+_CLOCK_SKEW_LEEWAY_SECONDS = 30
+
 # Cliente JWKS module-level: PyJWKClient cachea las claves públicas, de modo
 # que solo hay red hacia Supabase en el primer request y al expirar la caché
 # (1h), no en cada validación. Ver ADR-010 / AUDIT_REPORT H-02.
@@ -82,7 +87,9 @@ def _decode_local(token: str, settings: Settings) -> dict | None:
             # local. Mejor degradar a validación remota que tumbar la API.
             logger.warning("JWKS no disponible, fallback a validación remota: %s", exc)
             return None
-        return jwt.decode(token, key, algorithms=[alg], audience=_SUPABASE_AUD)
+        return jwt.decode(
+            token, key, algorithms=[alg], audience=_SUPABASE_AUD, leeway=_CLOCK_SKEW_LEEWAY_SECONDS
+        )
 
     if alg == "HS256" and settings.supabase_jwt_secret:
         return jwt.decode(
@@ -90,6 +97,7 @@ def _decode_local(token: str, settings: Settings) -> dict | None:
             settings.supabase_jwt_secret,
             algorithms=["HS256"],
             audience=_SUPABASE_AUD,
+            leeway=_CLOCK_SKEW_LEEWAY_SECONDS,
         )
 
     # Algoritmo no soportado en local (o HS256 sin secreto): fallback remoto.

@@ -159,3 +159,20 @@ async def test_jwks_caido_hace_fallback_remoto_no_500():
     ):
         user = await _call(_token())
     assert user.id == "via-remoto"
+
+
+@pytest.mark.asyncio
+async def test_token_recien_emitido_con_reloj_local_atrasado_se_acepta():
+    now = int(time.time())
+    claims = {"sub": "u-1", "aud": "authenticated", "iat": now + 5, "exp": now + 3600}
+    user = await _call(jwt.encode(claims, _PRIVATE_KEY, algorithm="ES256"))
+    assert user.id == "u-1"
+
+
+@pytest.mark.asyncio
+async def test_token_con_iat_muy_en_el_futuro_se_rechaza():
+    now = int(time.time())
+    claims = {"sub": "u-1", "aud": "authenticated", "iat": now + 300, "exp": now + 3600}
+    with pytest.raises(HTTPException) as exc:
+        await _call(jwt.encode(claims, _PRIVATE_KEY, algorithm="ES256"))
+    assert exc.value.status_code == 401
