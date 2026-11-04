@@ -1,6 +1,6 @@
 # 🚀 08 · Despliegue
 
-> ⚠️ **ESTADO ACTUAL (2026-06):** la migración al dominio definitivo **ya está
+> ⚠️ **ESTADO ACTUAL (2026-06; checklist de chollos de usuarios añadida el 2026-11-04):** la migración al dominio definitivo **ya está
 > hecha**. Producción = **frontend en Cloudflare Workers** (`buenchollotech.com`)
 > + **API en el NAS expuesta vía Cloudflare Tunnel** (`api.buenchollotech.com`).
 > La **guía operativa viva y verificada** es
@@ -300,6 +300,89 @@ docker run -d \
 
 > Token en `Cloudflare Zero Trust → Tunnels → Create tunnel`. No
 > abres puertos, IP oculta, SSL automático.
+
+---
+
+## 🙋 Checklist de despliegue — chollos de usuarios
+
+> ⚠️ **Cómo llega el código al NAS.** Los contenedores `buenchollo-api` y
+> `buenchollo-scheduler` montan esta carpeta (`volumes: .:/app`) y el NAS la ve en
+> tiempo real: es el mismo recurso de red que `Z:` (ver [`NAS-SSH.md`](../guides/NAS-SSH.md) §1.1).
+> **La rama que esté activa en la copia de trabajo es la que ejecutan los contenedores
+> en cuanto se reinician o reconstruyen.** No hay `tar`/`scp` ni despliegue separado.
+> El comando de la API es `alembic upgrade head && uvicorn ...`.
+>
+> **Situación a 2026-11-04.** Los contenedores siguen ejecutando en memoria el código de
+> `main` (arrancados el 2026-11-03 15:53 UTC), pero la copia de trabajo está en `develop`
+> y la BD compartida ya está en la revisión Alembic `20261103140000`. Consecuencias:
+>
+> - **Cualquier reinicio ahora** (caída del NAS, `docker restart`, `up -d` con cambios)
+>   cargaría código de `develop` sobre la imagen antigua, sin `Pillow` →
+>   `ModuleNotFoundError` y API caída.
+> - **Volver la copia de trabajo a `main`** tampoco sirve hoy: `alembic upgrade head`
+>   falla con "Can't locate revision" porque `main` no conoce `20261103140000`.
+> - Por tanto el despliegue debe hacerse **pronto**. Camino seguro: mergear
+>   `develop` → `main`, dejar la copia de trabajo en `main` (== `develop`) y reconstruir.
+
+Orden recomendado:
+
+1. **Merge** `develop` → `main` y esperar CI verde (backend, integración, frontend, E2E,
+   auditoría). La CI de la PR #64 pasó todos los trabajos.
+2. **`.env` del NAS** (no copiar valores al repo): añadir
+   `ADMIN_NOTIFICATION_EMAIL=pjzambudio@gmail.com` (requiere SMTP operativo; sin SMTP el
+   aviso no sale). `AMAZON_AFFILIATE_TAG`: si no está definida se usa el valor por
+   defecto `buenchollo0b-21`; **solo un valor explícitamente vacío** (`AMAZON_AFFILIATE_TAG=`)
+   aborta el arranque con `APP_ENV=production`. Confirmar que no está vacía.
+3. **Reconstruir y levantar desde la copia de trabajo ya en `main`**, en el NAS
+   (`NAS-SSH.md` §1.1): `docker-compose build && docker-compose up -d`. Un simple
+   `restart` no basta (dependencias nuevas `Pillow` y `limits`). `alembic upgrade head`
+   no hará nada: la migración `20261103140000` ya está aplicada.
+4. **Ventana web ↔ API.** La web se despliega sola desde `main` (Cloudflare Workers
+   Builds, minutos): durante el intervalo hasta que la API nueva esté arriba, `/publicar`
+   y `/mis-chollos` llamarían a endpoints que aún no existen en la API antigua. Para
+   acortarla, hacer el paso 2 y el 3 inmediatamente después del merge (o reconstruir
+   primero desde la copia de trabajo ya mergeada y empujar a `main` después). La ventana
+   es de minutos y solo afecta a las pantallas nuevas.
+5. **Recomendado: no exponer la API a la LAN.** `docker-compose.yml` publica `8001:8000` en
+   el host; como los límites de peticiones confían en `CF-Connecting-IP`, un cliente de la
+   LAN que salte Cloudflare podría falsificarla. Enlazar a loopback (`127.0.0.1:8001:8000`)
+   **no afecta a `cloudflared`**, que llega a `buenchollo-api:8000` por la red de Compose,
+   ni al healthcheck del Dockerfile (`localhost:8000` dentro del contenedor). `NAS-SSH.md`
+   solo menciona el `8001` para evitar choques de puertos, no como acceso desde la LAN
+   (comprobar antes de aplicar). No está aplicado: es decisión de despliegue.
+6. **Supabase Auth → URL Configuration → Redirect URLs** debe incluir
+   `https://buenchollotech.com/**` (sin ello Google OAuth vuelve al Site URL en lugar de a
+   `/publicar`).
+7. **Backfill** (idempotente): desde `buenchollo-api/` (o dentro del contenedor API)
+   `python scripts/backfill_canonical_urls.py` (dry-run) y luego `--apply`, para los chollos
+   que aún no tengan `canonical_url`.
+8. **Smoke tests**:
+   - `https://api.buenchollotech.com/health` → 200 y logs sin error de arranque.
+   - Con un usuario real: `/publicar` → pegar un enlace `amazon.es` → prefill y
+     `?tag=<nuestro>`; enviar una propuesta (llega aviso a `ADMIN_NOTIFICATION_EMAIL`).
+   - `/admin/propuestas` carga la cola y aprobar/rechazar notifica al autor; borrar luego
+     el chollo de prueba.
+   - Subir una imagen: la URL es de `deal-images/submissions/` y termina en `.webp`.
+   - Un 429 devuelve `Retry-After`.
+   - Sin sesión, "+ Publicar chollo" muestra el diálogo de cuenta.
+
+### 🔙 Rollback de esta feature
+
+- **Web**: revertir el merge en `main` (se redespliega solo) o volver a la versión anterior
+  del Worker desde Cloudflare.
+- **API**: la migración es aditiva, pero el contenedor ejecuta `alembic upgrade head` al
+  arrancar y **falla si el código no contiene el fichero `20261103140000`** ("Can't locate
+  revision") → la API no arranca. Opciones, de menor a mayor impacto:
+  1. Volver a un commit **que conserve** el fichero de migración (p. ej. revertir solo el
+     código de la feature y mantener `alembic/versions/20261103140000_*.py`).
+  2. Cambiar temporalmente el `command` del compose a `uvicorn app.main:app --host 0.0.0.0
+     --port 8000 --workers 2` (sin alembic; ver el comentario del propio compose) y
+     restaurar después.
+  3. Solo si es imprescindible: `alembic downgrade 20261103120000` **antes** de volver al
+     commit anterior. Borra `deal_submissions` y las columnas `deals.canonical_url` /
+     `coupon_code`: **pérdida de las propuestas** existentes.
+- Recordar que el reinicio del contenedor usa la rama activa en la copia de trabajo (ver
+  aviso inicial); cambiar de rama sin reconstruir deja la imagen y el código desfasados.
 
 ---
 

@@ -77,7 +77,7 @@ def test_preview_sin_candidatos_devuelve_lista_vacia(integration_client):
     task_id = _get_price_check_task_id(integration_client)
 
     with patch(
-        "app.modules.scheduled_tasks.api.router.AmazonProductClient"
+        "app.modules.scheduled_tasks.application.factory.AmazonProductClient"
     ) as mock_client_cls:
         mock_client_cls.return_value.get_product_previews.side_effect = (
             lambda asins: {asin: None for asin in asins}

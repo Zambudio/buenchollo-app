@@ -55,6 +55,8 @@ app/
     │   ├── infrastructure/# repositorios, adapters externos
     │   └── api/           # router FastAPI, schemas Pydantic
     ├── products/          # preview Amazon (DIP con Protocols e integración ProductAIEnricher)
+    ├── submissions/       # propuestas de chollos de usuarios: check-link, imágenes (Pillow→WebP), moderación admin
+    ├── affiliates/        # dominio puro: canonicalización de URL y reescritores de afiliado por tienda
     ├── telegram/          # publicación al canal, formato emoji premium, hashtags IA
     ├── categories/
     ├── stores/
@@ -130,6 +132,18 @@ El dominio no depende de FastAPI, SQLAlchemy, ni ningún framework externo.
 - **Cambios de dependencias / framework**: solo en `develop` y con CI en verde antes de tocar `main` (un bump a `main` sin verificar puede romper el build de producción).
 - **Cambios de panel Cloudflare / `.env` del NAS**: se aplican directos a prod; cada uno con su verificación y rollback. El `.env` del NAS está **excluido del sync de SynologyDrive** (independiente del `.env` local).
 - Ante un **aspecto crítico** (entorno roto, CI/hooks fallando, datos/seguridad en riesgo): **parar y resolverlo** antes de avanzar; no ofrecer "seguir o arreglar".
+
+### Entorno local de pruebas
+
+Para probar cualquier cambio en `localhost` antes de desplegar existe un entorno
+local completo (web + API + Postgres 17 portable + capturador de correo),
+**aislado de la base de datos de producción** y sin Docker:
+`.\local-env\bct-local.cmd setup` (una vez por PC) y `.\local-env\bct-local.cmd start`
+→ <http://localhost:8080> (correos en <http://localhost:8025>). Pruebas en vivo:
+`bct-local.cmd qa` y `bct-local.cmd stress`. Guía completa (qué es local y qué
+sigue siendo real, otro PC, problemas conocidos): [`docs/guides/LOCAL-ENV.md`](docs/guides/LOCAL-ENV.md).
+No cambies de rama en el share del NAS para probar: el NAS ejecuta esa copia (TD-31);
+usa un clon local.
 
 ### Memoria y contexto
 

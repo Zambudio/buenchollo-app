@@ -8,6 +8,7 @@ import { HomeFilterTabs, type HomeFilterKey } from "@/features/deals/components/
 import { useMyVotes } from "@/features/deals/hooks/useMyVotes";
 import { useAuth } from "@/hooks/useAuth";
 import { dealsService, favoritesApi } from "@/services/api/deals";
+import { serializeJsonLd } from "@/lib/json-ld";
 
 const SITE = "https://buenchollotech.com";
 const PAGE_SIZE = 30;
@@ -62,7 +63,7 @@ export const Route = createFileRoute("/")({
     scripts: [
       {
         type: "application/ld+json",
-        children: JSON.stringify({
+        children: serializeJsonLd({
           "@context": "https://schema.org",
           "@graph": [
             {

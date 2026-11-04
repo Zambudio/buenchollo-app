@@ -25,16 +25,30 @@
 
 ### 🛡️ Defensa en profundidad
 
-#### ⏱️ Rate limiting (SlowAPI por IP, respeta `X-Forwarded-For`)
+#### ⏱️ Rate limiting (SlowAPI por IP real de Cloudflare)
+
+La clave es `CF-Connecting-IP` (Cloudflare la sobrescribe) y, si no existe, la IP
+del peer. **Nunca** se lee `X-Forwarded-For`: el cliente podía falsificarlo y saltarse
+el límite. Supuesto: la API solo es alcanzable a través del Cloudflare Tunnel; si el
+puerto publicado en el NAS (`8001:8000`) se alcanza desde la LAN, `CF-Connecting-IP`
+es falsificable (ver recomendación en `08-deployment.md`).
 
 | Endpoint | Límite |
 |---|---|
 | `POST /v1/deals/comments` | 10/min |
 | `POST /v1/deals/{id}/vote` | 30/min |
 | `POST /v1/deals/{id}/click` | 60/min |
-| `POST /v1/products/preview` | 10/min |
+| `POST /v1/products/preview-from-url` | 10/min |
 | `POST /v1/telegram/publish` | 5/min |
+| `POST /v1/submissions/check-link` | 20/min **por usuario** |
+| `POST /v1/submissions` | 10/min **por usuario** |
+| `POST /v1/submissions/images` y `/images/from-url` | 30/min **por usuario** cada uno |
 
+Los endpoints de propuestas usan la dependencia `user_rate_limit` (clave `user:{id}`,
+misma storage y mismo 429 con `Retry-After` que slowapi). Se evalúa antes de las
+demás dependencias, así que una petición limitada no toca la BD. Las peticiones que
+fallan la validación (422) también cuentan. El almacenamiento es en memoria por worker
+(TD-28).
 #### 📋 Audit log
 
 `admin_audit_log` con cada acción admin: `request_id` correlacionable
@@ -76,6 +90,8 @@ startup si producción tiene `*`.
 
 `extract_asin_from_url` con allowlist Amazon + bloqueo IPs privadas
 (RFC1918, loopback, link-local).
+La comprobación vive en `core/ssrf.py` (también CGNAT y multicast) y la usan el cliente de
+Amazon y el fetcher de imágenes; ver la sección "Contenido de usuarios" más abajo.
 
 ### 📝 Validación y sanitización
 
@@ -85,6 +101,26 @@ startup si producción tiene `*`.
 | ⚛️ **Frontend** | Zod schemas en `lib/validation/` — doble frontera ([ADR-005](../adr/ADR-005-validacion-doble-frontera.md)) |
 | 🎨 **Render** | React escapa por defecto; `react-markdown` SIN `rehype-raw`. No `dangerouslySetInnerHTML` con input usuario |
 | 💾 **SQL** | SQLAlchemy ORM + `text(... :param)` parametrizado |
+
+### 🙋 Contenido de usuarios (propuestas de chollos)
+
+Decisiones en [ADR-015](../adr/ADR-015-ingesta-imagenes-backend.md) y
+[ADR-016](../adr/ADR-016-propuestas-comunidad-y-afiliados.md); spec en
+[`docs/superpowers/specs/2026-11-03-chollos-de-usuarios-design.md`](../superpowers/specs/2026-11-03-chollos-de-usuarios-design.md).
+
+| Riesgo | Control |
+|---|---|
+| Imagen maliciosa / bomba de descompresión | Pillow re-codifica a WebP (≤ 1600 px, 5 MB, 40 MP); errores del parser → 400; límite de cuerpo ASGI previo al parseo multipart (413 con CORS) |
+| SSRF al importar imagen o resolver enlace | `core/ssrf.py` bloquea privadas, loopback, link-local, multicast, CGNAT `100.64.0.0/10` y `192.0.0.0/24`; redirecciones revalidadas (máx. 3); plazo total 20 s. Ventana de DNS rebinding conocida (TD-25) |
+| Imágenes externas en fichas públicas | Solo se aceptan URLs del prefijo público de `deal-images/submissions/`; allowlist probada contra `\`, `../` y userinfo |
+| Enlaces de afiliado ajenos | `amazon.es` se reescribe con nuestro tag; tags ajenos desaparecen; acortadores genéricos rechazados (400); API no arranca en producción con `AMAZON_AFFILIATE_TAG` vacío |
+| Open redirect tras login | El parámetro `redirect` solo admite rutas internas (sanitizador en el frontend, con tests de variantes codificadas) |
+| Spam / abuso | 5 pendientes por usuario y 15 / 24 h; perfil completo obligatorio; rate limit por usuario; máx. 8 imágenes |
+| Fuga de propuestas no aprobadas | Tabla `deal_submissions` separada con RLS activado; los listados públicos nunca la consultan |
+| Inyección en correos | Plantillas `.html.j2` con autoescape de Jinja (`_env` en `emails/application/rendering.py`); el asunto colapsa espacios y saltos de línea con `_one_line` (mismo fichero) |
+
+Deuda abierta relacionada: TD-23 (preview de Amazon sin autenticación), TD-24
+(imágenes huérfanas), TD-25 (DNS rebinding), TD-29 (cuota no atómica).
 
 ### 🔑 Secretos y configuración
 

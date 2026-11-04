@@ -1,0 +1,18 @@
+{
+  "admin_emails": ["pjzambudio@gmail.com"],
+  "sync_email_patterns": ["pjzambudio+*@gmail.com"],
+  "test_email_template": "pjzambudio+local-{n}@gmail.com",
+  "snapshot_tables": [
+    "stores",
+    "categories",
+    "deals",
+    "blog_categories",
+    "blog_posts",
+    "scheduled_deals",
+    "scheduled_tasks"
+  ],
+  "api_port": 8000,
+  "web_port": 8080,
+  "mail_smtp_port": 1025,
+  "mail_web_port": 8025
+}

@@ -4,7 +4,7 @@
 > Solo items **abiertos**: cuando uno se cierra, se elimina de aquí (el histórico
 > resuelto vive en [`PROJECT_STATUS.md`](../../PROJECT_STATUS.md)). Para consultar el diseño de arquitectura, ver [`docs/master/`](../master/00-index.md).
 
-Última revisión: **2026-10-27** (overrides npm tras limpieza de advisories).
+Última revisión: **2026-11-04** (cierre de chollos de usuarios: TD-23 a TD-35; entorno local y prueba exhaustiva: TD-36 a TD-38).
 
 ---
 
@@ -20,7 +20,97 @@
   fecha/evidencia en `docs/guides/Cloudflare.md`. No copiar el valor nuevo a Git,
   documentación, logs ni chat.
 
+## 🟠 Media — chollos de usuarios (cierre 2026-11-04)
+
+- **TD-23 — `POST /v1/products/preview-from-url` no exige autenticación.** Solo lo
+  limita `10/min` por IP; cada llamada hace HTTP a Amazon Creators y al motor de IA.
+  Es anterior a las propuestas, pero `check-link` (autenticado, 20/min por usuario) ya
+  cubre el caso de usuarios. Proponer: exigir `require_admin` si solo lo usa el panel,
+  o al menos usuario autenticado.
+
+- **TD-24 — Imágenes huérfanas en `deal-images/submissions/`.** Una imagen subida y
+  nunca enviada en una propuesta (usuario que abandona el formulario) o las de una
+  cuenta eliminada no se borran. Falta una tarea programada (ADR-012) que borre objetos
+  sin referencia en `deal_submissions.images` / `deals.images` con antigüedad suficiente.
+
+- **TD-25 — Ventana de DNS rebinding en el fetcher de imágenes.** `core/ssrf.py`
+  resuelve el host y valida la IP, pero `httpx` vuelve a resolverlo al conectar; un DNS
+  malicioso podría responder distinto la segunda vez. Mitigación: conectar a la IP ya
+  validada (con `Host`/SNI del original) o transporte con resolver propio.
+
+- **TD-26 — El resumen nocturno de alertas lee atributos que no existen en `Deal`.**
+  `emails/application/digest_worker.py` usa `deal.price`, `deal.original_price` y
+  `deal.discount`; el modelo tiene `current_price`, `previous_price` y
+  `discount_percentage`. Al montar el resumen de un chollo que coincide, `deal.price`
+  debería lanzar `AttributeError`. Hallado al analizar el cierre de la feature (lectura de
+  código); el efecto en producción no está comprobado (el digest solo actúa a las 21:00 con
+  alertas activas y chollos recientes). Revisar y añadir un test con un `Deal` real.
+
+- **TD-28 — Rate limit con almacenamiento en memoria por worker.** `slowapi`/`limits`
+  sin Redis: con 2 workers los límites efectivos se duplican y se reinician al reiniciar
+  el contenedor. Aceptable hoy (un solo proceso por servicio); revisar al escalar.
+
+- **TD-29 — Cuota de propuestas "comprobar y luego insertar" no atómica.** Dos
+  peticiones simultáneas del mismo usuario pueden pasar el límite de pendientes/día; solo
+  los índices únicos parciales (mismo producto) lo acotan. Impacto bajo, con rate limit
+  por usuario delante.
+
+- **TD-30 — Sin reintento si falla el correo al usuario.** El notificador de propuestas
+  solo registra el fallo; el usuario conserva la notificación in-app.
+
+- **TD-31 — El runtime del NAS depende de la copia de trabajo de desarrollo.** Los
+  contenedores montan `.:/app` y el NAS ve la misma carpeta que `Z:`: la rama activa al
+  reiniciar o reconstruir es lo que ejecuta producción. Trabajar en `develop` cambia en
+  silencio lo que correría tras un reinicio (a 2026-11-04 la API se caería: sin `Pillow` en
+  la imagen y, al volver a `main`, Alembic no encuentra la revisión). Proponer desplegar
+  desde un checkout o tag separado en el NAS, o copiar el código a la imagen en lugar de
+  montarlo. Mientras tanto, ver el aviso en `08-deployment.md`.
+
+- **TD-32 — Duplicación menor de lógica.** El cálculo de `canonical_url` está duplicado entre
+  `DealService._canonical_url_for` (`deal_service.py`) y `compute_canonical`
+  (`scripts/backfill_canonical_urls.py`); `submissions/infrastructure/storage.py` repite en
+  línea la limpieza de la URL de Supabase (`split("/rest/v1")[0].rstrip("/")`) que ya existe
+  como `_clean_supabase_url` en `core/security.py`.
+
+- **TD-33 — `external_id` no Amazon en mayúsculas al aprobar.** Puede no detectar un
+  duplicado con SKU en minúsculas (`canonical_url` sí lo detecta).
+
+- **TD-34 — Acortadores sin resolver.** `amzn.asia` y `amzn.com` no se resuelven (los
+  acortadores genéricos se rechazan; los de Amazon `amzn.to`/`amzn.eu`/`a.co`/`link.amazon`
+  sí se resuelven).
+
+- **TD-35 — Menores de la revisión.** `previously_published` pasa a verdadero para
+  aprobadas cuya ficha ya expiró; las peticiones sin autenticar a los endpoints de
+  propuestas se rechazan con 401 antes de que cuente el límite por usuario (aceptable: el
+  JWT se verifica en local).
+
+- **TD-36 — `supabase/migrations/*.sql` no describe el esquema real de producción.**
+  Detectado al montar el entorno local (2026-11-04): en producción los enums
+  (`deal_status`, `app_role`, …) son `text`, `deals.images` es `jsonb`, varias columnas
+  son nullable y no existen los triggers/funciones de esas migraciones (contadores,
+  `process_deal_statuses`, pg_cron). Reproducir esas migraciones da otro esquema. El
+  entorno local usa `pg_dump --schema-only` de producción (ver `docs/guides/LOCAL-ENV.md`).
+  Proponer: generar una migración *baseline* SQL a partir del volcado real y archivar las
+  antiguas, para que un proyecto Supabase nuevo salga igual que producción.
+
+- **TD-37 — Los clientes Supabase REST del backend ignoran `DATABASE_URL`.**
+  `DealCleanerService` (scheduler), `SupabaseCategoryClient` (preview con IA) y la
+  borrada de cuenta hablan con Supabase por REST/Admin API, no con la base configurada.
+  En producción da igual, pero en local obliga a mantener el scheduler apagado (su
+  limpieza borraría chollos de PRODUCCIÓN). Proponer: pasar la limpieza a SQLAlchemy.
+
 ## 🟡 Baja — observabilidad y hardening de cuenta
+
+- **TD-27 — `TelegramPanel` desborda 8 px a 375 px de ancho.** Preexistente (visto en la
+  verificación visual de chollos de usuarios). Arreglar con `min-w-0`/`flex-wrap` en el
+  panel y fijarlo con una comprobación a 375 px en el E2E.
+
+- **TD-38 — Menores vistos en la prueba exhaustiva en local (2026-11-04).**
+  (a) `AppearanceToggle` (menú lateral) provoca un *hydration mismatch* en consola
+  (el tema se lee de `localStorage` solo en cliente). (b) `/admin/propuestas` sin sesión
+  redirige a `/login` sin `?redirect=`, a diferencia de `/mis-chollos`. (c) Una subida de
+  más de 5 MB que se salta la validación del cliente recibe la conexión cerrada en vez del
+  413 (la web ya valida antes de subir).
 
 - **TD-22 — Retirar los overrides npm temporales de `buenchollo-web`.**
   `overrides.miniflare.undici = 7.30.1` existe porque `@cloudflare/vite-plugin`

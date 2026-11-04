@@ -1,5 +1,5 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { signInWithGoogle } from "@/lib/auth";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,9 +11,13 @@ import { SITE_URL } from "@/lib/site";
 import { authApi } from "@/services/api/auth";
 import { translateAuthError } from "@/lib/errors";
 import { Mail, ArrowLeft } from "lucide-react";
+import { loginSearch, safeRedirect } from "@/lib/safe-redirect";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
+  validateSearch: (s: Record<string, unknown>): { redirect?: string } => ({
+    redirect: typeof s.redirect === "string" ? s.redirect : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Acceder · BuenChollo Tech" },
@@ -42,7 +46,17 @@ const schema = z.object({
 
 function LoginPage() {
   const { user, loading: authLoading } = useAuth();
-  const nav = useNavigate();
+  const router = useRouter();
+  const { redirect } = Route.useSearch();
+  const target = safeRedirect(redirect);
+  // El submit y el efecto de "ya hay sesión" pueden dispararse ambos: se
+  // navega una sola vez y con replace para no dejar /login en el historial.
+  const navigated = useRef(false);
+  const goAfterLogin = useCallback(() => {
+    if (navigated.current) return;
+    navigated.current = true;
+    router.history.replace(target);
+  }, [router, target]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -63,9 +77,9 @@ function LoginPage() {
       toast.success("¡Bienvenido a BuenChollo Tech!", { id: "welcome-toast" });
       const name = user.user_metadata?.display_name || user.email?.split("@")[0] || "Chollero";
       void authApi.sendWelcomeEmail(name).catch(() => {});
-      nav({ to: "/" });
+      goAfterLogin();
     }
-  }, [authLoading, user, nav]);
+  }, [authLoading, user, goAfterLogin]);
 
   // Mensaje cuando la cuenta ha sido confirmada vía callback de Supabase
   useEffect(() => {
@@ -114,7 +128,7 @@ function LoginPage() {
       return;
     }
     toast.success("Sesión iniciada");
-    nav({ to: "/" });
+    goAfterLogin();
   };
 
   const onResetPassword = async (e: React.FormEvent) => {
@@ -138,7 +152,7 @@ function LoginPage() {
   };
 
   const onGoogle = async () => {
-    const { error } = await signInWithGoogle();
+    const { error } = await signInWithGoogle(target);
     if (error) {
       toast.error(translateAuthError(error.message, "No se pudo iniciar sesión con Google"));
       return;
@@ -319,7 +333,11 @@ function LoginPage() {
 
           <p className="text-center text-sm text-muted-foreground mt-6">
             ¿No tienes cuenta?{" "}
-            <Link to="/registro" className="text-cyan-glow hover:underline">
+            <Link
+              to="/registro"
+              search={loginSearch(redirect)}
+              className="text-cyan-glow hover:underline"
+            >
               Regístrate
             </Link>
           </p>

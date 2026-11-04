@@ -36,6 +36,7 @@ supabase==2.9.1       # storage3>=2.x introduce pyiceberg (no compila sin Build 
 openai==2.37.0
 httpx==0.27.2         # supabase 2.9.1 requiere httpx<0.28; openai acepta >=0.23
 requests==2.34.2
+Pillow==13.0.0        # ingesta de imágenes de propuestas (→ WebP); AVIF requiere wheel con libavif
 
 # Tareas en background
 apscheduler==3.11.2
@@ -45,6 +46,8 @@ tzdata==2026.2
 # Rate limiting (slowapi). Storage en memoria por defecto — suficiente para el
 # monolito; cambiar a Redis si se escala a múltiples instancias.
 slowapi==0.1.9
+# `limits` (dependencia de slowapi) se importa directamente en app/core/rate_limit.py.
+limits==5.8.0
 
 # Error tracking (Sentry SaaS o cualquier endpoint compatible con su protocolo,
 # p.ej. GlitchTip). Desactivado por defecto: si SENTRY_DSN está vacío, init_sentry

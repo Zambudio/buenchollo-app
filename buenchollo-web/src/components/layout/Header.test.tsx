@@ -65,6 +65,28 @@ describe("Header", () => {
     expect(screen.getByRole("link", { name: /acceder/i })).toBeInTheDocument();
   });
 
+  it("anónimo: el botón Publicar chollo es visible y abre el diálogo de registro", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<Header />);
+
+    await user.click(screen.getByRole("button", { name: "Publicar chollo" }));
+
+    expect(await screen.findByRole("link", { name: "Crear cuenta" })).toBeInTheDocument();
+  });
+
+  it("logueado: Publicar chollo enlaza a /publicar y el menú incluye Mis chollos", async () => {
+    mocks.useAuth.mockReturnValue({ user: { id: "u-1" }, isAdmin: false, signOut: vi.fn() });
+    const user = userEvent.setup();
+    renderWithProviders(<Header />);
+
+    expect(screen.getByRole("link", { name: "Publicar chollo" })).toHaveAttribute(
+      "href",
+      "/publicar",
+    );
+    await user.click(screen.getByRole("button", { name: /perfil/i }));
+    expect(await screen.findByRole("menuitem", { name: "Mis chollos" })).toBeInTheDocument();
+  });
+
   it("usuario logueado: no muestra ACCEDER y enseña los enlaces de usuario", () => {
     mocks.useAuth.mockReturnValue({
       user: { id: "u-1", email: "x@y.z" },

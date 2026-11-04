@@ -1,0 +1,9 @@
+{% if name %}¡Enhorabuena, {{ name }}!{% else %}¡Enhorabuena!{% endif %}
+
+Tu propuesta "{{ title }}" {% if deal_url %}ya está publicada en BuenChollo Tech{% elif deal_status == "scheduled" and publish_at %}está aprobada y se publicará el {{ publish_at }}{% elif deal_status == "scheduled" %}está aprobada y se publicará pronto{% else %}está aprobada; la publicaremos en breve{% endif %}. Gracias por compartir chollos con la comunidad.
+{% if deal_url %}
+
+Míralo aquí: {{ deal_url }}
+{% endif %}
+
+— El equipo de BuenChollo Tech

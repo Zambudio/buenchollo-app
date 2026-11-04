@@ -13,6 +13,7 @@ _BRAND_MAX = 100
 _STATUS_MAX = 16
 _SLUG_MAX = 200
 _EXTERNAL_ID_MAX = 64
+_COUPON_MAX = 64
 
 class StoreBasic(BaseModel):
     id: str
@@ -23,6 +24,12 @@ class StoreBasic(BaseModel):
 class CategoryBasic(BaseModel):
     name: str
     slug: str
+    model_config = ConfigDict(from_attributes=True)
+
+class AuthorBasic(BaseModel):
+    username: str | None = None
+    display_name: str | None = None
+    avatar_url: str | None = None
     model_config = ConfigDict(from_attributes=True)
 
 class DealCardResponse(BaseModel):
@@ -39,6 +46,8 @@ class DealCardResponse(BaseModel):
     comment_count: int = 0
     published_at: datetime | None = None
     created_at: datetime | None = None
+    source: str = "manual"
+    author: AuthorBasic | None = Field(default=None, validation_alias="public_author")
 
     store: StoreBasic | None = None
     category: CategoryBasic | None = None
@@ -71,6 +80,7 @@ class DealDetailResponse(DealCardResponse):
     subcategory_id: str | None = None
     external_id: str | None = None
     show_keepa_chart: bool = False
+    coupon_code: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -82,6 +92,11 @@ class VoteResponse(BaseModel):
     votes_up: int
     votes_down: int
     my_vote: int  # -1, 0 o 1
+
+# Estados válidos de un chollo (mismos que DealStatus del panel admin). Texto
+# libre dejaba guardar chollos con un estado que ningún listado muestra.
+DealStatus = Literal["active", "expired", "scheduled", "draft"]
+
 
 class DealCreate(BaseModel):
     title: str = Field(min_length=1, max_length=_TITLE_MAX)
@@ -99,13 +114,14 @@ class DealCreate(BaseModel):
     category_id: str | None = None
     subcategory_id: str | None = None
     brand: str | None = Field(default=None, max_length=_BRAND_MAX)
-    status: str = Field(default="active", max_length=_STATUS_MAX)
+    status: DealStatus = "active"
     expires_at: datetime | None = None
     scheduled_for: datetime | None = None
     published_at: datetime | None = None
     source: str = Field(default="manual", max_length=_STATUS_MAX)
     external_id: str | None = Field(default=None, max_length=_EXTERNAL_ID_MAX)
     show_keepa_chart: bool = False
+    coupon_code: str | None = Field(default=None, max_length=_COUPON_MAX)
 
     @field_validator("title")
     @classmethod
@@ -130,12 +146,13 @@ class DealUpdate(BaseModel):
     category_id: str | None = None
     subcategory_id: str | None = None
     brand: str | None = Field(default=None, max_length=_BRAND_MAX)
-    status: str | None = Field(default=None, max_length=_STATUS_MAX)
+    status: DealStatus | None = None
     expires_at: datetime | None = None
     scheduled_for: datetime | None = None
     published_at: datetime | None = None
     external_id: str | None = Field(default=None, max_length=_EXTERNAL_ID_MAX)
     show_keepa_chart: bool | None = None
+    coupon_code: str | None = Field(default=None, max_length=_COUPON_MAX)
 
     @field_validator("title")
     @classmethod

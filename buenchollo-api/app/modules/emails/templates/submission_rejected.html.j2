@@ -1,0 +1,25 @@
+{% extends "_layout.html.j2" %}
+{% import "_components.html.j2" as ui with context %}
+
+{% block content %}
+        <tr>
+          <td class="px" bgcolor="#ffffff" style="background:#ffffff;border:1px solid #e2e8f0;border-top:0;border-radius:0 0 16px 16px;padding:32px 28px 32px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td>
+                  {{ ui.eyebrow("Propuesta revisada") }}
+                  <h1 class="h1" style="margin:10px 0 0;font-family:{{ t.sans }};font-size:25px;line-height:33px;font-weight:700;letter-spacing:-.5px;color:{{ t.text }};">{% if name %}Hola, {{ name }}{% else %}Hola{% endif %}</h1>
+                  <p style="margin:12px 0 0;font-family:{{ t.sans }};font-size:15px;line-height:24px;color:{{ t.text_soft }};">Hemos revisado tu propuesta <strong>{{ title }}</strong> y, por ahora, no hemos podido publicarla.</p>
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:18px;">
+                    <tr><td bgcolor="#f8fafc" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px 20px;font-family:{{ t.sans }};font-size:14px;line-height:22px;color:{{ t.text_soft }};"><strong>Motivo:</strong> {{ reason }}</td></tr>
+                  </table>
+                  <p style="margin:12px 0 0;font-family:{{ t.sans }};font-size:15px;line-height:24px;color:{{ t.text_soft }};">Puedes revisar tus propuestas y enviar otra cuando quieras.</p>
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:24px;">
+                    <tr><td width="100%">{{ ui.button(my_deals_url, "Mis chollos", variant="primary", full=true) }}</td></tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+{% endblock %}

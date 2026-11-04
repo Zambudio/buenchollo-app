@@ -14,3 +14,7 @@
 *.woff  binary
 *.woff2 binary
 *.pdf  binary
+
+# Scripts de cmd.exe: necesitan CRLF (local-env/bct-local.cmd).
+*.cmd text eol=crlf
+*.bat text eol=crlf

@@ -251,3 +251,44 @@ def test_get_product_previews_sin_credenciales_lanza_error() -> None:
 
     with pytest.raises(ProductProviderUnavailableError):
         client.get_product_previews(["B001"])
+
+
+class _FakeResponse:
+    status_code = 200
+    text = ""
+
+    def __init__(self, data):
+        self._data = data
+
+    def json(self):
+        return self._data
+
+
+def test_fetch_items_pide_espanol_y_registra_los_errores_de_amazon(monkeypatch, caplog) -> None:
+    settings = Settings(amazon_client_id="client", amazon_client_secret="secret", amazon_affiliate_tag="tag-21")
+    client = AmazonProductClient(settings)
+    sent = {}
+
+    def fake_post(url, json, headers, timeout):
+        sent.update(json=json, headers=headers)
+        return _FakeResponse(
+            {
+                "itemsResult": {"items": [{"asin": "B0AAAAAAAA"}]},
+                "errors": [
+                    {
+                        "code": "InvalidParameterValue",
+                        "message": "The ItemIds B0BBBBBBBB provided in the request is invalid.",
+                    }
+                ],
+            }
+        )
+
+    monkeypatch.setattr(amazon_client.requests, "post", fake_post)
+    with caplog.at_level("INFO", logger=amazon_client.logger.name):
+        items = client._fetch_items(["B0AAAAAAAA", "B0BBBBBBBB"], "token")
+
+    assert items == [{"asin": "B0AAAAAAAA"}]
+    assert sent["json"]["languagesOfPreference"] == ["es_ES"]
+    assert sent["json"]["partnerTag"] == "tag-21"
+    assert sent["headers"]["x-marketplace"] == "www.amazon.es"
+    assert "InvalidParameterValue" in caplog.text and "B0BBBBBBBB" in caplog.text

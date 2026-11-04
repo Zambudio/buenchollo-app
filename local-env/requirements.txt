@@ -1,0 +1,4 @@
+# Dependencias del venv del entorno local: las de la API (runtime + tests)
+# más el servidor SMTP del capturador de correo.
+-r ../buenchollo-api/requirements-dev.txt
+aiosmtpd==1.4.6

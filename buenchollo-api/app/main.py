@@ -17,6 +17,7 @@ from app.core.exceptions import DomainError
 from app.core.health import router as health_router
 from app.core.logging import configure_logging
 from app.core.rate_limit import limiter, rate_limit_exceeded_handler
+from app.core.body_limit import BodyLimitMiddleware
 from app.core.cache_headers import CacheHeadersMiddleware
 from app.core.request_id import REQUEST_ID_HEADER, RequestIdMiddleware, get_request_id
 from app.core.security_headers import SecurityHeadersMiddleware
@@ -36,6 +37,8 @@ from app.modules.blog.api.router import router as blog_router
 from app.modules.blog_comments.api.router import router as blog_comments_router
 from app.modules.analytics.api.router import router as analytics_router
 from app.modules.emails.api.router import router as emails_router
+from app.modules.submissions.api.router import router as submissions_router
+from app.modules.submissions.api.admin_router import router as admin_submissions_router
 
 settings = get_settings()
 configure_logging(settings.log_level, fmt=settings.log_format)
@@ -98,6 +101,10 @@ if _allow_all and settings.app_env == "production":
         "SECURITY: CORS_ORIGINS contiene '*' en producción. "
         "Configura la lista exacta de dominios en .env (ver SECURITY_AUDIT.md SEC-04)."
     )
+# Límite de cuerpo en la subida de imágenes: se registra ANTES que CORS (queda
+# dentro de él) para que el 413 lleve cabeceras CORS, pero sigue cortando antes
+# del routing y de que Starlette parsee el multipart.
+app.add_middleware(BodyLimitMiddleware, limits={"/v1/submissions/images": 5_767_168})
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"] if _allow_all else cors_origins,
@@ -208,6 +215,8 @@ v1.include_router(blog_router)
 v1.include_router(blog_comments_router)
 v1.include_router(analytics_router)
 v1.include_router(emails_router)
+v1.include_router(submissions_router)
+v1.include_router(admin_submissions_router)
 
 app.include_router(v1)
 app.include_router(health_router)  # /health y /health/ready — sin /v1

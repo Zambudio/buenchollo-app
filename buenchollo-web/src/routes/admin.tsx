@@ -11,7 +11,9 @@ import {
   FileText,
   Clock,
   Activity,
+  Inbox,
 } from "lucide-react";
+import { SubmissionsNavBadge } from "@/features/admin/components/SubmissionsNavBadge";
 
 export const Route = createFileRoute("/admin")({
   component: AdminLayout,
@@ -63,6 +65,14 @@ function AdminLayout() {
               className="flex items-center gap-2 px-3 py-2 font-mono text-xs uppercase hover:bg-surface-700"
             >
               <Package className="size-4" /> Chollos
+            </Link>
+            <Link
+              to="/admin/propuestas"
+              activeProps={{ className: "bg-surface-700 text-cyan-glow" }}
+              className="flex items-center gap-2 px-3 py-2 font-mono text-xs uppercase hover:bg-surface-700"
+            >
+              <Inbox className="size-4" /> Propuestas
+              <SubmissionsNavBadge enabled={!!user && isAdmin} />
             </Link>
             <Link
               to="/admin/categorias"

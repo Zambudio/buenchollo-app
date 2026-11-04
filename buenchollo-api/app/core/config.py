@@ -4,7 +4,7 @@ import json
 from functools import lru_cache
 from typing import Annotated
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
@@ -134,6 +134,14 @@ class Settings(BaseSettings):
     # Intentos fallidos o respuestas vacías del proveedor gratuito antes de enrutar a OpenAI
     ai_max_empty_responses: int = 3
 
+    @model_validator(mode="after")
+    def require_affiliate_tag_in_production(self) -> "Settings":
+        # Sin tag, los enlaces de Amazon se publicarían sin afiliación (M8).
+        self.amazon_affiliate_tag = (self.amazon_affiliate_tag or "").strip()
+        if self.app_env == "production" and not self.amazon_affiliate_tag:
+            raise ValueError("AMAZON_AFFILIATE_TAG es obligatorio con APP_ENV=production")
+        return self
+
     @field_validator("ai_fallback_models", mode="before")
     @classmethod
     def parse_ai_fallback_models(cls, v: str | list) -> list[str]:
@@ -194,6 +202,9 @@ class Settings(BaseSettings):
     # Dominios extra (CSV) permitidos para enlaces de afiliado manuales del
     # blog, además de los ya soportados por defecto (ver domain/affiliate_domains.py).
     blog_affiliate_domains: str = ""
+
+    # Destinatario de los avisos de nuevas propuestas de usuarios. Vacío = sin aviso.
+    admin_notification_email: str = ""
 
     # ── Configuración de Correo Electrónico (Zoho Mail / SMTP) ──
     smtp_host: str = "smtp.zoho.eu"

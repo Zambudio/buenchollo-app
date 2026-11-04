@@ -1,6 +1,6 @@
 /** Formulario de creación/edición de chollos del admin (TD-03).
  *  Presentación: el estado y las operaciones llegan por props desde la ruta. */
-import type { Dispatch, SetStateAction } from "react";
+import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { GripVertical, Send, Upload, X } from "lucide-react";
 import type { Category } from "@/services/api/categories";
 import type { Store } from "@/services/api/stores";
@@ -18,6 +18,15 @@ interface Props {
   readonly onSubmit: (e: React.FormEvent) => void;
   readonly onCancel: () => void;
   readonly onOpenTelegram: () => void;
+  readonly heading?: string;
+  readonly submitLabel?: string;
+  readonly showTelegramButton?: boolean;
+  readonly footer?: ReactNode;
+  readonly extraActions?: ReactNode;
+  /** Desactiva el botón de envío (p. ej. mientras la petición está en curso). */
+  readonly submitDisabled?: boolean;
+  /** Evita el envío implícito al pulsar Enter en un input: hay que usar el botón. */
+  readonly preventImplicitSubmit?: boolean;
 }
 
 export function DealFormPanel({
@@ -31,6 +40,13 @@ export function DealFormPanel({
   onSubmit,
   onCancel,
   onOpenTelegram,
+  heading,
+  submitLabel = "GUARDAR",
+  showTelegramButton = true,
+  footer,
+  extraActions,
+  submitDisabled = false,
+  preventImplicitSubmit = false,
 }: Props) {
   const { uploading, fileRef, addImageUrl, handleFiles, removeImage, moveImage } = images;
   const filteredSubcats = subcats.filter((s) => s.parent_id === form.category_id);
@@ -38,10 +54,17 @@ export function DealFormPanel({
   return (
     <form
       onSubmit={onSubmit}
+      onKeyDown={
+        preventImplicitSubmit
+          ? (e) => {
+              if (e.key === "Enter" && e.target instanceof HTMLInputElement) e.preventDefault();
+            }
+          : undefined
+      }
       className="bg-surface-800 border border-surface-700 p-5 mb-6 space-y-3"
     >
       <h3 className="font-mono text-xs uppercase text-cyan-glow">
-        {isEditing ? "Editar chollo" : "Nuevo chollo"}
+        {heading ?? (isEditing ? "Editar chollo" : "Nuevo chollo")}
       </h3>
       <input
         placeholder="Título *"
@@ -192,6 +215,13 @@ export function DealFormPanel({
         className={inputCls}
       />
       <input
+        placeholder="Código de descuento (opcional)"
+        maxLength={64}
+        value={form.coupon_code}
+        onChange={(e) => setForm({ ...form, coupon_code: e.target.value })}
+        className={inputCls}
+      />
+      <input
         placeholder="Enlace afiliado *"
         required
         value={form.affiliate_url}
@@ -257,12 +287,12 @@ export function DealFormPanel({
           <option value="draft">Borrador</option>
         </select>
       </div>
-      <div className="flex items-center gap-3 bg-surface-900 border border-surface-600 px-3 py-2.5">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 bg-surface-900 border border-surface-600 px-3 py-2.5">
         <input
           placeholder="ASIN de Amazon (para gráfica de precios)"
           value={form.external_id}
           onChange={(e) => setForm({ ...form, external_id: e.target.value })}
-          className="flex-1 bg-transparent font-mono text-xs outline-none text-foreground placeholder:text-muted-foreground"
+          className="min-w-0 flex-1 basis-40 bg-transparent font-mono text-xs outline-none text-foreground placeholder:text-muted-foreground"
         />
         <label className="flex items-center gap-2 font-mono text-xs text-muted-foreground whitespace-nowrap cursor-pointer select-none shrink-0">
           <input
@@ -313,7 +343,7 @@ export function DealFormPanel({
           ⛔ CADUCADO · Aparecerá en gris con aviso de oferta finalizada.
         </p>
       )}
-      {form.status !== "scheduled" && (
+      {showTelegramButton && form.status !== "scheduled" && (
         <button
           type="button"
           onClick={onOpenTelegram}
@@ -323,13 +353,17 @@ export function DealFormPanel({
         </button>
       )}
 
-      <div className="flex gap-2">
+      {footer}
+
+      <div className="flex flex-wrap gap-2">
         <button
           type="submit"
-          className="bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-4 py-2"
+          disabled={submitDisabled}
+          className="bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-4 py-2 disabled:opacity-50"
         >
-          GUARDAR
+          {submitLabel}
         </button>
+        {extraActions}
         <button
           type="button"
           onClick={onCancel}

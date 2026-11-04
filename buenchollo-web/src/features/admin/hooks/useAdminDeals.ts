@@ -5,16 +5,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { dealsService, type DealDetailData } from "@/services/api/deals";
-import { categoriesService, type Category } from "@/services/api/categories";
-import { storesService, type Store } from "@/services/api/stores";
 import { errorMessage } from "@/lib/errors";
+import { useAdminCatalogs } from "./useAdminCatalogs";
 
 export function useAdminDeals() {
   const [deals, setDeals] = useState<DealDetailData[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [stores, setStores] = useState<Store[]>([]);
-  const [cats, setCats] = useState<Category[]>([]);
-  const [subcats, setSubcats] = useState<Category[]>([]);
+  const { stores, cats, subcats } = useAdminCatalogs();
 
   const load = useCallback(() => {
     dealsService
@@ -26,16 +23,6 @@ export function useAdminDeals() {
   useEffect(() => {
     load();
   }, [load]);
-
-  useEffect(() => {
-    Promise.all([storesService.getAll(), categoriesService.getAll()])
-      .then(([s, c]) => {
-        setStores(s);
-        setCats(c.filter((x) => !x.parent_id));
-        setSubcats(c.filter((x) => !!x.parent_id));
-      })
-      .catch((err: unknown) => toast.error(errorMessage(err)));
-  }, []);
 
   const remove = async (id: string) => {
     if (!confirm("¿Eliminar este chollo?")) return;

@@ -20,6 +20,7 @@ export interface DealForm {
   current_price: string;
   previous_price: string;
   shipping_info: string;
+  coupon_code: string;
   affiliate_url: string;
   store_id: string;
   category_id: string;
@@ -52,6 +53,7 @@ export function emptyForm(): DealForm {
     current_price: "",
     previous_price: "",
     shipping_info: "",
+    coupon_code: "",
     affiliate_url: "",
     store_id: "",
     category_id: "",
@@ -75,6 +77,7 @@ export function dealToForm(d: DealDetailData): DealForm {
     current_price: String(d.current_price),
     previous_price: d.previous_price != null ? String(d.previous_price) : "",
     shipping_info: d.shipping_info ?? "",
+    coupon_code: d.coupon_code ?? "",
     affiliate_url: d.affiliate_url ?? "",
     store_id: d.store_id ?? "",
     category_id: d.category_id ?? "",
@@ -160,6 +163,7 @@ export function buildDealPayload(
     previous_price: previous,
     discount_percentage: calculateDiscount(current, previous),
     shipping_info: form.shipping_info || null,
+    coupon_code: form.coupon_code.trim().slice(0, 64) || null,
     affiliate_url: form.affiliate_url,
     store_id: form.store_id || null,
     category_id: form.category_id || null,

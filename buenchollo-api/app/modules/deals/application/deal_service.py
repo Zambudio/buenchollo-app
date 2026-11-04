@@ -1,4 +1,5 @@
 import logging
+from app.modules.affiliates.domain.links import InvalidLinkError, canonicalize
 from app.modules.deals.domain.exceptions import DuplicateDealError
 from app.modules.deals.domain.models import Deal
 from app.modules.deals.domain.utils import auto_slug
@@ -36,6 +37,16 @@ class DealService:
                 existing_title=existing.title,
             )
 
+    @staticmethod
+    def _canonical_url_for(affiliate_url: str | None, external_id: str | None) -> str | None:
+        if not affiliate_url:
+            return None
+        try:
+            link = canonicalize(affiliate_url, asin=external_id)
+        except InvalidLinkError:
+            return None
+        return link.canonical_url if link.host else None
+
     async def create_deal(self, deal_data: dict, user_id: str) -> Deal:
         await self._check_external_id_unique(deal_data.get("external_id"))
 
@@ -48,6 +59,10 @@ class DealService:
         else:
             deal_data.pop("created_by", None)
             logger.warning("Perfil no encontrado para user_id=%s; created_by quedará NULL", user_id)
+
+        deal_data["canonical_url"] = self._canonical_url_for(
+            deal_data.get("affiliate_url"), deal_data.get("external_id")
+        )
 
         new_deal = Deal(**deal_data)
         created = await self.repo.create(new_deal)
@@ -68,6 +83,8 @@ class DealService:
             )
         for field, value in update_data.items():
             setattr(deal, field, value)
+        if "affiliate_url" in update_data or "external_id" in update_data:
+            deal.canonical_url = self._canonical_url_for(deal.affiliate_url, deal.external_id)
         await self.repo.update(deal)
         updated = await self.repo.get_by_id(deal_id)
         # AlertMatcher comprueba internamente que status == "active".

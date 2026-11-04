@@ -1,6 +1,7 @@
 """Rate limiting con slowapi.
 
-Modelo: límites por IP del cliente con storage en memoria. Suficiente
+Modelo: límites por IP del cliente (`CF-Connecting-IP`, ver `client_ip`) o
+por usuario autenticado (`user_rate_limit`) con storage en memoria. Suficiente
 para el monolito desplegado en NAS Synology. Si en el futuro se escala
 a múltiples instancias, cambiar `storage_uri` a Redis (`redis://...`)
 para que el contador sea compartido.
@@ -27,28 +28,36 @@ disparará un AttributeError en runtime.
 """
 from __future__ import annotations
 
-from fastapi import Request
+from collections.abc import Awaitable, Callable
+
+from fastapi import Depends, Request
 from fastapi.responses import JSONResponse
+from limits import parse
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
+from slowapi.wrappers import Limit
 
 from app.core.config import get_settings
 from app.core.request_id import REQUEST_ID_HEADER, get_request_id
+from app.core.security import AuthenticatedUser, get_current_user
 
 
-def _key_func(request: Request) -> str:
-    """Identifica al cliente para contar peticiones.
+def client_ip(request: Request) -> str:
+    """IP real del cliente.
 
-    Respeta `X-Forwarded-For` cuando viene del proxy/Nginx delante del
-    contenedor (típico en NAS Synology con reverse proxy). Cae a la IP
-    de la conexión directa si no.
+    En producción la API solo es accesible a través de Cloudflare Tunnel, que
+    sobrescribe `CF-Connecting-IP` con la IP del visitante. `X-Forwarded-For`
+    no se usa: el cliente puede inyectar cualquier valor en su primer salto.
+    Sin la cabecera de Cloudflare (dev, LAN) se usa el peer de la conexión.
     """
-    forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
-        # Primera IP de la cadena = cliente original
-        return forwarded.split(",", 1)[0].strip()
+    cf_ip = (request.headers.get("CF-Connecting-IP") or "").strip()
+    if cf_ip:
+        return cf_ip
     return get_remote_address(request)
+
+
+_key_func = client_ip
 
 
 _settings = get_settings()
@@ -64,6 +73,32 @@ limiter = Limiter(
     key_func=_key_func,
     enabled=_settings.rate_limit_enabled,
 )
+
+
+def user_rate_limit(
+    limit_value: str, scope: str
+) -> Callable[..., Awaitable[AuthenticatedUser]]:
+    """Dependency de límite por usuario autenticado (no por IP).
+
+    Se usa en `dependencies=[...]` del decorador de ruta: FastAPI resuelve esas
+    dependencias antes que las de la firma, así que una petición rechazada no
+    llega a abrir conexión de BD (al contrario que `@limiter.limit`, que se
+    evalúa dentro del endpoint, después de todas las dependencias). Comparte
+    el storage del `limiter` global, su `enabled` y el handler 429.
+    """
+    item = parse(limit_value)
+
+    async def dependency(
+        user: AuthenticatedUser = Depends(get_current_user),
+    ) -> AuthenticatedUser:
+        key = f"user:{user.id}"
+        if limiter.enabled and not limiter.limiter.hit(item, scope, key):
+            raise RateLimitExceeded(
+                Limit(item, lambda: key, scope, False, None, None, None, 1, False)
+            )
+        return user
+
+    return dependency
 
 
 async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:

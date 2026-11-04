@@ -1,7 +1,7 @@
 # 11 · Estado actual verificado
 
 > Fuente de verdad resumida del estado operativo y funcional de BuenCholloTech.
-> Última comprobación operativa: **2026-11-03**. La auditoría integral del
+> Última comprobación operativa: **2026-11-03** (chollos de usuarios: cierre en `develop` 2026-11-04, **pendiente de desplegar**). La auditoría integral del
 > **2026-09-26** corresponde al merge `eee0a97`; las verificaciones posteriores
 > y el historial detallado permanecen en `PROJECT_STATUS.md`.
 
@@ -35,10 +35,12 @@ DDNS se conservan solo como histórico dentro de la guía de despliegue.
 - Contador público de lecturas de artículos validado por navegador y día.
 - Entrada `/telegram`, que atribuye el origen a Telegram y redirige a la portada.
 - Perfil de usuario, autenticación con Google y páginas legales.
+- **Chollos de usuarios** (en `develop`, sin desplegar a producción a 2026-11-04): botón "+ Publicar chollo", `/publicar` (comprobar enlace → formulario con prefill de Amazon e imágenes subidas/pegadas/por URL), `/mis-chollos` y ficha con "Compartido por" y cupón. Decisiones en ADR-015 y ADR-016.
 
 ### Administración
 
 - CRUD de chollos, categorías, tiendas, usuarios y contenido del blog.
+- Cola de moderación `/admin/propuestas` (en `develop`): editar, aprobar (publicado, programado o borrador) o rechazar con motivo; el autor recibe correo y notificación.
 - Autocompletado seguro desde enlaces oficiales de Amazon, incluidos
   `https://link.amazon/...`, `amzn.*` y dominios Amazon admitidos.
 - Enriquecimiento con Amazon Creators API, Keepa y el motor de IA unificado.
@@ -77,9 +79,9 @@ DDNS se conservan solo como histórico dentro de la guía de despliegue.
 
 ## Módulos de backend activos
 
-`ai`, `alerts`, `analytics`, `blog`, `blog_comments`, `categories`, `comments`,
+`affiliates`, `ai`, `alerts`, `analytics`, `blog`, `blog_comments`, `categories`, `comments`,
 `deals`, `emails`, `notifications`, `products`, `scheduled_deals`, `scheduled_tasks`,
-`stores`, `telegram` y `users`.
+`stores`, `submissions`, `telegram` y `users`.
 
 Todos los routers de negocio se publican bajo `/v1`; `/health` y
 `/health/ready` quedan fuera de esa versión. El frontend accede a datos de negocio
@@ -125,13 +127,18 @@ La última ejecución completa de `main` terminó en verde en GitHub Actions (`4
 - Total verificado: **519 pruebas automatizadas** en verde.
 - TypeScript, ESLint, Prettier, coverage, `pip-audit`, `npm audit` y gitleaks superados al 100%.
 
+Verificación de `develop` con chollos de usuarios (2026-11-04): la CI de la PR #64 pasó
+todos los trabajos. En local: 537 pruebas backend no integración, 433 de frontend y 16
+E2E de los dos specs nuevos; `pip-audit` sin vulnerabilidades.
+
 Las cifras son una fotografía fechada, no un contrato. El workflow
 `.github/workflows/ci.yml` es la autoridad sobre qué se ejecuta actualmente.
 
 ## Datos y migraciones
 
 - Alembic contiene la cadena incremental actual hasta
-  `20260926120000_add_first_party_analytics.py`.
+  `20261103140000` (`deal_submissions` + `deals.canonical_url`/`coupon_code`, aditiva,
+  ya aplicada en la BD compartida).
 - Las tablas nuevas activan RLS en su propia migración; existe una prueba de
   regresión que detecta nuevas tablas públicas sin RLS.
 - La API usa la conexión de servicio y las credenciales privilegiadas nunca se
@@ -149,6 +156,11 @@ operativos conocidos:
 2. Activar manualmente la protección de contraseñas filtradas en Supabase Auth.
 3. Hacer que los fallos de cableado del worker de tareas programadas propaguen a
    la observabilidad en lugar de terminar como una ejecución aparentemente válida.
+
+Tras el cierre de chollos de usuarios se añaden TD-23 a TD-35 (preview sin auth,
+imágenes huérfanas, DNS rebinding, digest nocturno, `TelegramPanel` a 375 px, rate limit
+en memoria, cuota no atómica, runtime del NAS acoplado a la copia de trabajo y menores). **Aviso operativo:** la copia de trabajo (que montan los contenedores) está en `develop` y la BD en la revisión `20261103140000`; un reinicio de la API antes de desplegar la dejaría caída (sin `Pillow` en la imagen) y volver a `main` falla en Alembic. Desplegar pronto, ver TD-31. Pendiente operativo: seguir la checklist de
+[`08-deployment.md`](08-deployment.md#-checklist-de-despliegue--chollos-de-usuarios).
 
 No se consideran pendientes las funciones ya desplegadas de analítica,
 `link.amazon`, atribución `/telegram` ni edición integral de publicaciones.

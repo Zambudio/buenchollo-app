@@ -142,6 +142,7 @@ export interface DealDetailData extends DealCardData {
   show_keepa_chart?: boolean;
   aggregate_rating?: number | null;
   review_count?: number | null;
+  coupon_code?: string | null;
 }
 
 /** Payload aceptado por POST /deals/admin. Coincide con el schema DealCreate del backend. */
@@ -156,6 +157,7 @@ export interface DealCreatePayload {
   previous_price?: number | null;
   discount_percentage?: number | null;
   shipping_info?: string | null;
+  coupon_code?: string | null;
   affiliate_url: string;
   store_id?: string | null;
   category_id?: string | null;

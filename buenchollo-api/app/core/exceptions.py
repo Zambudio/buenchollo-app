@@ -50,3 +50,9 @@ class ServiceUnavailableError(DomainError):
     """Un servicio externo del que dependemos no está disponible. → 503."""
 
     http_status: int = 503
+
+
+class TooManyRequestsError(DomainError):
+    """El usuario ha superado un límite de uso (cuota por usuario). → 429."""
+
+    http_status: int = 429
