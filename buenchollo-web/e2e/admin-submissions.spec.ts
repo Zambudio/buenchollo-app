@@ -140,7 +140,11 @@ for (const { name, viewport } of VIEWPORTS) {
       await loginAndGoto(page, "/admin/propuestas");
 
       const queue = page.getByRole("region", { name: "Cola de propuestas" });
-      await expect(queue.getByRole("button", { name: RECHAZAR_TITLE })).toBeVisible();
+      // Primera carga de la ruta con el dev server compilando en paralelo: el resto de
+      // tests espera vía click() (sin límite propio); aquí se da el mismo margen.
+      await expect(queue.getByRole("button", { name: RECHAZAR_TITLE })).toBeVisible({
+        timeout: 60_000,
+      });
       await expect(queue.getByRole("button", { name: APROBAR_TITLE })).toBeVisible();
       expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
 
