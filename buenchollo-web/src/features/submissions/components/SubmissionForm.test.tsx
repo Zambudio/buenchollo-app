@@ -271,6 +271,23 @@ describe("SubmissionForm", () => {
     await userEvent.click(screen.getByRole("button", { name: /cambiar enlace/i }));
     expect(props.onBack).toHaveBeenCalled();
   });
+  it("Amazon sin datos leídos avisa de rellenar a mano", () => {
+    renderForm(amazonResult({ prefill: null }));
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "No hemos podido leer los datos de Amazon. Rellena el formulario a mano.",
+    );
+  });
+
+  it("sin aviso de Amazon si hay prefill o si no es Amazon", () => {
+    renderForm(amazonResult());
+    expect(screen.queryByText(/No hemos podido leer los datos de Amazon/)).not.toBeInTheDocument();
+  });
+
+  it("tienda no Amazon sin prefill no muestra el aviso", () => {
+    renderForm(amazonResult({ prefill: null, is_amazon: false }));
+    expect(screen.queryByText(/No hemos podido leer los datos de Amazon/)).not.toBeInTheDocument();
+  });
+
   it("la región viva del descuento está siempre montada y solo cambia el texto", async () => {
     renderForm(amazonResult({ prefill: null }));
     const live = document.getElementById("sub-discount")!;

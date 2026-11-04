@@ -234,6 +234,7 @@ class AmazonProductClient:
             "partnerTag": self.settings.amazon_affiliate_tag,
             "itemIds": asins,
             "resources": RESOURCES,
+            "languagesOfPreference": ["es_ES"],
         }
         headers = {
             "Authorization": f"Bearer {token}",
@@ -256,6 +257,12 @@ class AmazonProductClient:
             raise ProductProviderUnavailableError(f"Amazon rechazó la petición ({resp.status_code})")
 
         data = resp.json()
+        # Amazon responde 200 aunque algún ASIN falle: los que no existen en
+        # amazon.es llegan como InvalidParameterValue en `errors`, sin item.
+        for error in data.get("errors") or []:
+            logger.info(
+                "Amazon no devolvió un item: %s %s", error.get("code"), error.get("message")
+            )
         return _j(data, "itemsResult", "items", default=[]) or []
 
     def _fetch_item(self, asin: str, token: str) -> dict | None:

@@ -290,6 +290,15 @@ export function SubmissionForm({
           </button>
         </div>
 
+        {result.is_amazon && !result.prefill && (
+          <p
+            role="status"
+            className="border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300"
+          >
+            No hemos podido leer los datos de Amazon. Rellena el formulario a mano.
+          </p>
+        )}
+
         <Field id="sub-title" label="Título" required error={e.title?.message}>
           <input
             id="sub-title"
