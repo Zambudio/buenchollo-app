@@ -34,6 +34,7 @@ import { Route as AdminAnaliticaRouteImport } from './routes/admin.analitica'
 import { Route as AdminBlogRouteImport } from './routes/admin.blog'
 import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
 import { Route as AdminChollosRouteImport } from './routes/admin.chollos'
+import { Route as AdminPropuestasRouteImport } from './routes/admin.propuestas'
 import { Route as AdminTareasProgramadasRouteImport } from './routes/admin.tareas-programadas'
 import { Route as AdminTiendasRouteImport } from './routes/admin.tiendas'
 import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
@@ -172,6 +173,11 @@ const AdminChollosRoute = AdminChollosRouteImport.update({
   path: '/chollos',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminPropuestasRoute = AdminPropuestasRouteImport.update({
+  id: '/propuestas',
+  path: '/propuestas',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminTareasProgramadasRoute = AdminTareasProgramadasRouteImport.update({
   id: '/tareas-programadas',
   path: '/tareas-programadas',
@@ -258,6 +264,7 @@ export interface FileRoutesByFullPath {
   '/admin/blog': typeof AdminBlogRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/chollos': typeof AdminChollosRoute
+  '/admin/propuestas': typeof AdminPropuestasRoute
   '/admin/tareas-programadas': typeof AdminTareasProgramadasRoute
   '/admin/tiendas': typeof AdminTiendasRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
@@ -296,6 +303,7 @@ export interface FileRoutesByTo {
   '/admin/blog': typeof AdminBlogRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/chollos': typeof AdminChollosRoute
+  '/admin/propuestas': typeof AdminPropuestasRoute
   '/admin/tareas-programadas': typeof AdminTareasProgramadasRoute
   '/admin/tiendas': typeof AdminTiendasRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
@@ -336,6 +344,7 @@ export interface FileRoutesById {
   '/admin/blog': typeof AdminBlogRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/chollos': typeof AdminChollosRoute
+  '/admin/propuestas': typeof AdminPropuestasRoute
   '/admin/tareas-programadas': typeof AdminTareasProgramadasRoute
   '/admin/tiendas': typeof AdminTiendasRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
@@ -377,6 +386,7 @@ export interface FileRouteTypes {
     | '/admin/blog'
     | '/admin/categorias'
     | '/admin/chollos'
+    | '/admin/propuestas'
     | '/admin/tareas-programadas'
     | '/admin/tiendas'
     | '/admin/usuarios'
@@ -415,6 +425,7 @@ export interface FileRouteTypes {
     | '/admin/blog'
     | '/admin/categorias'
     | '/admin/chollos'
+    | '/admin/propuestas'
     | '/admin/tareas-programadas'
     | '/admin/tiendas'
     | '/admin/usuarios'
@@ -454,6 +465,7 @@ export interface FileRouteTypes {
     | '/admin/blog'
     | '/admin/categorias'
     | '/admin/chollos'
+    | '/admin/propuestas'
     | '/admin/tareas-programadas'
     | '/admin/tiendas'
     | '/admin/usuarios'
@@ -673,6 +685,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminChollosRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/propuestas': {
+      id: '/admin/propuestas'
+      path: '/propuestas'
+      fullPath: '/admin/propuestas'
+      preLoaderRoute: typeof AdminPropuestasRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/tareas-programadas': {
       id: '/admin/tareas-programadas'
       path: '/tareas-programadas'
@@ -765,6 +784,7 @@ interface AdminRouteChildren {
   AdminBlogRoute: typeof AdminBlogRoute
   AdminCategoriasRoute: typeof AdminCategoriasRoute
   AdminChollosRoute: typeof AdminChollosRoute
+  AdminPropuestasRoute: typeof AdminPropuestasRoute
   AdminTareasProgramadasRoute: typeof AdminTareasProgramadasRoute
   AdminTiendasRoute: typeof AdminTiendasRoute
   AdminUsuariosRoute: typeof AdminUsuariosRoute
@@ -780,6 +800,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminBlogRoute: AdminBlogRoute,
   AdminCategoriasRoute: AdminCategoriasRoute,
   AdminChollosRoute: AdminChollosRoute,
+  AdminPropuestasRoute: AdminPropuestasRoute,
   AdminTareasProgramadasRoute: AdminTareasProgramadasRoute,
   AdminTiendasRoute: AdminTiendasRoute,
   AdminUsuariosRoute: AdminUsuariosRoute,

@@ -8,7 +8,7 @@
  *  guardar (con conflicto 409) → Telegram.
  */
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useState, lazy, Suspense } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   dealsService,
   isDuplicateDealError,
@@ -25,13 +25,6 @@ import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import type { TelegramScheduleRequest } from "@/features/telegram/components/TelegramPanel";
-
-const TelegramPanel = lazy(() =>
-  import("@/features/telegram/components/TelegramPanel").then((m) => ({
-    default: m.TelegramPanel,
-  })),
-);
-import type { TelegramGenerateRequest } from "@/services/api/telegram";
 import {
   buildDealPayload,
   dealToForm,
@@ -42,6 +35,8 @@ import {
 } from "@/features/admin/deal-form";
 import { useAdminDeals } from "@/features/admin/hooks/useAdminDeals";
 import { useDealImages } from "@/features/admin/hooks/useDealImages";
+import { useTelegramHandoff } from "@/features/admin/hooks/useTelegramHandoff";
+import { TelegramHandoffPanel } from "@/features/admin/components/TelegramHandoffPanel";
 import { AmazonAutofillPanel } from "@/features/admin/components/AmazonAutofillPanel";
 import { DealFormPanel } from "@/features/admin/components/DealFormPanel";
 import { AdminDealsTable } from "@/features/admin/components/AdminDealsTable";
@@ -60,11 +55,6 @@ export const Route = createFileRoute("/admin/chollos")({
   component: AdminDeals,
 });
 
-type TelegramPanelData = TelegramGenerateRequest & {
-  images?: string[];
-  image_url?: string | null;
-};
-
 function AdminDeals() {
   const { user } = useAuth();
   const { deals, statusFilter, setStatusFilter, stores, cats, subcats, load, remove } =
@@ -74,10 +64,8 @@ function AdminDeals() {
   const [form, setForm] = useState<DealForm>(emptyForm);
   const [amazonUrl, setAmazonUrl] = useState("");
   const [autofilling, setAutofilling] = useState(false);
-  const [showTelegramPanel, setShowTelegramPanel] = useState(false);
-  const [telegramDealData, setTelegramDealData] = useState<TelegramPanelData | null>(null);
-  const [telegramCanSchedule, setTelegramCanSchedule] = useState(false);
-  const [defaultScheduledAt, setDefaultScheduledAt] = useState<string | null>(null);
+  const telegram = useTelegramHandoff();
+  const { openWith: openTelegramPanelWith, openFromDeal: openTelegramPanelFromDeal } = telegram;
   const [calendarRefresh, setCalendarRefresh] = useState(0);
   const [calendarDealId, setCalendarDealId] = useState<string | null>(null);
   const [aiProvider, setAiProvider] = useState<string>(() => {
@@ -215,22 +203,6 @@ function AdminDeals() {
     }
   };
 
-  /** Abre el panel Telegram con datos ya normalizados. */
-  const openTelegramPanelWith = async (data: TelegramPanelData, canSchedule = false) => {
-    let nextScheduledAt: string | null = null;
-    if (canSchedule) {
-      try {
-        nextScheduledAt = (await scheduledDealsService.getNextSlot()).scheduled_at;
-      } catch (error) {
-        toast.error(errorMessage(error, "No se pudo calcular la siguiente hora disponible"));
-      }
-    }
-    setTelegramDealData(data);
-    setTelegramCanSchedule(canSchedule);
-    setDefaultScheduledAt(nextScheduledAt);
-    setShowTelegramPanel(true);
-  };
-
   /** Abre el panel a partir del formulario actual. */
   const openTelegramPanelFromForm = async () => {
     const allImages = form.images.filter(Boolean);
@@ -251,23 +223,6 @@ function AdminDeals() {
       },
       !editing,
     );
-  };
-
-  /** Abre el panel a partir de un deal ya guardado. */
-  const openTelegramPanelFromDeal = (d: DealDetailData) => {
-    const allImages = (d.images ?? []).filter(Boolean);
-    if (d.image_url && !allImages.includes(d.image_url)) allImages.unshift(d.image_url);
-    void openTelegramPanelWith({
-      title: d.title,
-      current_price: d.current_price,
-      previous_price: d.previous_price,
-      discount_percentage: d.discount_percentage,
-      description: d.short_description || null,
-      affiliate_url: d.affiliate_url ?? "",
-      expires_at: d.expires_at,
-      images: allImages,
-      image_url: allImages[0] ?? null,
-    });
   };
 
   const scheduleFromTelegram = async (request: TelegramScheduleRequest): Promise<boolean> => {
@@ -498,22 +453,7 @@ function AdminDeals() {
 
   return (
     <div>
-      {showTelegramPanel && telegramDealData && (
-        <Suspense
-          fallback={
-            <div className="fixed inset-0 z-50 bg-background/80 flex items-center justify-center font-mono text-xs text-cyan-glow">
-              Cargando panel Telegram...
-            </div>
-          }
-        >
-          <TelegramPanel
-            dealData={telegramDealData}
-            onClose={() => setShowTelegramPanel(false)}
-            onSchedule={telegramCanSchedule ? scheduleFromTelegram : undefined}
-            defaultScheduledAt={defaultScheduledAt}
-          />
-        </Suspense>
-      )}
+      <TelegramHandoffPanel handoff={telegram} onSchedule={scheduleFromTelegram} />
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <h2 className="font-mono text-sm uppercase text-cyan-glow">Gestión de chollos</h2>
         <div className="flex items-center gap-2">
