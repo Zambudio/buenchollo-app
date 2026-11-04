@@ -50,7 +50,9 @@ app/
 │   ├── security.py                get_current_user, require_admin
 │   ├── exceptions.py              Jerarquía DomainError
 │   ├── request_id.py              ContextVar + middleware
-│   ├── rate_limit.py              SlowAPI con X-Forwarded-For
+│   ├── rate_limit.py              SlowAPI por CF-Connecting-IP + límite por usuario
+│   ├── ssrf.py                    Comprobación de IP destino (SSRF)
+│   ├── body_limit.py              Límite de cuerpo ASGI por ruta
 │   ├── security_headers.py        CSP, X-Frame, HSTS en prod
 │   ├── sentry.py                  LoggingIntegration + before_send
 │   ├── audit.py                   Audit log para acciones admin
@@ -72,9 +74,9 @@ app/
 ### 🧱 Módulos de dominio
 
 ```
-ai · alerts · analytics · blog · blog_comments · categories · comments ·
-deals · notifications · products · scheduled_deals · scheduled_tasks ·
-stores · telegram · users
+affiliates · ai · alerts · analytics · blog · blog_comments · categories ·
+comments · deals · emails · notifications · products · scheduled_deals ·
+scheduled_tasks · stores · submissions · telegram · users
 ```
 
 ### 🔄 Flujo de dependencias
@@ -123,6 +125,9 @@ src/
 │   ├── admin.tareas-programadas.tsx ⏱️ Mantenimiento recurrente
 │   ├── admin.categorias.tsx       🏷️ CRUD categorías
 │   ├── admin.tiendas.tsx          🏪 CRUD tiendas
+│   ├── admin.propuestas.tsx       🙋 Cola de moderación de propuestas
+│   ├── publicar.tsx               ➕ Proponer un chollo (2 pasos)
+│   ├── mis-chollos.tsx            📋 Propuestas del usuario y su estado
 │   ├── blog.tsx / blog_.$slug.tsx 📰 Blog público
 │   └── telegram.tsx               📈 Entrada atribuida desde Telegram
 │
@@ -133,6 +138,8 @@ src/
 │   ├── blog/                      Editor Tiptap + render público
 │   ├── alerts/components/         RecommendedAlertsBlock
 │   ├── notifications/             NotificationsPopover · useUnreadNotifications
+│   ├── submissions/               Formulario, comprobación de enlace, subida de imágenes,
+│   │                              /mis-chollos, botón "+ Publicar chollo"
 │   └── telegram/components/       TelegramPanel
 │
 ├── 🧩 components/

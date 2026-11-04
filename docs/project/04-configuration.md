@@ -59,7 +59,7 @@ de los identificadores seudónimos, no descifra datos anteriores.
 |---|---|
 | `AMAZON_CLIENT_ID` | Credencial LWA |
 | `AMAZON_CLIENT_SECRET` | Credencial LWA |
-| `AMAZON_AFFILIATE_TAG` | p.ej. `buenchollo0b-21` |
+| `AMAZON_AFFILIATE_TAG` | p.ej. `buenchollo0b-21`. **No puede estar vacío con `APP_ENV=production`**: la API se niega a arrancar (validador de `Settings`). Es el tag que se fuerza en todo enlace `amazon.es` publicado |
 | `AMAZON_API_VERSION` | `3.2` (no cambiar salvo indicación de Amazon) |
 | `AMAZON_CREDENTIAL_VERSION` | Override opcional de la versión enviada en la credencial; vacío hereda `AMAZON_API_VERSION` |
 | `AMAZON_MARKETPLACE` | `www.amazon.es` |
@@ -113,7 +113,9 @@ valores de Telegram; sin ellos la programación queda en `error` y no se activa.
 
 | Variable | Descripción |
 |---|---|
-| `ADMIN_NOTIFICATION_EMAIL` | Correo que recibe un aviso por cada nueva propuesta de chollo (vacío = sin aviso). Requiere SMTP configurado |
+| `ADMIN_NOTIFICATION_EMAIL` | Correo que recibe un aviso por cada nueva propuesta de chollo (vacío = sin aviso). Requiere SMTP configurado. En producción: `pjzambudio@gmail.com` |
+
+> Dependencias nuevas de la API que exigen **rebuild** de la imagen: `Pillow` (imágenes) y `limits` (fijado porque `rate_limit.py` lo importa directamente).
 
 ### 📝 Blog (opcional)
 

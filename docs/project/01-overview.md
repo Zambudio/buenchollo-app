@@ -3,7 +3,7 @@
 > **TL;DR** · BuenCholloTech es una plataforma web tipo comunidad
 > para chollos tecnológicos. Web + Telegram + alertas in-app, todo
 > alimentado por curación humana del admin con autocomplete IA desde
-> Amazon.
+> Amazon, y por chollos que proponen los usuarios y el admin modera.
 
 ---
 
@@ -61,6 +61,8 @@ y comentan, y el sistema notifica vía **alertas personalizadas** y un
 | 🏷️ `categories` | Catálogo maestro (admin) |
 | 🏪 `stores` | Catálogo maestro (admin) |
 | 👤 `users` | Perfil, roles, stats |
+| 🙋 `submissions` | Chollos de usuarios: comprobar enlace, propuesta, ingesta de imágenes y cola de moderación admin ([ADR-015](../adr/ADR-015-ingesta-imagenes-backend.md), [ADR-016](../adr/ADR-016-propuestas-comunidad-y-afiliados.md)) |
+| 🔗 `affiliates` | Dominio puro: extracción/canonicalización de URL y reescritores de afiliado por tienda |
 
 ---
 
@@ -74,6 +76,7 @@ y comentan, y el sistema notifica vía **alertas personalizadas** y un
 │ Ver detalle  │ login  │  + comentar  │  rol   │  + IA copy   │
 │ Buscar       │ Google │  + favoritos │  admin │  + Telegram  │
 │              │        │  + alertas   │        │  + audit log │
+│              │        │  + proponer  │        │  + moderar   │
 └──────────────┘        └──────────────┘        └──────────────┘
 ```
 
@@ -107,7 +110,16 @@ y comentan, y el sistema notifica vía **alertas personalizadas** y un
         ├─ Ejecuta revisión periódica de precios
         └─ Aplica retención de analítica
 
-7. 📊  Analítica first-party                         [/admin/analitica]
+7. 🙋  Usuario registrado propone un chollo         [/publicar]
+        │
+        ├─ check-link: ASIN, duplicado, prefill Amazon y tag propio
+        ├─ imágenes subidas/pegadas/importadas → WebP en Storage
+        ▼
+   Admin revisa en /admin/propuestas → aprueba (se crea el chollo
+   con autor visible) o rechaza con motivo; el autor recibe correo
+   y notificación. Sus chollos: /mis-chollos
+
+8. 📊  Analítica first-party                         [/admin/analitica]
         ├─ Atribuye buscadores, Telegram, referencias y directo
         ├─ Cuenta lecturas únicas del blog
         └─ Permite excluir el navegador del administrador

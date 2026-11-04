@@ -55,6 +55,8 @@ app/
     │   ├── infrastructure/# repositorios, adapters externos
     │   └── api/           # router FastAPI, schemas Pydantic
     ├── products/          # preview Amazon (DIP con Protocols e integración ProductAIEnricher)
+    ├── submissions/       # propuestas de chollos de usuarios: check-link, imágenes (Pillow→WebP), moderación admin
+    ├── affiliates/        # dominio puro: canonicalización de URL y reescritores de afiliado por tienda
     ├── telegram/          # publicación al canal, formato emoji premium, hashtags IA
     ├── categories/
     ├── stores/

@@ -303,6 +303,35 @@ docker run -d \
 
 ---
 
+## 🙋 Checklist de despliegue — chollos de usuarios
+
+Rama `develop` → `main` (la web se despliega sola desde `main`; la API requiere pasos en el NAS).
+
+1. **Merge** `develop` → `main` y esperar CI verde (backend, integración, frontend, E2E, auditoría).
+2. **`.env` del NAS** (no copiar valores al repo): añadir `ADMIN_NOTIFICATION_EMAIL=pjzambudio@gmail.com`
+   y **confirmar que `AMAZON_AFFILIATE_TAG` no está vacío** (con `APP_ENV=production` la API no arranca si lo está).
+3. **Recomendado: no exponer la API a la LAN.** `buenchollo-api/docker-compose.yml` publica `8001:8000` en el host del NAS; como los límites de peticiones confían en `CF-Connecting-IP`, un cliente de la LAN que salte Cloudflare podría falsificarla. Si el healthcheck y los procedimientos de `docs/guides/NAS-SSH.md` no necesitan acceso LAN, enlazar a loopback (`127.0.0.1:8001:8000`). No está aplicado: es decisión de despliegue.
+4. **Rebuild** de la imagen de API y scheduler (dependencias nuevas `Pillow` y `limits`):
+   `docker-compose build --no-cache && docker-compose up -d`. Un simple restart no basta.
+5. **Migración** `20261103140000` (tabla `deal_submissions` + `deals.canonical_url` / `coupon_code`):
+   ya aplicada en la BD compartida; `alembic upgrade head` al arrancar no hará nada.
+6. **Supabase Auth → URL Configuration → Redirect URLs** debe incluir `https://buenchollotech.com/**`
+   (sin ello Google OAuth vuelve al Site URL en lugar de a `/publicar`).
+7. **Backfill** tras el despliegue (idempotente): desde `buenchollo-api/` (o dentro del contenedor API)
+   `python scripts/backfill_canonical_urls.py` (dry-run) y luego `--apply`, para los chollos que aún no tengan `canonical_url`.
+8. **Smoke tests**:
+   - `https://api.buenchollotech.com/health` → 200 y logs sin error de arranque.
+   - Con un usuario real: `/publicar` → pegar un enlace `amazon.es` → prefill y tag `…?tag=<nuestro>`; enviar una propuesta (llega aviso a `ADMIN_NOTIFICATION_EMAIL`).
+   - `/admin/propuestas` carga la cola y aprobar/rechazar notifica al autor; borrar luego el chollo de prueba.
+   - Subir una imagen y comprobar que la URL es de `deal-images/submissions/` y `.webp`.
+   - Un 429 devuelve `Retry-After`.
+   - Sin sesión, "+ Publicar chollo" muestra el diálogo de cuenta.
+9. **Rollback**: la migración es **aditiva**, así que volver al commit anterior es seguro
+   (rebuild incluido); la tabla y las columnas nuevas quedan sin uso. No hacer `alembic downgrade`
+   con propuestas reales: borraría `deal_submissions`.
+
+---
+
 ## ✅ Comprobaciones post-deploy
 
 - [ ] 🌐 `https://tudominio.com` carga la web

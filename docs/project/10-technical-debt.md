@@ -4,7 +4,7 @@
 > Solo items **abiertos**: cuando uno se cierra, se elimina de aquí (el histórico
 > resuelto vive en [`PROJECT_STATUS.md`](../../PROJECT_STATUS.md)). Para consultar el diseño de arquitectura, ver [`docs/master/`](../master/00-index.md).
 
-Última revisión: **2026-10-27** (overrides npm tras limpieza de advisories).
+Última revisión: **2026-11-04** (cierre de chollos de usuarios: TD-23 a TD-30).
 
 ---
 
@@ -20,7 +20,56 @@
   fecha/evidencia en `docs/guides/Cloudflare.md`. No copiar el valor nuevo a Git,
   documentación, logs ni chat.
 
+## 🟠 Media — chollos de usuarios (cierre 2026-11-04)
+
+- **TD-23 — `POST /v1/products/preview-from-url` no exige autenticación.** Solo lo
+  limita `10/min` por IP; cada llamada hace HTTP a Amazon Creators y al motor de IA.
+  Es anterior a las propuestas, pero `check-link` (autenticado, 20/min por usuario) ya
+  cubre el caso de usuarios. Proponer: exigir `require_admin` si solo lo usa el panel,
+  o al menos usuario autenticado.
+
+- **TD-24 — Imágenes huérfanas en `deal-images/submissions/`.** Una imagen subida y
+  nunca enviada en una propuesta (usuario que abandona el formulario) o las de una
+  cuenta eliminada no se borran. Falta una tarea programada (ADR-012) que borre objetos
+  sin referencia en `deal_submissions.images` / `deals.images` con antigüedad suficiente.
+
+- **TD-25 — Ventana de DNS rebinding en el fetcher de imágenes.** `core/ssrf.py`
+  resuelve el host y valida la IP, pero `httpx` vuelve a resolverlo al conectar; un DNS
+  malicioso podría responder distinto la segunda vez. Mitigación: conectar a la IP ya
+  validada (con `Host`/SNI del original) o transporte con resolver propio.
+
+- **TD-26 — El resumen nocturno de alertas lee atributos que no existen en `Deal`.**
+  `emails/application/digest_worker.py` usa `deal.price`, `deal.original_price` y
+  `deal.discount`; el modelo tiene `current_price`, `previous_price` y
+  `discount_percentage`. Al montar el resumen de un chollo que coincide, `deal.price`
+  debería lanzar `AttributeError`. Hallado al analizar el cierre de la feature (lectura de
+  código); el efecto en producción no está comprobado (el digest solo actúa a las 21:00 con
+  alertas activas y chollos recientes). Revisar y añadir un test con un `Deal` real.
+
+- **TD-28 — Rate limit con almacenamiento en memoria por worker.** `slowapi`/`limits`
+  sin Redis: con 2 workers los límites efectivos se duplican y se reinician al reiniciar
+  el contenedor. Aceptable hoy (un solo proceso por servicio); revisar al escalar.
+
+- **TD-29 — Cuota de propuestas "comprobar y luego insertar" no atómica.** Dos
+  peticiones simultáneas del mismo usuario pueden pasar el límite de pendientes/día; solo
+  los índices únicos parciales (mismo producto) lo acotan. Impacto bajo, con rate limit
+  por usuario delante.
+
+- **TD-30 — Menores diferidos de la revisión.** Sin reintento si falla el correo al
+  usuario (solo se registra); `previously_published` pasa a verdadero para aprobadas cuya
+  ficha ya expiró; el helper `_canonical_url_for` está duplicado entre `deal_service.py` y
+  `scripts/backfill_canonical_urls.py`, y `storage.py` duplica `_clean_supabase_url`.
+  Además: al aprobar, el `external_id` de tiendas no Amazon se pasa a mayúsculas (puede
+  no detectar un duplicado con SKU en minúsculas; `canonical_url` sí lo detecta); los
+  acortadores `amzn.asia` y `amzn.com` no se resuelven; y las peticiones sin autenticar
+  a los 4 endpoints de propuestas se rechazan con 401 antes de que cuente el límite por
+  usuario (aceptable: el JWT se verifica en local).
+
 ## 🟡 Baja — observabilidad y hardening de cuenta
+
+- **TD-27 — `TelegramPanel` desborda 8 px a 375 px de ancho.** Preexistente (visto en la
+  verificación visual de chollos de usuarios). Arreglar con `min-w-0`/`flex-wrap` en el
+  panel y fijarlo con una comprobación a 375 px en el E2E.
 
 - **TD-22 — Retirar los overrides npm temporales de `buenchollo-web`.**
   `overrides.miniflare.undici = 7.30.1` existe porque `@cloudflare/vite-plugin`

@@ -1,5 +1,15 @@
 # PROJECT_STATUS — BuenCholloTech
-*Actualización de producción: 2026-11-03 — Programación Telegram con ficha web pendiente desplegada en web, API y scheduler; migración aplicada y CI de `main` en verde.*
+*Actualización de producción: 2026-11-03 — Programación Telegram con ficha web pendiente desplegada en web, API y scheduler; migración aplicada y CI de `main` en verde. Chollos de usuarios cerrado en `develop` (2026-11-04), pendiente de desplegar.*
+
+## 2026-11-04 · Chollos de usuarios (cierre en `develop`)
+
+- Los usuarios registrados pueden proponer chollos (`/publicar`, botón "+ Publicar chollo") y seguirlos en `/mis-chollos`; el admin los modera en `/admin/propuestas` (editar, aprobar como publicado/programado/borrador, rechazar con motivo). El autor recibe correo y notificación; el admin recibe aviso por correo (`ADMIN_NOTIFICATION_EMAIL`). La ficha pública muestra "Compartido por" y el cupón. Spec: `docs/superpowers/specs/2026-11-03-chollos-de-usuarios-design.md`; decisiones en ADR-015 (ingesta de imágenes) y ADR-016 (tabla separada, reescritores de afiliado, acortadores rechazados).
+- Rango `a6feac7..HEAD` de `develop` (sin tocar `main`). Backend: módulos `submissions` y `affiliates`, `core/ssrf.py`, `core/body_limit.py`, rate limit por usuario, migración aditiva `20261103140000` (aplicada en la BD compartida; backfill de 178 chollos), dependencias `Pillow` y `limits`. Frontend: `features/submissions`, rutas `/publicar`, `/mis-chollos`, `/admin/propuestas`.
+- Ronda final de correcciones tras la revisión de toda la rama: rate limit ya no falsificable con `X-Forwarded-For` (clave `CF-Connecting-IP`; por usuario en los endpoints de propuestas); conexión de BD liberada antes de E/S lenta; acortadores genéricos rechazados; aprobaciones programadas/borrador con texto propio; `asin` en `SubmissionResponse`; `AMAZON_AFFILIATE_TAG` obligatorio en producción; JWT con 30 s de margen de reloj; precios con separador de miles español.
+- Verificación: 537 pruebas backend unitarias; 42 de integración en un Postgres 16 desechable (equivalente al job de CI; contra Supabase se salta el test que hace commit); 433 de frontend; typecheck, build y `pip-audit` limpios; lint sin errores. E2E Playwright de los dos specs nuevos: 16/16, dos veces seguidas. E2E real (2026-11-04) contra Supabase, Amazon y Zoho con usuarios de prueba creados y borrados después: check-link, subida/pegado/importación de imágenes, creación, duplicado 409, retirada, aprobar y rechazar con correos recibidos, navegador real sin respuestas distintas de 2xx; sin datos residuales. Estrés (`buenchollo-api/scripts/stress_submissions.py`, 5 usuarios): 50 check-link concurrentes → 20×200 y 30×429 sin 5xx; 20 creaciones del mismo producto → 1 pending, resto 409/429; 30 subidas de PNG sin 5xx y memoria estable (pico ~273 MB); ráfagas con `Retry-After`. Prueba de concurrencia local: 12 check-link con Amazon lento en 1,2 s (3,2 s sin liberar la conexión).
+- Incidencias del proceso: un subagente ejecutó `taskkill /IM python.exe` (puede haber matado procesos Python locales; ya prohibido en las instrucciones); aprobar el chollo de la prueba real disparó 2 notificaciones de alerta a usuarios reales (se borraron con el chollo, ~11 min visibles).
+- **Pendiente de despliegue** (checklist en `docs/project/08-deployment.md`): merge `develop`→`main`, `ADMIN_NOTIFICATION_EMAIL` y `AMAZON_AFFILIATE_TAG` no vacío en el `.env` del NAS, rebuild por `Pillow`/`limits`, Redirect URLs de Supabase Auth con `https://buenchollotech.com/**` y re-ejecutar `scripts/backfill_canonical_urls.py --apply`.
+- Deuda nueva: TD-23 a TD-30 en `docs/project/10-technical-debt.md`.
 
 ## 2026-11-03 · Programación Telegram y web
 
@@ -10,7 +20,7 @@
 - Merge funcional `cc9c827` y merge documental `3e6c1aa` en `main`. Migración `20261103120000_telegram_web_readiness.py` aplicada en producción y confirmada como head en el contenedor API. API y scheduler reconstruidos y reiniciados; API saludable y `/health` público responde 200. Los cinco trabajos de CI de ambos merges pasaron, incluida integración con PostgreSQL, E2E de Playwright y auditoría de seguridad. En local: 282 pruebas backend, 202 frontend con cobertura, TypeScript, ESLint y build SSR correctos. El E2E usa `PLAYWRIGHT_PORT` y sondeo de archivos en unidades de red.
 - Comprobación web de producción (2026-11-03): portada y `/admin/chollos` responden 200; el HTML público carga `admin.chollos-6oze5U6N.js` y ese archivo contiene el nuevo aviso `WEB PENDIENTE`. El Worker actualizado está publicado. No se ha creado una programación real ni enviado contenido de prueba al canal Telegram; esa prueba funcional queda pendiente.
 
-*Última actualización: 2026-11-03 (estado canónico en `docs/project/11-current-state.md`)*
+*Última actualización: 2026-11-04 (estado canónico en `docs/project/11-current-state.md`)*
 
 > La migración al dominio propio ya está completada. Este documento conserva la
 > cronología; para el estado operativo vigente consulta

@@ -26,6 +26,10 @@
   Total: 511 tests (verificado 2026-09-26 · Python 3.11 + Node 20)
 ```
 
+> Fotografía posterior (2026-11-04, tras chollos de usuarios): backend **537** unit,
+> **42** de integración en Postgres desechable, frontend **433** y los 16 tests E2E de
+> `community-submission` + `admin-submissions` en verde. La autoridad sigue siendo `ci.yml`.
+
 ---
 
 ## 🚀 Comandos
@@ -49,6 +53,24 @@ npm run test:e2e                    # 16 Playwright (levanta dev server)
 npm run test:e2e:ui                 # modo UI interactivo
 npx playwright show-report          # último HTML report
 ```
+
+### 🙋 Propuestas de usuarios — suites y estrés
+
+| Suite | Qué cubre |
+|---|---|
+| Backend unit (`test_submission_*`, `test_affiliate_links`, `test_rate_limit`, `test_ssrf_allowlist`, `test_config_affiliate_tag`) | Check-link, creación, imágenes, notificador, revisión, reescritores, rate limit por usuario, SSRF, tag obligatorio |
+| Backend integración (`test_submission_repository_integration`, `test_submission_review_http_integration`) | SQL real del repositorio y aprobar/rechazar por HTTP. El de HTTP **se salta** si `DATABASE_URL` apunta a Supabase (el endpoint hace commit): solo corre en BD desechable (CI) |
+| Frontend (`features/submissions/**`, `lib/validation/submissions`) | Formulario, subida/pegado de imágenes, `/mis-chollos`, cola admin, precios con separadores españoles |
+| E2E (`e2e/community-submission.spec.ts`, `e2e/admin-submissions.spec.ts`) | Flujo usuario y moderación admin, escritorio y móvil, con la API mockeada |
+
+Estrés (`buenchollo-api/scripts/stress_submissions.py`): lanza 4 escenarios (50 check-link
+concurrentes, 20 creaciones del mismo producto, 30 subidas de PNG, ráfaga sobre los
+límites) y limpia lo que crea. Necesita 5 access tokens de **usuarios de prueba no admin
+con perfil completo** (`--token-file`) y el `.env` del backend.
+
+> ⚠️ **No ejecutar contra producción sin usuarios de prueba** dedicados: crea propuestas
+> reales, dispara correos al admin y sube imágenes a Storage de la BD compartida. Los
+> usuarios de prueba deben borrarse después con todos sus datos.
 
 ### 🎯 Gates compuestos
 
