@@ -355,7 +355,7 @@ def test_create_endpoint_commits_before_scheduling_admin_notification(endpoint_s
         (dict(live=SimpleNamespace(id="d1", slug="x", title="T", image_url=None, current_price=9.5, status="active")), {}, 409),
         (dict(pending_count=5), {}, 429),
         (dict(day_count=15), {}, 429),
-        (dict(), dict(category_id="missing"), 400),
+        (dict(), dict(category_id="99999999-9999-4999-8999-999999999999"), 400),
     ],
 )
 def test_create_endpoint_failure_schedules_nothing(endpoint_settings, repo_kwargs, payload, status):

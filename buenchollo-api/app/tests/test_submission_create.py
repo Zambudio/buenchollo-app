@@ -26,6 +26,11 @@ SUB_ID = "11111111-1111-4111-8111-111111111111"
 URL = "/v1/submissions"
 BUCKET = "https://proj.supabase.co/storage/v1/object/public/deal-images/submissions/"
 AMAZON_IMG = "https://m.media-amazon.com/images/I/a.jpg"
+CAT1 = "c1111111-1111-4111-8111-111111111111"
+CAT2 = "c2222222-2222-4222-8222-222222222222"
+SUB1 = "51111111-1111-4111-8111-111111111111"
+SUB2 = "52222222-2222-4222-8222-222222222222"
+MISSING = "99999999-9999-4999-8999-999999999999"
 
 
 class FakeRepo:
@@ -75,7 +80,7 @@ class FakeRepo:
 
 
 class FakeCategories:
-    def __init__(self, known=("cat-1",), parents=None):
+    def __init__(self, known=(CAT1,), parents=None):
         self.known = set(known) | set(parents or {})
         self.parents = parents or {}
 
@@ -105,7 +110,7 @@ def body(**over):
         "description": "Muy buenos",
         "current_price": 10,
         "previous_price": 20,
-        "category_id": "cat-1",
+        "category_id": CAT1,
         "images": [AMAZON_IMG, BUCKET + "u/1.webp"],
         "image_url": AMAZON_IMG,
     }
@@ -264,7 +269,7 @@ def test_expires_must_be_future_and_after_start(client):
 
 
 def test_unknown_category_is_400(client, repo):
-    resp = client.post(URL, json=body(category_id="nope"))
+    resp = client.post(URL, json=body(category_id=MISSING))
     assert resp.status_code == 400
     assert not repo.rows
 
@@ -300,12 +305,12 @@ def test_other_integrity_error_is_not_swallowed(repo):
 
 def test_subcategory_must_belong_to_category(client, repo):
     app.dependency_overrides[get_category_repository] = lambda: FakeCategories(
-        known=("cat-1", "cat-2"), parents={"sub-1": "cat-1", "sub-2": "cat-2"}
+        known=(CAT1, CAT2), parents={SUB1: CAT1, SUB2: CAT2}
     )
-    assert client.post(URL, json=body(subcategory_id="sub-2")).status_code == 400
-    assert client.post(URL, json=body(subcategory_id="cat-2")).status_code == 400
-    assert client.post(URL, json=body(subcategory_id="missing")).status_code == 400
-    assert client.post(URL, json=body(subcategory_id="sub-1")).status_code == 201
+    assert client.post(URL, json=body(subcategory_id=SUB2)).status_code == 400
+    assert client.post(URL, json=body(subcategory_id=CAT2)).status_code == 400
+    assert client.post(URL, json=body(subcategory_id=MISSING)).status_code == 400
+    assert client.post(URL, json=body(subcategory_id=SUB1)).status_code == 201
 
 
 def test_mine_only_own(client, repo):
@@ -375,3 +380,19 @@ def test_original_url_stores_the_extracted_link_not_the_pasted_text(client, repo
     resp = client.post(URL, json=body(url=pasted))
     assert resp.status_code == 201, resp.text
     assert repo.rows[0].original_url == f"https://www.amazon.es/dp/{ASIN}?tag=otro-21"
+
+
+@pytest.mark.parametrize(
+    "field, value",
+    [("category_id", "cat-1"), ("category_id", ""), ("subcategory_id", "1; drop"), ("category_id", "1234")],
+)
+def test_malformed_category_ids_are_422(client, repo, field, value):
+    resp = client.post(URL, json=body(**{field: value}))
+    assert resp.status_code == 422, resp.text
+    assert not repo.rows
+
+
+def test_blank_subcategory_is_none(client, repo):
+    resp = client.post(URL, json=body(subcategory_id=""))
+    assert resp.status_code == 201, resp.text
+    assert repo.rows[0].subcategory_id is None

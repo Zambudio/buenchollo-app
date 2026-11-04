@@ -1,10 +1,11 @@
 import re
+import uuid
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Literal
 from urllib.parse import unquote, urlparse
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator, model_validator
 
 from app.core.config import get_settings
 from app.modules.deals.api.schemas import AuthorBasic
@@ -120,6 +121,19 @@ class SubmissionCreate(BaseModel):
     expires_at: datetime | None = None
     images: list[str] = Field(default_factory=list, max_length=MAX_IMAGES)
     image_url: str | None = None
+
+    @field_validator("category_id", "subcategory_id", mode="before")
+    @classmethod
+    def _uuid_ids(cls, value: object, info: ValidationInfo) -> object:
+        if isinstance(value, str):
+            value = value.strip()
+            if not value and info.field_name == "subcategory_id":
+                return None
+            try:
+                return str(uuid.UUID(value))
+            except ValueError:
+                raise ValueError("Identificador de categoría no válido") from None
+        return value
 
     @field_validator("image_url", mode="after")
     @classmethod

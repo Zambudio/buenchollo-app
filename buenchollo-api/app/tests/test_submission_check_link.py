@@ -206,3 +206,16 @@ def test_generic_shortener_is_400(client, url):
     resp = post(client, url)
     assert resp.status_code == 400
     assert resp.json()["detail"] == "Pega el enlace directo del producto, sin acortadores"
+
+
+def test_short_link_resolved_is_rewritten_with_our_tag(client):
+    from app.modules.submissions.application.check_link import CheckLinkUseCase
+
+    app.dependency_overrides[get_check_link_use_case] = lambda: CheckLinkUseCase(
+        FakeRepo(), FakeProvider(PRODUCT), amazon_tag="nuestro-21", asin_resolver=lambda url: ASIN
+    )
+    body = post(client, "https://amzn.to/abc123").json()
+    assert body["status"] == "ok"
+    assert body["canonical_url"] == f"https://www.amazon.es/dp/{ASIN}"
+    assert body["affiliate_url"] == f"https://www.amazon.es/dp/{ASIN}?tag=nuestro-21"
+    assert body["warnings"] == []
