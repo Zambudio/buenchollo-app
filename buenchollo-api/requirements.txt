@@ -46,6 +46,8 @@ tzdata==2026.2
 # Rate limiting (slowapi). Storage en memoria por defecto — suficiente para el
 # monolito; cambiar a Redis si se escala a múltiples instancias.
 slowapi==0.1.9
+# `limits` (dependencia de slowapi) se importa directamente en app/core/rate_limit.py.
+limits==5.8.0
 
 # Error tracking (Sentry SaaS o cualquier endpoint compatible con su protocolo,
 # p.ej. GlitchTip). Desactivado por defecto: si SENTRY_DSN está vacío, init_sentry
