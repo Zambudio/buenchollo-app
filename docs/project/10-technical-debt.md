@@ -4,7 +4,7 @@
 > Solo items **abiertos**: cuando uno se cierra, se elimina de aquí (el histórico
 > resuelto vive en [`PROJECT_STATUS.md`](../../PROJECT_STATUS.md)). Para consultar el diseño de arquitectura, ver [`docs/master/`](../master/00-index.md).
 
-Última revisión: **2026-11-04** (cierre de chollos de usuarios: TD-23 a TD-35).
+Última revisión: **2026-11-04** (cierre de chollos de usuarios: TD-23 a TD-35; entorno local y prueba exhaustiva: TD-36 a TD-38).
 
 ---
 
@@ -84,11 +84,33 @@
   propuestas se rechazan con 401 antes de que cuente el límite por usuario (aceptable: el
   JWT se verifica en local).
 
+- **TD-36 — `supabase/migrations/*.sql` no describe el esquema real de producción.**
+  Detectado al montar el entorno local (2026-11-04): en producción los enums
+  (`deal_status`, `app_role`, …) son `text`, `deals.images` es `jsonb`, varias columnas
+  son nullable y no existen los triggers/funciones de esas migraciones (contadores,
+  `process_deal_statuses`, pg_cron). Reproducir esas migraciones da otro esquema. El
+  entorno local usa `pg_dump --schema-only` de producción (ver `docs/guides/LOCAL-ENV.md`).
+  Proponer: generar una migración *baseline* SQL a partir del volcado real y archivar las
+  antiguas, para que un proyecto Supabase nuevo salga igual que producción.
+
+- **TD-37 — Los clientes Supabase REST del backend ignoran `DATABASE_URL`.**
+  `DealCleanerService` (scheduler), `SupabaseCategoryClient` (preview con IA) y la
+  borrada de cuenta hablan con Supabase por REST/Admin API, no con la base configurada.
+  En producción da igual, pero en local obliga a mantener el scheduler apagado (su
+  limpieza borraría chollos de PRODUCCIÓN). Proponer: pasar la limpieza a SQLAlchemy.
+
 ## 🟡 Baja — observabilidad y hardening de cuenta
 
 - **TD-27 — `TelegramPanel` desborda 8 px a 375 px de ancho.** Preexistente (visto en la
   verificación visual de chollos de usuarios). Arreglar con `min-w-0`/`flex-wrap` en el
   panel y fijarlo con una comprobación a 375 px en el E2E.
+
+- **TD-38 — Menores vistos en la prueba exhaustiva en local (2026-11-04).**
+  (a) `AppearanceToggle` (menú lateral) provoca un *hydration mismatch* en consola
+  (el tema se lee de `localStorage` solo en cliente). (b) `/admin/propuestas` sin sesión
+  redirige a `/login` sin `?redirect=`, a diferencia de `/mis-chollos`. (c) Una subida de
+  más de 5 MB que se salta la validación del cliente recibe la conexión cerrada en vez del
+  413 (la web ya valida antes de subir).
 
 - **TD-22 — Retirar los overrides npm temporales de `buenchollo-web`.**
   `overrides.miniflare.undici = 7.30.1` existe porque `@cloudflare/vite-plugin`

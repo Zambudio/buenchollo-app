@@ -133,6 +133,18 @@ El dominio no depende de FastAPI, SQLAlchemy, ni ningún framework externo.
 - **Cambios de panel Cloudflare / `.env` del NAS**: se aplican directos a prod; cada uno con su verificación y rollback. El `.env` del NAS está **excluido del sync de SynologyDrive** (independiente del `.env` local).
 - Ante un **aspecto crítico** (entorno roto, CI/hooks fallando, datos/seguridad en riesgo): **parar y resolverlo** antes de avanzar; no ofrecer "seguir o arreglar".
 
+### Entorno local de pruebas
+
+Para probar cualquier cambio en `localhost` antes de desplegar existe un entorno
+local completo (web + API + Postgres 17 portable + capturador de correo),
+**aislado de la base de datos de producción** y sin Docker:
+`.\local-env\bct-local.cmd setup` (una vez por PC) y `.\local-env\bct-local.cmd start`
+→ <http://localhost:8080> (correos en <http://localhost:8025>). Pruebas en vivo:
+`bct-local.cmd qa` y `bct-local.cmd stress`. Guía completa (qué es local y qué
+sigue siendo real, otro PC, problemas conocidos): [`docs/guides/LOCAL-ENV.md`](docs/guides/LOCAL-ENV.md).
+No cambies de rama en el share del NAS para probar: el NAS ejecuta esa copia (TD-31);
+usa un clon local.
+
 ### Memoria y contexto
 
 Las **normas de trabajo y la memoria del proyecto** viven **dentro del repo** en [`.claude/memory/`](.claude/memory/) (versionadas). El índice [`.claude/memory/MEMORY.md`](.claude/memory/MEMORY.md) lista cada nota: forma de trabajo iterativa, no continuar con lo crítico, deps solo en `develop`, método de revisión/auditoría, estado del proyecto, etc. **Consúltalas al inicio de cada sesión** y mantenlas al día (una nota por fichero, con frontmatter; actualiza también el índice).

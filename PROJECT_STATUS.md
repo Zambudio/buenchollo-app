@@ -1,6 +1,13 @@
 # PROJECT_STATUS — BuenCholloTech
 *Actualización de producción: 2026-11-03 — Programación Telegram con ficha web pendiente desplegada en web, API y scheduler; migración aplicada y CI de `main` en verde. Chollos de usuarios cerrado en `develop` (2026-11-04), pendiente de desplegar.*
 
+## 2026-11-04 · Entorno local de pruebas y prueba exhaustiva de `develop`
+
+- Nuevo `local-env/` (guía `docs/guides/LOCAL-ENV.md`): `bct-local.cmd setup|start|stop|status|reset-db|logs|users|qa|stress`. Web + API + PostgreSQL 17 portable + capturador de correo en `localhost`, sin Docker y **aislado de la BD de producción**: esquema = `pg_dump --schema-only` del esquema real + `alembic upgrade head`; datos = copia de solo lectura del catálogo (tiendas, categorías, 157 chollos, blog, 152 programados). Auth, Storage y Amazon siguen siendo reales; scheduler y Telegram apagados. Reproducible en cualquier PC Windows (Python 3.11 + Node 20).
+- Batería en vivo `local-env/qa` (pytest, 164 casos contra la API real local con 6 usuarios reales de prueba) y estrés `local-env/qa/stress.py` (8 escenarios).
+- **Fallos encontrados y corregidos**: (1) **XSS almacenado** en las fichas públicas: el JSON-LD (`<script type="application/ld+json">`) se serializaba con `JSON.stringify` y un título o descripción con `</script>` rompía el bloque (afecta también a `main`; nuevo `src/lib/json-ld.ts` en chollo, inicio, categoría y blog); (2) un ASIN en minúsculas (`/dp/b09b8x9rgm`) no se reconocía: enlace **sin tag de afiliado**, sin autorrelleno y saltándose la detección de duplicados; (3) el admin podía guardar un chollo con cualquier `status` de texto libre (quedaba invisible); ahora `active|expired|scheduled|draft`; (4) `check-link` aceptaba IPs, `localhost`, hosts internos, credenciales en la URL y puertos raros como "tienda"; (5) test `test_preview_sin_candidatos_devuelve_lista_vacia` con un mock obsoleto que en local llamaba a Amazon de verdad.
+- Deuda nueva: TD-36 (las migraciones SQL de `supabase/` no describen producción), TD-37 (clientes REST de Supabase que ignoran `DATABASE_URL`), TD-38 (menores).
+
 ## 2026-11-04 · Chollos de usuarios (cierre en `develop`)
 
 - Los usuarios registrados pueden proponer chollos (`/publicar`, botón "+ Publicar chollo") y seguirlos en `/mis-chollos`; el admin los modera en `/admin/propuestas` (editar, aprobar como publicado/programado/borrador, rechazar con motivo). El autor recibe correo y notificación; el admin recibe aviso por correo (`ADMIN_NOTIFICATION_EMAIL`). La ficha pública muestra "Compartido por" y el cupón. Spec: `docs/superpowers/specs/2026-11-03-chollos-de-usuarios-design.md`; decisiones en ADR-015 (ingesta de imágenes) y ADR-016 (tabla separada, reescritores de afiliado, acortadores rechazados).

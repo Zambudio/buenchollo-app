@@ -62,6 +62,18 @@ app/
 
 ---
 
+## Entorno local de pruebas
+
+Para probar cualquier cambio en `localhost` antes de desplegar existe un entorno
+local completo (web + API + Postgres 17 portable + capturador de correo),
+**aislado de la base de datos de producción** y sin Docker:
+`.\local-env\bct-local.cmd setup` (una vez por PC) y `.\local-env\bct-local.cmd start`
+→ <http://localhost:8080> (correos en <http://localhost:8025>). Pruebas en vivo:
+`bct-local.cmd qa` y `bct-local.cmd stress`. Guía completa (qué es local y qué
+sigue siendo real, otro PC, problemas conocidos): [`docs/guides/LOCAL-ENV.md`](docs/guides/LOCAL-ENV.md).
+No cambies de rama en el share del NAS para probar: el NAS ejecuta esa copia (TD-31);
+usa un clon local.
+
 ## Estado actual
 
 - **Web en producción** en `https://buenchollotech.com` (frontend TanStack Start SSR como **Cloudflare Worker**; deploy automático al hacer push a `main` vía Workers Builds).

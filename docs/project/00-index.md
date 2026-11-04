@@ -22,6 +22,7 @@
 | ⚙️ **Saber qué variables de entorno hay** | [04](04-configuration.md) |
 | 💻 **Trabajar día a día** (commits, ramas, IA) | [05](05-development-workflow.md) |
 | 🧪 **Ejecutar tests o pasar el CI** | [06](06-testing-and-quality.md) |
+| 🖥️ **Probar la web en local antes de desplegar** | [`LOCAL-ENV.md`](../guides/LOCAL-ENV.md) |
 | 🛡️ **Revisar la seguridad operativa** | [07](07-security.md) |
 | 🚀 **Desplegar o mantener producción** | [08](08-deployment.md) |
 | 🔍 **Algo no funciona** | [09](09-troubleshooting.md) |
@@ -57,6 +58,7 @@
 | [`../reference/`](../reference/) | 📚 Referencias densas (plan hardening, auditoría OWASP, smoke test) |
 | [`../guides/Cloudflare.md`](../guides/Cloudflare.md) | ☁️ **Guía operativa viva** de Cloudflare (Workers, túnel, TLS, WAF) — estado real de producción |
 | [`../guides/NAS-SSH.md`](../guides/NAS-SSH.md) | 🔐 **Guía operativa viva** de conexión SSH al NAS — para que una IA haga rebuild/redeploy de `buenchollo-api` sin intervención manual |
+| [`../guides/LOCAL-ENV.md`](../guides/LOCAL-ENV.md) | 🧪 **Entorno local de pruebas**: web + API + Postgres + correo en tu PC, aislado de producción (`local-env/bct-local.cmd`) |
 | [`../guides/MIGRATIONS.md`](../guides/MIGRATIONS.md) | 🛠️ Setup Alembic |
 | [`../archive/`](../archive/) | 🗄️ Documentación histórica preservada con índice de motivos |
 

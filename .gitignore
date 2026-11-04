@@ -77,3 +77,7 @@ buenchollo-api/*.whl
 
 # ─── Alembic (versiones generadas localmente si aplica) ─────────────────────
 # alembic/versions/   # descomenta si no quieres versionar las migraciones
+
+# ─── Entorno local (local-env/) ─────────────────────────────────────────────
+# Overrides personales de local-env/config.json (correos admin, puertos...).
+local-env/config.local.json

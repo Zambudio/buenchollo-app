@@ -1,5 +1,10 @@
 # 📥 02 · Instalación y setup
 
+> 🖥️ **¿Solo quieres levantar todo en local para probar?** Usa el entorno
+> local listo para usar: [`docs/guides/LOCAL-ENV.md`](../guides/LOCAL-ENV.md)
+> (`.\local-env\bct-local.cmd setup` + `start`). Esta página describe el
+> montaje manual pieza a pieza.
+
 > **TL;DR** · Clonar repo · instalar Husky con `npm install` raíz ·
 > levantar backend con Python venv + uvicorn · levantar frontend con
 > `npm run dev` · configurar Supabase. En 10 minutos lo tienes
