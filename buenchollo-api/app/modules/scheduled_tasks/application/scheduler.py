@@ -16,7 +16,6 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
 from app.core.config import Settings
-from app.modules.deals.infrastructure.repository import DealRepository
 from app.modules.scheduled_tasks.application.factory import build_task_handlers
 from app.modules.scheduled_tasks.application.scheduled_task_service import (
     ScheduledTaskService,
@@ -63,9 +62,8 @@ def _build_service(session, settings: Settings) -> tuple[ScheduledTaskRepository
     `build_task_handlers` a factory.py) reventaba cada tick automático con
     NameError y la tarea no se ejecutaba nunca sola."""
     repo = ScheduledTaskRepository(session)
-    deal_repo = DealRepository(session)
     handlers = build_task_handlers(session, settings)
-    service = ScheduledTaskService(repo, deal_repo, handlers, session)
+    service = ScheduledTaskService(repo, handlers, session)
     return repo, service
 
 

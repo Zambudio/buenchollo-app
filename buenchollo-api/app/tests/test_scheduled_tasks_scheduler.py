@@ -147,5 +147,5 @@ def test_build_service_cablea_dependencias_sin_nameerror():
     repo, service = _build_service(session, settings)
 
     assert isinstance(service, ScheduledTaskService)
-    assert service.deal_repo is not None
+    assert service.handlers["price_check"].catalog_repo is not None
     assert "price_check" in service.handlers

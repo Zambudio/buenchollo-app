@@ -5,14 +5,10 @@ from app.core.audit import audit_log
 from app.core.config import Settings, get_settings
 from app.core.database import get_db
 from app.core.security import require_admin
-from app.modules.deals.api.schemas import DealDetailResponse
-from app.modules.deals.infrastructure.repository import DealRepository
-from app.modules.products.infrastructure.amazon_client import AmazonProductClient
 from app.modules.scheduled_tasks.api.schemas import (
     BulkDeleteRunsRequest,
     BulkDeleteRunsResponse,
     CandidateSchema,
-    ConfirmRequest,
     PreviewResponse,
     RunDetailResponse,
     RunResponse,
@@ -21,7 +17,6 @@ from app.modules.scheduled_tasks.api.schemas import (
 )
 from app.modules.scheduled_tasks.application.factory import build_task_handlers
 from app.modules.scheduled_tasks.application.scheduled_task_service import ScheduledTaskService
-from app.modules.scheduled_tasks.application.task_handler import Candidate
 from app.modules.scheduled_tasks.domain.exceptions import ScheduledTaskRunNotFound
 from app.modules.scheduled_tasks.infrastructure.repository import ScheduledTaskRepository
 
@@ -32,10 +27,7 @@ def get_scheduled_task_service(
     db: AsyncSession = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ) -> ScheduledTaskService:
-    repo = ScheduledTaskRepository(db)
-    deal_repo = DealRepository(db)
-    handlers = build_task_handlers(db, settings)
-    return ScheduledTaskService(repo, deal_repo, handlers, db)
+    return ScheduledTaskService(ScheduledTaskRepository(db), build_task_handlers(db, settings), db)
 
 
 @router.get("", response_model=list[ScheduledTaskResponse])
@@ -83,13 +75,12 @@ async def preview_scheduled_task(
 @router.post("/{task_id}/confirm", response_model=RunResponse)
 async def confirm_scheduled_task(
     task_id: str,
-    payload: ConfirmRequest,
-    db: AsyncSession = Depends(get_db),
     service: ScheduledTaskService = Depends(get_scheduled_task_service),
     current_user=Depends(require_admin),
 ):
-    candidates = [Candidate(**c.model_dump()) for c in payload.candidates]
-    return await service.confirm(task_id, payload.total_checked, candidates, str(current_user.id))
+    """Ejecuta la revisión ahora y aplica todas las transiciones (el body que
+    enviaba el panel antiguo con candidatos se ignora)."""
+    return await service.confirm(task_id, str(current_user.id))
 
 
 @router.get("/{task_id}/runs", response_model=list[RunResponse])
@@ -151,21 +142,3 @@ async def bulk_delete_scheduled_task_runs(
         payload={"run_ids": payload.run_ids},
     )
     return BulkDeleteRunsResponse(deleted=count)
-
-
-@router.post("/runs/items/{item_id}/restore", response_model=DealDetailResponse)
-async def restore_scheduled_task_run_item(
-    item_id: str,
-    db: AsyncSession = Depends(get_db),
-    service: ScheduledTaskService = Depends(get_scheduled_task_service),
-    current_user=Depends(require_admin),
-):
-    deal = await service.restore_item(item_id)
-    await audit_log(
-        db,
-        user_id=str(current_user.id),
-        action="deal.restore_from_price_check",
-        target_type="deal",
-        target_id=deal.id,
-    )
-    return deal

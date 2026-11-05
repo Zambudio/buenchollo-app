@@ -68,15 +68,3 @@ class ScheduledTaskRepository:
         )
         await self.session.flush()
         return result.rowcount or 0
-
-    # --- ScheduledTaskRunItem ---
-
-    async def get_run_item_by_id(self, item_id: str) -> ScheduledTaskRunItem | None:
-        result = await self.session.execute(
-            select(ScheduledTaskRunItem).where(ScheduledTaskRunItem.id == item_id)
-        )
-        return result.scalars().first()
-
-    async def update_run_item(self, item: ScheduledTaskRunItem) -> ScheduledTaskRunItem:
-        await self.session.flush()
-        return item
