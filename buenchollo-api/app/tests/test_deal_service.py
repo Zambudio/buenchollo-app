@@ -40,6 +40,7 @@ def _build_service(*, has_profile: bool = True, with_matcher: bool = True):
         return deal_obj
     repo.create = AsyncMock(side_effect=_assign_id)
     repo.get_by_id = AsyncMock(side_effect=lambda _id: _stub_deal())
+    repo.reload = AsyncMock(side_effect=lambda _id: _stub_deal())
     repo.update = AsyncMock()
     repo.delete = AsyncMock()
     # Por defecto no hay duplicado de ASIN. Los tests que necesiten simular un
@@ -121,6 +122,7 @@ async def test_update_deal_aplica_cambios_y_dispara_matcher():
     service, repo, matcher = _build_service()
     existing = _stub_deal(status="active", title="Antiguo")
     repo.get_by_id = AsyncMock(return_value=existing)
+    repo.reload = AsyncMock(return_value=existing)
 
     result = await service.update_deal("id-x", {"title": "Nuevo título", "current_price": 79.0})
 
@@ -220,3 +222,120 @@ async def test_update_deal_ok_si_external_id_no_viene_en_el_payload():
 
     repo.find_by_external_id.assert_not_called()
     repo.update.assert_awaited_once()
+
+
+# --- Catálogo permanente: dar de alta un producto ya conocido ---
+
+
+def _expired_existing(**overrides):
+    base = dict(
+        id="existente-id", slug="producto-existente", title="Viejo", status="expired",
+        offer_end_reason="price_increase", current_price=120.0, offer_price=99.0,
+        published_at=None, created_by="autor-viejo", listing_id="listing-1", external_id="B0DABC1234",
+        votes_up=7, scheduled_for=None,
+    )
+    base.update(overrides)
+    return SimpleNamespace(**base)
+
+
+@pytest.mark.asyncio
+async def test_alta_de_asin_expirado_reactiva_mismo_deal():
+    service, repo, matcher = _build_service()
+    existing = _expired_existing()
+    repo.find_by_external_id = AsyncMock(return_value=existing)
+    repo.get_by_id = AsyncMock(return_value=existing)
+    repo.reload = AsyncMock(return_value=existing)
+
+    deal = await service.create_deal(
+        {"title": "Nuevo título", "current_price": 89.0, "external_id": "B0DABC1234",
+         "affiliate_url": "https://www.amazon.es/dp/B0DABC1234", "status": "active"},
+        "user-1",
+    )
+
+    repo.create.assert_not_called()
+    assert deal is existing
+    assert existing.slug == "producto-existente"
+    assert existing.title == "Nuevo título"
+    assert existing.status == "active"
+    assert existing.offer_end_reason is None
+    assert existing.offer_price == 89.0
+    assert existing.published_at is not None
+    assert existing.created_by == "user-1"
+    assert existing.votes_up == 7
+    matcher.notify_matching_alerts.assert_awaited_once_with(existing)
+
+
+@pytest.mark.asyncio
+async def test_alta_con_revive_id_reactiva_ese_deal():
+    service, repo, _ = _build_service()
+    existing = _expired_existing(id="por-url")
+    repo.get_by_id = AsyncMock(return_value=existing)
+    repo.reload = AsyncMock(return_value=existing)
+
+    deal = await service.create_deal(
+        {"title": "X", "current_price": 10.0, "affiliate_url": "https://tienda.es/p"},
+        "user-1",
+        revive_id="por-url",
+    )
+
+    assert deal is existing and existing.status == "active"
+    repo.create.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_alta_programada_de_asin_expirado_queda_programada():
+    service, repo, matcher = _build_service()
+    existing = _expired_existing()
+    repo.find_by_external_id = AsyncMock(return_value=existing)
+    repo.get_by_id = AsyncMock(return_value=existing)
+    repo.reload = AsyncMock(return_value=existing)
+
+    await service.create_deal(
+        {"title": "X", "current_price": 10.0, "external_id": "B0DABC1234", "status": "scheduled",
+         "scheduled_for": "2026-12-01T10:00:00Z"},
+        "user-1",
+    )
+
+    assert existing.status == "scheduled"
+    assert existing.published_at is None
+    matcher.notify_matching_alerts.assert_not_awaited()
+
+
+@pytest.mark.parametrize("status", ["active", "draft", "scheduled"])
+@pytest.mark.asyncio
+async def test_alta_de_asin_vivo_sigue_dando_duplicado(status):
+    service, repo, _ = _build_service()
+    repo.find_by_external_id = AsyncMock(return_value=_expired_existing(status=status))
+
+    with pytest.raises(DuplicateDealError):
+        await service.create_deal({"title": "X", "current_price": 1.0, "external_id": "B0DABC1234"}, "user-1")
+
+
+@pytest.mark.asyncio
+async def test_alta_nueva_enlaza_catalogo():
+    repo_service, repo, _ = _build_service()
+    catalog = MagicMock()
+    catalog.link_new_deal = AsyncMock()
+    service = DealService(repo, None, catalog)
+
+    await service.create_deal({"title": "Nuevo", "current_price": 9.99, "external_id": "B0NEW00001"}, "user-1")
+
+    catalog.link_new_deal.assert_awaited_once()
+    linked = catalog.link_new_deal.await_args.args[0]
+    assert linked.external_id == "B0NEW00001"
+
+
+@pytest.mark.asyncio
+async def test_reactivar_deal_sin_listing_lo_enlaza():
+    _, repo, _ = _build_service()
+    existing = _expired_existing(listing_id=None)
+    repo.find_by_external_id = AsyncMock(return_value=existing)
+    repo.get_by_id = AsyncMock(return_value=existing)
+    repo.reload = AsyncMock(return_value=existing)
+    catalog = MagicMock()
+    catalog.link_new_deal = AsyncMock()
+    service = DealService(repo, None, catalog)
+
+    await service.create_deal({"title": "X", "current_price": 5.0, "external_id": "B0DABC1234"}, "user-1")
+
+    catalog.link_new_deal.assert_awaited_once_with(existing)

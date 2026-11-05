@@ -150,7 +150,7 @@ def api(integration_client, seeded):
     app.dependency_overrides.clear()
 
 
-def test_approve_creates_community_deal_and_replaces_expired(api, seeded):
+def test_approve_revives_the_expired_deal_as_community_deal(api, seeded):
     resp = api.client.post(
         f"/v1/admin/submissions/{seeded.submission}/approve",
         json={
@@ -172,9 +172,14 @@ def test_approve_creates_community_deal_and_replaces_expired(api, seeded):
     assert body["external_id"] == seeded.asin
     assert body["affiliate_url"] == f"https://www.amazon.es/dp/{seeded.asin}?tag={tag}"
     assert api.notifier.calls == [seeded.submission]
+    # Catálogo permanente: el chollo caducado del mismo ASIN se reactiva (misma
+    # URL y votos) en vez de borrarse y crear otro.
+    assert body["id"] == seeded.expired
+    assert body["status"] == "active"
 
     async def check(session):
-        assert await session.get(Deal, seeded.expired) is None
+        revived = await session.get(Deal, seeded.expired)
+        assert revived is not None and revived.status == "active"
         sub = await session.get(DealSubmission, seeded.submission)
         assert sub.status == "approved"
         assert sub.deal_id == body["id"]
@@ -184,7 +189,8 @@ def test_approve_creates_community_deal_and_replaces_expired(api, seeded):
                 select(AuditLog.action).where(AuditLog.user_id == seeded.admin)
             )
         ).scalars().all()
-        assert {"submission.approve", "deal.delete"} <= set(actions)
+        assert "submission.approve" in set(actions)
+        assert "deal.delete" not in set(actions)
 
     _run(check)
 

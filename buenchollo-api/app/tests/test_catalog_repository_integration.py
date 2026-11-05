@@ -33,6 +33,14 @@ async def session():
         await engine.dispose()
 
 
+async def _any_user_id(conn) -> str:
+    """Un user_id válido para deal_votes: en la BD local (esquema de producción)
+    la FK apunta a auth.users; en la de CI (create_all) no hay FK."""
+    if (await conn.execute(text("SELECT to_regclass('auth.users')"))).scalar() is None:
+        return str(uuid.uuid4())
+    return str((await conn.execute(text("SELECT id FROM auth.users LIMIT 1"))).scalar_one())
+
+
 def _deal(external_id: str | None, *, status="active", published_at=None, price=50.0, url=None) -> Deal:
     suffix = uuid.uuid4().hex[:10]
     return Deal(
@@ -127,7 +135,7 @@ async def test_purge_listing_con_otra_tienda_repunta_y_no_borra(session):
 async def test_purge_listing_unico_borra_producto_deal_y_votos(session):
     repo = CatalogRepository(session)
     deal = await _add_linked(session, repo, _deal("B0REPOA006"))
-    user_id = (await session.execute(text("SELECT id FROM auth.users LIMIT 1"))).scalar_one()
+    user_id = await _any_user_id(session)
     await session.execute(
         text("INSERT INTO deal_votes (deal_id, user_id, vote) VALUES (:d, :u, 1)"),
         {"d": deal.id, "u": user_id},

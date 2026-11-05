@@ -73,21 +73,17 @@ class ReviewSubmissionUseCase:
                 existing_id=live.id, existing_slug=live.slug, existing_title=live.title
             )
 
-        for expired in await self.repo.find_expired_deals(external_id, link.canonical_url):
-            await self.deal_service.delete_deal(expired.id)
-            if self.audit is not None:
-                await self.audit(
-                    "deal.delete",
-                    "deal",
-                    str(expired.id),
-                    {"reason": "replaced_by_submission", "submission_id": submission_id},
-                )
+        # Catálogo permanente: un chollo caducado del mismo producto no se borra,
+        # se reactiva con los datos de la propuesta (misma URL, votos y comentarios).
+        expired = await self.repo.find_expired_deal(external_id, link.canonical_url)
 
         now = datetime.now(timezone.utc)
         if deal_in.scheduled_for is not None and _aware(deal_in.scheduled_for) > now:
             payload["status"] = "scheduled"
 
-        deal = await self.deal_service.create_deal(payload, user_id=submission.user_id)
+        deal = await self.deal_service.create_deal(
+            payload, user_id=submission.user_id, revive_id=expired.id if expired else None
+        )
         submission.deal_id = deal.id
         submission.reviewed_by = admin_id
         submission.reviewed_at = now

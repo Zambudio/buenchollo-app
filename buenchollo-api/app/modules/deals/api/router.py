@@ -20,6 +20,7 @@ from app.modules.deals.api.schemas import (
 from app.core.security import require_admin, get_current_user
 from app.modules.alerts.infrastructure.repository import AlertRepository
 from app.modules.alerts.application.alert_matcher import AlertMatcher
+from app.modules.catalog.infrastructure.repository import CatalogRepository
 from app.modules.notifications.infrastructure.repository import NotificationRepository
 
 logger = logging.getLogger(__name__)
@@ -37,7 +38,7 @@ def get_deal_service(db: AsyncSession = Depends(get_db)) -> DealService:
     aplicación; el router se limita a hablar HTTP."""
     repo = DealRepository(db)
     matcher = AlertMatcher(AlertRepository(db), NotificationRepository(db))
-    return DealService(repo, matcher)
+    return DealService(repo, matcher, CatalogRepository(db))
 
 
 # ── Endpoints públicos ────────────────────────────────────────────────────────

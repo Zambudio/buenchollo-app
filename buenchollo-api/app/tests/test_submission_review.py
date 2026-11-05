@@ -70,8 +70,8 @@ class FakeRepo:
     async def find_live_deal(self, asin, canonical_url):
         return self.live
 
-    async def find_expired_deals(self, asin, canonical_url):
-        return self.expired
+    async def find_expired_deal(self, asin, canonical_url):
+        return self.expired[0] if self.expired else None
 
     async def list_by_status(self, status, limit, offset):
         return [s for s in self.subs.values() if s.status == status][offset : offset + limit]
@@ -88,13 +88,15 @@ class FakeDealService:
         self.log = log
         self.created: list[tuple[dict, str]] = []
         self.deleted: list[str] = []
+        self.revived: list[str | None] = []
         self.error: Exception | None = None
 
-    async def create_deal(self, data, user_id):
+    async def create_deal(self, data, user_id, revive_id=None):
         if self.error:
             raise self.error
         self.log.append("create_deal")
         self.created.append((dict(data), user_id))
+        self.revived.append(revive_id)
         return SimpleNamespace(
             id="55555555-5555-4555-8555-555555555555",
             title=data["title"],
@@ -197,18 +199,20 @@ def test_reject_commits_before_notifying(client, env):
     assert env.log.index("commit") < env.log.index(f"notify:{SUB_ID}")
 
 
-def test_approve_replaces_expired_deal(client, env):
+def test_approve_revives_expired_deal_instead_of_deleting(client, env):
     env.repo.expired = [SimpleNamespace(id="old-deal", slug="old", title="Old")]
     resp = client.post(f"{BASE}/{SUB_ID}/approve", json=deal_body())
     assert resp.status_code == 200, resp.text
-    assert env.service.deleted == ["old-deal"]
-    assert env.log.index("delete_deal") < env.log.index("create_deal")
-    delete_audit = next(a for a in env.audits if a["action"] == "deal.delete")
-    assert delete_audit["payload"] == {
-        "reason": "replaced_by_submission",
-        "submission_id": SUB_ID,
-    }
-    assert len(env.service.created) == 1
+    assert env.service.deleted == []
+    assert "delete_deal" not in env.log
+    assert env.service.revived == ["old-deal"]
+    assert not [a for a in env.audits if a["action"] == "deal.delete"]
+
+
+def test_approve_without_expired_creates_new_deal(client, env):
+    resp = client.post(f"{BASE}/{SUB_ID}/approve", json=deal_body())
+    assert resp.status_code == 200, resp.text
+    assert env.service.revived == [None]
 
 
 def test_approve_with_live_deal_conflicts_and_does_not_commit(client, env):
@@ -330,19 +334,6 @@ def test_detail(client, env):
     assert resp.json()["id"] == SUB_ID
     assert resp.json()["previously_published"] is False
     assert client.get(f"{BASE}/{OTHER_ID}").status_code == 404
-
-
-def test_approve_replaces_all_expired_matches(client, env):
-    env.repo.expired = [
-        SimpleNamespace(id="old-by-asin", slug="a", title="A"),
-        SimpleNamespace(id="old-by-url", slug="b", title="B"),
-    ]
-    resp = client.post(f"{BASE}/{SUB_ID}/approve", json=deal_body())
-    assert resp.status_code == 200, resp.text
-    assert env.service.deleted == ["old-by-asin", "old-by-url"]
-    deletes = [a for a in env.audits if a["action"] == "deal.delete"]
-    assert [d["target_id"] for d in deletes] == ["old-by-asin", "old-by-url"]
-    assert env.log.index("delete_deal") < env.log.index("create_deal")
 
 
 class FakeDealsRepo:

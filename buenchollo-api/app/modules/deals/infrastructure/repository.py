@@ -27,6 +27,17 @@ class DealRepository:
         )
         return result.scalars().first()
 
+    async def reload(self, deal_id: str) -> Deal | None:
+        """Como `get_by_id` pero refrescando un deal que ya está en la sesión:
+        sin `populate_existing`, sus relaciones (p. ej. `author` tras cambiar
+        `created_by`) seguirían con los valores cargados antes."""
+        result = await self.session.execute(
+            self._base_deal_query()
+            .where(Deal.id == deal_id)
+            .execution_options(populate_existing=True)
+        )
+        return result.scalars().first()
+
     async def get_by_slug(self, slug: str) -> Deal | None:
         result = await self.session.execute(
             self._base_deal_query().where(Deal.slug == slug)

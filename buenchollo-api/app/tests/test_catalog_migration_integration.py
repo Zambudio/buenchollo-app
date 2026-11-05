@@ -48,13 +48,23 @@ async def conn():
         await engine.dispose()
 
 
+async def _any_user_id(conn) -> str:
+    """Un user_id válido para deal_votes: en la BD local (esquema de producción)
+    la FK apunta a auth.users; en la de CI (create_all) no hay FK."""
+    if (await conn.execute(text("SELECT to_regclass('auth.users')"))).scalar() is None:
+        return str(uuid.uuid4())
+    return str((await conn.execute(text("SELECT id FROM auth.users LIMIT 1"))).scalar_one())
+
+
 async def _insert_deal(conn, *, external_id, status, published_at, price):
     deal_id = str(uuid.uuid4())
     await conn.execute(
         text(
             "INSERT INTO deals (id, title, slug, current_price, previous_price, affiliate_url, "
-            "canonical_url, status, source, external_id, published_at, images) VALUES "
-            "(:id, :title, :slug, :price, :prev, :url, :canon, :status, 'manual', :ext, :pub, '[]')"
+            "canonical_url, status, source, external_id, published_at, images, temperature, "
+            "votes_up, votes_down, click_count, comment_count, favorite_count, show_keepa_chart) VALUES "
+            "(:id, :title, :slug, :price, :prev, :url, :canon, :status, 'manual', :ext, :pub, '[]', "
+            "0, 0, 0, 0, 0, 0, false)"
         ),
         {
             "id": deal_id,
@@ -83,7 +93,7 @@ async def test_backfill_agrupa_por_asin_sin_perder_deals_ni_votos(conn):
     manual = await _insert_deal(
         conn, external_id=None, status="active", published_at=now, price=20
     )
-    user_id = (await conn.execute(text("SELECT id FROM auth.users LIMIT 1"))).scalar_one()
+    user_id = await _any_user_id(conn)
     await conn.execute(
         text("INSERT INTO deal_votes (deal_id, user_id, vote) VALUES (:d, :u, 1)"),
         {"d": old_active, "u": user_id},
