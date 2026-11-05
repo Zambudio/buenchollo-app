@@ -143,6 +143,10 @@ export interface DealDetailData extends DealCardData {
   aggregate_rating?: number | null;
   review_count?: number | null;
   coupon_code?: string | null;
+  /** Catálogo permanente: por qué terminó la oferta (solo si `status` es expired). */
+  offer_end_reason?: string | null;
+  /** Última comprobación de precio y stock en la tienda. */
+  last_price_check_at?: string | null;
 }
 
 /** Payload aceptado por POST /deals/admin. Coincide con el schema DealCreate del backend. */

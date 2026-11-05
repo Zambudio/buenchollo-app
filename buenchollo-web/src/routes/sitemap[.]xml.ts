@@ -2,15 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { blogService } from "@/services/api/blog";
+import { dealSitemapEntry, type SitemapEntry } from "@/lib/sitemap";
 
 const BASE_URL = "https://buenchollotech.com";
-
-interface SitemapEntry {
-  path: string;
-  lastmod?: string;
-  changefreq?: "always" | "hourly" | "daily" | "weekly" | "monthly" | "yearly" | "never";
-  priority?: string;
-}
 
 export const Route = createFileRoute("/sitemap.xml")({
   server: {
@@ -46,20 +40,13 @@ export const Route = createFileRoute("/sitemap.xml")({
         try {
           const { data: deals } = await supabaseAdmin
             .from("deals")
-            .select("slug,updated_at,published_at")
-            .eq("status", "active")
+            .select("slug,status,updated_at,published_at")
+            // Catálogo permanente: también los chollos sin oferta (URL estable).
+            .in("status", ["active", "expired"])
             .order("published_at", { ascending: false })
-            .limit(2000);
+            .limit(5000);
           for (const d of deals ?? []) {
-            entries.push({
-              path: `/chollo/${d.slug}`,
-              lastmod:
-                (d.updated_at ?? d.published_at)
-                  ? new Date(d.updated_at ?? d.published_at).toISOString()
-                  : undefined,
-              changefreq: "daily",
-              priority: "0.8",
-            });
+            entries.push(dealSitemapEntry(d));
           }
         } catch {
           // sitemap es best-effort: si una fuente falla seguimos con las demás
