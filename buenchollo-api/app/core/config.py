@@ -198,6 +198,8 @@ class Settings(BaseSettings):
     telegram_bot_token: str = ""
     telegram_main_channel_id: str = ""
     telegram_admin_channel_id: str = ""
+    # Base de los enlaces a la web en avisos (canal Admin de Telegram).
+    public_site_url: str = "https://buenchollotech.com"
 
     # Dominios extra (CSV) permitidos para enlaces de afiliado manuales del
     # blog, además de los ya soportados por defecto (ver domain/affiliate_domains.py).

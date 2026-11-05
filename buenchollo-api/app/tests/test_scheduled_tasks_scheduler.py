@@ -68,6 +68,46 @@ async def test_execute_due_tasks_ejecuta_solo_las_debidas():
 
 
 @pytest.mark.asyncio
+async def test_execute_due_tasks_avisa_reactivaciones_tras_el_commit():
+    repo = FakeRepo([_task("task-1", run_hour=0)])
+    order: list[str] = []
+    run = SimpleNamespace(items=[
+        SimpleNamespace(transition="reactivated", deal_id_snapshot="deal-a"),
+        SimpleNamespace(transition="offer_ended", deal_id_snapshot="deal-b"),
+    ])
+    service = MagicMock()
+    service.run_automatic = AsyncMock(return_value=run)
+    session = MagicMock()
+    session.commit = AsyncMock(side_effect=lambda: order.append("commit"))
+    notifier = MagicMock()
+    notifier.notify = AsyncMock(side_effect=lambda ids, now: order.append(f"notify:{ids}") or 1)
+
+    await _execute_due_tasks(repo, service, session, datetime(2026, 8, 10, 5, tzinfo=timezone.utc), notifier)
+
+    assert order == ["commit", "notify:['deal-a']", "commit"]
+
+
+@pytest.mark.asyncio
+async def test_execute_due_tasks_un_fallo_del_aviso_no_rompe_el_worker():
+    repo = FakeRepo([_task("task-1", run_hour=0)])
+    run = SimpleNamespace(items=[SimpleNamespace(transition="reactivated", deal_id_snapshot="deal-a")])
+    service = MagicMock()
+    service.run_automatic = AsyncMock(return_value=run)
+    session = MagicMock()
+    session.commit = AsyncMock()
+    session.rollback = AsyncMock()
+    notifier = MagicMock()
+    notifier.notify = AsyncMock(side_effect=RuntimeError("telegram"))
+
+    executed = await _execute_due_tasks(
+        repo, service, session, datetime(2026, 8, 10, 5, tzinfo=timezone.utc), notifier
+    )
+
+    assert executed == 1
+    session.rollback.assert_awaited_once()
+
+
+@pytest.mark.asyncio
 async def test_execute_due_tasks_continua_si_una_tarea_falla():
     task_a = _task("task-1", run_hour=0)
     task_b = _task("task-2", run_hour=0)

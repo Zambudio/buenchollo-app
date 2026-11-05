@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,7 +17,8 @@ from app.modules.scheduled_tasks.api.schemas import (
     ScheduledTaskResponse,
     ScheduledTaskUpdate,
 )
-from app.modules.scheduled_tasks.application.factory import build_task_handlers
+from app.modules.catalog.application.reactivation_notifier import reactivated_deal_ids
+from app.modules.scheduled_tasks.application.factory import build_reactivation_notifier, build_task_handlers
 from app.modules.scheduled_tasks.application.scheduled_task_service import ScheduledTaskService
 from app.modules.scheduled_tasks.domain.exceptions import ScheduledTaskRunNotFound
 from app.modules.scheduled_tasks.infrastructure.repository import ScheduledTaskRepository
@@ -75,12 +78,21 @@ async def preview_scheduled_task(
 @router.post("/{task_id}/confirm", response_model=RunResponse)
 async def confirm_scheduled_task(
     task_id: str,
+    db: AsyncSession = Depends(get_db),
+    settings: Settings = Depends(get_settings),
     service: ScheduledTaskService = Depends(get_scheduled_task_service),
     current_user=Depends(require_admin),
 ):
     """Ejecuta la revisión ahora y aplica todas las transiciones (el body que
-    enviaba el panel antiguo con candidatos se ignora)."""
-    return await service.confirm(task_id, str(current_user.id))
+    enviaba el panel antiguo con candidatos se ignora). Las reactivaciones se
+    avisan tras el commit, igual que en la ejecución automática."""
+    run = await service.confirm(task_id, str(current_user.id))
+    await db.commit()
+    deal_ids = reactivated_deal_ids(run)
+    if deal_ids:
+        notifier = build_reactivation_notifier(db, settings)
+        await notifier.notify(deal_ids, datetime.now(timezone.utc))
+    return run
 
 
 @router.get("/{task_id}/runs", response_model=list[RunResponse])
