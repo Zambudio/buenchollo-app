@@ -7,6 +7,8 @@ from app.core.database import Base
 
 # Importar Profile para que SQLAlchemy registre la tabla 'profiles' antes de resolver la FK created_by
 import app.modules.users.domain.models  # noqa: F401
+# FK product_id / listing_id al catálogo permanente
+import app.modules.catalog.domain.models  # noqa: F401
 
 class Deal(Base):
     __tablename__ = "deals"
@@ -49,6 +51,18 @@ class Deal(Base):
     show_keepa_chart: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     coupon_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
     canonical_url: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+
+    # Catálogo permanente: la oferta ya no se borra, cambia de estado. Guarda por
+    # qué terminó, el precio con el que se publicó/reactivó por última vez
+    # (`offer_price`, referencia de las reglas de oferta) y el antispam del
+    # aviso al canal Admin.
+    product_id: Mapped[str | None] = mapped_column(ForeignKey("products.id", ondelete="SET NULL"), type_=Uuid(as_uuid=False), nullable=True, index=True)
+    listing_id: Mapped[str | None] = mapped_column(ForeignKey("product_listings.id", ondelete="SET NULL"), type_=Uuid(as_uuid=False), nullable=True, index=True)
+    offer_end_reason: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    offer_price: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
+    last_price_check_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    admin_notified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    admin_notified_price: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
 
     # Foreign keys
     category_id: Mapped[str | None] = mapped_column(ForeignKey("categories.id", ondelete="SET NULL"), type_=Uuid(as_uuid=False), nullable=True)
