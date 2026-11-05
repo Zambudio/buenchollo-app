@@ -11,15 +11,14 @@ from app.core.config import Settings
 from app.modules.deals.application.scheduler import build_deals_scheduler
 
 
-def test_builder_registra_los_siete_jobs_sin_arrancar():
+def test_builder_registra_los_seis_jobs_sin_arrancar():
     scheduler, cleaner = build_deals_scheduler(Settings())
     jobs = scheduler.get_jobs()
-    assert len(jobs) == 7
+    assert len(jobs) == 6
     names = {job.func.__name__ for job in jobs}
     assert names == {
         "mark_expired_deals",
         "run_due_scheduled_publications",
-        "clean_expired_deals",
         "run_due_scheduled_posts",
         "run_due_scheduled_tasks",
         "run_analytics_cleanup",
@@ -27,6 +26,8 @@ def test_builder_registra_los_siete_jobs_sin_arrancar():
     }
     assert scheduler.running is False
     assert cleaner is not None
+    # Catálogo permanente: ningún job borra chollos.
+    assert not hasattr(cleaner, "clean_expired_deals")
 
 
 def test_scheduler_enabled_por_defecto():
@@ -53,3 +54,15 @@ def test_repositorio_programado_resuelve_mappers_en_proceso_aislado():
     )
 
     assert result.returncode == 0, result.stderr
+
+
+def test_mark_expired_deals_guarda_el_motivo_expired_date():
+    from unittest.mock import MagicMock
+
+    from app.modules.deals.application.cleaner_service import DealCleanerService
+
+    cleaner = DealCleanerService(Settings())
+    client = MagicMock()
+    cleaner._client = client
+    cleaner.mark_expired_deals()
+    client.table.return_value.update.assert_called_once_with({"status": "expired", "offer_end_reason": "expired_date"})
