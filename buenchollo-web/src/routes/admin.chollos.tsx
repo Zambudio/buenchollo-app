@@ -211,6 +211,7 @@ function AdminDeals() {
     const previous = form.previous_price ? parseFloat(form.previous_price) : null;
     await openTelegramPanelWith(
       {
+        deal_id: editing?.id ?? null,
         title: form.title,
         current_price: current,
         previous_price: previous,

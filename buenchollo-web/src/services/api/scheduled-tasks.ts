@@ -7,9 +7,10 @@ export type PriceCheckReason =
   | "out_of_stock"
   | "not_found"
   | "deal_again"
+  | "price_drop"
   | "listing_purged"
   | "product_purged";
-export type PriceCheckTransition = "offer_ended" | "reactivated" | "purged";
+export type PriceCheckTransition = "offer_ended" | "reactivated" | "price_dropped" | "purged";
 
 export interface ScheduledTaskConfig {
   id: string;
@@ -21,6 +22,7 @@ export interface ScheduledTaskConfig {
     price_tolerance_percent?: number;
     min_discount_percent?: number;
     purge_after_days?: number;
+    price_drop_percent?: number;
     [key: string]: unknown;
   };
   last_run_at: string | null;

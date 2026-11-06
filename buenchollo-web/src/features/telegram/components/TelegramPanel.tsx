@@ -23,8 +23,9 @@ import {
   telegramApi,
   type TelegramChannel,
   type TelegramGenerateRequest,
+  type TelegramPublication,
 } from "@/services/api/telegram";
-import { toDatetimeLocal } from "@/lib/format";
+import { formatPrice, toDatetimeLocal } from "@/lib/format";
 import {
   cropAndUploadTelegramImage,
   rotateAndUploadTelegramImage,
@@ -49,6 +50,8 @@ interface TelegramPanelProps {
   dealData: TelegramGenerateRequest & {
     images?: string[];
     image_url?: string | null;
+    /** Chollo ya guardado: se registra la publicación y se ofrece la última enviada. */
+    deal_id?: string | null;
   };
   onClose: () => void;
   onSchedule?: (request: TelegramScheduleRequest) => Promise<boolean>;
@@ -115,6 +118,16 @@ export function TelegramPanel({
   const [addingCat, setAddingCat] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Última publicación enviada de este chollo (registro de Telegram)
+  const [lastPublication, setLastPublication] = useState<TelegramPublication | null>(null);
+  useEffect(() => {
+    if (!dealData.deal_id) return;
+    telegramApi
+      .listPublications(dealData.deal_id)
+      .then((items) => setLastPublication(items.find((p) => p.channel_kind !== "admin") ?? null))
+      .catch(() => setLastPublication(null));
+  }, [dealData.deal_id]);
 
   // ── Al montar: cargar canales + categorías + generar texto ─────────────────
   useEffect(() => {
@@ -271,6 +284,8 @@ export function TelegramPanel({
         text,
         image_url: selectedImage,
         channel_id: channelId,
+        deal_id: dealData.deal_id ?? null,
+        affiliate_url: dealData.affiliate_url,
       });
       toast.success("✅ Publicado en Telegram");
       onClose();
@@ -371,6 +386,21 @@ export function TelegramPanel({
                 {generating ? "Generando..." : "↺ Regenerar"}
               </button>
             </div>
+            {lastPublication && (
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2 border border-surface-700 bg-surface-900 px-3 py-2 font-mono text-[10px] text-muted-foreground">
+                <span>
+                  Última publicación: {new Date(lastPublication.sent_at).toLocaleString("es-ES")}
+                  {lastPublication.price != null && <> · {formatPrice(lastPublication.price)}</>}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setText(lastPublication.text)}
+                  className="text-cyan-glow hover:underline"
+                >
+                  Usar la última publicación
+                </button>
+              </div>
+            )}
             {generating ? (
               <div className="flex items-center justify-center h-40 border border-surface-700 bg-surface-900">
                 <Loader2 className="size-5 animate-spin text-cyan-glow" />

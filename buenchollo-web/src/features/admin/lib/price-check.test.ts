@@ -36,3 +36,14 @@ describe("summarizeTransitions", () => {
     expect(summarizeTransitions([])).toBe("Sin cambios");
   });
 });
+
+describe("bajadas de precio", () => {
+  it("se describen y se cuentan", () => {
+    expect(describeChange("price_dropped", "price_drop")).toBe(
+      "Bajada de precio · Ha bajado de precio",
+    );
+    expect(
+      summarizeTransitions([{ transition: "price_dropped" }, { transition: "price_dropped" }]),
+    ).toBe("2 bajadas de precio");
+  });
+});

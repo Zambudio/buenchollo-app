@@ -126,11 +126,12 @@ export function ScheduledTaskConfigPanel({ task }: { readonly task: ScheduledTas
 
       <p className="text-xs text-muted-foreground">
         Actualiza precio y stock de todo el catálogo. Los chollos no se borran: dejan de estar en
-        oferta si suben de precio o se agotan, y se reactivan (con aviso al canal Admin) si vuelven
-        a bajar. Solo se elimina una tienda tras los días sin disponibilidad indicados.
+        oferta si suben de precio o se agotan, y se reactivan si vuelven a bajar. Al reactivarse o
+        bajar de precio llega al canal Admin el aviso y la publicación con el precio corregido. Solo
+        se elimina una tienda tras los días sin disponibilidad indicados.
       </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <label className="flex flex-col justify-between text-xs font-mono uppercase text-muted-foreground">
           Frecuencia
           <select
@@ -177,6 +178,14 @@ export function ScheduledTaskConfigPanel({ task }: { readonly task: ScheduledTas
           max={90}
           integer
           onCommit={saveConfig("min_discount_percent")}
+        />
+        <NumberField
+          label="Bajada mínima para avisar (%)"
+          value={task.config.price_drop_percent ?? 5}
+          min={1}
+          max={90}
+          integer
+          onCommit={saveConfig("price_drop_percent")}
         />
         <NumberField
           label="Días sin stock para eliminar"

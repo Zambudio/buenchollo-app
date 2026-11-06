@@ -3,6 +3,7 @@
 export const TRANSITION_LABEL: Record<string, string> = {
   offer_ended: "Oferta terminada",
   reactivated: "Reactivada",
+  price_dropped: "Bajada de precio",
   purged: "Eliminada",
 };
 
@@ -14,6 +15,7 @@ export const REASON_LABEL: Record<string, string> = {
   expired_date: "Caducada por fecha",
   manual: "Terminada a mano",
   deal_again: "Vuelve a estar en oferta",
+  price_drop: "Ha bajado de precio",
   listing_purged: "Tienda retirada del producto",
   product_purged: "Producto sin tiendas",
 };
@@ -25,6 +27,7 @@ export function describeChange(transition: string, reason: string): string {
 const SUMMARY: [string, string, string][] = [
   ["offer_ended", "oferta terminada", "ofertas terminadas"],
   ["reactivated", "reactivada", "reactivadas"],
+  ["price_dropped", "bajada de precio", "bajadas de precio"],
   ["purged", "eliminada", "eliminadas"],
 ];
 
