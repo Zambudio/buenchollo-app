@@ -12,6 +12,8 @@ from app.modules.notifications.infrastructure.repository import NotificationRepo
 from app.modules.products.infrastructure.amazon_client import AmazonProductClient
 from app.modules.scheduled_tasks.application.price_check_handler import PriceCheckHandler
 from app.modules.scheduled_tasks.application.task_handler import TaskHandler
+from app.modules.telegram.application.post_generator import TelegramPostGenerator
+from app.modules.telegram.infrastructure.publication_repository import TelegramPublicationRepository
 from app.modules.telegram.infrastructure.telegram_bot import TelegramBot
 
 
@@ -35,4 +37,6 @@ def build_reactivation_notifier(session: AsyncSession, settings: Settings) -> Re
         matcher=AlertMatcher(AlertRepository(session), NotificationRepository(session)),
         deal_repo=DealRepository(session),
         site_url=settings.public_site_url,
+        publications=TelegramPublicationRepository(session),
+        generator=TelegramPostGenerator(settings=settings),
     )

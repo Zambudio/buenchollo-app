@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
 from app.core.config import Settings
-from app.modules.catalog.application.reactivation_notifier import reactivated_deal_ids
+from app.modules.catalog.application.reactivation_notifier import notifiable_events
 from app.modules.scheduled_tasks.application.factory import build_reactivation_notifier, build_task_handlers
 from app.modules.scheduled_tasks.application.scheduled_task_service import (
     ScheduledTaskService,
@@ -68,14 +68,14 @@ async def notify_reactivations(notifier, run, session) -> None:
     """Avisa de las reactivaciones de un run YA guardado y guarda el antispam.
     Compartida por el worker y por "Ejecutar ahora" del panel: un fallo se
     registra y nunca afecta a lo ya aplicado."""
-    deal_ids = reactivated_deal_ids(run)
-    if not deal_ids:
+    events = notifiable_events(run)
+    if not events:
         return
     try:
-        await notifier.notify(deal_ids, datetime.now(timezone.utc))
+        await notifier.notify(events, datetime.now(timezone.utc))
         await session.commit()
     except Exception:
-        logger.exception("Fallo avisando de %d reactivación(es)", len(deal_ids))
+        logger.exception("Fallo avisando de %d cambio(s) de oferta", len(events))
         await session.rollback()
 
 

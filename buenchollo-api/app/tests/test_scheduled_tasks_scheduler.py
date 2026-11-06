@@ -84,7 +84,7 @@ async def test_execute_due_tasks_avisa_reactivaciones_tras_el_commit():
 
     await _execute_due_tasks(repo, service, session, datetime(2026, 8, 10, 5, tzinfo=timezone.utc), notifier)
 
-    assert order == ["commit", "notify:['deal-a']", "commit"]
+    assert order == ["commit", "notify:[OfferEvent(deal_id='deal-a', kind='reactivated', old_price=None)]", "commit"]
 
 
 @pytest.mark.asyncio
