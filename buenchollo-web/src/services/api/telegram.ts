@@ -50,6 +50,8 @@ export interface TelegramPublication {
   previous_price: number | null;
   discount_percentage: number | null;
   sent_at: string;
+  /** El mismo texto con el precio actual del chollo (null si no se puede corregir). */
+  repriced_text?: string | null;
 }
 
 export const telegramApi = {

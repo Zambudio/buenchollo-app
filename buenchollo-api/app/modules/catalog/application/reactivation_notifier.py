@@ -109,11 +109,21 @@ class ReactivationNotifier:
             deal.admin_notified_at = now
             deal.admin_notified_price = deal.current_price
             sent += 1
-            text, image_url = await self._republishable(deal, now)
-            if not await self._call(self.bot.send_preformatted, text=text, entities=self.generator.build_entities(text),
-                                    image_url=image_url, chat_id=self.admin_chat_id):
-                logger.warning("No se pudo enviar al canal Admin la publicación corregida de %s", deal.slug)
+            await self._send_republishable(deal, now)
         return sent
+
+    async def _send_republishable(self, deal, now: datetime) -> None:
+        """Segundo mensaje; aislado para que un fallo en un chollo no deje sin
+        aviso a los siguientes ni deshaga el antispam de los ya avisados."""
+        try:
+            text, image_url = await self._republishable(deal, now)
+            entities = self.generator.build_entities(text)
+        except Exception:
+            logger.exception("No se pudo preparar la publicación corregida de %s", deal.slug)
+            return
+        if not await self._call(self.bot.send_preformatted, text=text, entities=entities,
+                                image_url=image_url, chat_id=self.admin_chat_id):
+            logger.warning("No se pudo enviar al canal Admin la publicación corregida de %s", deal.slug)
 
     async def _republishable(self, deal, now: datetime) -> tuple[str, str | None]:
         """Última publicación pública con el precio corregido; si no existe (o

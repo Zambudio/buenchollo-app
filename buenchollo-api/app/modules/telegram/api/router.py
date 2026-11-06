@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+from uuid import UUID
 import asyncio
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,7 +11,7 @@ from app.core.rate_limit import limiter
 from app.core.security import require_admin
 from app.modules.deals.infrastructure.repository import DealRepository
 from app.modules.telegram.application.post_generator import TelegramPostGenerator
-from app.modules.telegram.application.publications import channel_kind, record_publication
+from app.modules.telegram.application.publications import channel_kind, record_safely, with_current_price
 from app.modules.telegram.infrastructure.publication_repository import TelegramPublicationRepository
 from app.modules.telegram.domain.exceptions import (
     TelegramChannelNotConfigured,
@@ -186,7 +188,8 @@ async def notify_deal(
         raise TelegramSendFailed()
 
     if payload.text:
-        await record_publication(
+        await record_safely(
+            db,
             TelegramPublicationRepository(db),
             DealRepository(db),
             text=payload.text,
@@ -194,7 +197,7 @@ async def notify_deal(
             kind=channel_kind(channel_id, settings),
             source="panel",
             image_url=payload.image_url,
-            deal_id=payload.deal_id,
+            deal_id=str(payload.deal_id) if payload.deal_id else None,
             affiliate_url=payload.affiliate_url,
             message_id=bot.last_message_id,
             sent_by=str(current_user.id),
@@ -213,9 +216,16 @@ async def notify_deal(
 
 @router.get("/publications", response_model=list[TelegramPublicationResponse])
 async def list_publications(
-    deal_id: str,
+    deal_id: UUID,
     db: AsyncSession = Depends(get_db),
     _auth=Depends(require_admin),
 ) -> list[TelegramPublicationResponse]:
-    """Publicaciones enviadas de un chollo, la más reciente primero."""
-    return await TelegramPublicationRepository(db).list_for_deal(deal_id)
+    """Publicaciones enviadas de un chollo, la más reciente primero, con su
+    texto ya corregido al precio actual."""
+    publications = await TelegramPublicationRepository(db).list_for_deal(str(deal_id))
+    deal = await DealRepository(db).get_by_id(str(deal_id))
+    repriced = with_current_price(publications, deal, datetime.now(timezone.utc))
+    return [
+        TelegramPublicationResponse.model_validate(p).model_copy(update={"repriced_text": text})
+        for p, text in zip(publications, repriced)
+    ]

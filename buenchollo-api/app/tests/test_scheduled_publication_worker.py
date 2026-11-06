@@ -245,3 +245,39 @@ async def test_registra_tambien_la_publicacion_solo_telegram():
     await worker.process_due(datetime.now(timezone.utc))
 
     assert [r["deal_id"] for r in publications.recorded] == ["deal-2"]
+
+
+@pytest.mark.asyncio
+async def test_un_fallo_al_registrar_no_deshace_la_publicacion_ni_la_repite():
+    class BrokenPublications:
+        async def record(self, **kwargs):
+            raise RuntimeError("BD caída")
+
+    scheduled = scheduled_deal()
+    scheduled.deal_id = "deal-1"
+    product = ProductPreview(current_price=90.0, in_stock=True)
+    worker, bot = worker_for(scheduled, product)
+    worker.publications = BrokenPublications()
+
+    await worker.process_due(datetime(2026, 1, 1, 10, 1, tzinfo=timezone.utc))
+
+    assert scheduled.status == ScheduledDealStatus.PUBLISHED
+    assert len(bot.posts) == 1 and bot.admin_messages == []
+
+
+@pytest.mark.asyncio
+async def test_registra_el_precio_ya_actualizado_del_chollo():
+    seen = {}
+
+    class SpyPublications:
+        async def record(self, **kwargs):
+            seen["deal_price"] = scheduled.deal.current_price
+
+    scheduled = scheduled_deal()
+    scheduled.deal_id = "deal-1"
+    worker, _ = worker_for(scheduled, ProductPreview(current_price=95.0, in_stock=True))
+    worker.publications = SpyPublications()
+
+    await worker.process_due(datetime(2026, 1, 1, 10, 1, tzinfo=timezone.utc))
+
+    assert seen["deal_price"] == Decimal("95.00")

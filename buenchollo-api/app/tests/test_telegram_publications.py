@@ -117,11 +117,12 @@ def test_notify_del_panel_registra_la_publicacion(monkeypatch):
     fake_bot.last_message_id = 9
     recorded = {}
 
-    async def _record(repo, deal_repo, **kwargs):
+    async def _record(session, repo, deal_repo, **kwargs):
         recorded.update(kwargs)
+        return True
 
     monkeypatch.setattr("app.modules.telegram.api.router.TelegramBot", lambda token: fake_bot)
-    monkeypatch.setattr("app.modules.telegram.api.router.record_publication", _record)
+    monkeypatch.setattr("app.modules.telegram.api.router.record_safely", _record)
     app.dependency_overrides[require_admin] = _admin
     app.dependency_overrides[get_db] = _db
     app.dependency_overrides[get_settings] = lambda: Settings(
@@ -131,10 +132,84 @@ def test_notify_del_panel_registra_la_publicacion(monkeypatch):
         resp = TestClient(app).post(
             "/v1/telegram/notify",
             json={"text": "🍄 Monitor", "channel_id": "-100main", "image_url": "https://img/x.jpg",
-                  "deal_id": "deal-1", "affiliate_url": "https://www.amazon.es/dp/B0D9WH9WLD"},
+                  "deal_id": "11111111-1111-4111-8111-111111111111",
+                  "affiliate_url": "https://www.amazon.es/dp/B0D9WH9WLD"},
         )
     finally:
         app.dependency_overrides.clear()
     assert resp.status_code == 200, resp.text
-    assert recorded["deal_id"] == "deal-1" and recorded["text"] == "🍄 Monitor"
+    assert recorded["deal_id"] == "11111111-1111-4111-8111-111111111111" and recorded["text"] == "🍄 Monitor"
     assert recorded["kind"] == "main" and recorded["source"] == "panel" and recorded["message_id"] == 9
+
+
+class _Savepoint:
+    def __init__(self, log):
+        self.log = log
+
+    async def __aenter__(self):
+        self.log.append("savepoint")
+
+    async def __aexit__(self, exc_type, exc, tb):
+        self.log.append("rollback-savepoint" if exc_type else "release")
+        return False
+
+
+@pytest.mark.asyncio
+async def test_record_safely_nunca_lanza_y_aisla_el_fallo_en_un_savepoint():
+    from app.modules.telegram.application.publications import record_safely
+
+    log = []
+    session = MagicMock()
+    session.begin_nested = MagicMock(return_value=_Savepoint(log))
+    repo = FakeRepo()
+    repo.add = AsyncMock(side_effect=RuntimeError("FK rota"))
+
+    ok = await record_safely(session, repo, _deal_repo(), text="t", channel_id="c", kind="main", source="panel")
+
+    assert ok is False and log == ["savepoint", "rollback-savepoint"]
+
+
+def test_notify_rechaza_deal_id_que_no_es_uuid_antes_de_enviar(monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from app.core.config import get_settings
+    from app.core.security import require_admin
+    from app.main import app
+
+    class User:
+        id = "admin-1"
+
+    async def _admin():
+        return User()
+
+    fake_bot = MagicMock()
+    monkeypatch.setattr("app.modules.telegram.api.router.TelegramBot", lambda token: fake_bot)
+    app.dependency_overrides[require_admin] = _admin
+    app.dependency_overrides[get_settings] = lambda: Settings(
+        telegram_enabled=True, telegram_bot_token="tok", telegram_main_channel_id="-100main"
+    )
+    try:
+        resp = TestClient(app).post("/v1/telegram/notify", json={"text": "t", "deal_id": "no-es-uuid"})
+    finally:
+        app.dependency_overrides.clear()
+    assert resp.status_code == 422
+    fake_bot.send_preformatted.assert_not_called()
+
+
+def test_al_listar_se_ofrece_el_texto_con_el_precio_actual_del_chollo():
+    from datetime import datetime, timezone
+
+    from app.modules.telegram.application.post_generator import TelegramPostGenerator
+    from app.modules.telegram.application.publications import with_current_price
+
+    old = TelegramPostGenerator(ai_service=object()).generate_text(
+        title="Monitor", current_price=99.0, previous_price=150.0, discount_pct=34, affiliate_url="https://amzn.to/x",
+    )
+    pubs = [SimpleNamespace(text=old), SimpleNamespace(text="texto libre")]
+    deal = _deal(current_price=Decimal("79.00"), previous_price=Decimal("150"), discount_percentage=47, expires_at=None)
+
+    repriced = with_current_price(pubs, deal, datetime(2026, 11, 6, tzinfo=timezone.utc))
+
+    assert "💶 Precio: 79,00 € (antes 150,00 €)" in repriced[0]
+    assert repriced[1] is None
+    assert with_current_price(pubs, None, datetime(2026, 11, 6, tzinfo=timezone.utc)) == [None, None]

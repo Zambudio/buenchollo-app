@@ -1,7 +1,14 @@
 """Registro de publicaciones de Telegram (panel y chollos programados)."""
 
+import logging
+from datetime import datetime
+from decimal import Decimal
+
 from app.modules.affiliates.domain.links import InvalidLinkError, canonicalize
+from app.modules.telegram.application.reprice import reprice_publication_text
 from app.modules.telegram.domain.models import TelegramPublication
+
+logger = logging.getLogger(__name__)
 
 
 def channel_kind(channel_id: str, settings) -> str:
@@ -58,6 +65,19 @@ def _asin_of(url: str) -> str | None:
     return asin.upper() if asin else None
 
 
+async def record_safely(session, repo, deal_repo, **kwargs) -> bool:
+    """Registra en un savepoint y nunca lanza: la publicación ya está en
+    Telegram, y un fallo del registro no puede deshacer ni repetir el envío
+    (abortaría la transacción y el llamante lo reintentaría)."""
+    try:
+        async with session.begin_nested():
+            await record_publication(repo, deal_repo, **kwargs)
+        return True
+    except Exception:
+        logger.exception("No se pudo registrar la publicación de Telegram (ya enviada)")
+        return False
+
+
 class PublicationRecorder:
     """Adaptador para workers: registra con el canal clasificado y una fuente fija."""
 
@@ -68,8 +88,23 @@ class PublicationRecorder:
         self.source = source
 
     async def record(self, *, deal_id, channel_id, text, image_url=None, message_id=None):
-        return await record_publication(
-            self.repo, self.deal_repo, text=text, channel_id=channel_id,
+        return await record_safely(
+            self.repo.session, self.repo, self.deal_repo, text=text, channel_id=channel_id,
             kind=channel_kind(channel_id, self.settings), source=self.source,
             image_url=image_url, deal_id=deal_id, message_id=message_id,
         )
+
+
+def with_current_price(publications, deal, now: datetime) -> list[str | None]:
+    """Texto de cada publicación con el precio actual del chollo (None si no se
+    puede corregir): «Usar la última publicación» nunca reutiliza un precio viejo."""
+    if deal is None:
+        return [None for _ in publications]
+    previous = Decimal(str(deal.previous_price)) if deal.previous_price is not None else None
+    return [
+        reprice_publication_text(
+            p.text, price=Decimal(str(deal.current_price)), previous_price=previous,
+            discount_pct=deal.discount_percentage, expires_at=deal.expires_at, now=now,
+        )
+        for p in publications
+    ]

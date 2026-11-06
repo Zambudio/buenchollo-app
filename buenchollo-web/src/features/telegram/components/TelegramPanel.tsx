@@ -394,10 +394,12 @@ export function TelegramPanel({
                 </span>
                 <button
                   type="button"
-                  onClick={() => setText(lastPublication.text)}
+                  onClick={() => setText(lastPublication.repriced_text ?? lastPublication.text)}
                   className="text-cyan-glow hover:underline"
                 >
-                  Usar la última publicación
+                  {lastPublication.repriced_text
+                    ? "Usar la última publicación (precio actual)"
+                    : "Usar la última publicación (revisa el precio)"}
                 </button>
               </div>
             )}

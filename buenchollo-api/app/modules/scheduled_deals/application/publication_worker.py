@@ -147,7 +147,6 @@ class ScheduledPublicationWorker:
             last_err = getattr(self.bot, "last_error", None)
             detail = f": {last_err}" if last_err else ""
             raise RuntimeError(f"Telegram rechazo la publicacion{detail}")
-        await self._record(scheduled, destination_channel_id)
 
         scheduled.deal.current_price = current_price
         scheduled.deal.discount_percentage = scheduled.discount_percentage
@@ -155,6 +154,8 @@ class ScheduledPublicationWorker:
         scheduled.deal.shipping_info = product.shipping_type or scheduled.deal.shipping_info
         scheduled.deal.status = "active"
         scheduled.deal.published_at = now
+        # Después de actualizar el deal: el registro guarda el precio publicado.
+        await self._record(scheduled, destination_channel_id)
         scheduled.status = ScheduledDealStatus.PUBLISHED
         scheduled.cancellation_reason = None
         await self.repo.update(scheduled)
@@ -178,6 +179,14 @@ class ScheduledPublicationWorker:
     async def _record(self, scheduled: ScheduledDeal, channel_id: str) -> None:
         if self.publications is None:
             return
+        try:
+            await self._record_unsafe(scheduled, channel_id)
+        except Exception:
+            # Ya está publicado: un fallo del registro no puede marcarlo como
+            # error ni hacer que se vuelva a publicar.
+            logger.exception("No se pudo registrar la publicación de %s", scheduled.id)
+
+    async def _record_unsafe(self, scheduled: ScheduledDeal, channel_id: str) -> None:
         await self.publications.record(
             deal_id=getattr(scheduled, "deal_id", None),
             channel_id=channel_id,

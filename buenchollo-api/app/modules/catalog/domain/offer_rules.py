@@ -54,6 +54,10 @@ class OfferState:
     # Fin de oferta fijado a mano: pasado, no se reactiva (mark_expired_deals
     # la volvería a caducar por fecha a los pocos minutos).
     expires_at: datetime | None = None
+    # Precio del último aviso al canal Admin: una bajada se mide contra él (y
+    # contra offer_price), sin mover offer_price, para no avisar dos veces de
+    # la misma bajada ni terminar la oferta si vuelve a su precio normal.
+    notified_price: Decimal | None = None
 
 
 @dataclass(frozen=True)
@@ -134,7 +138,10 @@ def _end_reason(state: OfferState, obs: Observation, cfg: RulesConfig) -> str | 
 def _dropped(state: OfferState, obs: Observation, cfg: RulesConfig) -> bool:
     if state.offer_price is None or obs.price is None:
         return False
-    return obs.price <= state.offer_price * (Decimal("1") - Decimal(cfg.price_drop_percent) / Decimal("100"))
+    reference = state.offer_price
+    if state.notified_price is not None:
+        reference = min(reference, state.notified_price)
+    return obs.price <= reference * (Decimal("1") - Decimal(cfg.price_drop_percent) / Decimal("100"))
 
 
 def _is_deal_again(state: OfferState, obs: Observation, cfg: RulesConfig) -> bool:

@@ -333,11 +333,18 @@ async def test_apply_limpia_productos_huerfanos():
 
 
 @pytest.mark.asyncio
-async def test_bajada_de_precio_en_activo_mantiene_la_oferta_y_fija_el_nuevo_precio():
+async def test_bajada_de_precio_en_activo_mantiene_la_oferta_y_su_precio_de_referencia():
     deal = _deal(offer_price=Decimal("100"))
     applied = await _handler().apply([ListingCheck(_listing(), deal, _obs("90"))], CONFIG, NOW)
-    assert deal.status == "active" and deal.offer_price == Decimal("90")
+    assert deal.status == "active" and deal.offer_price == Decimal("100")
     assert deal.published_at == NOW - timedelta(days=10)  # no se recoloca en «Últimos»
     assert [(c.transition, c.reason, c.old_price, c.new_price) for c in applied] == [
         ("price_dropped", "price_drop", Decimal("100"), Decimal("90"))
     ]
+
+
+@pytest.mark.asyncio
+async def test_tras_avisar_una_bajada_volver_al_precio_normal_no_termina_la_oferta():
+    deal = _deal(offer_price=Decimal("100"), admin_notified_price=Decimal("90"))
+    applied = await _handler().apply([ListingCheck(_listing(), deal, _obs("100"))], CONFIG, NOW)
+    assert applied == [] and deal.status == "active"

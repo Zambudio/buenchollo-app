@@ -210,6 +210,7 @@ class PriceCheckHandler:
             offer_price=_money(deal.offer_price),
             previous_price=_money(deal.previous_price),
             expires_at=getattr(deal, "expires_at", None),
+            notified_price=_money(getattr(deal, "admin_notified_price", None)),
         )
 
     @staticmethod
@@ -245,8 +246,9 @@ class PriceCheckHandler:
             deal.status = "expired"
             deal.offer_end_reason = outcome.reason
         elif outcome.transition == "price_dropped":
-            # Sigue en oferta a un precio mejor: pasa a ser su precio de referencia.
-            deal.offer_price = check.observation.price
+            # Sigue en oferta; offer_price no cambia (la bajada se mide contra el
+            # precio del último aviso, que guarda el notificador).
+            pass
         else:
             deal.status = "active"
             deal.offer_end_reason = None

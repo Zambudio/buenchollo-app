@@ -193,3 +193,12 @@ def test_rules_config_from_price_drop():
     assert rules_config_from({"price_drop_percent": 10}).price_drop_percent == 10
     assert rules_config_from({"price_drop_percent": 0}).price_drop_percent == 5
     assert rules_config_from({"price_drop_percent": "x"}).price_drop_percent == 5
+
+
+def test_bajada_se_mide_contra_el_ultimo_aviso_sin_mover_el_precio_de_oferta():
+    """Revisión 2026-11-06: si la bajada movía offer_price, 100 → 90 → 100
+    terminaba la oferta por 'subida' y ya no se reactivaba a 100."""
+    notified_at_90 = OfferState("active", None, Decimal("100"), None, notified_price=Decimal("90"))
+    assert decide(notified_at_90, _obs("100"), CFG) == ("keep", None)
+    assert decide(notified_at_90, _obs("88"), CFG) == ("keep", None)  # < 5 % bajo el último aviso
+    assert decide(notified_at_90, _obs("85.50"), CFG) == ("drop", "price_drop")

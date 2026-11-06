@@ -198,3 +198,19 @@ async def test_ignora_deals_borrados_o_no_activos():
     notifier, bot, _ = _notifier(_deal(status="expired"))
     assert await notifier.notify([EVENT], NOW) == 0
     bot.send_admin_notification.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_fallo_preparando_la_publicacion_no_corta_los_demas_avisos():
+    first, second = _deal(id="d1", slug="uno"), _deal(id="d2", slug="dos")
+    notifier, bot, _ = _notifier(first)
+    notifier.deal_repo.get_by_id = AsyncMock(side_effect=lambda deal_id: {"d1": first, "d2": second}[deal_id])
+    notifier.publications.latest_public_for_deal = AsyncMock(side_effect=[RuntimeError("BD"), None])
+
+    sent = await notifier.notify(
+        [OfferEvent("d1", "reactivated", Decimal("300")), OfferEvent("d2", "reactivated", Decimal("300"))], NOW
+    )
+
+    assert sent == 2
+    assert first.admin_notified_at == NOW and second.admin_notified_at == NOW
+    assert bot.send_preformatted.call_count == 1  # solo la del segundo

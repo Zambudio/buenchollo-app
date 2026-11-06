@@ -360,6 +360,7 @@ describe("TelegramPanel · registro de publicaciones", () => {
         previous_price: null,
         discount_percentage: null,
         sent_at: "2026-11-01T10:00:00Z",
+        repriced_text: "🍄 Texto que publiqué con precio actual",
       },
     ]);
     renderWithProviders(
@@ -374,7 +375,8 @@ describe("TelegramPanel · registro de publicaciones", () => {
       await screen.findByRole("button", { name: /Usar la última publicación/ }),
     );
 
-    expect(screen.getByDisplayValue(/Texto que publiqué/)).toBeInTheDocument();
+    // Con el precio corregido, nunca el precio antiguo de la publicación
+    expect(screen.getByDisplayValue(/Texto que publiqué con precio actual/)).toBeInTheDocument();
   });
 
   it("sin chollo guardado no consulta publicaciones", async () => {

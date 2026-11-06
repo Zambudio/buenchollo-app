@@ -1,4 +1,5 @@
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
@@ -52,7 +53,7 @@ class TelegramNotifyRequest(BaseModel):
     channel_id: str | None = None           # si None → usa TELEGRAM_MAIN_CHANNEL_ID
     # Chollo al que pertenece (para registrar la publicación). Si el panel no lo
     # conoce, se busca por el ASIN de `affiliate_url`.
-    deal_id: str | None = None
+    deal_id: UUID | None = None
 
     # Flujo rápido (legado, se usa si text es None)
     title: str | None = None
@@ -75,5 +76,7 @@ class TelegramPublicationResponse(BaseModel):
     previous_price: float | None = None
     discount_percentage: int | None = None
     sent_at: datetime
+    # El mismo texto con el precio actual del chollo (None si no se puede corregir).
+    repriced_text: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
