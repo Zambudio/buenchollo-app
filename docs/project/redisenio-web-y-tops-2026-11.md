@@ -32,6 +32,10 @@ En `develop` (tras la revisión del 2026-11-06): backend `pytest -q -m "not inte
 
 Para publicar, verificar primero la CI de la PR `develop` → `main`. El merge desplegará el Worker web automáticamente. La API del NAS requiere después `pg_dump` previo, actualización de la copia `main` del share, rebuild/reinicio de API y scheduler según [NAS-SSH](../guides/NAS-SSH.md) §1.1, y comprobación de `/health`, `/health/ready`, `/v1/catalog/tops/monitores` y Alembic `20261107120000`. Durante el intervalo entre web y API, las páginas de categoría podrán mostrar el top vacío hasta que la API se actualice. No hay dependencias nuevas.
 
+**Resultado (2026-11-06):** desplegado. Backup `bct-prod-pre-tops-20261106T173021Z.dump` validado con `pg_restore -l`; merge `477166f`; rebuild de API y scheduler; Alembic en `20261107120000`; endpoints de salud, top y sitemap con 200 y voto sin sesión con 401.
+
+> Nota operativa: el `.env` del NAS guarda `DATABASE_URL` entre comillas y `docker run --env-file` las conserva. El script de backup debe quitarlas antes de validar el esquema de la URL. Lanzar los scripts remotos desde Bash (heredoc): canalizarlos desde PowerShell añade BOM y CRLF.
+
 ## Pendiente siguiente desarrollo
 
 Diseñar **puntos por acciones y recompensas para usuarios**: fuentes de puntos, límites contra abuso, historial auditable, niveles y recompensas. No forma parte de este cambio; requiere decisión de producto y modelo propios.
