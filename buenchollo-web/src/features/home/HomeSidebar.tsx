@@ -50,7 +50,14 @@ export function HomeSidebar({
               <li key={post.id}>
                 <Link to="/blog/$slug" params={{ slug: post.slug }}>
                   {post.cover_image_url && (
-                    <img src={post.cover_image_url} alt="" loading="lazy" width="64" height="64" />
+                    <img
+                      className="sidebar-thumb-cover"
+                      src={post.cover_image_url}
+                      alt=""
+                      loading="lazy"
+                      width="96"
+                      height="64"
+                    />
                   )}
                   <span>{post.title}</span>
                 </Link>

@@ -167,16 +167,8 @@ function HomePage() {
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        <div className="home-intro">
-          <div>
-            <span className="eyebrow">Tecnología que merece la pena</span>
-            <h1>Chollos de tecnología que apetece descubrir</h1>
-            <p>
-              Ofertas seleccionadas, productos que permanecen y una comunidad que decide cuáles
-              destacan.
-            </p>
-          </div>
-        </div>
+        {/* Sin texto visible de cabecera (decisión de diseño); el H1 se mantiene para SEO y lectores de pantalla. */}
+        <h1 className="sr-only">Chollos y ofertas de tecnología verificadas</h1>
         <section className="top-banner" aria-labelledby="top-banner-heading">
           <span className="top-banner-icon">
             <Trophy size={30} aria-hidden="true" />
