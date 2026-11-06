@@ -83,6 +83,20 @@ ITEMS_ENDPOINT = "https://creatorsapi.amazon/catalog/v1/getItems"
 MAX_ITEMS_PER_REQUEST = 10
 
 
+# Códigos de error por ítem que significan "este producto no existe o no se
+# puede consultar en amazon.es" (y no un fallo transitorio de la API).
+_NOT_FOUND_CODES = {"InvalidParameterValue", "ItemNotAccessible"}
+_ASIN_TOKEN = r"(?<![A-Z0-9])(?:[0-9]{9}[0-9X]|[A-Z][A-Z0-9]{9})(?![A-Z0-9])"
+
+
+def _not_found_asins(errors: list[dict]) -> set[str]:
+    found: set[str] = set()
+    for error in errors:
+        if error.get("code") in _NOT_FOUND_CODES:
+            found.update(re.findall(_ASIN_TOKEN, str(error.get("message") or "")))
+    return found
+
+
 def _j(obj: Any, *keys: str, default: Any = None) -> Any:
     """Recorre dicts anidados de forma segura."""
     for key in keys:
@@ -168,19 +182,32 @@ class AmazonProductClient:
         para varios ASIN en vez de una llamada por producto. El caller debe
         respetar `MAX_ITEMS_PER_REQUEST` — aquí no se trocea, para que un
         fallo de red en una llamada no oculte cuántos ASIN se pidieron a la
-        vez ni fuerce reintentar lotes ya resueltos."""
+        vez ni fuerce reintentar lotes ya resueltos.
+
+        Resultado: preview para los encontrados; `None` SOLO para los que
+        Amazon declara inexistentes o inaccesibles en `errors`; los que faltan
+        sin explicación se omiten (desconocidos). Una respuesta sin items ni
+        errores por ítem se trata como fallo del lote: la revisión diaria
+        terminaría ofertas por un problema de Amazon."""
         if not self.settings.amazon_client_id or not self.settings.amazon_client_secret:
             raise ProductProviderUnavailableError("Faltan credenciales de Amazon en variables de entorno.")
         if not asins:
             return {}
 
         token = self._get_token()
-        items = self._fetch_items(asins, token)
-        results: dict[str, ProductPreview | None] = {asin: None for asin in asins}
+        items, errors = self._fetch_response(asins, token)
+        requested = set(asins)
+        results: dict[str, ProductPreview | None] = {
+            asin: None for asin in _not_found_asins(errors) if asin in requested
+        }
         for item in items:
             item_asin = item.get("asin")
-            if item_asin in results:
+            if item_asin in requested:
                 results[item_asin] = self._map_item(item, item_asin)
+        if not results:
+            raise ProductProviderUnavailableError(
+                "Amazon devolvió una respuesta sin productos ni errores por producto"
+            )
         return results
 
     def _get_token(self) -> str:
@@ -227,9 +254,12 @@ class AmazonProductClient:
         return self._token
 
     def _fetch_items(self, asins: list[str], token: str) -> list[dict]:
+        return self._fetch_response(asins, token)[0]
+
+    def _fetch_response(self, asins: list[str], token: str) -> tuple[list[dict], list[dict]]:
         """Una única petición HTTP con hasta `MAX_ITEMS_PER_REQUEST` ASIN.
-        Compartida por `_fetch_item` (lookup individual) y
-        `get_product_previews` (lote)."""
+        Devuelve (items, errores por ítem). Compartida por `_fetch_item`
+        (lookup individual) y `get_product_previews` (lote)."""
         payload = {
             "partnerTag": self.settings.amazon_affiliate_tag,
             "itemIds": asins,
@@ -259,11 +289,12 @@ class AmazonProductClient:
         data = resp.json()
         # Amazon responde 200 aunque algún ASIN falle: los que no existen en
         # amazon.es llegan como InvalidParameterValue en `errors`, sin item.
-        for error in data.get("errors") or []:
+        errors = data.get("errors") or []
+        for error in errors:
             logger.info(
                 "Amazon no devolvió un item: %s %s", error.get("code"), error.get("message")
             )
-        return _j(data, "itemsResult", "items", default=[]) or []
+        return _j(data, "itemsResult", "items", default=[]) or [], errors
 
     def _fetch_item(self, asin: str, token: str) -> dict | None:
         items = self._fetch_items([asin], token)

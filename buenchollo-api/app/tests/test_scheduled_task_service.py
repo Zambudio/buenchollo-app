@@ -34,9 +34,20 @@ def _candidate(**overrides):
         store_id=None, store_name=None, category_id=None, subcategory_id=None,
         external_id="B0D9WH9WLD", affiliate_url="https://a", source_url=None,
         old_price=Decimal("100.00"), new_price=Decimal("115.00"), reason="price_increase",
+        transition="offer_ended",
     )
     base.update(overrides)
     return Candidate(**base)
+
+
+def _handler(*, checks=("check",), applied=(), collect_error=None, apply_error=None):
+    handler = MagicMock()
+    handler.collect = AsyncMock(return_value=list(checks), side_effect=collect_error)
+    handler.evaluate = MagicMock(
+        return_value=PreviewResult(total_checked=len(checks), candidates=list(applied))
+    )
+    handler.apply = AsyncMock(return_value=list(applied), side_effect=apply_error)
+    return handler
 
 
 def _build_service(task, handler):
@@ -44,23 +55,21 @@ def _build_service(task, handler):
     repo.get_by_id = AsyncMock(return_value=task)
     repo.update_task = AsyncMock(side_effect=lambda t: t)
     repo.create_run = AsyncMock(side_effect=lambda run: run)
-    deal_repo = MagicMock()
-    deal_repo.get_active_without_expiry_with_asin = AsyncMock(return_value=["deal-obj"])
+    repo.claim_run = AsyncMock(return_value=True)
+    repo.release_run = AsyncMock()
     session = MagicMock()
-    session.begin_nested = MagicMock(return_value=_NoopAsyncCtx())
     session.add = MagicMock()
     session.flush = AsyncMock()
     session.rollback = AsyncMock()
-    service = ScheduledTaskService(repo, deal_repo, {"price_check": handler}, session)
-    return service, repo, deal_repo
+    session.commit = AsyncMock()
+    service = ScheduledTaskService(repo, {"price_check": handler}, session)
+    return service, repo
 
 
-class _NoopAsyncCtx:
-    async def __aenter__(self):
-        return self
-
-    async def __aexit__(self, *exc):
-        return False
+def _build_service_for_history():
+    repo = MagicMock()
+    service = ScheduledTaskService(repo, {}, MagicMock())
+    return service, repo, None
 
 
 # --- is_task_due ---
@@ -94,123 +103,107 @@ def test_is_task_due_true_si_ya_paso_el_intervalo_de_frecuencia():
     assert is_task_due(task, now) is True
 
 
+def test_is_task_due_diaria_no_se_desplaza_si_ayer_acabo_tras_la_hora():
+    """Ayer terminó a las 04:05; hoy a las 04:00 ya toca (antes esperaba a las
+    05:00 y la hora de ejecución se iba retrasando cada día)."""
+    task = _task(frequency_preset="daily", run_hour=4, last_run_at=datetime(2026, 8, 9, 4, 5, tzinfo=timezone.utc))
+    assert is_task_due(task, datetime(2026, 8, 10, 4, 0, tzinfo=timezone.utc)) is True
+    assert is_task_due(task, datetime(2026, 8, 9, 23, 0, tzinfo=timezone.utc)) is False
+
+
 # --- preview ---
 
 @pytest.mark.asyncio
-async def test_preview_delega_en_el_handler_con_los_deals_y_config_de_la_tarea():
+async def test_preview_recoge_y_evalua_sin_aplicar():
     task = _task()
-    handler = MagicMock()
-    handler.evaluate = MagicMock(return_value=PreviewResult(total_checked=1, candidates=[]))
-    service, repo, deal_repo = _build_service(task, handler)
+    handler = _handler(checks=["c1", "c2"])
+    service, _ = _build_service(task, handler)
 
     result = await service.preview("task-1")
 
-    deal_repo.get_active_without_expiry_with_asin.assert_awaited_once()
-    handler.evaluate.assert_called_once_with(["deal-obj"], task.config)
-    assert result.total_checked == 1
+    handler.collect.assert_awaited_once()
+    args = handler.evaluate.call_args.args
+    assert args[0] == ["c1", "c2"] and args[1] == task.config
+    handler.apply.assert_not_awaited()
+    assert result.total_checked == 2
 
 
 @pytest.mark.asyncio
 async def test_preview_lanza_not_found_si_la_tarea_no_existe():
-    handler = MagicMock()
-    service, repo, _ = _build_service(_task(), handler)
+    service, repo = _build_service(_task(), _handler())
     repo.get_by_id = AsyncMock(return_value=None)
 
     with pytest.raises(ScheduledTaskNotFound):
         await service.preview("no-existe")
 
 
-# --- confirm ---
+# --- confirm / run ---
 
 @pytest.mark.asyncio
-async def test_confirm_borra_persiste_el_run_y_actualiza_last_run_at():
+async def test_confirm_aplica_todo_persiste_el_run_y_actualiza_last_run_at():
     task = _task(last_run_at=None)
-    handler = MagicMock()
     candidate = _candidate()
-    handler.execute = AsyncMock(return_value=[candidate])
-    service, repo, _ = _build_service(task, handler)
+    handler = _handler(checks=["c1", "c2", "c3"], applied=[candidate])
+    service, repo = _build_service(task, handler)
     session = service.session
 
-    run = await service.confirm("task-1", total_checked=5, candidates=[candidate], triggered_by="admin-1")
+    run = await service.confirm("task-1", triggered_by="admin-1")
 
-    handler.execute.assert_awaited_once_with([candidate])
+    handler.apply.assert_awaited_once()
+    assert handler.apply.await_args.args[0] == ["c1", "c2", "c3"]
     assert run.trigger_type == "manual"
     assert run.status == "completed"
-    assert run.total_checked == 5
+    assert run.total_checked == 3
     assert run.total_affected == 1
     assert run.triggered_by == "admin-1"
-    assert len(run.items) == 1
     assert run.items[0].deal_id_snapshot == "deal-1"
+    assert run.items[0].transition == "offer_ended"
     assert run.items[0].reason == "price_increase"
     assert task.last_run_at is not None
     repo.update_task.assert_awaited_once_with(task)
 
-    session.add.assert_called_once()
     entry = session.add.call_args.args[0]
     assert entry.user_id == "admin-1"
-    assert entry.action == "deal.auto_delete_price_check"
+    assert entry.action == "deal.offer_transition"
     assert entry.target_type == "deal"
     assert entry.target_id == "deal-1"
-    assert entry.payload == {"old_price": 100.0, "new_price": 115.0, "reason": "price_increase"}
+    assert entry.payload == {
+        "transition": "offer_ended", "reason": "price_increase", "old_price": 100.0, "new_price": 115.0,
+    }
 
-
-# --- run_automatic ---
 
 @pytest.mark.asyncio
-async def test_run_automatic_ejecuta_preview_y_execute_y_marca_automatic():
+async def test_run_automatic_marca_automatic_y_registra_reactivaciones():
     task = _task(last_run_at=None)
-    handler = MagicMock()
-    candidate = _candidate()
-    handler.evaluate = MagicMock(return_value=PreviewResult(total_checked=3, candidates=[candidate]))
-    handler.execute = AsyncMock(return_value=[candidate])
-    service, repo, deal_repo = _build_service(task, handler)
-    session = service.session
+    reactivated = _candidate(transition="reactivated", reason="deal_again", new_price=Decimal("90"))
+    service, _ = _build_service(task, _handler(applied=[reactivated]))
 
     run = await service.run_automatic("task-1")
 
     assert run.trigger_type == "automatic"
-    assert run.status == "completed"
     assert run.triggered_by is None
-    assert run.total_checked == 3
-    assert run.total_affected == 1
-    assert task.last_run_at is not None
-
-    session.add.assert_called_once()
-    entry = session.add.call_args.args[0]
-    assert entry.user_id is None
-    assert entry.action == "deal.auto_delete_price_check"
-    assert entry.target_type == "deal"
-    assert entry.target_id == "deal-1"
-    assert entry.payload == {"old_price": 100.0, "new_price": 115.0, "reason": "price_increase"}
+    assert [(i.transition, i.reason) for i in run.items] == [("reactivated", "deal_again")]
 
 
 @pytest.mark.asyncio
 async def test_run_automatic_persiste_run_fallido_y_relanza_si_el_handler_explota():
     task = _task(last_run_at=None)
-    handler = MagicMock()
-    handler.evaluate = MagicMock(side_effect=RuntimeError("Amazon caído"))
-    service, repo, _ = _build_service(task, handler)
+    service, repo = _build_service(task, _handler(collect_error=RuntimeError("Amazon caído")))
 
     with pytest.raises(RuntimeError):
         await service.run_automatic("task-1")
 
     created_run = repo.create_run.await_args.args[0]
     assert created_run.status == "failed"
+    assert created_run.trigger_type == "automatic"
     assert "Amazon caído" in created_run.error_message
-    assert task.last_run_at is None  # no se actualiza en fallo: reintenta en el próximo tick
+    assert task.last_run_at is None
 
 
 @pytest.mark.asyncio
 async def test_run_automatic_hace_rollback_de_la_sesion_antes_de_persistir_el_run_fallido():
-    """Si la excepción viene de una operación SQLAlchemy, la sesión queda en
-    estado rollback-required; sin un rollback previo, `create_run` fallaría
-    con PendingRollbackError y se perdería el registro de fallo. Se
-    verifica el orden real de las llamadas, no solo que ambas ocurran
-    (ver finding 8)."""
     task = _task(last_run_at=None)
-    handler = MagicMock()
-    handler.evaluate = MagicMock(side_effect=RuntimeError("Amazon caído"))
-    service, repo, _ = _build_service(task, handler)
+    service, repo = _build_service(task, _handler(collect_error=RuntimeError("Amazon caído")))
     session = service.session
 
     call_order: list[str] = []
@@ -230,22 +223,17 @@ async def test_run_automatic_hace_rollback_de_la_sesion_antes_de_persistir_el_ru
 
 
 @pytest.mark.asyncio
-async def test_run_automatic_preserva_total_checked_real_si_evaluate_ok_pero_execute_falla():
-    """Si `evaluate()` tuvo éxito y solo `execute()` falla a mitad de
-    camino, el run fallido debe guardar el total_checked real de evaluate(),
-    no un 0 hardcodeado (ver finding 8)."""
+async def test_run_preserva_total_checked_si_apply_falla():
     task = _task(last_run_at=None)
-    handler = MagicMock()
-    candidate = _candidate()
-    handler.evaluate = MagicMock(return_value=PreviewResult(total_checked=7, candidates=[candidate]))
-    handler.execute = AsyncMock(side_effect=RuntimeError("fallo borrando el deal"))
-    service, repo, _ = _build_service(task, handler)
+    handler = _handler(checks=["a"] * 7, apply_error=RuntimeError("fallo escribiendo"))
+    service, repo = _build_service(task, handler)
 
     with pytest.raises(RuntimeError):
-        await service.run_automatic("task-1")
+        await service.confirm("task-1", triggered_by="admin-1")
 
     created_run = repo.create_run.await_args.args[0]
     assert created_run.status == "failed"
+    assert created_run.trigger_type == "manual"
     assert created_run.total_checked == 7
 
 
@@ -279,69 +267,25 @@ class _ExpiringTask:
 
 @pytest.mark.asyncio
 async def test_run_automatic_no_relee_task_id_del_orm_tras_el_rollback():
-    """`Session.rollback()` expira TODOS los objetos ORM del identity map,
-    incluida la PK: si el except leyera `task.id` DESPUÉS del rollback,
-    reventaría con MissingGreenlet (el scheduler corre bajo `asyncio.run`
-    plano, sin contexto greenlet vivo). Debe usar el `task_id` recibido
-    como parámetro del método, sin volver a tocar el ORM tras el rollback."""
     task = _ExpiringTask(
         id="task-1", task_type="price_check", config={"price_tolerance_percent": 10}, last_run_at=None,
     )
-    handler = MagicMock()
-    handler.evaluate = MagicMock(side_effect=RuntimeError("Amazon caído"))
     repo = MagicMock()
     repo.get_by_id = AsyncMock(return_value=task)
     repo.create_run = AsyncMock(side_effect=lambda run: run)
-    deal_repo = MagicMock()
-    deal_repo.get_active_without_expiry_with_asin = AsyncMock(return_value=["deal-obj"])
+    repo.claim_run = AsyncMock(return_value=True)
+    repo.release_run = AsyncMock()
     session = MagicMock()
+    session.commit = AsyncMock()
     session.rollback = AsyncMock(side_effect=task.expire)
-    service = ScheduledTaskService(repo, deal_repo, {"price_check": handler}, session)
+    handler = _handler(collect_error=RuntimeError("Amazon caído"))
+    service = ScheduledTaskService(repo, {"price_check": handler}, session)
 
     with pytest.raises(RuntimeError, match="Amazon caído"):
         await service.run_automatic("task-1")
 
     created_run = repo.create_run.await_args.args[0]
     assert created_run.task_id == "task-1"
-
-
-from app.modules.scheduled_tasks.domain.exceptions import (
-    ItemAlreadyRestoredError,
-    RestoreFailedError,
-    RunItemNotFound,
-)
-
-
-def _run_item(**overrides):
-    base = dict(
-        id="item-1",
-        title="Producto X",
-        slug="producto-x",
-        description="desc",
-        short_description="Eslogan corto",
-        image_url="https://img/x.jpg",
-        affiliate_url="https://amazon.es/dp/B0D9WH9WLD",
-        source_url=None,
-        external_id="B0D9WH9WLD",
-        store_id="store-1",
-        category_id="cat-1",
-        subcategory_id=None,
-        old_price=Decimal("100.00"),
-        previous_price=Decimal("150.00"),
-        discount_percentage=33,
-        restored_at=None,
-        restored_deal_id=None,
-    )
-    base.update(overrides)
-    return SimpleNamespace(**base)
-
-
-def _build_service_for_history():
-    repo = MagicMock()
-    deal_repo = MagicMock()
-    session = MagicMock()
-    service = ScheduledTaskService(repo, deal_repo, {}, session)
-    return service, repo, deal_repo
 
 
 @pytest.mark.asyncio
@@ -390,59 +334,37 @@ async def test_bulk_delete_runs_delega_en_el_repositorio():
 
 
 @pytest.mark.asyncio
-async def test_restore_item_crea_deal_activo_y_marca_restaurado():
-    service, repo, deal_repo = _build_service_for_history()
-    item = _run_item()
-    repo.get_run_item_by_id = AsyncMock(return_value=item)
-    repo.update_run_item = AsyncMock(side_effect=lambda i: i)
-    created = SimpleNamespace(id="new-deal-1")
-    reloaded = SimpleNamespace(id="new-deal-1", title="Producto X", store=None, category=None)
-    deal_repo.create = AsyncMock(return_value=created)
-    deal_repo.get_by_id = AsyncMock(return_value=reloaded)
+async def test_run_rechaza_si_ya_hay_una_ejecucion_en_curso():
+    from app.modules.scheduled_tasks.domain.exceptions import TaskAlreadyRunningError
 
-    result = await service.restore_item("item-1")
+    handler = _handler()
+    service, repo = _build_service(_task(), handler)
+    repo.claim_run = AsyncMock(return_value=False)
 
-    assert result is reloaded  # recargado con relaciones precargadas, no el objeto crudo de create()
-    deal_repo.get_by_id.assert_awaited_once_with("new-deal-1")
-    created_deal = deal_repo.create.call_args.args[0]
-    assert created_deal.title == "Producto X"
-    assert created_deal.status == "active"
-    assert created_deal.current_price == Decimal("100.00")
-    assert created_deal.previous_price == Decimal("150.00")
-    assert created_deal.discount_percentage == 33
-    assert created_deal.short_description == "Eslogan corto"
-    assert item.restored_at is not None
-    assert item.restored_deal_id == "new-deal-1"
-    repo.update_run_item.assert_awaited_once_with(item)
+    with pytest.raises(TaskAlreadyRunningError):
+        await service.confirm("task-1", triggered_by="admin-1")
+    handler.collect.assert_not_awaited()
+    repo.create_run.assert_not_awaited()
 
 
 @pytest.mark.asyncio
-async def test_restore_item_lanza_not_found_si_no_existe():
-    service, repo, _ = _build_service_for_history()
-    repo.get_run_item_by_id = AsyncMock(return_value=None)
+async def test_run_cierra_la_transaccion_antes_de_consultar_amazon_y_libera_la_marca():
+    task = _task(running_since="marca")
+    handler = _handler()
+    service, repo = _build_service(task, handler)
 
-    with pytest.raises(RunItemNotFound):
-        await service.restore_item("no-existe")
+    await service.run_automatic("task-1")
 
-
-@pytest.mark.asyncio
-async def test_restore_item_lanza_conflict_si_ya_estaba_restaurado():
-    service, repo, _ = _build_service_for_history()
-    item = _run_item(restored_at=datetime(2026, 8, 1, tzinfo=timezone.utc), restored_deal_id="old-deal")
-    repo.get_run_item_by_id = AsyncMock(return_value=item)
-
-    with pytest.raises(ItemAlreadyRestoredError):
-        await service.restore_item("item-1")
+    assert handler.collect.await_args.kwargs["between"] is service.session.commit
+    repo.release_run.assert_awaited_once_with("task-1")
 
 
 @pytest.mark.asyncio
-async def test_restore_item_traduce_integrity_error_a_restore_failed():
-    from sqlalchemy.exc import IntegrityError
+async def test_run_fallido_libera_la_marca_y_guarda_el_registro():
+    service, repo = _build_service(_task(), _handler(collect_error=RuntimeError("Amazon caído")))
 
-    service, repo, deal_repo = _build_service_for_history()
-    item = _run_item()
-    repo.get_run_item_by_id = AsyncMock(return_value=item)
-    deal_repo.create = AsyncMock(side_effect=IntegrityError("stmt", {}, Exception("fk violation")))
+    with pytest.raises(RuntimeError):
+        await service.confirm("task-1", triggered_by="admin-1")
 
-    with pytest.raises(RestoreFailedError):
-        await service.restore_item("item-1")
+    repo.release_run.assert_awaited_once_with("task-1")
+    assert service.session.commit.await_count >= 2  # marca + registro del fallo

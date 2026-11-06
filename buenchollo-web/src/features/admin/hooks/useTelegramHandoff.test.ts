@@ -29,6 +29,7 @@ beforeEach(() => vi.clearAllMocks());
 describe("telegramDataFromDeal", () => {
   it("normaliza los datos de un deal guardado (principal primero)", () => {
     expect(telegramDataFromDeal(deal)).toEqual({
+      deal_id: "d1",
       title: "Monitor",
       current_price: 100,
       previous_price: 150,

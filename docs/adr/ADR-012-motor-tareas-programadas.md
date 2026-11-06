@@ -70,7 +70,8 @@ Motor genérico con **handler registrable**, en un módulo nuevo
   nulo.
 - **`scheduled_task_run_items` como columna JSONB genérica** en vez de tabla relacional
   tipada: más genérico de verdad (cualquier tarea guarda cualquier snapshot), pero
-  restaurar un item necesita estado mutable por fila (`restored_at`, `restored_deal_id`)
+  restaurar un item necesitaba estado mutable por fila (`restored_at`, `restored_deal_id`;
+  sin uso desde ADR-017, que deja de borrar chollos y retira «Restaurar»)
   que un blob JSON no da sin reescribirlo entero cada vez, y el resto del proyecto usa
   tablas normales, no blobs, salvo casos puntuales (`admin_audit_log.payload`).
   Descartada — ver ADR-002 y el principio de "tablas, no blobs" ya asentado.

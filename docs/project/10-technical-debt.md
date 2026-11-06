@@ -4,7 +4,7 @@
 > Solo items **abiertos**: cuando uno se cierra, se elimina de aquí (el histórico
 > resuelto vive en [`PROJECT_STATUS.md`](../../PROJECT_STATUS.md)). Para consultar el diseño de arquitectura, ver [`docs/master/`](../master/00-index.md).
 
-Última revisión: **2026-11-04** (cierre de chollos de usuarios: TD-23 a TD-35; entorno local y prueba exhaustiva: TD-36 a TD-38).
+Última revisión: **2026-11-06** (catálogo permanente, Fase 1: TD-39 a TD-45; cierre de chollos de usuarios: TD-23 a TD-35; entorno local y prueba exhaustiva: TD-36 a TD-38).
 
 ---
 
@@ -19,6 +19,45 @@
   `https://api.buenchollotech.com/health` y dejar
   fecha/evidencia en `docs/guides/Cloudflare.md`. No copiar el valor nuevo a Git,
   documentación, logs ni chat.
+
+## 🟠 Media — catálogo permanente (Fase 1, 2026-11-06)
+
+- **TD-41 — La ejecución manual de `price_check` es una petición HTTP síncrona.** Vista
+  previa y «Aplicar» consultan Amazon dentro de la petición (≈ 1 s por cada 10 productos:
+  ~18 s con 157). Con más de ~900 productos superaría los 100 s de Cloudflare (524). Ya no
+  retiene conexión de BD durante la consulta ni puede solaparse con el worker. Proponer para
+  Fase 3: ejecución en segundo plano (202 + estado del run), cadencia por prioridad (ofertas
+  activas a diario, catálogo frío cada 3 días) y control del cupo diario de la Creators API,
+  que depende de las ventas.
+- **TD-39 — Precio de más de 24 h en las tarjetas si Amazon falla varios días.** La ficha
+  avisa («Precio de hace N días: puede haber cambiado») y la de un chollo sin oferta oculta
+  el precio, pero portada, listados y búsqueda siguen mostrando el último precio conocido.
+  Con la revisión diaria solo ocurre si Amazon falla de forma prolongada. Opción: ocultar o
+  marcar el precio en tarjetas cuando `last_price_check_at` supere 24 h.
+- **TD-42 — Las alertas de usuario no vuelven a avisar de un chollo reactivado.**
+  `AlertMatcher` deduplica por (alerta, deal) para siempre: quien ya recibió ese chollo no
+  recibe su vuelta. Decidido así por prudencia; revisar con las alertas de precio de Fase 3.
+- **TD-43 — Volver a dar de alta desde el panel un producto sin ASIN crea otro chollo.**
+  El panel solo reconoce el producto por `external_id`; las propuestas sí buscan también
+  por URL canónica y reactivan el existente. Unificar la búsqueda en `DealService`.
+- **TD-44 — Menores de la revisión final del catálogo permanente.** (1) Un producto que
+  entra y sale de stock a diario se reactiva cada día y sube a «Últimos» (el aviso a Admin
+  sí está limitado a 1 cada 7 días). (2) Sin credenciales de Amazon todos los lotes fallan
+  y aun así el run queda `completed`: registrar cuántos lotes fallaron o marcarlo fallido.
+  (3) Revivir un chollo caducado como `scheduled` oculta su ficha indexada hasta la hora
+  programada. (4) Sin savepoint por listing: un error de BD en uno revierte la revisión
+  entera. (5) `started_at` y `finished_at` del run son el mismo instante (previo).
+- **TD-45 — Menores del registro de publicaciones de Telegram.** (1) La corrección de
+  precio solo cambia la primera línea 💶 y la primera «⚠️ Finaliza el» (un texto editado con
+  dos líneas de precio o «⚠» sin selector de variante queda a medias) y no añade la fecha de
+  fin si la publicación original no la tenía. (2) El panel registra los precios del chollo
+  guardado, no los del texto editado si el formulario estaba sin guardar. (3) El panel no
+  descarta respuestas tardías al cargar la última publicación. (4) El flujo rápido heredado
+  (`/telegram/notify` sin `text`) no se registra; no lo usa el frontend. (5) Reenviar a mano
+  desde el canal Admin al oficial no queda registrado.
+- **TD-40 — Columnas `restored_at`/`restored_deal_id` sin uso** en
+  `scheduled_task_run_items` desde que no hay nada que restaurar. Se conservaron para no
+  tocar el histórico; eliminarlas en una migración posterior cuando deje de importar.
 
 ## 🟠 Media — chollos de usuarios (cierre 2026-11-04)
 

@@ -24,7 +24,14 @@ sys.modules.setdefault("amazon_paapi.errors", MagicMock())
 # ── Variables de entorno ──────────────────────────────────────────────────────
 from dotenv import load_dotenv
 env_path = Path(__file__).parent / ".env"
-load_dotenv(dotenv_path=env_path, override=True)
+# override=False: lo exportado en la shell (p. ej. DATABASE_URL hacia la base de
+# test, docs/guides/LOCAL-ENV.md) gana al .env; con override=True un .env real
+# mandaba los tests de integración a la base de producción.
+load_dotenv(dotenv_path=env_path, override=False)
+# Los tests nunca publican en Telegram (Settings lee el .env real por su cuenta).
+import os  # noqa: E402
+
+os.environ["TELEGRAM_ENABLED"] = "false"
 
 # ── Registro completo del grafo de modelos SQLAlchemy ────────────────────────
 # Los relationship("Category"|"Store"|...) se resuelven por nombre en la
@@ -37,6 +44,7 @@ import app.modules.categories.domain.models  # noqa: F401, E402
 import app.modules.stores.domain.models  # noqa: F401, E402
 import app.modules.deals.domain.models  # noqa: F401, E402
 import app.modules.submissions.domain.models  # noqa: F401, E402
+import app.modules.telegram.domain.models  # noqa: F401, E402
 import app.modules.alerts.domain.models  # noqa: F401, E402
 import app.modules.notifications.domain.models  # noqa: F401, E402
 import app.modules.comments.domain.models  # noqa: F401, E402

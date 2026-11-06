@@ -15,6 +15,8 @@ class TelegramBot:
         self._token = token
         self._default_chat_id = default_chat_id
         self.last_error: str | None = None
+        # message_id del último envío correcto (para registrar la publicación).
+        self.last_message_id: int | None = None
 
     def _url(self, method: str) -> str:
         return _BASE.format(token=self._token, method=method)
@@ -24,6 +26,13 @@ class TelegramBot:
         if not resolved:
             raise ValueError("chat_id no especificado y no hay canal por defecto configurado.")
         return resolved
+
+    @staticmethod
+    def _message_id(resp) -> int | None:
+        try:
+            return int(resp.json()["result"]["message_id"])
+        except Exception:
+            return None
 
     @staticmethod
     def _extract_error(resp: requests.Response) -> str:
@@ -88,6 +97,7 @@ class TelegramBot:
             try:
                 resp = requests.post(self._url("sendPhoto"), data=data, files=files, timeout=30)
                 if resp.ok:
+                    self.last_message_id = self._message_id(resp)
                     return True
                 self.last_error = self._extract_error(resp)
                 logger.warning("Telegram sendPhoto con archivo multipart falló: %s", self.last_error)
@@ -110,6 +120,7 @@ class TelegramBot:
             resp = requests.post(self._url("sendPhoto"), json=payload, timeout=25)
             if resp.ok:
                 self.last_error = None
+                self.last_message_id = self._message_id(resp)
                 return True
             self.last_error = self._extract_error(resp)
             logger.error("Telegram sendPhoto con URL falló: %s", self.last_error)
@@ -133,6 +144,7 @@ class TelegramBot:
         Si se proporciona image_url, usa sendPhoto con caption; si no, sendMessage.
         """
         self.last_error = None
+        self.last_message_id = None
         chat = self._resolve_chat(chat_id)
         if image_url:
             return self._send_photo(chat=chat, image_url=image_url, caption=text, entities=entities)
@@ -149,6 +161,7 @@ class TelegramBot:
                 timeout=20,
             )
             if resp.ok:
+                self.last_message_id = self._message_id(resp)
                 return True
             self.last_error = self._extract_error(resp)
             logger.error("Telegram sendMessage falló: %s", self.last_error)

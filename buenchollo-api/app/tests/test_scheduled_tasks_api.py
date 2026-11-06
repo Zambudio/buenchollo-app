@@ -1,11 +1,14 @@
 """Tests de integración del panel de tareas programadas. Requieren
 PostgreSQL real (excluidos del CI con -m "not integration")."""
+from contextlib import contextmanager
 from unittest.mock import patch
 
 import pytest
 
 from app.core.security import require_admin
 from app.main import app
+from app.modules.catalog.infrastructure.repository import CatalogRepository
+from app.modules.products.domain.entities import ProductPreview
 
 pytestmark = pytest.mark.integration
 
@@ -76,75 +79,12 @@ def test_update_scheduled_task_cambia_config(integration_client):
 def test_preview_sin_candidatos_devuelve_lista_vacia(integration_client):
     task_id = _get_price_check_task_id(integration_client)
 
-    with patch(
-        "app.modules.scheduled_tasks.application.factory.AmazonProductClient"
-    ) as mock_client_cls:
-        mock_client_cls.return_value.get_product_previews.side_effect = (
-            lambda asins: {asin: None for asin in asins}
-        )
+    with _only_listing("B0NOEXIST0", None):
         response = integration_client.post(f"/v1/admin/scheduled-tasks/{task_id}/preview")
 
     assert response.status_code == 200, response.text
     body = response.json()
     assert body["candidates"] == []
-
-
-def test_confirm_borra_el_deal_y_crea_el_registro(integration_client):
-    task_id = _get_price_check_task_id(integration_client)
-
-    create_resp = integration_client.post(
-        "/v1/deals/admin",
-        json={
-            "title": "Auriculares Test Price Check",
-            "current_price": 50.0,
-            "affiliate_url": "https://amazon.es/dp/B0TESTPRICE",
-            "external_id": "B0TESTPRICE",
-            "status": "active",
-        },
-    )
-    assert create_resp.status_code == 200, create_resp.text
-    deal = create_resp.json()
-
-    # Si cualquier aserción entre la creación y la confirmación de borrado
-    # falla, el deal de prueba se quedaría publicado permanentemente en
-    # producción (y su ASIN, con índice único, rompería el siguiente run de
-    # la suite) — best-effort cleanup en `finally` (ver finding 4).
-    try:
-        confirm_payload = {
-            "total_checked": 1,
-            "candidates": [
-                {
-                    "deal_id": deal["id"],
-                    "title": deal["title"],
-                    "slug": deal["slug"],
-                    "image_url": None,
-                    "description": None,
-                    "store_id": None,
-                    "store_name": None,
-                    "category_id": None,
-                    "subcategory_id": None,
-                    "external_id": "B0TESTPRICE",
-                    "affiliate_url": deal["affiliate_url"],
-                    "source_url": None,
-                    "old_price": 50.0,
-                    "new_price": 65.0,
-                    "reason": "price_increase",
-                }
-            ],
-        }
-        response = integration_client.post(
-            f"/v1/admin/scheduled-tasks/{task_id}/confirm", json=confirm_payload
-        )
-
-        assert response.status_code == 200, response.text
-        run = response.json()
-        assert run["trigger_type"] == "manual"
-        assert run["total_affected"] == 1
-
-        get_deal_resp = integration_client.get(f"/v1/deals/{deal['slug']}")
-        assert get_deal_resp.status_code == 404
-    finally:
-        integration_client.delete(f"/v1/deals/admin/{deal['id']}")
 
 
 def _create_deal(client, *, asin: str, price: float = 50.0) -> dict:
@@ -162,57 +102,88 @@ def _create_deal(client, *, asin: str, price: float = 50.0) -> dict:
     return resp.json()
 
 
-def _confirm_deletion(client, task_id: str, deal: dict, *, reason: str = "price_increase") -> dict:
-    payload = {
-        "total_checked": 1,
-        "candidates": [
-            {
-                "deal_id": deal["id"],
-                "title": deal["title"],
-                "slug": deal["slug"],
-                "image_url": None,
-                "description": None,
-                "store_id": None,
-                "store_name": None,
-                "category_id": None,
-                "subcategory_id": None,
-                "external_id": deal["external_id"],
-                "affiliate_url": deal["affiliate_url"],
-                "source_url": None,
-                "old_price": deal["current_price"],
-                "new_price": deal["current_price"] + 20,
-                "reason": reason,
-            }
-        ],
-    }
-    resp = client.post(f"/v1/admin/scheduled-tasks/{task_id}/confirm", json=payload)
+@contextmanager
+def _only_listing(asin: str, product: ProductPreview | None):
+    """Limita la revisión al listing del chollo de prueba y simula la respuesta
+    de Amazon: `confirm` revisa TODO el catálogo y sin esto tocaría los
+    chollos reales de la BD."""
+    original = CatalogRepository.get_checkable
+
+    async def _filtered(self):
+        return [(listing, deal) for listing, deal in await original(self) if listing.external_id == asin]
+
+    with patch.object(CatalogRepository, "get_checkable", _filtered), patch(
+        "app.modules.scheduled_tasks.application.factory.AmazonProductClient"
+    ) as client_cls:
+        client_cls.return_value.get_product_previews.side_effect = lambda asins: {
+            a: (product if a == asin else None) for a in asins
+        }
+        yield
+
+
+def _run_price_increase(client, task_id: str, deal: dict) -> dict:
+    product = ProductPreview(current_price=deal["current_price"] + 20, in_stock=True)
+    with _only_listing(deal["external_id"], product):
+        resp = client.post(f"/v1/admin/scheduled-tasks/{task_id}/confirm")
     assert resp.status_code == 200, resp.text
     return resp.json()
 
 
+def test_confirm_termina_la_oferta_sin_borrar_el_deal(integration_client):
+    task_id = _get_price_check_task_id(integration_client)
+    deal = _create_deal(integration_client, asin="B0TESTPRC1")
+    try:
+        run = _run_price_increase(integration_client, task_id, deal)
+        assert run["trigger_type"] == "manual"
+        assert run["total_checked"] == 1
+        assert run["total_affected"] == 1
+
+        detail = integration_client.get(f"/v1/deals/{deal['slug']}")
+        assert detail.status_code == 200
+        body = detail.json()
+        assert body["status"] == "expired"
+        assert body["offer_end_reason"] == "price_increase"
+        assert body["current_price"] == deal["current_price"] + 20
+    finally:
+        integration_client.delete(f"/v1/deals/admin/{deal['id']}")
+
+
+def test_confirm_reactiva_y_el_registro_lo_indica(integration_client):
+    task_id = _get_price_check_task_id(integration_client)
+    deal = _create_deal(integration_client, asin="B0TESTRCT1")
+    try:
+        _run_price_increase(integration_client, task_id, deal)
+        back = ProductPreview(current_price=deal["current_price"], in_stock=True)
+        with _only_listing(deal["external_id"], back):
+            resp = integration_client.post(f"/v1/admin/scheduled-tasks/{task_id}/confirm")
+        assert resp.status_code == 200, resp.text
+
+        detail = integration_client.get(f"/v1/admin/scheduled-tasks/runs/{resp.json()['id']}").json()
+        assert [(i["transition"], i["reason"]) for i in detail["items"]] == [("reactivated", "deal_again")]
+        assert integration_client.get(f"/v1/deals/{deal['slug']}").json()["status"] == "active"
+    finally:
+        integration_client.delete(f"/v1/deals/admin/{deal['id']}")
+
+
 def test_list_runs_devuelve_el_run_recien_creado(integration_client):
     task_id = _get_price_check_task_id(integration_client)
-    deal = _create_deal(integration_client, asin="B0RUNLIST01")
-    # Best-effort cleanup si algo falla entre crear el deal y confirmar su
-    # borrado (ver finding 4): sin esto, un assert que reviente a mitad de
-    # camino deja el deal huérfano y activo en producción.
+    deal = _create_deal(integration_client, asin="B0RUNLST01")
     try:
-        run = _confirm_deletion(integration_client, task_id, deal)
+        run = _run_price_increase(integration_client, task_id, deal)
 
         resp = integration_client.get(f"/v1/admin/scheduled-tasks/{task_id}/runs")
 
         assert resp.status_code == 200, resp.text
-        run_ids = [r["id"] for r in resp.json()]
-        assert run["id"] in run_ids
+        assert run["id"] in [r["id"] for r in resp.json()]
     finally:
         integration_client.delete(f"/v1/deals/admin/{deal['id']}")
 
 
 def test_get_run_detail_incluye_los_items(integration_client):
     task_id = _get_price_check_task_id(integration_client)
-    deal = _create_deal(integration_client, asin="B0RUNDETAIL1")
+    deal = _create_deal(integration_client, asin="B0RUNDETL1")
     try:
-        run = _confirm_deletion(integration_client, task_id, deal)
+        run = _run_price_increase(integration_client, task_id, deal)
 
         resp = integration_client.get(f"/v1/admin/scheduled-tasks/runs/{run['id']}")
 
@@ -220,95 +191,30 @@ def test_get_run_detail_incluye_los_items(integration_client):
         detail = resp.json()
         assert len(detail["items"]) == 1
         assert detail["items"][0]["deal_id_snapshot"] == deal["id"]
-        assert detail["items"][0]["restored_at"] is None
+        assert detail["items"][0]["transition"] == "offer_ended"
+        assert "restored_at" not in detail["items"][0]
     finally:
         integration_client.delete(f"/v1/deals/admin/{deal['id']}")
 
 
-def test_restore_item_recrea_el_deal_activo(integration_client):
-    # `confirm` borra el deal original; `restore` crea uno NUEVO, activo y
-    # permanente (visible en buenchollotech.com). No hay BD de test separada
-    # (ver task-8-report.md / task-9-brief.md), así que hay que borrarlo
-    # explícitamente al terminar, incluso si una aserción posterior falla.
+def test_el_endpoint_de_restaurar_ya_no_existe(integration_client):
+    resp = integration_client.post("/v1/admin/scheduled-tasks/runs/items/cualquiera/restore")
+    assert resp.status_code in (404, 405)
+
+
+def test_update_rechaza_config_fuera_de_rango(integration_client):
     task_id = _get_price_check_task_id(integration_client)
-    deal = _create_deal(integration_client, asin="B0RESTORE001")
-    # Envuelve TODO el cuerpo (no solo el bloque de /restore de más abajo):
-    # si `_confirm_deletion` lanza antes de llegar a crear el restaurado, el
-    # deal original de `_create_deal` también quedaría huérfano (finding 4).
-    try:
-        run = _confirm_deletion(integration_client, task_id, deal)
-        detail = integration_client.get(f"/v1/admin/scheduled-tasks/runs/{run['id']}").json()
-        item_id = detail["items"][0]["id"]
-
-        # El id se captura DENTRO del try, junto con la propia llamada a
-        # /restore y su aserción de status — si cualquiera de ellas lanza
-        # después de que el deal ya se haya persistido, el finally debe seguir
-        # pudiendo limpiarlo. Se inicializa a None por si /restore ni siquiera
-        # llega a devolver un 200.
-        restored_id = None
-        try:
-            resp = integration_client.post(f"/v1/admin/scheduled-tasks/runs/items/{item_id}/restore")
-            assert resp.status_code == 200, resp.text
-            restored = resp.json()
-            restored_id = restored["id"]
-            assert restored["status"] == "active"
-            assert restored["external_id"] == "B0RESTORE001"
-
-            detail_after = integration_client.get(f"/v1/admin/scheduled-tasks/runs/{run['id']}").json()
-            assert detail_after["items"][0]["restored_at"] is not None
-        finally:
-            if restored_id is not None:
-                cleanup_resp = integration_client.delete(f"/v1/deals/admin/{restored_id}")
-                assert cleanup_resp.status_code == 204, cleanup_resp.text
-    finally:
-        # Best-effort: si `_confirm_deletion` ya tuvo éxito, este deal ya no
-        # existe y se espera un 404, que es correcto — es solo la red de
-        # seguridad para cuando falla antes de llegar ahí.
-        integration_client.delete(f"/v1/deals/admin/{deal['id']}")
-
-
-def test_restore_item_ya_restaurado_devuelve_409(integration_client):
-    # La primera llamada a /restore SÍ crea un deal activo permanente (igual
-    # que en test_restore_item_recrea_el_deal_activo) aunque el objetivo del
-    # test sea la segunda llamada (409) — hay que limpiar el deal restaurado
-    # en la primera, no solo comprobar el 409 de la segunda.
-    task_id = _get_price_check_task_id(integration_client)
-    deal = _create_deal(integration_client, asin="B0RESTORE002")
-    # Igual que en test_restore_item_recrea_el_deal_activo: envuelve todo el
-    # cuerpo para que un fallo entre crear el deal y confirmar su borrado no
-    # deje un huérfano (finding 4).
-    try:
-        run = _confirm_deletion(integration_client, task_id, deal)
-        detail = integration_client.get(f"/v1/admin/scheduled-tasks/runs/{run['id']}").json()
-        item_id = detail["items"][0]["id"]
-
-        # La primera llamada a /restore es la que crea el deal activo permanente
-        # (la segunda, bajo test para el 409, nunca llega a crear nada). Igual
-        # que en test_restore_item_recrea_el_deal_activo, la llamada y su
-        # aserción de status van DENTRO del try para que un fallo ahí no impida
-        # la limpieza si el deal ya quedó persistido.
-        restored_id = None
-        try:
-            first_restore = integration_client.post(f"/v1/admin/scheduled-tasks/runs/items/{item_id}/restore")
-            assert first_restore.status_code == 200, first_restore.text
-            restored_id = first_restore.json()["id"]
-
-            resp = integration_client.post(f"/v1/admin/scheduled-tasks/runs/items/{item_id}/restore")
-
-            assert resp.status_code == 409
-        finally:
-            if restored_id is not None:
-                cleanup_resp = integration_client.delete(f"/v1/deals/admin/{restored_id}")
-                assert cleanup_resp.status_code == 204, cleanup_resp.text
-    finally:
-        integration_client.delete(f"/v1/deals/admin/{deal['id']}")
+    resp = integration_client.put(
+        f"/v1/admin/scheduled-tasks/{task_id}", json={"config": {"purge_after_days": 2}}
+    )
+    assert resp.status_code == 422
 
 
 def test_delete_run_lo_elimina(integration_client):
     task_id = _get_price_check_task_id(integration_client)
-    deal = _create_deal(integration_client, asin="B0DELETERUN1")
+    deal = _create_deal(integration_client, asin="B0DELRUN01")
     try:
-        run = _confirm_deletion(integration_client, task_id, deal)
+        run = _run_price_increase(integration_client, task_id, deal)
 
         resp = integration_client.delete(f"/v1/admin/scheduled-tasks/runs/{run['id']}")
         assert resp.status_code == 204
@@ -321,11 +227,11 @@ def test_delete_run_lo_elimina(integration_client):
 
 def test_bulk_delete_runs_borra_varios(integration_client):
     task_id = _get_price_check_task_id(integration_client)
-    deal_a = _create_deal(integration_client, asin="B0BULK000001")
-    deal_b = _create_deal(integration_client, asin="B0BULK000002")
+    deal_a = _create_deal(integration_client, asin="B0BULK0001")
+    deal_b = _create_deal(integration_client, asin="B0BULK0002")
     try:
-        run_a = _confirm_deletion(integration_client, task_id, deal_a)
-        run_b = _confirm_deletion(integration_client, task_id, deal_b)
+        run_a = _run_price_increase(integration_client, task_id, deal_a)
+        run_b = _run_price_increase(integration_client, task_id, deal_b)
 
         resp = integration_client.post(
             "/v1/admin/scheduled-tasks/runs/bulk-delete",

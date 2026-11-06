@@ -10,6 +10,7 @@ import type { TelegramGenerateRequest } from "@/services/api/telegram";
 export type TelegramPanelData = TelegramGenerateRequest & {
   images?: string[];
   image_url?: string | null;
+  deal_id?: string | null;
 };
 
 /** Datos del panel a partir de un deal ya guardado. */
@@ -17,6 +18,7 @@ export function telegramDataFromDeal(d: DealDetailData): TelegramPanelData {
   const allImages = (d.images ?? []).filter(Boolean);
   if (d.image_url && !allImages.includes(d.image_url)) allImages.unshift(d.image_url);
   return {
+    deal_id: d.id,
     title: d.title,
     current_price: d.current_price,
     previous_price: d.previous_price,

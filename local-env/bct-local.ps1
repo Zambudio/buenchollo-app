@@ -86,6 +86,9 @@ function Get-ApiEnv {
     SMTP_PASSWORD            = 'local'
     SMTP_FROM_EMAIL          = 'info@buenchollo.local'
     ADMIN_NOTIFICATION_EMAIL = 'admin@buenchollo.local'
+    # '' no apaga nada: PowerShell borra la variable y la API leería el token
+    # real del .env. TELEGRAM_ENABLED=false vacía token y canales en Settings.
+    TELEGRAM_ENABLED         = 'false'
     TELEGRAM_BOT_TOKEN       = ''
     TELEGRAM_MAIN_CHANNEL_ID = ''
     TELEGRAM_ADMIN_CHANNEL_ID = ''

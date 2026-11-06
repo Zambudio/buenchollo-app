@@ -8,6 +8,9 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
 from app.core.config import Settings
+from app.modules.deals.infrastructure.repository import DealRepository
+from app.modules.telegram.application.publications import PublicationRecorder
+from app.modules.telegram.infrastructure.publication_repository import TelegramPublicationRepository
 from app.modules.products.domain.entities import ProductPreview
 from app.modules.products.infrastructure.amazon_client import AmazonProductClient
 from app.modules.scheduled_deals.domain.models import ScheduledDeal, ScheduledDealStatus
@@ -39,6 +42,7 @@ class ScheduledPublicationWorker:
         bot: PublicationBot,
         main_channel_id: str,
         admin_chat_id: str,
+        publications=None,
     ):
         self.repo = repo
         self.product_verifier = product_verifier
@@ -46,6 +50,8 @@ class ScheduledPublicationWorker:
         self.main_channel_id = main_channel_id
         self.admin_chat_id = admin_chat_id
         self.generator = TelegramPostGenerator()
+        # Registro de lo enviado (telegram_publications); opcional en tests.
+        self.publications = publications
 
     async def process_due(self, now: datetime | None = None) -> int:
         current_time = now or datetime.now(timezone.utc)
@@ -148,6 +154,8 @@ class ScheduledPublicationWorker:
         scheduled.deal.shipping_info = product.shipping_type or scheduled.deal.shipping_info
         scheduled.deal.status = "active"
         scheduled.deal.published_at = now
+        # Después de actualizar el deal: el registro guarda el precio publicado.
+        await self._record(scheduled, destination_channel_id)
         scheduled.status = ScheduledDealStatus.PUBLISHED
         scheduled.cancellation_reason = None
         await self.repo.update(scheduled)
@@ -163,9 +171,29 @@ class ScheduledPublicationWorker:
             chat_id=destination,
         ):
             raise RuntimeError("Telegram rechazo la publicacion")
+        await self._record(scheduled, destination)
         scheduled.status = ScheduledDealStatus.PUBLISHED
         scheduled.cancellation_reason = None
         await self.repo.update(scheduled)
+
+    async def _record(self, scheduled: ScheduledDeal, channel_id: str) -> None:
+        if self.publications is None:
+            return
+        try:
+            await self._record_unsafe(scheduled, channel_id)
+        except Exception:
+            # Ya está publicado: un fallo del registro no puede marcarlo como
+            # error ni hacer que se vuelva a publicar.
+            logger.exception("No se pudo registrar la publicación de %s", scheduled.id)
+
+    async def _record_unsafe(self, scheduled: ScheduledDeal, channel_id: str) -> None:
+        await self.publications.record(
+            deal_id=getattr(scheduled, "deal_id", None),
+            channel_id=channel_id,
+            text=scheduled.telegram_text,
+            image_url=scheduled.image_url,
+            message_id=getattr(self.bot, "last_message_id", None),
+        )
 
     @staticmethod
     def _discount(current: Decimal, regular: Decimal | None) -> int:
@@ -203,6 +231,9 @@ async def _run(settings: Settings) -> int:
                     TelegramBot(settings.telegram_bot_token),
                     settings.telegram_main_channel_id,
                     settings.telegram_admin_channel_id,
+                    publications=PublicationRecorder(
+                        TelegramPublicationRepository(session), DealRepository(session), settings, "scheduled"
+                    ),
                 )
                 count = await worker.process_due()
                 await session.commit()

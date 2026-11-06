@@ -16,18 +16,19 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
 from app.core.config import Settings
-from app.modules.deals.infrastructure.repository import DealRepository
-from app.modules.scheduled_tasks.application.factory import build_task_handlers
+from app.modules.catalog.application.reactivation_notifier import notifiable_events
+from app.modules.scheduled_tasks.application.factory import build_reactivation_notifier, build_task_handlers
 from app.modules.scheduled_tasks.application.scheduled_task_service import (
     ScheduledTaskService,
     is_task_due,
 )
+from app.modules.scheduled_tasks.domain.exceptions import TaskAlreadyRunningError
 from app.modules.scheduled_tasks.infrastructure.repository import ScheduledTaskRepository
 
 logger = logging.getLogger(__name__)
 
 
-async def _execute_due_tasks(repo, service, session, now_local: datetime) -> int:
+async def _execute_due_tasks(repo, service, session, now_local: datetime, notifier=None) -> int:
     """Comitea tras cada tarea (éxito o fallo ya capturado) en vez de una
     única vez al final: si la tarea A deja la sesión en estado
     rollback-required y eso no se recupera limpiamente, un solo commit final
@@ -40,18 +41,42 @@ async def _execute_due_tasks(repo, service, session, now_local: datetime) -> int
     `tasks`). Si `is_task_due` se evaluara dentro del bucle, la siguiente
     iteración leería atributos de una tarea ya expirada fuera de contexto
     greenlet y reventaría con MissingGreenlet, fuera del try/except de
-    aislamiento por tarea."""
+    aislamiento por tarea.
+
+    Las reactivaciones se avisan (canal Admin + alertas) DESPUÉS del commit
+    del run: nunca se anuncia una oferta que luego no quedó guardada. Un
+    fallo del aviso se registra y no afecta al resto de tareas."""
     executed = 0
     tasks = await repo.get_enabled_tasks()
     due_task_ids = [task.id for task in tasks if is_task_due(task, now_local)]
     for task_id in due_task_ids:
+        run = None
         try:
-            await service.run_automatic(task_id)
+            run = await service.run_automatic(task_id)
             executed += 1
+        except TaskAlreadyRunningError:
+            logger.info("Tarea programada %s ya en curso (p. ej. lanzada desde el panel): se omite", task_id)
         except Exception:
             logger.exception("Fallo al ejecutar la tarea programada %s", task_id)
         await session.commit()
+        if run is not None and notifier is not None:
+            await notify_reactivations(notifier, run, session)
     return executed
+
+
+async def notify_reactivations(notifier, run, session) -> None:
+    """Avisa de las reactivaciones de un run YA guardado y guarda el antispam.
+    Compartida por el worker y por "Ejecutar ahora" del panel: un fallo se
+    registra y nunca afecta a lo ya aplicado."""
+    events = notifiable_events(run)
+    if not events:
+        return
+    try:
+        await notifier.notify(events, datetime.now(timezone.utc))
+        await session.commit()
+    except Exception:
+        logger.exception("Fallo avisando de %d cambio(s) de oferta", len(events))
+        await session.rollback()
 
 
 def _build_service(session, settings: Settings) -> tuple[ScheduledTaskRepository, ScheduledTaskService]:
@@ -63,9 +88,8 @@ def _build_service(session, settings: Settings) -> tuple[ScheduledTaskRepository
     `build_task_handlers` a factory.py) reventaba cada tick automático con
     NameError y la tarea no se ejecutaba nunca sola."""
     repo = ScheduledTaskRepository(session)
-    deal_repo = DealRepository(session)
     handlers = build_task_handlers(session, settings)
-    service = ScheduledTaskService(repo, deal_repo, handlers, session)
+    service = ScheduledTaskService(repo, handlers, session)
     return repo, service
 
 
@@ -86,7 +110,8 @@ async def _run(settings: Settings) -> int:
                 repo, service = _build_service(session, settings)
 
                 now_local = datetime.now(timezone.utc).astimezone()
-                executed = await _execute_due_tasks(repo, service, session, now_local)
+                notifier = build_reactivation_notifier(session, settings)
+                executed = await _execute_due_tasks(repo, service, session, now_local, notifier)
                 return executed
             except Exception:
                 await session.rollback()

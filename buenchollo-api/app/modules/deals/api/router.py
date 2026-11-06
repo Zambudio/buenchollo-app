@@ -9,6 +9,7 @@ from app.modules.deals.infrastructure.repository import DealRepository
 from app.modules.deals.application.deal_service import DealService
 from app.modules.deals.domain.exceptions import DealNotFound
 from app.modules.deals.api.schemas import (
+    DealSitemapEntry,
     DealCardResponse,
     DealCreate,
     DealDetailResponse,
@@ -20,6 +21,7 @@ from app.modules.deals.api.schemas import (
 from app.core.security import require_admin, get_current_user
 from app.modules.alerts.infrastructure.repository import AlertRepository
 from app.modules.alerts.application.alert_matcher import AlertMatcher
+from app.modules.catalog.infrastructure.repository import CatalogRepository
 from app.modules.notifications.infrastructure.repository import NotificationRepository
 
 logger = logging.getLogger(__name__)
@@ -37,10 +39,17 @@ def get_deal_service(db: AsyncSession = Depends(get_db)) -> DealService:
     aplicación; el router se limita a hablar HTTP."""
     repo = DealRepository(db)
     matcher = AlertMatcher(AlertRepository(db), NotificationRepository(db))
-    return DealService(repo, matcher)
+    return DealService(repo, matcher, CatalogRepository(db))
 
 
 # ── Endpoints públicos ────────────────────────────────────────────────────────
+
+@router.get("/sitemap", response_model=list[DealSitemapEntry])
+async def get_deals_sitemap(repo: DealRepository = Depends(get_deal_repository)):
+    """Entradas del sitemap web (activos y sin oferta). Declarada antes de
+    `/{slug}` para que esa ruta no la capture."""
+    return await repo.get_sitemap_entries()
+
 
 @router.get("/latest", response_model=list[DealCardResponse])
 async def get_latest_deals(

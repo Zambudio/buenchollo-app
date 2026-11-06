@@ -471,7 +471,8 @@
     .product-title {
       order: 1;
     }
-    .product-price-block {
+    .product-price-block,
+    .product-price-freshness {
       order: 2;
     }
     .product-availability {

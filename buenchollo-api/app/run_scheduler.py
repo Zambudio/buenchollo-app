@@ -21,14 +21,12 @@ logger = logging.getLogger(__name__)
 def main() -> None:
     settings = get_settings()
     configure_logging(settings.log_level, fmt=settings.log_format)
-    scheduler, cleaner = build_deals_scheduler(settings)
+    scheduler, _cleaner = build_deals_scheduler(settings)
     scheduler.start()
-    # Limpieza inicial para no esperar al cron de las 3:00.
-    cleaner.clean_expired_deals()
     logger.info(
         "Scheduler dedicado en marcha: "
         "mark_expired + verify/publish scheduled (cada 5 min) | "
-        "clean deals (03:00) | clean analytics (03:30)"
+        "price_check (diario) | clean analytics (03:30)"
     )
     try:
         while True:

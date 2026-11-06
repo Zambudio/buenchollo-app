@@ -68,6 +68,46 @@ async def test_execute_due_tasks_ejecuta_solo_las_debidas():
 
 
 @pytest.mark.asyncio
+async def test_execute_due_tasks_avisa_reactivaciones_tras_el_commit():
+    repo = FakeRepo([_task("task-1", run_hour=0)])
+    order: list[str] = []
+    run = SimpleNamespace(items=[
+        SimpleNamespace(transition="reactivated", deal_id_snapshot="deal-a"),
+        SimpleNamespace(transition="offer_ended", deal_id_snapshot="deal-b"),
+    ])
+    service = MagicMock()
+    service.run_automatic = AsyncMock(return_value=run)
+    session = MagicMock()
+    session.commit = AsyncMock(side_effect=lambda: order.append("commit"))
+    notifier = MagicMock()
+    notifier.notify = AsyncMock(side_effect=lambda ids, now: order.append(f"notify:{ids}") or 1)
+
+    await _execute_due_tasks(repo, service, session, datetime(2026, 8, 10, 5, tzinfo=timezone.utc), notifier)
+
+    assert order == ["commit", "notify:[OfferEvent(deal_id='deal-a', kind='reactivated', old_price=None)]", "commit"]
+
+
+@pytest.mark.asyncio
+async def test_execute_due_tasks_un_fallo_del_aviso_no_rompe_el_worker():
+    repo = FakeRepo([_task("task-1", run_hour=0)])
+    run = SimpleNamespace(items=[SimpleNamespace(transition="reactivated", deal_id_snapshot="deal-a")])
+    service = MagicMock()
+    service.run_automatic = AsyncMock(return_value=run)
+    session = MagicMock()
+    session.commit = AsyncMock()
+    session.rollback = AsyncMock()
+    notifier = MagicMock()
+    notifier.notify = AsyncMock(side_effect=RuntimeError("telegram"))
+
+    executed = await _execute_due_tasks(
+        repo, service, session, datetime(2026, 8, 10, 5, tzinfo=timezone.utc), notifier
+    )
+
+    assert executed == 1
+    session.rollback.assert_awaited_once()
+
+
+@pytest.mark.asyncio
 async def test_execute_due_tasks_continua_si_una_tarea_falla():
     task_a = _task("task-1", run_hour=0)
     task_b = _task("task-2", run_hour=0)
@@ -147,5 +187,30 @@ def test_build_service_cablea_dependencias_sin_nameerror():
     repo, service = _build_service(session, settings)
 
     assert isinstance(service, ScheduledTaskService)
-    assert service.deal_repo is not None
+    assert service.handlers["price_check"].catalog_repo is not None
     assert "price_check" in service.handlers
+
+
+@pytest.mark.asyncio
+async def test_execute_due_tasks_omite_sin_error_si_ya_hay_una_ejecucion_en_curso(caplog):
+    from app.modules.scheduled_tasks.domain.exceptions import TaskAlreadyRunningError
+
+    repo = FakeRepo([_task("task-1", run_hour=0)])
+    service = MagicMock()
+    service.run_automatic = AsyncMock(side_effect=TaskAlreadyRunningError("task-1"))
+    session = MagicMock()
+    session.commit = AsyncMock()
+
+    with caplog.at_level("INFO"):
+        executed = await _execute_due_tasks(repo, service, session, datetime(2026, 8, 10, 5, tzinfo=timezone.utc))
+
+    assert executed == 0
+    assert not [r for r in caplog.records if r.levelname == "ERROR"]
+    assert "en curso" in caplog.text
+
+
+def test_router_y_worker_comparten_el_aviso_protegido():
+    from app.modules.scheduled_tasks.api import router as api_router
+    from app.modules.scheduled_tasks.application import scheduler as worker
+
+    assert api_router.notify_reactivations is worker.notify_reactivations

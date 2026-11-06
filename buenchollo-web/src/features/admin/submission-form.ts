@@ -7,7 +7,7 @@ export const SUBMISSION_WARNING_LABELS: Record<string, string> = {
   amazon_foreign_marketplace: "Amazon de otro país (sin nuestro tag)",
   third_party_affiliate_removed: "Afiliado ajeno eliminado",
   not_affiliable: "Sin afiliación",
-  previously_published: "Se borrará el chollo caducado anterior al aprobar",
+  previously_published: "Al aprobar se reactivará el chollo anterior de este producto",
 };
 
 export const SUBMISSION_STATUS_LABEL: Record<SubmissionStatus, string> = {

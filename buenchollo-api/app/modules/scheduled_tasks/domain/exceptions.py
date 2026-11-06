@@ -14,19 +14,6 @@ class ScheduledTaskRunNotFound(NotFoundError):
         super().__init__(f"Registro de ejecución '{run_id}' no encontrado")
 
 
-class RunItemNotFound(NotFoundError):
-    def __init__(self, item_id: str):
-        super().__init__(f"Elemento de registro '{item_id}' no encontrado")
-
-
-class ItemAlreadyRestoredError(ConflictError):
-    def __init__(self, item_id: str):
-        super().__init__(f"El elemento '{item_id}' ya fue restaurado")
-
-
-class RestoreFailedError(ConflictError):
-    def __init__(self, item_id: str):
-        super().__init__(
-            f"No se pudo restaurar el elemento '{item_id}': "
-            "la tienda o categoría original ya no existe"
-        )
+class TaskAlreadyRunningError(ConflictError):
+    def __init__(self, task_id: str):
+        super().__init__(f"La tarea programada '{task_id}' ya se está ejecutando; inténtalo en unos minutos")

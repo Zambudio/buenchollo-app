@@ -2,10 +2,22 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 _FrequencyPreset = Literal["daily", "weekly", "biweekly", "monthly"]
-_Reason = Literal["price_increase", "no_longer_deal", "out_of_stock"]
+_Reason = Literal[
+    "price_increase", "no_longer_deal", "out_of_stock", "not_found",
+    "deal_again", "price_drop", "listing_purged", "product_purged",
+]
+_Transition = Literal["offer_ended", "reactivated", "price_dropped", "purged"]
+
+# Rangos admitidos para las claves conocidas de la config de price_check.
+_CONFIG_RANGES = {
+    "price_tolerance_percent": (0, 100),
+    "min_discount_percent": (0, 90),
+    "purge_after_days": (7, 365),
+    "price_drop_percent": (1, 90),
+}
 
 
 class ScheduledTaskResponse(BaseModel):
@@ -24,6 +36,17 @@ class ScheduledTaskUpdate(BaseModel):
     frequency_preset: _FrequencyPreset | None = None
     run_hour: int | None = Field(default=None, ge=0, le=23)
     config: dict | None = None
+
+    @field_validator("config")
+    @classmethod
+    def _check_config_ranges(cls, config: dict | None) -> dict | None:
+        for key, (low, high) in _CONFIG_RANGES.items():
+            if config is None or key not in config:
+                continue
+            value = config[key]
+            if isinstance(value, bool) or not isinstance(value, (int, float)) or not low <= value <= high:
+                raise ValueError(f"{key} debe ser un número entre {low} y {high}")
+        return config
 
 
 class CandidateSchema(BaseModel):
@@ -45,14 +68,10 @@ class CandidateSchema(BaseModel):
     discount_percentage: int | None = None
     new_price: Decimal | None = None
     reason: _Reason
+    transition: _Transition
 
 
 class PreviewResponse(BaseModel):
-    total_checked: int
-    candidates: list[CandidateSchema]
-
-
-class ConfirmRequest(BaseModel):
     total_checked: int
     candidates: list[CandidateSchema]
 
@@ -83,8 +102,7 @@ class RunItemResponse(BaseModel):
     discount_percentage: int | None = None
     new_price: Decimal | None = None
     reason: str
-    restored_at: datetime | None = None
-    restored_deal_id: str | None = None
+    transition: str
     model_config = ConfigDict(from_attributes=True)
 
 

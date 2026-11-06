@@ -81,8 +81,20 @@ class DealDetailResponse(DealCardResponse):
     external_id: str | None = None
     show_keepa_chart: bool = False
     coupon_code: str | None = None
+    # Catálogo permanente: por qué terminó la oferta y cuándo se comprobó el precio.
+    offer_end_reason: str | None = None
+    last_price_check_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+class DealSitemapEntry(BaseModel):
+    slug: str
+    status: str
+    updated_at: datetime | None = None
+    published_at: datetime | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
 
 class VoteRequest(BaseModel):
     vote: Literal[-1, 1]

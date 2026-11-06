@@ -1,4 +1,5 @@
 import { apiClient, ApiError } from "./client";
+import type { SitemapDeal } from "@/lib/sitemap";
 import type { DealCardData } from "@/features/deals/components/DealCard";
 
 /** Body que envía el backend cuando un POST/PUT de deal choca con un
@@ -143,6 +144,10 @@ export interface DealDetailData extends DealCardData {
   aggregate_rating?: number | null;
   review_count?: number | null;
   coupon_code?: string | null;
+  /** Catálogo permanente: por qué terminó la oferta (solo si `status` es expired). */
+  offer_end_reason?: string | null;
+  /** Última comprobación de precio y stock en la tienda. */
+  last_price_check_at?: string | null;
 }
 
 /** Payload aceptado por POST /deals/admin. Coincide con el schema DealCreate del backend. */
@@ -176,6 +181,9 @@ export interface DealCreatePayload {
 export type DealUpdatePayload = Partial<DealCreatePayload>;
 
 export const dealsService = {
+  /** URLs del sitemap: chollos activos y sin oferta (catálogo permanente). */
+  getSitemap: (): Promise<SitemapDeal[]> => apiClient.get<SitemapDeal[]>("/deals/sitemap"),
+
   /** Obtiene los chollos más recientes */
   getLatest: (limit = 8): Promise<DealCardData[]> =>
     apiClient.get<DealCardData[]>(`/deals/latest?limit=${limit}`),

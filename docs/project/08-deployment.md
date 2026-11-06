@@ -8,6 +8,13 @@
 > (DDNS Synology, reverse proxy DSM, "Cloudflare Pages/Vercel") describen el
 > **enfoque anterior / la transición** y se conservan como histórico/contexto.
 
+> **Cierre de noviembre de 2026:** para el catálogo permanente y el registro de
+> publicaciones de Telegram, seguir el [checklist operativo](cambios-2026-11-catalogo-permanente.md#despliegue-de-la-api-en-el-nas-pendiente-de-autorización-de-pedro).
+> El merge a `main` despliega la web por Workers Builds, pero la API del NAS
+> requiere `git pull` en la copia del share y `docker-compose build && docker-compose up -d`
+> tras un `pg_dump`. Las migraciones `20261105120000` y `20261106120000` se
+> aplican al arrancar. No reiniciar el NAS con el código del share desfasado.
+
 > **TL;DR (backend)** · Docker Compose en NAS Synology; el contenedor ejecuta
 > `alembic upgrade head` antes de uvicorn al arrancar — migraciones automáticas,
 > sin SSH. La exposición pública del NAS hoy es por **Cloudflare Tunnel**
@@ -159,7 +166,11 @@ curl -s https://embyzambu.synology.me:8000/health/ready
 
 ---
 
-## 🔄 Actualizar el contenedor tras cambios
+## 🔄 Histórico: actualización anterior del contenedor
+
+Para el despliegue vigente de este lote, usar el checklist de noviembre de 2026
+enlazado al inicio. El bloque siguiente se conserva como referencia histórica;
+la ruta `/volume1/docker/buenchollo-api` no es la del Compose activo.
 
 ```bash
 # 📥 En el NAS (o subiendo con SynologyDrive desde el PC)

@@ -27,6 +27,17 @@ class DealRepository:
         )
         return result.scalars().first()
 
+    async def reload(self, deal_id: str) -> Deal | None:
+        """Como `get_by_id` pero refrescando un deal que ya está en la sesión:
+        sin `populate_existing`, sus relaciones (p. ej. `author` tras cambiar
+        `created_by`) seguirían con los valores cargados antes."""
+        result = await self.session.execute(
+            self._base_deal_query()
+            .where(Deal.id == deal_id)
+            .execution_options(populate_existing=True)
+        )
+        return result.scalars().first()
+
     async def get_by_slug(self, slug: str) -> Deal | None:
         result = await self.session.execute(
             self._base_deal_query().where(Deal.slug == slug)
@@ -255,19 +266,16 @@ class DealRepository:
         )
         return list(result.scalars().all())
 
-    async def get_active_without_expiry_with_asin(self) -> list[Deal]:
-        """Chollos activos sin fecha de expiración y con ASIN — candidatos de
-        la tarea programada de revisión de precios. Usa `_base_deal_query()`
-        (eager-loads category/subcategory/store) porque el caller evalúa
-        estos deals dentro de un threadpool y no puede lazy-load relaciones
-        ahí (el AsyncSession vive en el hilo del event loop, no en ese hilo)."""
+    async def get_sitemap_entries(self, limit: int = 5000) -> list:
+        """URLs públicas permanentes (catálogo permanente): ofertas activas y
+        chollos sin oferta. Solo las columnas que necesita el sitemap."""
         result = await self.session.execute(
-            self._base_deal_query()
-            .where(Deal.status == "active")
-            .where(Deal.expires_at.is_(None))
-            .where(Deal.external_id.isnot(None))
+            select(Deal.slug, Deal.status, Deal.updated_at, Deal.published_at)
+            .where(Deal.status.in_(("active", "expired")))
+            .order_by(Deal.published_at.desc())
+            .limit(limit)
         )
-        return list(result.scalars().all())
+        return list(result.all())
 
     async def user_has_profile(self, user_id: str) -> bool:
         """Comprueba si existe un perfil en la tabla profiles para el user_id dado."""

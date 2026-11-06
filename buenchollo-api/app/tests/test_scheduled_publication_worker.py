@@ -203,3 +203,81 @@ async def test_precomprueba_cinco_minutos_antes_sin_publicar():
     assert scheduled.offer_price == Decimal("98.00")
     assert scheduled.deal.status == "scheduled"
     assert bot.posts == []
+
+
+class FakePublications:
+    def __init__(self):
+        self.recorded = []
+
+    async def record(self, **kwargs):
+        self.recorded.append(kwargs)
+
+
+@pytest.mark.asyncio
+async def test_registra_la_publicacion_enviada_por_el_programador():
+    scheduled = scheduled_deal()
+    scheduled.deal_id = "deal-1"
+    scheduled.scheduled_at = datetime(2026, 1, 1, 10, 0, tzinfo=timezone.utc)
+    product = ProductPreview(current_price=100.0, in_stock=True)
+    publications = FakePublications()
+    worker, bot = worker_for(scheduled, product)
+    worker.publications = publications
+
+    await worker.process_due(datetime(2026, 1, 1, 10, 1, tzinfo=timezone.utc))
+
+    assert scheduled.status == ScheduledDealStatus.PUBLISHED
+    [record] = publications.recorded
+    assert record["deal_id"] == "deal-1" and record["channel_id"] == "-100-destination"
+    assert record["text"] == scheduled.telegram_text and record["image_url"] == scheduled.image_url
+
+
+@pytest.mark.asyncio
+async def test_registra_tambien_la_publicacion_solo_telegram():
+    scheduled = scheduled_deal()
+    scheduled.deal_id = "deal-2"
+    scheduled.web_ready = False
+    scheduled.asin = None
+    scheduled.offer_price = Decimal("0")
+    publications = FakePublications()
+    worker, _ = worker_for(scheduled, None)
+    worker.publications = publications
+
+    await worker.process_due(datetime.now(timezone.utc))
+
+    assert [r["deal_id"] for r in publications.recorded] == ["deal-2"]
+
+
+@pytest.mark.asyncio
+async def test_un_fallo_al_registrar_no_deshace_la_publicacion_ni_la_repite():
+    class BrokenPublications:
+        async def record(self, **kwargs):
+            raise RuntimeError("BD caída")
+
+    scheduled = scheduled_deal()
+    scheduled.deal_id = "deal-1"
+    product = ProductPreview(current_price=90.0, in_stock=True)
+    worker, bot = worker_for(scheduled, product)
+    worker.publications = BrokenPublications()
+
+    await worker.process_due(datetime(2026, 1, 1, 10, 1, tzinfo=timezone.utc))
+
+    assert scheduled.status == ScheduledDealStatus.PUBLISHED
+    assert len(bot.posts) == 1 and bot.admin_messages == []
+
+
+@pytest.mark.asyncio
+async def test_registra_el_precio_ya_actualizado_del_chollo():
+    seen = {}
+
+    class SpyPublications:
+        async def record(self, **kwargs):
+            seen["deal_price"] = scheduled.deal.current_price
+
+    scheduled = scheduled_deal()
+    scheduled.deal_id = "deal-1"
+    worker, _ = worker_for(scheduled, ProductPreview(current_price=95.0, in_stock=True))
+    worker.publications = SpyPublications()
+
+    await worker.process_due(datetime(2026, 1, 1, 10, 1, tzinfo=timezone.utc))
+
+    assert seen["deal_price"] == Decimal("95.00")

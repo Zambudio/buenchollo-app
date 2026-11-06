@@ -205,7 +205,17 @@ no se modifica.
   & "$env:LOCALAPPDATA\BuenCholloLocal\api-venv\Scripts\python.exe" scripts/create_test_schema.py
   & "$env:LOCALAPPDATA\BuenCholloLocal\api-venv\Scripts\python.exe" -m pytest -m integration
   ```
-  Recréala antes de cada pasada: los tests dejan datos.
+  Recréala antes de cada pasada: los tests dejan datos. La variable exportada manda sobre
+  `buenchollo-api/.env` (`conftest.py` con `override=False` desde 2026-11-06; antes, con un
+  `.env` real presente, estos tests acababan contra la base de **producción**).
+- **Revisión diaria de precios (catálogo permanente, ADR-017).** Con el scheduler apagado,
+  se lanza a mano desde *Admin → Tareas programadas → Ejecutar ahora*: consulta Amazon de
+  verdad (~1 s por cada 10 productos) y escribe solo en la base local. Telegram está
+  apagado con `TELEGRAM_ENABLED=false` (desde 2026-11-06; antes los `TELEGRAM_*=''` no
+  servían: PowerShell borra las variables vacías y la API leía el token real del `.env`),
+  así que el aviso al canal Admin solo queda en el log de la API. Para ver la ficha de un chollo sin oferta basta con que la revisión termine alguno, o
+  forzarlo en la base local:
+  `UPDATE deals SET status='expired', offer_end_reason='price_increase', last_price_check_at=now() WHERE slug='…';`
 
 ## 8. Avisos importantes
 

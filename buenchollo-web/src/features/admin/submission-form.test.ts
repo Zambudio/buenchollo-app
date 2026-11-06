@@ -194,7 +194,7 @@ describe("submissionWarningLabels", () => {
       submissionWarningLabels(
         submission({ previously_published: true, warnings: ["previously_published"] }),
       ),
-    ).toEqual(["Se borrará el chollo caducado anterior al aprobar"]);
+    ).toEqual(["Al aprobar se reactivará el chollo anterior de este producto"]);
   });
 
   it("muestra los códigos desconocidos tal cual", () => {

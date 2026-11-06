@@ -1,16 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { categoriesService } from "@/services/api/categories";
+import { dealsService } from "@/services/api/deals";
 import { blogService } from "@/services/api/blog";
+import { dealSitemapEntry, type SitemapEntry } from "@/lib/sitemap";
 
 const BASE_URL = "https://buenchollotech.com";
-
-interface SitemapEntry {
-  path: string;
-  lastmod?: string;
-  changefreq?: "always" | "hourly" | "daily" | "weekly" | "monthly" | "yearly" | "never";
-  priority?: string;
-}
 
 export const Route = createFileRoute("/sitemap.xml")({
   server: {
@@ -26,40 +21,21 @@ export const Route = createFileRoute("/sitemap.xml")({
           { path: "/politica-de-cookies", changefreq: "yearly", priority: "0.5" },
         ];
 
+        // Categorías y chollos vía el backend (ADR-002), como el blog. Antes se
+        // leían con supabaseAdmin desde el Worker; fallaba en silencio y el
+        // sitemap de producción no publicaba ninguna categoría ni chollo.
         try {
-          const { data: cats } = await supabaseAdmin
-            .from("categories")
-            .select("slug,updated_at")
-            .eq("is_active", true);
-          for (const c of cats ?? []) {
-            entries.push({
-              path: `/categoria/${c.slug}`,
-              lastmod: c.updated_at ? new Date(c.updated_at).toISOString() : undefined,
-              changefreq: "daily",
-              priority: "0.7",
-            });
+          for (const c of await categoriesService.getAll()) {
+            entries.push({ path: `/categoria/${c.slug}`, changefreq: "daily", priority: "0.7" });
           }
         } catch {
           // sitemap es best-effort: si una fuente falla seguimos con las demás
         }
 
         try {
-          const { data: deals } = await supabaseAdmin
-            .from("deals")
-            .select("slug,updated_at,published_at")
-            .eq("status", "active")
-            .order("published_at", { ascending: false })
-            .limit(2000);
-          for (const d of deals ?? []) {
-            entries.push({
-              path: `/chollo/${d.slug}`,
-              lastmod:
-                (d.updated_at ?? d.published_at)
-                  ? new Date(d.updated_at ?? d.published_at).toISOString()
-                  : undefined,
-              changefreq: "daily",
-              priority: "0.8",
-            });
+          // Catálogo permanente: activos y sin oferta (URL estable).
+          for (const d of await dealsService.getSitemap()) {
+            entries.push(dealSitemapEntry(d));
           }
         } catch {
           // sitemap es best-effort: si una fuente falla seguimos con las demás

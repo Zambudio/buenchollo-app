@@ -26,6 +26,8 @@ export interface TelegramNotifyRequest {
   entities?: object[];
   image_url?: string | null;
   channel_id?: string;
+  /** Chollo al que pertenece, para registrar la publicación. */
+  deal_id?: string | null;
   // Flujo rápido (checkbox al guardar)
   title?: string;
   current_price?: number;
@@ -36,7 +38,29 @@ export interface TelegramNotifyRequest {
   public_url?: string | null;
 }
 
+/** Publicación enviada a Telegram (registro). */
+export interface TelegramPublication {
+  id: string;
+  deal_id: string | null;
+  channel_kind: "main" | "admin" | "other";
+  source: "panel" | "scheduled";
+  text: string;
+  image_url: string | null;
+  price: number | null;
+  previous_price: number | null;
+  discount_percentage: number | null;
+  sent_at: string;
+  /** El mismo texto con el precio actual del chollo (null si no se puede corregir). */
+  repriced_text?: string | null;
+}
+
 export const telegramApi = {
+  listPublications(dealId: string): Promise<TelegramPublication[]> {
+    return apiClient.get<TelegramPublication[]>(
+      `/telegram/publications?deal_id=${encodeURIComponent(dealId)}`,
+    );
+  },
+
   getChannels(): Promise<TelegramChannel[]> {
     return apiClient.get<TelegramChannel[]>("/telegram/channels");
   },

@@ -51,10 +51,11 @@ app/
     ├── ai/            # motor unificado LLM, fallback multi-modelo, copywriting, categorización, chatbot
     ├── deals/
     │   ├── domain/        # modelos SQLAlchemy (Deal)
-    │   ├── application/   # casos de uso, cleaner_service
+    │   ├── application/   # casos de uso, cleaner_service (caducidad por fecha; ya no borra)
     │   ├── infrastructure/# repositorios, adapters externos
     │   └── api/           # router FastAPI, schemas Pydantic
     ├── products/          # preview Amazon (DIP con Protocols e integración ProductAIEnricher)
+    ├── catalog/           # catálogo permanente: products + product_listings, reglas de oferta, aviso de reactivación (ADR-017)
     ├── submissions/       # propuestas de chollos de usuarios: check-link, imágenes (Pillow→WebP), moderación admin
     ├── affiliates/        # dominio puro: canonicalización de URL y reescritores de afiliado por tienda
     ├── telegram/          # publicación al canal, formato emoji premium, hashtags IA

@@ -12,6 +12,6 @@ export const DEAL_STATUS_OPTIONS = [
   { value: "all", label: "Todos" },
   { value: "active", label: "Activos" },
   { value: "scheduled", label: "Programados" },
-  { value: "expired", label: "Caducados" },
+  { value: "expired", label: "Sin oferta" },
   { value: "draft", label: "Borradores" },
 ] as const;

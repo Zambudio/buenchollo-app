@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   generate: vi.fn(),
   addCategory: vi.fn(),
   notify: vi.fn(),
+  listPublications: vi.fn(),
   cropAndUploadTelegramImage: vi.fn(),
   rotateAndUploadTelegramImage: vi.fn(),
 }));
@@ -34,6 +35,7 @@ beforeEach(() => {
   });
   mocks.addCategory.mockResolvedValue(["#Tecnología"]);
   mocks.notify.mockResolvedValue({ ok: true });
+  mocks.listPublications.mockResolvedValue([]);
   mocks.cropAndUploadTelegramImage.mockResolvedValue(
     "https://storage.test/deal-images/telegram/cropped.jpg",
   );
@@ -316,5 +318,75 @@ describe("TelegramPanel", () => {
         "https://images.test/b.jpg",
       ],
     });
+  });
+});
+
+describe("TelegramPanel · registro de publicaciones", () => {
+  it("publica indicando el chollo y el enlace para registrar la publicación", async () => {
+    renderWithProviders(
+      <TelegramPanel
+        dealData={{
+          deal_id: "deal-1",
+          title: "Chollo de prueba",
+          current_price: 99,
+          affiliate_url: "https://amazon.es/dp/B0D9WH9WLD",
+        }}
+        onClose={vi.fn()}
+      />,
+    );
+    await screen.findByDisplayValue(/Chollo de prueba/);
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /PUBLICAR AHORA/ })).toBeEnabled(),
+    );
+    await userEvent.click(screen.getByRole("button", { name: /PUBLICAR AHORA/ }));
+
+    await waitFor(() => expect(mocks.notify).toHaveBeenCalled());
+    expect(mocks.notify.mock.calls[0]?.[0]).toMatchObject({
+      deal_id: "deal-1",
+      affiliate_url: "https://amazon.es/dp/B0D9WH9WLD",
+    });
+  });
+
+  it("muestra la última publicación del chollo y permite reutilizar su texto", async () => {
+    mocks.listPublications.mockResolvedValue([
+      {
+        id: "p1",
+        deal_id: "deal-1",
+        channel_kind: "main",
+        source: "panel",
+        text: "🍄 Texto que publiqué",
+        image_url: null,
+        price: 89,
+        previous_price: null,
+        discount_percentage: null,
+        sent_at: "2026-11-01T10:00:00Z",
+        repriced_text: "🍄 Texto que publiqué con precio actual",
+      },
+    ]);
+    renderWithProviders(
+      <TelegramPanel
+        dealData={{ deal_id: "deal-1", title: "Chollo de prueba", current_price: 99 }}
+        onClose={vi.fn()}
+      />,
+    );
+    await screen.findByDisplayValue(/Chollo de prueba/);
+    expect(mocks.listPublications).toHaveBeenCalledWith("deal-1");
+    await userEvent.click(
+      await screen.findByRole("button", { name: /Usar la última publicación/ }),
+    );
+
+    // Con el precio corregido, nunca el precio antiguo de la publicación
+    expect(screen.getByDisplayValue(/Texto que publiqué con precio actual/)).toBeInTheDocument();
+  });
+
+  it("sin chollo guardado no consulta publicaciones", async () => {
+    renderWithProviders(
+      <TelegramPanel
+        dealData={{ title: "Chollo de prueba", current_price: 99 }}
+        onClose={vi.fn()}
+      />,
+    );
+    await screen.findByDisplayValue(/Chollo de prueba/);
+    expect(mocks.listPublications).not.toHaveBeenCalled();
   });
 });

@@ -1,8 +1,16 @@
 import { apiClient } from "./client";
-import type { DealDetailData } from "./deals";
 
 export type FrequencyPreset = "daily" | "weekly" | "biweekly" | "monthly";
-export type PriceCheckReason = "price_increase" | "no_longer_deal" | "out_of_stock";
+export type PriceCheckReason =
+  | "price_increase"
+  | "no_longer_deal"
+  | "out_of_stock"
+  | "not_found"
+  | "deal_again"
+  | "price_drop"
+  | "listing_purged"
+  | "product_purged";
+export type PriceCheckTransition = "offer_ended" | "reactivated" | "price_dropped" | "purged";
 
 export interface ScheduledTaskConfig {
   id: string;
@@ -10,7 +18,13 @@ export interface ScheduledTaskConfig {
   enabled: boolean;
   frequency_preset: FrequencyPreset;
   run_hour: number;
-  config: { price_tolerance_percent?: number; [key: string]: unknown };
+  config: {
+    price_tolerance_percent?: number;
+    min_discount_percent?: number;
+    purge_after_days?: number;
+    price_drop_percent?: number;
+    [key: string]: unknown;
+  };
   last_run_at: string | null;
 }
 
@@ -37,6 +51,7 @@ export interface ScheduledTaskCandidate {
   old_price: number;
   new_price: number | null;
   reason: PriceCheckReason;
+  transition: PriceCheckTransition;
 }
 
 export interface ScheduledTaskPreview {
@@ -66,8 +81,7 @@ export interface ScheduledTaskRunItem {
   old_price: number;
   new_price: number | null;
   reason: PriceCheckReason;
-  restored_at: string | null;
-  restored_deal_id: string | null;
+  transition: PriceCheckTransition;
 }
 
 export interface ScheduledTaskRunDetail extends ScheduledTaskRun {
@@ -83,8 +97,9 @@ export const scheduledTasksService = {
   preview: (id: string): Promise<ScheduledTaskPreview> =>
     apiClient.post(`/admin/scheduled-tasks/${id}/preview`, {}),
 
-  confirm: (id: string, payload: ScheduledTaskPreview): Promise<ScheduledTaskRun> =>
-    apiClient.post(`/admin/scheduled-tasks/${id}/confirm`, payload),
+  /** Ejecuta la revisión ahora y aplica todos los cambios (sin selección). */
+  confirm: (id: string): Promise<ScheduledTaskRun> =>
+    apiClient.post(`/admin/scheduled-tasks/${id}/confirm`, {}),
 
   listRuns: (id: string): Promise<ScheduledTaskRun[]> =>
     apiClient.get(`/admin/scheduled-tasks/${id}/runs`),
@@ -97,7 +112,4 @@ export const scheduledTasksService = {
 
   bulkDeleteRuns: (runIds: string[]): Promise<{ deleted: number }> =>
     apiClient.post(`/admin/scheduled-tasks/runs/bulk-delete`, { run_ids: runIds }),
-
-  restoreItem: (itemId: string): Promise<DealDetailData> =>
-    apiClient.post<DealDetailData>(`/admin/scheduled-tasks/runs/items/${itemId}/restore`, {}),
 };

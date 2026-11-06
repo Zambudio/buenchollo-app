@@ -1,4 +1,6 @@
-from sqlalchemy import delete, select
+from datetime import datetime, timedelta, timezone
+
+from sqlalchemy import delete, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -14,6 +16,31 @@ class ScheduledTaskRepository:
         self.session = session
 
     # --- ScheduledTask (config) ---
+
+    async def claim_run(self, task_id: str, stale_after: timedelta = timedelta(minutes=30)) -> bool:
+        """Marca la tarea como en curso si nadie la tiene (o la marca es de un
+        proceso que murió hace más de `stale_after`). UPDATE atómico: entre el
+        worker y "Ejecutar ahora" del panel solo uno lo consigue."""
+        now = datetime.now(timezone.utc)
+        result = await self.session.execute(
+            update(ScheduledTask)
+            .where(
+                ScheduledTask.id == task_id,
+                or_(ScheduledTask.running_since.is_(None), ScheduledTask.running_since < now - stale_after),
+            )
+            .values(running_since=now)
+            .returning(ScheduledTask.id)
+            .execution_options(synchronize_session=False)
+        )
+        return result.first() is not None
+
+    async def release_run(self, task_id: str) -> None:
+        await self.session.execute(
+            update(ScheduledTask)
+            .where(ScheduledTask.id == task_id)
+            .values(running_since=None)
+            .execution_options(synchronize_session=False)
+        )
 
     async def get_by_id(self, task_id: str) -> ScheduledTask | None:
         result = await self.session.execute(select(ScheduledTask).where(ScheduledTask.id == task_id))
@@ -68,15 +95,3 @@ class ScheduledTaskRepository:
         )
         await self.session.flush()
         return result.rowcount or 0
-
-    # --- ScheduledTaskRunItem ---
-
-    async def get_run_item_by_id(self, item_id: str) -> ScheduledTaskRunItem | None:
-        result = await self.session.execute(
-            select(ScheduledTaskRunItem).where(ScheduledTaskRunItem.id == item_id)
-        )
-        return result.scalars().first()
-
-    async def update_run_item(self, item: ScheduledTaskRunItem) -> ScheduledTaskRunItem:
-        await self.session.flush()
-        return item

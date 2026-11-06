@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.audit import audit_log
 from app.core.database import get_db
 from app.core.security import require_admin
+from app.modules.catalog.infrastructure.repository import CatalogRepository
 from app.modules.deals.application.deal_service import DealService
 from app.modules.deals.infrastructure.repository import DealRepository
 from app.modules.scheduled_deals.api.schemas import (
@@ -24,7 +25,7 @@ router = APIRouter(prefix="/scheduled-deals", tags=["scheduled-deals"])
 def get_schedule_service(db: AsyncSession = Depends(get_db)) -> ScheduleService:
     return ScheduleService(
         ScheduledDealRepository(db),
-        DealService(DealRepository(db)),
+        DealService(DealRepository(db), catalog=CatalogRepository(db)),
     )
 
 

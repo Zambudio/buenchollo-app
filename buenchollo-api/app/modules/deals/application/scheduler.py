@@ -20,8 +20,8 @@ from app.modules.emails.application.digest_worker import run_due_alert_digest
 def build_deals_scheduler(settings: Settings) -> tuple[BackgroundScheduler, DealCleanerService]:
     """Crea (sin arrancar) el scheduler con los jobs de mantenimiento.
 
-    Devuelve también el cleaner para que el caller pueda lanzar la limpieza
-    inicial al arrancar (no esperar a las 3:00).
+    Devuelve también el cleaner (caducidad por fecha y activación de
+    programados). Ningún job borra chollos: catálogo permanente.
 
     Nota: también registra la publicación programada de artículos del blog.
     El contenedor `buenchollo-scheduler` es el único proceso dedicado a jobs
@@ -40,7 +40,6 @@ def build_deals_scheduler(settings: Settings) -> tuple[BackgroundScheduler, Deal
         max_instances=1,
         coalesce=True,
     )
-    scheduler.add_job(cleaner.clean_expired_deals, "cron", hour=3, minute=0)
     scheduler.add_job(
         run_due_scheduled_posts,
         "cron",

@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { Edit3, Send, Trash2 } from "lucide-react";
 import type { DealDetailData } from "@/services/api/deals";
 import { formatPrice, formatRelativeTime } from "@/lib/format";
+import { REASON_LABEL } from "@/features/admin/lib/price-check";
 
 interface Props {
   readonly deals: DealDetailData[];
@@ -70,6 +71,16 @@ export function AdminDealsTable({ deals, onEdit, onTelegram, onRemove }: Props) 
                   <span className={`font-mono text-[10px] uppercase px-2 py-1 ${stCls}`}>
                     {d.status}
                   </span>
+                  {d.status === "expired" && d.offer_end_reason && (
+                    <div className="mt-1 font-mono text-[10px] text-muted-foreground">
+                      {REASON_LABEL[d.offer_end_reason] ?? d.offer_end_reason}
+                    </div>
+                  )}
+                  {d.last_price_check_at && (
+                    <div className="mt-1 font-mono text-[10px] text-muted-foreground">
+                      Precio {formatRelativeTime(d.last_price_check_at)}
+                    </div>
+                  )}
                 </td>
                 <td className="p-3 text-muted-foreground font-mono text-xs">
                   {d.status === "scheduled" && d.scheduled_for ? (

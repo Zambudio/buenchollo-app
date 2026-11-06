@@ -109,7 +109,7 @@ describe("SubmissionReviewPanel", () => {
     const warnings = screen.getByRole("list", { name: "Avisos" });
     expect(within(warnings).getByText("Afiliado ajeno eliminado")).toBeInTheDocument();
     expect(
-      within(warnings).getByText("Se borrará el chollo caducado anterior al aprobar"),
+      within(warnings).getByText("Al aprobar se reactivará el chollo anterior de este producto"),
     ).toBeInTheDocument();
     expect(screen.getByText("Pepe")).toBeInTheDocument();
   });

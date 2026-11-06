@@ -32,6 +32,8 @@ class ScheduledTask(Base):
     run_hour: Mapped[int] = mapped_column(SmallInteger, default=4, nullable=False)
     config: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     last_run_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Marca de "ejecución en curso" (exclusión mutua entre el worker y el panel).
+    running_since: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), default=lambda: datetime.now(timezone.utc)
     )
@@ -91,6 +93,10 @@ class ScheduledTaskRunItem(Base):
     discount_percentage: Mapped[int | None] = mapped_column(Integer, nullable=True)
     new_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
     reason: Mapped[str] = mapped_column(String(32), nullable=False)
+    # 'offer_ended' | 'reactivated' | 'purged' (filas antiguas: borrados = 'offer_ended')
+    transition: Mapped[str] = mapped_column(
+        String(16), default="offer_ended", server_default="offer_ended", nullable=False
+    )
     restored_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     restored_deal_id: Mapped[str | None] = mapped_column(Uuid(as_uuid=False), nullable=True)
     created_at: Mapped[datetime] = mapped_column(

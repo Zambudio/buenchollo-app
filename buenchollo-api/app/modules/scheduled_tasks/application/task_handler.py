@@ -1,12 +1,18 @@
 from dataclasses import dataclass
+from datetime import datetime
 from decimal import Decimal
-from typing import Protocol
+from typing import Literal, Protocol
 
 from app.modules.products.domain.entities import ProductPreview
+
+Transition = Literal["offer_ended", "reactivated", "price_dropped", "purged"]
 
 
 @dataclass
 class Candidate:
+    """Una transición de oferta (terminada, reactivada o tienda purgada), con la
+    foto del deal que se guarda en el registro de ejecuciones."""
+
     deal_id: str
     title: str
     slug: str
@@ -22,6 +28,7 @@ class Candidate:
     old_price: Decimal
     new_price: Decimal | None
     reason: str
+    transition: Transition = "offer_ended"
     previous_price: Decimal | None = None
     discount_percentage: int | None = None
     short_description: str | None = None
@@ -34,10 +41,10 @@ class PreviewResult:
 
 
 class ProductVerifier(Protocol):
-    def get_product_preview(self, asin: str) -> ProductPreview | None: ...
     def get_product_previews(self, asins: list[str]) -> dict[str, ProductPreview | None]: ...
 
 
 class TaskHandler(Protocol):
-    def evaluate(self, deals: list, config: dict) -> PreviewResult: ...
-    async def execute(self, candidates: list[Candidate]) -> list[Candidate]: ...
+    async def collect(self, between=None) -> list: ...
+    def evaluate(self, checks: list, config: dict, now: datetime) -> PreviewResult: ...
+    async def apply(self, checks: list, config: dict, now: datetime) -> list[Candidate]: ...

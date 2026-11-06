@@ -1,4 +1,4 @@
-"""Moderación: aprobar, rechazar, carreras entre admins, duplicados y sustitución de caducados."""
+"""Moderación: aprobar, rechazar, carreras entre admins, duplicados y reactivación de caducados."""
 
 import uuid
 from concurrent.futures import ThreadPoolExecutor
@@ -193,7 +193,8 @@ def test_approve_when_admin_published_it_meanwhile_is_409_and_stays_pending(pool
     db("DELETE FROM public.deals WHERE id = $1::uuid", manual.json()["id"])
 
 
-def test_approving_resubmitted_expired_product_replaces_the_old_deal(pool, admin, category):
+def test_approving_resubmitted_expired_product_revives_the_old_deal(pool, admin, category):
+    """Catálogo permanente: el chollo caducado no se borra, se reactiva (misma URL y votos)."""
     owner, sub = new_pending(pool, category)
     first = admin.post(f"/v1/admin/submissions/{sub['id']}/approve", json=deal_body(sub))
     assert first.status_code == 200, detail(first)
@@ -206,8 +207,10 @@ def test_approving_resubmitted_expired_product_replaces_the_old_deal(pool, admin
     owner2, sub2 = new_pending(pool, category, url=sub["original_url"], current_price="9.99")
     resp = admin.post(f"/v1/admin/submissions/{sub2['id']}/approve", json=deal_body(sub2))
     assert resp.status_code == 200, detail(resp)
-    assert db("SELECT count(*) AS n FROM public.deals WHERE id = $1::uuid", old_id)[0]["n"] == 0
-    assert db("SELECT count(*) AS n FROM public.deals WHERE id = $1::uuid", resp.json()["id"])[0]["n"] == 1
+    assert resp.json()["id"] == old_id
+    revived = db("SELECT status, slug, offer_end_reason FROM public.deals WHERE id = $1::uuid", old_id)[0]
+    assert revived["status"] == "active" and revived["offer_end_reason"] is None
+    assert revived["slug"] == first.json()["slug"]
 
 
 def test_scheduled_approval_is_not_public_yet(pool, admin, category, anon):
