@@ -16,7 +16,7 @@ status: "active"
 - Fase 1 hecha en `develop` el 2026-11-06 (módulo `catalog`, migración `20261105120000`,
   `price_check` diaria). Fases siguientes de la visión: ficha `/producto` multitienda y otras
   afiliaciones (2), histórico y alertas de precio solo donde la fuente lo permita (3),
-  rankings/Top 10 editoriales (4), monetización (5).
+  rankings comunitarios automáticos (4, implementados en `develop` el 2026-11-06), monetización (5).
 - **Amazon:** no guardar histórico de precios ni hacer alertas de bajada por producto con
   datos de Amazon sin revisar la licencia (Associates/Creators API, Keepa). Solo precio
   vigente, mostrado como actual si tiene ≤ 24 h.
