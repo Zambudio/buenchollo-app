@@ -9,6 +9,7 @@ import { Comments } from "@/features/deals/components/Comments";
 import { RecommendedAlertsBlock } from "@/features/alerts/components/RecommendedAlertsBlock";
 import { ShareDialog } from "@/features/deals/components/ShareBox";
 import { DealVoteControl } from "@/features/deals/components/DealVoteControl";
+import { ProductVoteButton } from "@/features/catalog/ProductVoteButton";
 import { StoreAvailability } from "@/features/deals/components/StoreAvailability";
 import { DealAuthor } from "@/features/deals/components/DealAuthor";
 import { CouponCode } from "@/features/deals/components/CouponCode";
@@ -780,6 +781,7 @@ function DealDetail() {
                   size="detail"
                   onVote={vote}
                 />
+                {deal.product_id && <ProductVoteButton productId={deal.product_id} />}
                 <div className="social-actions">
                   <button
                     type="button"

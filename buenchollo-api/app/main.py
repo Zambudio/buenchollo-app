@@ -23,6 +23,7 @@ from app.core.request_id import REQUEST_ID_HEADER, RequestIdMiddleware, get_requ
 from app.core.security_headers import SecurityHeadersMiddleware
 from app.core.sentry import init_sentry
 from app.modules.products.api.router import router as products_router
+from app.modules.catalog.api.router import router as catalog_router
 from app.modules.categories.api.router import router as categories_router
 from app.modules.deals.api.router import router as deals_router
 from app.modules.stores.api.router import router as stores_router
@@ -200,6 +201,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 v1 = APIRouter(prefix="/v1")
 v1.include_router(auth_router)
 v1.include_router(products_router)
+v1.include_router(catalog_router)
 v1.include_router(categories_router)
 v1.include_router(deals_router)
 v1.include_router(stores_router)

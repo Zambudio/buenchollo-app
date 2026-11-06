@@ -23,6 +23,8 @@ Cada sección lleva el resultado esperado entre paréntesis. Marca con
 | 0.4 | `GET /deals/latest` (sin `/v1`) | `404` |
 | 0.5 | Headers `X-Request-ID` presente en respuesta | sí, UUID |
 | 0.6 | Logs del backend muestran `request_id` en cada línea | sí, JSON estructurado |
+| 0.7 | `GET /v1/catalog/tops/monitores` | `200` con array (máx. 10) de productos con `vote_count` y `position` |
+| 0.8 | `POST /v1/catalog/products/{id}/vote` sin sesión | `401` |
 
 ---
 

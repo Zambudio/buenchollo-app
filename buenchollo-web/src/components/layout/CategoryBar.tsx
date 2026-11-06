@@ -1,9 +1,10 @@
 import { Link } from "@tanstack/react-router";
-import { FolderTree, ListFilter, Newspaper, Send } from "lucide-react";
+import { ArrowUpRight, Compass, House, Newspaper, Send, Trophy } from "lucide-react";
 
 const LINKS = [
-  { label: "Filtros", to: "/explorar" as const, icon: ListFilter },
-  { label: "Categorías", to: "/categorias" as const, icon: FolderTree },
+  { label: "Inicio", to: "/" as const, icon: House },
+  { label: "Chollos", to: "/explorar" as const, icon: Compass },
+  { label: "Tops y categorías", to: "/categorias" as const, icon: Trophy },
   { label: "Blog", to: "/blog" as const, icon: Newspaper },
 ];
 
@@ -13,18 +14,18 @@ export function CategoryBar() {
   return (
     <nav
       aria-label="Navegación de chollos"
-      className="bg-surface-800 border-b border-surface-700 overflow-x-auto"
+      className="site-nav bg-surface-800 border-b border-surface-700 overflow-x-auto"
     >
-      <div className="max-w-7xl mx-auto px-2 sm:px-6 flex items-center justify-between gap-2 sm:gap-6 whitespace-nowrap">
-        <div className="flex items-center gap-3 sm:gap-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between gap-2 sm:gap-6 whitespace-nowrap">
+        <div className="flex items-center gap-1 sm:gap-2">
           {LINKS.map(({ label, to, icon: Icon }) => (
             <Link
               key={to}
               to={to}
-              className="flex items-center gap-1.5 font-mono text-[11px] sm:text-xs uppercase tracking-wide text-muted-foreground hover:text-cyan-glow py-2.5 transition-colors"
+              className="site-nav-link flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-muted-foreground hover:text-cyan-glow py-3 transition-colors"
               activeProps={{ className: "text-cyan-glow" }}
             >
-              {Icon && <Icon className="size-3.5" aria-hidden="true" />}
+              {Icon && <Icon className="size-4" aria-hidden="true" />}
               {label}
             </Link>
           ))}
@@ -33,11 +34,12 @@ export function CategoryBar() {
           href={TELEGRAM_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1.5 my-2 rounded-full bg-[#156287] hover:bg-[#0f4d68] text-white font-mono text-[11px] sm:text-xs font-bold uppercase tracking-wide px-3 sm:px-3.5 py-1.5 shadow-[0_0_12px_rgba(21,98,135,0.5)] transition-colors shrink-0"
+          className="site-nav-telegram flex items-center gap-1.5 my-2 text-xs sm:text-sm font-semibold px-3 sm:px-3.5 py-1.5 transition-colors shrink-0"
         >
           <Send className="size-3.5" />
           <span className="sm:hidden">Telegram</span>
-          <span className="hidden sm:inline">Chollos en Telegram</span>
+          <span className="hidden sm:inline">Telegram</span>
+          <ArrowUpRight className="hidden sm:block size-3.5" />
         </a>
       </div>
     </nav>

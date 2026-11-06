@@ -9,11 +9,12 @@
  *  - @/services/api/deals → favoritesApi.toggle stub.
  *  - sonner.toast → spyable.
  */
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DealCard, type DealCardData } from "@/features/deals/components/DealCard";
 import { renderWithProviders } from "@/test/utils";
+import { resetProductVotes } from "@/features/catalog/productVotes";
 
 // vi.hoisted: estos mocks se materializan ANTES que los vi.mock(), que a su
 // vez son hoisteados por Vitest al top del módulo. Sin esto, los vi.mock()
@@ -21,6 +22,8 @@ import { renderWithProviders } from "@/test/utils";
 const mocks = vi.hoisted(() => ({
   useAuth: vi.fn(),
   toggle: vi.fn(),
+  productVote: vi.fn(),
+  productMyVotes: vi.fn(),
   toast: { error: vi.fn(), success: vi.fn() },
 }));
 
@@ -42,6 +45,9 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 
 vi.mock("@/hooks/useAuth", () => ({ useAuth: mocks.useAuth }));
+vi.mock("@/services/api/catalog", () => ({
+  catalogService: { vote: mocks.productVote, myVotes: mocks.productMyVotes },
+}));
 
 vi.mock("@/services/api/deals", async (importActual) => {
   const actual = await importActual<typeof import("@/services/api/deals")>();
@@ -51,8 +57,12 @@ vi.mock("@/services/api/deals", async (importActual) => {
 vi.mock("sonner", () => ({ toast: mocks.toast }));
 
 beforeEach(() => {
+  resetProductVotes();
   mocks.useAuth.mockReturnValue({ user: null, isAdmin: false });
   mocks.toggle.mockReset();
+  mocks.productVote.mockReset();
+  mocks.productMyVotes.mockReset();
+  mocks.productMyVotes.mockResolvedValue([]);
   mocks.toast.error.mockReset();
 });
 
@@ -164,5 +174,26 @@ describe("DealCard", () => {
 
     expect(mocks.toggle).toHaveBeenCalledWith("d-1");
     expect(mocks.toast.error).not.toHaveBeenCalled();
+  });
+
+  it("permite votar el producto en el top sin cambiar el voto del chollo", async () => {
+    mocks.useAuth.mockReturnValue({ user: { id: "u-1" }, isAdmin: false });
+    mocks.productVote.mockResolvedValue({ voted: true });
+    renderWithProviders(<DealCard deal={buildDeal({ product_id: "product-1" })} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Votar este producto para el top" }));
+
+    expect(mocks.productVote).toHaveBeenCalledWith("product-1");
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Retirar voto a este producto del top" }),
+      ).toHaveAttribute("aria-pressed", "true"),
+    );
+    expect(screen.getByLabelText("Temperatura: 120 grados")).toBeInTheDocument();
+  });
+
+  it("omite el voto de producto si el chollo no tiene producto vinculado", () => {
+    renderWithProviders(<DealCard deal={buildDeal({ product_id: null })} />);
+    expect(screen.queryByText("Votar producto")).not.toBeInTheDocument();
   });
 });

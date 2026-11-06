@@ -9,11 +9,14 @@ import { ShareDialog } from "@/features/deals/components/ShareBox";
 import { DealVoteControl } from "@/features/deals/components/DealVoteControl";
 import { StoreAvailability } from "@/features/deals/components/StoreAvailability";
 import { DealAuthor } from "@/features/deals/components/DealAuthor";
+import { ProductVoteButton } from "@/features/catalog/ProductVoteButton";
 import type { DealAuthor as DealAuthorData } from "@/services/api/submissions";
 
 export interface DealCardData {
   id: string;
+  product_id?: string | null;
   title: string;
+  short_description?: string | null;
   slug: string;
   image_url: string | null;
   images?: string[] | null;
@@ -116,7 +119,7 @@ export function DealCardView({
   return (
     <article
       inert={preview || undefined}
-      className={`deal-card bg-surface-800 border border-surface-700 rounded-xl overflow-hidden transition-all duration-300 flex flex-col h-full ${isExpired ? "opacity-70" : "hover:border-cyan-glow hover:glow-cyan"}`}
+      className={`deal-card bg-surface-800 border border-surface-700 rounded-xl overflow-hidden transition-all duration-300 ${isExpired ? "opacity-70" : "hover:border-cyan-glow hover:glow-cyan"}`}
     >
       <CardLink
         preview={preview}
@@ -126,7 +129,7 @@ export function DealCardView({
           setHover(false);
           setImgIdx(0);
         }}
-        className="relative aspect-[4/3] bg-white overflow-hidden border-b border-surface-700 block group"
+        className="deal-card-media relative bg-white overflow-hidden block group"
         aria-label={`Ver oferta: ${deal.title} por ${deal.current_price} euros`}
       >
         {gallery.length > 0 ? (
@@ -172,7 +175,7 @@ export function DealCardView({
       </CardLink>
 
       <div className="deal-card-body flex flex-col flex-1">
-        <h3 className="deal-title card-title text-foreground text-base sm:text-lg mb-4 flex-1">
+        <h3 className="deal-title card-title text-foreground text-base sm:text-lg">
           <CardLink
             preview={preview}
             slug={deal.slug}
@@ -182,7 +185,11 @@ export function DealCardView({
           </CardLink>
         </h3>
 
-        <div className="deal-price flex items-end gap-3 mb-3">
+        {deal.short_description && (
+          <p className="deal-card-description">{deal.short_description}</p>
+        )}
+
+        <div className="deal-price flex items-end gap-3 mb-2">
           <span className="price-now product-price card-price font-mono tabular-nums leading-none">
             {preview && !(deal.current_price > 0) ? "— €" : formatPrice(deal.current_price)}
           </span>
@@ -201,7 +208,7 @@ export function DealCardView({
           </div>
         )}
 
-        <div className="mt-auto flex items-center justify-between gap-3">
+        <div className="deal-card-meta flex items-center justify-between gap-3">
           <span className="posted-date font-mono uppercase tracking-wider">
             {formatRelativeTime(deal.published_at)}
           </span>
@@ -225,6 +232,7 @@ export function DealCardView({
             disabled={preview || voting}
             onVote={onVote}
           />
+          {!preview && deal.product_id && <ProductVoteButton productId={deal.product_id} />}
           <div className="social-actions">
             <button
               type="button"
