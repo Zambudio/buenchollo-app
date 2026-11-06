@@ -28,6 +28,10 @@ env_path = Path(__file__).parent / ".env"
 # test, docs/guides/LOCAL-ENV.md) gana al .env; con override=True un .env real
 # mandaba los tests de integración a la base de producción.
 load_dotenv(dotenv_path=env_path, override=False)
+# Los tests nunca publican en Telegram (Settings lee el .env real por su cuenta).
+import os  # noqa: E402
+
+os.environ["TELEGRAM_ENABLED"] = "false"
 
 # ── Registro completo del grafo de modelos SQLAlchemy ────────────────────────
 # Los relationship("Category"|"Store"|...) se resuelven por nombre en la

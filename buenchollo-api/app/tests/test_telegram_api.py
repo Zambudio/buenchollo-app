@@ -39,7 +39,7 @@ def client():
 
 
 def _override_settings(**overrides):
-    settings = Settings(**overrides)
+    settings = Settings(**{"telegram_enabled": True, **overrides})
     app.dependency_overrides[get_settings] = lambda: settings
     return settings
 

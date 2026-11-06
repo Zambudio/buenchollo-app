@@ -135,6 +135,14 @@ class Settings(BaseSettings):
     ai_max_empty_responses: int = 3
 
     @model_validator(mode="after")
+    def disable_telegram_when_off(self) -> "Settings":
+        if not self.telegram_enabled:
+            self.telegram_bot_token = ""
+            self.telegram_main_channel_id = ""
+            self.telegram_admin_channel_id = ""
+        return self
+
+    @model_validator(mode="after")
     def require_affiliate_tag_in_production(self) -> "Settings":
         # Sin tag, los enlaces de Amazon se publicarían sin afiliación (M8).
         self.amazon_affiliate_tag = (self.amazon_affiliate_tag or "").strip()
@@ -195,6 +203,10 @@ class Settings(BaseSettings):
     def effective_analytics_hash_secret(self) -> str:
         return self.analytics_hash_secret or self.supabase_key
 
+    # Interruptor general: false en local y en tests. Vaciar las variables no
+    # basta (en PowerShell una variable vacía se borra y Settings vuelve a leer
+    # el token real del .env).
+    telegram_enabled: bool = True
     telegram_bot_token: str = ""
     telegram_main_channel_id: str = ""
     telegram_admin_channel_id: str = ""
