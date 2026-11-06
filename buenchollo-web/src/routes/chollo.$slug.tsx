@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/carousel";
 import { useAuth } from "@/hooks/useAuth";
 import { formatPrice, formatRelativeTime, calculateDiscount } from "@/lib/format";
+import { OfferStatusNotice } from "@/features/deals/components/OfferStatusNotice";
+import { isInStock } from "@/lib/offer-status";
 import { errorMessage } from "@/lib/errors";
 import {
   Heart,
@@ -101,8 +103,7 @@ export const Route = createFileRoute("/chollo/$slug")({
         price: m.current_price,
         priceCurrency: "EUR",
         priceValidUntil: m.expires_at?.slice(0, 10),
-        availability:
-          m.status === "expired" ? "https://schema.org/OutOfStock" : "https://schema.org/InStock",
+        availability: isInStock(m) ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
         itemCondition: "https://schema.org/NewCondition",
         url,
         seller: m.store?.name ? { "@type": "Organization", name: m.store.name } : undefined,
@@ -131,7 +132,7 @@ export const Route = createFileRoute("/chollo/$slug")({
         { property: "product:price:currency", content: "EUR" },
         {
           property: "product:availability",
-          content: m.status === "expired" ? "out of stock" : "in stock",
+          content: isInStock(m) ? "in stock" : "out of stock",
         },
         ...(img
           ? [
@@ -421,31 +422,15 @@ function DealDetail() {
         </nav>
 
         {/* Avisos de estado */}
-        {isExpired &&
-          (() => {
-            const deleteDate = deal.expires_at
-              ? new Date(new Date(deal.expires_at).getTime() + 2 * 24 * 60 * 60 * 1000)
-              : null;
-            return (
-              <div className="mb-4 bg-alert-red/10 border border-alert-red/40 text-alert-red px-4 py-3 font-mono text-xs uppercase flex items-center gap-2">
-                <AlertCircle className="size-4" />
-                <span>
-                  Esta oferta ha caducado
-                  {deal.expires_at && <> el {fmtDateTime(deal.expires_at)}</>} · Es posible que el
-                  precio o la disponibilidad hayan cambiado.
-                  {deleteDate && (
-                    <>
-                      {" "}
-                      ·{" "}
-                      <strong>
-                        Esta publicación se borrará el {fmtDateTime(deleteDate.toISOString())}.
-                      </strong>
-                    </>
-                  )}
-                </span>
-              </div>
-            );
-          })()}
+        {isExpired && (
+          <OfferStatusNotice
+            status={deal.status}
+            offerEndReason={deal.offer_end_reason}
+            currentPrice={deal.current_price}
+            lastPriceCheckAt={deal.last_price_check_at}
+            storeName={deal.store?.name}
+          />
+        )}
         {isDraft && isAdmin && (
           <div className="mb-4 bg-surface-700 border border-surface-600 text-foreground px-4 py-3 font-mono text-xs uppercase flex items-center gap-2">
             <AlertCircle className="size-4" /> Vista previa · Esta publicación está en BORRADOR y no
@@ -710,23 +695,35 @@ function DealDetail() {
                 </p>
               )}
 
-              <div className="product-price-block flex items-end gap-3 mb-3">
-                <span
-                  className={`product-price font-mono tabular-nums leading-none ${isExpired ? "text-muted-foreground line-through" : ""}`}
-                >
-                  {formatPrice(deal.current_price)}
-                </span>
-                {deal.previous_price && (
-                  <>
-                    <span className="previous-price font-mono pb-1">
-                      {formatPrice(deal.previous_price)}
+              {/* Sin oferta: el precio actual (si es reciente) lo da el aviso de arriba;
+                  aquí no se muestra el precio de la oferta tachado como si siguiera vigente. */}
+              {!isExpired && (
+                <>
+                  <div className="product-price-block flex items-end gap-3 mb-3">
+                    <span className="product-price font-mono tabular-nums leading-none">
+                      {formatPrice(deal.current_price)}
                     </span>
-                    {discount && (
-                      <span className="badge-discount font-mono mb-1">-{discount}%</span>
+                    {deal.previous_price && (
+                      <>
+                        <span className="previous-price font-mono pb-1">
+                          {formatPrice(deal.previous_price)}
+                        </span>
+                        {discount && (
+                          <span className="badge-discount font-mono mb-1">-{discount}%</span>
+                        )}
+                      </>
                     )}
-                  </>
-                )}
-              </div>
+                  </div>
+                  <OfferStatusNotice
+                    status={deal.status}
+                    offerEndReason={deal.offer_end_reason}
+                    currentPrice={deal.current_price}
+                    lastPriceCheckAt={deal.last_price_check_at}
+                    storeName={deal.store?.name}
+                    className="product-price-freshness"
+                  />
+                </>
+              )}
               {deal.store && (
                 <div className="product-availability">
                   <StoreAvailability store={deal.store} />
@@ -766,7 +763,7 @@ function DealDetail() {
               >
                 {isExpired ? (
                   <>
-                    VER OFERTA — PUEDE HABER CADUCADO <ExternalLink className="size-4" />
+                    VER PRECIO ACTUAL EN LA TIENDA <ExternalLink className="size-4" />
                   </>
                 ) : (
                   <>

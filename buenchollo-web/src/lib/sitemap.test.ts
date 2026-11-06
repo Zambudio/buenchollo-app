@@ -20,7 +20,12 @@ describe("dealSitemapEntry", () => {
 
   it("un chollo sin oferta sigue en el sitemap con menos prioridad", () => {
     expect(
-      dealSitemapEntry({ slug: "ssd", status: "expired", updated_at: null, published_at: "2026-10-01T00:00:00Z" }),
+      dealSitemapEntry({
+        slug: "ssd",
+        status: "expired",
+        updated_at: null,
+        published_at: "2026-10-01T00:00:00Z",
+      }),
     ).toEqual({
       path: "/chollo/ssd",
       lastmod: "2026-10-01T00:00:00.000Z",
@@ -30,6 +35,9 @@ describe("dealSitemapEntry", () => {
   });
 
   it("sin fechas no inventa lastmod", () => {
-    expect(dealSitemapEntry({ slug: "x", status: "active", updated_at: null, published_at: null }).lastmod).toBeUndefined();
+    expect(
+      dealSitemapEntry({ slug: "x", status: "active", updated_at: null, published_at: null })
+        .lastmod,
+    ).toBeUndefined();
   });
 });

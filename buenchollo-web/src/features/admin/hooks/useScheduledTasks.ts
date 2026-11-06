@@ -2,7 +2,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   scheduledTasksService,
-  type ScheduledTaskPreview,
   type ScheduledTaskUpdatePayload,
 } from "@/services/api/scheduled-tasks";
 import { errorMessage } from "@/lib/errors";
@@ -37,11 +36,11 @@ export function usePreviewScheduledTask() {
 export function useConfirmScheduledTask(taskId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: ScheduledTaskPreview) => scheduledTasksService.confirm(taskId, payload),
+    mutationFn: () => scheduledTasksService.confirm(taskId),
     onSuccess: (run) => {
       qc.invalidateQueries({ queryKey: KEYS.config });
       qc.invalidateQueries({ queryKey: KEYS.runs(taskId) });
-      toast.success(`Revisión ejecutada: ${run.total_affected} chollo(s) eliminado(s)`);
+      toast.success(`Revisión aplicada: ${run.total_affected} cambio(s) de oferta`);
     },
     onError: (e) => toast.error(errorMessage(e)),
   });
@@ -77,18 +76,6 @@ export function useBulkDeleteScheduledTaskRuns(taskId: string) {
   return useMutation({
     mutationFn: (runIds: string[]) => scheduledTasksService.bulkDeleteRuns(runIds),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.runs(taskId) }),
-    onError: (e) => toast.error(errorMessage(e)),
-  });
-}
-
-export function useRestoreScheduledTaskItem(runId: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (itemId: string) => scheduledTasksService.restoreItem(itemId),
-    onSuccess: (deal) => {
-      qc.invalidateQueries({ queryKey: KEYS.runDetail(runId) });
-      toast.success(`Chollo restaurado: ${deal.title}`);
-    },
     onError: (e) => toast.error(errorMessage(e)),
   });
 }

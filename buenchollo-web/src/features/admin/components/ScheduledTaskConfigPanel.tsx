@@ -1,4 +1,4 @@
-/** Configuración + ejecución manual (con confirmación) de una tarea programada. */
+/** Configuración + ejecución manual (con vista previa) de la revisión diaria de precios. */
 import { useEffect, useState } from "react";
 import { Play } from "lucide-react";
 import { toast } from "sonner";
@@ -13,22 +13,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { formatPrice } from "@/lib/format";
-import type {
-  ScheduledTaskCandidate,
-  ScheduledTaskConfig,
-  ScheduledTaskPreview,
-} from "@/services/api/scheduled-tasks";
+import { describeChange, summarizeTransitions } from "@/features/admin/lib/price-check";
+import type { ScheduledTaskConfig, ScheduledTaskPreview } from "@/services/api/scheduled-tasks";
 import {
   useConfirmScheduledTask,
   usePreviewScheduledTask,
   useUpdateScheduledTask,
 } from "@/features/admin/hooks/useScheduledTasks";
-
-const REASON_LABEL: Record<ScheduledTaskCandidate["reason"], string> = {
-  price_increase: "Subió de precio",
-  no_longer_deal: "Ya no es oferta",
-  out_of_stock: "Sin stock",
-};
 
 const FREQUENCY_LABEL: Record<ScheduledTaskConfig["frequency_preset"], string> = {
   daily: "Diario",
@@ -37,65 +28,73 @@ const FREQUENCY_LABEL: Record<ScheduledTaskConfig["frequency_preset"], string> =
   monthly: "Mensual",
 };
 
+const INPUT_CLASS =
+  "mt-1 w-full bg-surface-900 border border-surface-700 px-3 py-2 text-sm outline-none focus:border-cyan-glow";
+
+/** Campo numérico que guarda al salir del foco y vuelve al valor guardado si no es válido. */
+function NumberField({
+  label,
+  value,
+  min,
+  max,
+  integer = false,
+  onCommit,
+}: {
+  readonly label: string;
+  readonly value: number;
+  readonly min: number;
+  readonly max: number;
+  readonly integer?: boolean;
+  readonly onCommit: (value: number, revert: () => void) => void;
+}) {
+  const [draft, setDraft] = useState(String(value));
+  useEffect(() => setDraft(String(value)), [value]);
+
+  const commit = () => {
+    const parsed = Number(draft);
+    const valid =
+      draft.trim() !== "" &&
+      Number.isFinite(parsed) &&
+      (!integer || Number.isInteger(parsed)) &&
+      parsed >= min &&
+      parsed <= max;
+    if (valid && parsed !== value) onCommit(parsed, () => setDraft(String(value)));
+    else setDraft(String(value));
+  };
+
+  return (
+    <label className="flex flex-col justify-between text-xs font-mono uppercase text-muted-foreground">
+      {label}
+      <input
+        type="number"
+        min={min}
+        max={max}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        className={INPUT_CLASS}
+      />
+    </label>
+  );
+}
+
 export function ScheduledTaskConfigPanel({ task }: { readonly task: ScheduledTaskConfig }) {
   const [pendingPreview, setPendingPreview] = useState<ScheduledTaskPreview | null>(null);
   const update = useUpdateScheduledTask();
   const preview = usePreviewScheduledTask();
   const confirm = useConfirmScheduledTask(task.id);
 
-  const tolerance = task.config.price_tolerance_percent ?? 10;
-
-  const [runHourDraft, setRunHourDraft] = useState(String(task.run_hour));
-  const [toleranceDraft, setToleranceDraft] = useState(String(tolerance));
-
-  useEffect(() => {
-    setRunHourDraft(String(task.run_hour));
-  }, [task.run_hour]);
-
-  useEffect(() => {
-    setToleranceDraft(String(tolerance));
-  }, [tolerance]);
-
-  const commitRunHour = () => {
-    if (runHourDraft.trim() === "") {
-      setRunHourDraft(String(task.run_hour));
-      return;
-    }
-    const parsed = Number(runHourDraft);
-    if (Number.isInteger(parsed) && parsed >= 0 && parsed <= 23 && parsed !== task.run_hour) {
-      update.mutate(
-        { id: task.id, data: { run_hour: parsed } },
-        { onError: () => setRunHourDraft(String(task.run_hour)) },
-      );
-    } else {
-      setRunHourDraft(String(task.run_hour));
-    }
-  };
-
-  const commitTolerance = () => {
-    if (toleranceDraft.trim() === "") {
-      setToleranceDraft(String(tolerance));
-      return;
-    }
-    const parsed = Number(toleranceDraft);
-    if (Number.isFinite(parsed) && parsed >= 0 && parsed <= 100 && parsed !== tolerance) {
-      update.mutate(
-        {
-          id: task.id,
-          data: { config: { ...task.config, price_tolerance_percent: parsed } },
-        },
-        { onError: () => setToleranceDraft(String(tolerance)) },
-      );
-    } else {
-      setToleranceDraft(String(tolerance));
-    }
-  };
+  const saveConfig = (key: string) => (value: number, revert: () => void) =>
+    update.mutate(
+      { id: task.id, data: { config: { ...task.config, [key]: value } } },
+      { onError: revert },
+    );
 
   const handleRunNow = async () => {
     try {
       const result = await preview.mutateAsync(task.id);
       if (result.candidates.length === 0) {
-        toast.success(`${result.total_checked} chollo(s) analizado(s), ninguno requiere cambios`);
+        toast.success(`${result.total_checked} producto(s) revisado(s), ninguna oferta cambia`);
         setPendingPreview(null);
         return;
       }
@@ -107,7 +106,7 @@ export function ScheduledTaskConfigPanel({ task }: { readonly task: ScheduledTas
 
   const handleConfirm = () => {
     if (!pendingPreview) return;
-    confirm.mutate(pendingPreview);
+    confirm.mutate();
     setPendingPreview(null);
   };
 
@@ -125,8 +124,14 @@ export function ScheduledTaskConfigPanel({ task }: { readonly task: ScheduledTas
         </label>
       </div>
 
-      <div className="grid sm:grid-cols-3 gap-3">
-        <label className="text-xs font-mono uppercase text-muted-foreground">
+      <p className="text-xs text-muted-foreground">
+        Actualiza precio y stock de todo el catálogo. Los chollos no se borran: dejan de estar en
+        oferta si suben de precio o se agotan, y se reactivan (con aviso al canal Admin) si vuelven
+        a bajar. Solo se elimina una tienda tras los días sin disponibilidad indicados.
+      </p>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <label className="flex flex-col justify-between text-xs font-mono uppercase text-muted-foreground">
           Frecuencia
           <select
             value={task.frequency_preset}
@@ -138,7 +143,7 @@ export function ScheduledTaskConfigPanel({ task }: { readonly task: ScheduledTas
                 },
               })
             }
-            className="mt-1 w-full bg-surface-900 border border-surface-700 px-3 py-2 text-sm outline-none focus:border-cyan-glow"
+            className={INPUT_CLASS}
           >
             {Object.entries(FREQUENCY_LABEL).map(([value, label]) => (
               <option key={value} value={value}>
@@ -148,31 +153,39 @@ export function ScheduledTaskConfigPanel({ task }: { readonly task: ScheduledTas
           </select>
         </label>
 
-        <label className="text-xs font-mono uppercase text-muted-foreground">
-          Hora (0-23)
-          <input
-            type="number"
-            min={0}
-            max={23}
-            value={runHourDraft}
-            onChange={(e) => setRunHourDraft(e.target.value)}
-            onBlur={commitRunHour}
-            className="mt-1 w-full bg-surface-900 border border-surface-700 px-3 py-2 text-sm outline-none focus:border-cyan-glow"
-          />
-        </label>
-
-        <label className="text-xs font-mono uppercase text-muted-foreground">
-          Tolerancia de precio (%)
-          <input
-            type="number"
-            min={0}
-            max={100}
-            value={toleranceDraft}
-            onChange={(e) => setToleranceDraft(e.target.value)}
-            onBlur={commitTolerance}
-            className="mt-1 w-full bg-surface-900 border border-surface-700 px-3 py-2 text-sm outline-none focus:border-cyan-glow"
-          />
-        </label>
+        <NumberField
+          label="Hora (0-23)"
+          value={task.run_hour}
+          min={0}
+          max={23}
+          integer
+          onCommit={(value, revert) =>
+            update.mutate({ id: task.id, data: { run_hour: value } }, { onError: revert })
+          }
+        />
+        <NumberField
+          label="Tolerancia de subida (%)"
+          value={task.config.price_tolerance_percent ?? 10}
+          min={0}
+          max={100}
+          onCommit={saveConfig("price_tolerance_percent")}
+        />
+        <NumberField
+          label="Descuento mínimo para reactivar (%)"
+          value={task.config.min_discount_percent ?? 5}
+          min={0}
+          max={90}
+          integer
+          onCommit={saveConfig("min_discount_percent")}
+        />
+        <NumberField
+          label="Días sin stock para eliminar"
+          value={task.config.purge_after_days ?? 30}
+          min={7}
+          max={365}
+          integer
+          onCommit={saveConfig("purge_after_days")}
+        />
       </div>
 
       <div className="flex items-center justify-between flex-wrap gap-3 text-xs font-mono text-muted-foreground">
@@ -183,10 +196,15 @@ export function ScheduledTaskConfigPanel({ task }: { readonly task: ScheduledTas
         <button
           type="button"
           onClick={handleRunNow}
-          disabled={preview.isPending}
+          disabled={preview.isPending || confirm.isPending}
           className="bg-cyan-glow text-surface-900 font-mono text-xs font-bold px-4 py-2 flex items-center gap-2 hover:bg-foreground disabled:opacity-50"
         >
-          <Play className="size-4" /> {preview.isPending ? "REVISANDO..." : "EJECUTAR AHORA"}
+          <Play className="size-4" />{" "}
+          {preview.isPending
+            ? "REVISANDO..."
+            : confirm.isPending
+              ? "APLICANDO..."
+              : "EJECUTAR AHORA"}
         </button>
       </div>
 
@@ -197,29 +215,37 @@ export function ScheduledTaskConfigPanel({ task }: { readonly task: ScheduledTas
         <AlertDialogContent className="max-w-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Se van a borrar {pendingPreview?.candidates.length ?? 0} chollo(s), ¿deseas continuar?
+              {summarizeTransitions(pendingPreview?.candidates ?? [])}. ¿Aplicar ahora?
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="max-h-80 overflow-y-auto overflow-x-auto mt-2">
+                <p className="mb-2 text-xs">
+                  Se aplican todos los cambios y además se actualiza el precio de los{" "}
+                  {pendingPreview?.total_checked ?? 0} productos revisados. Las eliminaciones son
+                  definitivas.
+                </p>
                 <table className="w-full text-sm text-left">
                   <thead className="text-xs uppercase text-muted-foreground">
                     <tr>
                       <th className="p-2">Título</th>
                       <th className="p-2">Tienda</th>
                       <th className="p-2">Precio</th>
-                      <th className="p-2">Motivo</th>
+                      <th className="p-2">Cambio</th>
                     </tr>
                   </thead>
                   <tbody>
                     {pendingPreview?.candidates.map((c) => (
-                      <tr key={c.deal_id} className="border-t border-surface-700">
+                      <tr
+                        key={`${c.deal_id}-${c.transition}`}
+                        className="border-t border-surface-700"
+                      >
                         <td className="p-2">{c.title}</td>
                         <td className="p-2">{c.store_name ?? "—"}</td>
-                        <td className="p-2">
+                        <td className="p-2 whitespace-nowrap">
                           {formatPrice(c.old_price)}
                           {c.new_price != null && <> → {formatPrice(c.new_price)}</>}
                         </td>
-                        <td className="p-2">{REASON_LABEL[c.reason]}</td>
+                        <td className="p-2">{describeChange(c.transition, c.reason)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -229,7 +255,7 @@ export function ScheduledTaskConfigPanel({ task }: { readonly task: ScheduledTas
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirm}>Eliminar</AlertDialogAction>
+            <AlertDialogAction onClick={handleConfirm}>Aplicar</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

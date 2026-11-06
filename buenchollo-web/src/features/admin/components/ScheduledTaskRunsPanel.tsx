@@ -96,7 +96,7 @@ export function ScheduledTaskRunsPanel({ taskId }: { readonly taskId: string }) 
             <th className="text-left p-3">Fecha</th>
             <th className="text-left p-3">Tipo</th>
             <th className="text-right p-3">Revisados</th>
-            <th className="text-right p-3">Borrados</th>
+            <th className="text-right p-3">Cambios</th>
             <th className="p-3">Acciones</th>
           </tr>
         </thead>
@@ -115,7 +115,7 @@ export function ScheduledTaskRunsPanel({ taskId }: { readonly taskId: string }) 
               </td>
               <td className="p-3 font-mono text-xs uppercase">{TRIGGER_LABEL[run.trigger_type]}</td>
               <td className="p-3 text-right font-mono">{run.total_checked}</td>
-              <td className="p-3 text-right font-mono text-alert-red">{run.total_affected}</td>
+              <td className="p-3 text-right font-mono">{run.total_affected}</td>
               <td className="p-3 flex gap-1">
                 <button
                   type="button"
@@ -171,7 +171,7 @@ export function ScheduledTaskRunsPanel({ taskId }: { readonly taskId: string }) 
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar este registro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción eliminará permanentemente el registro y sus chollos no restaurados. No se
+              Esta acción eliminará permanentemente el registro (los chollos no se tocan). No se
               puede deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
