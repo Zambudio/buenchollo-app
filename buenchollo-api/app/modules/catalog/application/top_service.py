@@ -1,5 +1,5 @@
-from app.modules.catalog.infrastructure.top_repository import TopRepository
 from app.modules.catalog.domain.exceptions import ProductNotFound
+from app.modules.catalog.infrastructure.top_repository import TopRepository
 from app.modules.categories.domain.exceptions import CategoryNotFound
 
 

@@ -18,11 +18,16 @@ def upgrade() -> None:
         "product_top_votes",
         sa.Column("id", sa.UUID(as_uuid=False), primary_key=True, server_default=sa.text("gen_random_uuid()")),
         sa.Column("product_id", sa.UUID(as_uuid=False), sa.ForeignKey("products.id", ondelete="CASCADE"), nullable=False),
-        sa.Column("user_id", sa.UUID(as_uuid=False), nullable=False),
+        sa.Column(
+            "user_id",
+            sa.UUID(as_uuid=False),
+            sa.ForeignKey("profiles.user_id", ondelete="CASCADE"),
+            nullable=False,
+        ),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.UniqueConstraint("product_id", "user_id", name="uq_product_top_votes_product_user"),
     )
-    op.create_index("ix_product_top_votes_product_id", "product_top_votes", ["product_id"])
+    # La restricción única (product_id, user_id) ya indexa las búsquedas por producto.
     op.create_index("ix_product_top_votes_user_id", "product_top_votes", ["user_id"])
     op.execute("ALTER TABLE public.product_top_votes ENABLE ROW LEVEL SECURITY")
 

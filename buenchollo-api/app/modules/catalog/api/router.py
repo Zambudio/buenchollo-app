@@ -1,30 +1,19 @@
-from fastapi import APIRouter, Depends, Query, Request
 from uuid import UUID
-from pydantic import BaseModel
+
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.rate_limit import limiter
 from app.core.security import AuthenticatedUser, get_current_user
+from app.modules.catalog.api.schemas import TopProductResponse, VoteResponse
 from app.modules.catalog.application.top_service import TopService
 from app.modules.catalog.infrastructure.top_repository import TopRepository
 
 router = APIRouter(prefix="/catalog", tags=["catalog"])
 
-
-class TopProductResponse(BaseModel):
-    id: str
-    title: str
-    image_url: str | None
-    deal_slug: str | None
-    deal_status: str | None = None
-    current_price: float | None = None
-    vote_count: int
-    position: int
-
-
-class VoteResponse(BaseModel):
-    voted: bool
+# Coincide con el tamaño de lote que usa el frontend al consultar sus votos.
+MAX_VOTE_LOOKUP = 50
 
 
 def get_top_service(db: AsyncSession = Depends(get_db)) -> TopService:
@@ -42,7 +31,8 @@ async def my_votes(
     user: AuthenticatedUser = Depends(get_current_user),
     service: TopService = Depends(get_top_service),
 ):
-    return await service.my_votes([str(product_id) for product_id in product_ids[:50]], user.id)
+    unique_ids = list(dict.fromkeys(str(product_id) for product_id in product_ids))[:MAX_VOTE_LOOKUP]
+    return await service.my_votes(unique_ids, user.id)
 
 
 @router.post("/products/{product_id}/vote", response_model=VoteResponse)

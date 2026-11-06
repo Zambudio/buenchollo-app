@@ -2,6 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TopProducts } from "./TopProducts";
+import { resetProductVotes } from "./productVotes";
 import type { TopProduct } from "@/services/api/catalog";
 
 const mocks = vi.hoisted(() => ({
@@ -39,6 +40,7 @@ const product: TopProduct = {
 describe("TopProducts", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resetProductVotes();
     mocks.useAuth.mockReturnValue({ user: { id: "user-1" } });
     mocks.myVotes.mockImplementation(async () =>
       mocks.vote.mock.calls.length ? [product.id] : [],

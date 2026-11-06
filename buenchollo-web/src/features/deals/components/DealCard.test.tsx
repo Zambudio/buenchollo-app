@@ -14,6 +14,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DealCard, type DealCardData } from "@/features/deals/components/DealCard";
 import { renderWithProviders } from "@/test/utils";
+import { resetProductVotes } from "@/features/catalog/productVotes";
 
 // vi.hoisted: estos mocks se materializan ANTES que los vi.mock(), que a su
 // vez son hoisteados por Vitest al top del módulo. Sin esto, los vi.mock()
@@ -56,6 +57,7 @@ vi.mock("@/services/api/deals", async (importActual) => {
 vi.mock("sonner", () => ({ toast: mocks.toast }));
 
 beforeEach(() => {
+  resetProductVotes();
   mocks.useAuth.mockReturnValue({ user: null, isAdmin: false });
   mocks.toggle.mockReset();
   mocks.productVote.mockReset();

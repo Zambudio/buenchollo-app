@@ -107,7 +107,9 @@ class ProductTopVote(Base):
 
     id: Mapped[str] = mapped_column(Uuid(as_uuid=False), primary_key=True, server_default=func.gen_random_uuid())
     product_id: Mapped[str] = mapped_column(
-        ForeignKey("products.id", ondelete="CASCADE"), type_=Uuid(as_uuid=False), nullable=False, index=True
+        ForeignKey("products.id", ondelete="CASCADE"), type_=Uuid(as_uuid=False), nullable=False
     )
-    user_id: Mapped[str] = mapped_column(Uuid(as_uuid=False), nullable=False, index=True)
+    user_id: Mapped[str] = mapped_column(
+        ForeignKey("profiles.user_id", ondelete="CASCADE"), type_=Uuid(as_uuid=False), nullable=False, index=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)

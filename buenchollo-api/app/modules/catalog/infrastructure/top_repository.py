@@ -1,10 +1,22 @@
-from sqlalchemy import delete, exists, func, select
+from sqlalchemy import case, delete, exists, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.catalog.domain.models import Product, ProductTopVote
 from app.modules.categories.domain.models import Category
 from app.modules.deals.domain.models import Deal
+
+# Un producto es público mientras tenga alguna oferta visible en la web.
+PUBLIC_DEAL_STATUSES = ("active", "expired")
+TOP_SIZE = 10
+
+
+def _has_public_deal():
+    return exists().where(Deal.product_id == Product.id, Deal.status.in_(PUBLIC_DEAL_STATUSES))
+
+
+def _has_active_deal():
+    return exists().where(Deal.product_id == Product.id, Deal.status == "active")
 
 
 class TopRepository:
@@ -16,76 +28,66 @@ class TopRepository:
             select(Category).where(Category.slug == slug, Category.is_active.is_(True))
         )).scalar_one_or_none()
 
-    async def ranked_products(self, category: Category, limit: int = 10) -> list[dict]:
+    async def ranked_products(self, category: Category, limit: int = TOP_SIZE) -> list[dict]:
         votes = func.count(ProductTopVote.id).label("vote_count")
-        active_offer = exists().where(Deal.product_id == Product.id, Deal.status == "active")
         category_filter = (
             Product.subcategory_id == category.id if category.parent_id else Product.category_id == category.id
         )
         rows = (await self.session.execute(
             select(Product, votes)
             .outerjoin(ProductTopVote, ProductTopVote.product_id == Product.id)
-            .where(
-                category_filter,
-                Product.status == "active",
-                exists().where(Deal.product_id == Product.id, Deal.status.in_(("active", "expired"))),
-            )
+            .where(category_filter, Product.status == "active", _has_public_deal())
             .group_by(Product.id)
-            .order_by(votes.desc(), active_offer.desc(), Product.created_at.asc(), Product.id.asc())
+            .order_by(votes.desc(), _has_active_deal().desc(), Product.created_at.asc(), Product.id.asc())
             .limit(limit)
         )).all()
         if not rows:
             return []
-        products = [row[0] for row in rows]
+
+        # Oferta representativa: la activa más reciente; si no hay, la caducada más reciente.
         deals = (await self.session.execute(
             select(Deal)
-            .where(Deal.product_id.in_([product.id for product in products]), Deal.status.in_(("active", "expired")))
-            .order_by(Deal.status.asc(), Deal.published_at.desc(), Deal.id.asc())
+            .where(Deal.product_id.in_([product.id for product, _ in rows]), Deal.status.in_(PUBLIC_DEAL_STATUSES))
+            .order_by(case((Deal.status == "active", 0), else_=1), Deal.published_at.desc(), Deal.id.asc())
         )).scalars().all()
         representative: dict[str, Deal] = {}
         for deal in deals:
             representative.setdefault(deal.product_id, deal)
-        return [
-            {
+
+        ranked = []
+        for position, (product, vote_count) in enumerate(rows, 1):
+            deal = representative.get(product.id)
+            ranked.append({
                 "id": product.id,
                 "title": product.title,
                 "image_url": product.image_url,
-                "deal_slug": representative[product.id].slug if product.id in representative else None,
-                "deal_status": representative[product.id].status if product.id in representative else None,
-                "current_price": float(representative[product.id].current_price)
-                if product.id in representative and representative[product.id].status == "active" else None,
-                "vote_count": count,
-                "position": index,
-            }
-            for index, (product, count) in enumerate(rows, 1)
-        ]
+                "deal_slug": deal.slug if deal else None,
+                "deal_status": deal.status if deal else None,
+                "current_price": float(deal.current_price) if deal and deal.status == "active" else None,
+                "vote_count": vote_count,
+                "position": position,
+            })
+        return ranked
 
     async def product_exists(self, product_id: str) -> bool:
         return (await self.session.execute(
-            select(Product.id).where(
-                Product.id == product_id,
-                Product.status == "active",
-                exists().where(Deal.product_id == Product.id, Deal.status.in_(("active", "expired"))),
-            )
+            select(Product.id).where(Product.id == product_id, Product.status == "active", _has_public_deal())
         )).scalar_one_or_none() is not None
 
     async def toggle_vote(self, product_id: str, user_id: str) -> bool:
-        existing = (await self.session.execute(
-            select(ProductTopVote.id).where(
-                ProductTopVote.product_id == product_id, ProductTopVote.user_id == user_id
-            )
+        removed = (await self.session.execute(
+            delete(ProductTopVote)
+            .where(ProductTopVote.product_id == product_id, ProductTopVote.user_id == user_id)
+            .returning(ProductTopVote.id)
         )).scalar_one_or_none()
-        if existing:
-            await self.session.execute(delete(ProductTopVote).where(ProductTopVote.id == existing))
-            voted = False
-        else:
-            result = await self.session.execute(
+        if removed is None:
+            await self.session.execute(
                 insert(ProductTopVote).values(product_id=product_id, user_id=user_id)
                 .on_conflict_do_nothing(constraint="uq_product_top_votes_product_user")
             )
-            voted = result.rowcount > 0
         await self.session.commit()
-        return voted
+        # Ante una carrera de dos inserciones simultáneas el voto queda registrado igualmente.
+        return removed is None
 
     async def my_votes(self, product_ids: list[str], user_id: str) -> list[str]:
         if not product_ids:

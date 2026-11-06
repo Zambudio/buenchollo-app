@@ -2,13 +2,14 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Trophy } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
-import { DealCard, type DealCardData } from "@/features/deals/components/DealCard";
+import { DealCard } from "@/features/deals/components/DealCard";
 import { DealPagination } from "@/features/deals/components/DealPagination";
 import { HomeFilterTabs, type HomeFilterKey } from "@/features/deals/components/HomeFilterTabs";
 import { useMyVotes } from "@/features/deals/hooks/useMyVotes";
 import { useAuth } from "@/hooks/useAuth";
 import { dealsService, favoritesApi } from "@/services/api/deals";
 import { serializeJsonLd } from "@/lib/json-ld";
+import { withFallback } from "@/lib/fallback";
 import { HomeSidebar } from "@/features/home/HomeSidebar";
 import { blogService } from "@/services/api/blog";
 
@@ -42,14 +43,17 @@ export const Route = createFileRoute("/")({
   loaderDeps: ({ search }) => ({ sort: search.sort ?? "popular", page: search.page ?? 1 }),
   loader: async ({ deps }) => {
     const [page, popular, posts] = await Promise.all([
-      dealsService
-        .getPage({ sort: deps.sort, page: deps.page, page_size: PAGE_SIZE })
-        .catch(() => ({ items: [], total_pages: 1, page: 1, page_size: PAGE_SIZE, total: 0 })),
-      dealsService.getPopular(3).catch(() => []),
-      blogService
-        .getPosts({ page_size: 3 })
-        .then((result) => result.items)
-        .catch(() => []),
+      withFallback(
+        dealsService.getPage({ sort: deps.sort, page: deps.page, page_size: PAGE_SIZE }),
+        { items: [], total_pages: 1, page: 1, page_size: PAGE_SIZE, total: 0 },
+        "Error cargando chollos de portada",
+      ),
+      withFallback(dealsService.getPopular(3), [], "Error cargando chollos populares"),
+      withFallback(
+        blogService.getPosts({ page_size: 3 }).then((result) => result.items),
+        [],
+        "Error cargando artículos del blog",
+      ),
     ]);
     return { ...page, popular, posts };
   },
@@ -122,7 +126,7 @@ function HomePage() {
   const filter = search.sort ?? "popular";
   const page = search.page ?? 1;
   const data = Route.useLoaderData();
-  const deals = data.items as DealCardData[];
+  const deals = data.items;
   const totalPages = data.total_pages;
   const currentPage = data.page;
   const [favIds, setFavIds] = useState<Set<string>>(new Set());

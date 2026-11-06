@@ -5,12 +5,15 @@
 - La portada sustituye el texto SEO desplegable por un banner que invita a explorar y votar. El feed usa tarjetas horizontales, precio y tienda visibles, y módulos laterales alimentados por chollos populares y artículos publicados del blog.
 - La navegación muestra Inicio, Chollos, Tops y categorías, y Blog. La página de categorías ofrece una franja visual con imágenes de productos presentes en los últimos chollos (icono de reserva) y un directorio compacto de subcategorías.
 - Cada categoría y subcategoría muestra su top: podio para los tres primeros y lista hasta el décimo. Todos los productos públicos de esa categoría compiten automáticamente; no hay selección manual. Solo votan usuarios registrados. Repetir el voto lo retira.
+- El producto también se vota desde la tarjeta y la ficha de cada chollo con el chip «Votar producto», separado del pulgar que valora la oferta. Votar en cualquier sitio actualiza el top al momento.
 - La página de categoría mantiene después los chollos activos. El catálogo conserva productos aunque un chollo esté caducado; en ese caso el top no presenta su precio como oferta vigente.
 
 ## Sistema y SEO
 
 - `product_top_votes` (migración Alembic `20261107120000`) guarda un voto por usuario y producto. La unicidad evita duplicados; el ranking cuenta votos reales y, en empate, prioriza oferta activa y después fecha e ID.
 - API: `GET /v1/catalog/tops/{slug}`, `GET /v1/catalog/my-votes?product_ids=...` (autenticado) y `POST /v1/catalog/products/{id}/vote` (autenticado, limitado a 30 peticiones/minuto). Solo aparecen productos activos con al menos una oferta pública `active` o `expired`; los borradores quedan fuera.
+- `user_id` de `product_top_votes` referencia `profiles.user_id` con borrado en cascada. Las respuestas de chollos exponen `product_id`.
+- Web: un único estado compartido de votos de producto (`features/catalog/productVotes.ts`, `useSyncExternalStore`) alimenta top, tarjetas y ficha; agrupa en una petición el estado de todas las tarjetas visibles. Los loaders usan `withFallback` (`lib/fallback.ts`): un bloque secundario caído no rompe la página y el error queda registrado con `logError`.
 - Las categorías, sus tops y el feed de portada cargan en los loaders de TanStack Start, de modo que el HTML inicial contiene enlaces y contenido legible. Las URLs de categoría ya están en el sitemap; no se generan páginas de top vacías o duplicadas. No se añaden valoraciones estructuradas ficticias.
 - El blog tiene una entrada lateral visible hacia artículos publicados. Para mejorar la captación orgánica, Pedro debe publicar guías y comparativas útiles y mantener títulos, enlaces internos y datos de producto correctos. Ningún cambio técnico garantiza el primer puesto en búsquedas.
 
@@ -25,7 +28,7 @@ Referencias: [guía SEO de Google](https://developers.google.com/search/docs/fun
 
 ## Validación y despliegue
 
-En `develop`: backend `pytest -q -m "not integration"` 686 correctas y 58 de integración sobre PostgreSQL 17 local; frontend typecheck y lint sin errores, 457 Vitest, 33 Playwright y build SSR; comprobación visual a 390 y 1440 px sin desbordamiento horizontal. La migración se aplicó **solo a la base local** de `local-env`.
+En `develop` (tras la revisión del 2026-11-06): backend `pytest -q -m "not integration"` 689 correctas y 56 de integración correctas sobre PostgreSQL 17 local (las 2 restantes, de revisión de envíos, solo funcionan con el esquema de CI porque crean perfiles sin `auth.users`); migración probada en ida y vuelta; frontend typecheck y lint sin errores, 463 Vitest, 33 Playwright y build SSR; flujo real de voto/retirada/404 contra la API local con usuario de prueba; comprobación visual a 390 y 1440 px sin desbordamiento horizontal. La migración se aplicó **solo a la base local** de `local-env`.
 
 Para publicar, verificar primero la CI de la PR `develop` → `main`. El merge desplegará el Worker web automáticamente. La API del NAS requiere después `pg_dump` previo, actualización de la copia `main` del share, rebuild/reinicio de API y scheduler según [NAS-SSH](../guides/NAS-SSH.md) §1.1, y comprobación de `/health`, `/health/ready`, `/v1/catalog/tops/monitores` y Alembic `20261107120000`. Durante el intervalo entre web y API, las páginas de categoría podrán mostrar el top vacío hasta que la API se actualice. No hay dependencias nuevas.
 

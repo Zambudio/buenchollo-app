@@ -2,13 +2,15 @@ import uuid
 
 import pytest
 import pytest_asyncio
+from sqlalchemy import delete, select, text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from app.core.config import get_settings
-from app.modules.catalog.domain.models import Product
+from app.modules.catalog.domain.models import Product, ProductTopVote
 from app.modules.catalog.infrastructure.top_repository import TopRepository
 from app.modules.categories.domain.models import Category
 from app.modules.deals.domain.models import Deal
+from app.modules.users.domain.models import Profile
 
 pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
 
@@ -24,6 +26,16 @@ async def session():
         await trans.rollback()
         await conn.close()
         await engine.dispose()
+
+
+async def _voter_id(session) -> str:
+    """Perfil válido para la FK: en la BD local depende de auth.users; en CI no."""
+    if (await session.execute(text("SELECT to_regclass('auth.users')"))).scalar() is not None:
+        return str((await session.execute(select(Profile.user_id).limit(1))).scalar_one())
+    profile = Profile(user_id=str(uuid.uuid4()))
+    session.add(profile)
+    await session.flush()
+    return profile.user_id
 
 
 async def test_todos_los_productos_compiten_y_el_voto_reordena(session):
@@ -42,6 +54,7 @@ async def test_todos_los_productos_compiten_y_el_voto_reordena(session):
     session.add_all([
         Deal(title="Monitor A", slug=f"chollo-a-{suffix}", current_price=100, affiliate_url="https://example.com/a", product_id=first.id, status="expired"),
         Deal(title="Monitor B", slug=f"chollo-b-{suffix}", current_price=80, affiliate_url="https://example.com/b", product_id=second.id, status="active"),
+        Deal(title="Monitor B antiguo", slug=f"chollo-b-old-{suffix}", current_price=95, affiliate_url="https://example.com/b-old", product_id=second.id, status="expired"),
         Deal(title="Monitor sin publicar", slug=f"chollo-draft-{suffix}", current_price=70, affiliate_url="https://example.com/draft", product_id=draft_only.id, status="draft"),
     ])
     await session.flush()
@@ -54,7 +67,12 @@ async def test_todos_los_productos_compiten_y_el_voto_reordena(session):
     assert await repo.product_exists(second.id)
     assert not await repo.product_exists(draft_only.id)
 
-    user_id = str(uuid.uuid4())
+    by_parent = await repo.ranked_products(parent)
+    assert {item["id"] for item in by_parent} == {first.id, second.id}
+    assert before[0]["deal_slug"] == f"chollo-b-{suffix}"
+    assert before[1]["current_price"] is None and before[1]["deal_status"] == "expired"
+
+    user_id = await _voter_id(session)
     assert await repo.toggle_vote(second.id, user_id) is True
     ranked = await repo.ranked_products(child)
     assert ranked[0]["id"] == second.id
@@ -63,3 +81,10 @@ async def test_todos_los_productos_compiten_y_el_voto_reordena(session):
     assert (await repo.my_votes([first.id, second.id], user_id)) == [second.id]
     assert await repo.toggle_vote(second.id, user_id) is False
     assert all(item["vote_count"] == 0 for item in await repo.ranked_products(child))
+
+    assert await repo.toggle_vote(first.id, user_id) is True
+    await session.execute(delete(Profile).where(Profile.user_id == user_id))
+    remaining = (await session.execute(
+        select(ProductTopVote.id).where(ProductTopVote.user_id == user_id)
+    )).all()
+    assert remaining == []

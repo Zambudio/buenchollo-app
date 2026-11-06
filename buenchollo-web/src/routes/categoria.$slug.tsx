@@ -5,6 +5,7 @@ import { useMyVotes } from "@/features/deals/hooks/useMyVotes";
 import { categoriesService, type Category } from "@/services/api/categories";
 import { dealsService } from "@/services/api/deals";
 import { serializeJsonLd } from "@/lib/json-ld";
+import { withFallback } from "@/lib/fallback";
 import { catalogService } from "@/services/api/catalog";
 import { TopProducts } from "@/features/catalog/TopProducts";
 
@@ -16,14 +17,16 @@ export const Route = createFileRoute("/categoria/$slug")({
     try {
       const cat = await categoriesService.getBySlug(params.slug);
       const [tops, categories, deals] = await Promise.all([
-        catalogService.top(params.slug).catch(() => []),
-        categoriesService.getAll().catch(() => []),
-        dealsService
-          .search({
+        withFallback(catalogService.top(params.slug), [], "Error cargando el top de la categoría"),
+        withFallback(categoriesService.getAll(), [], "Error cargando subcategorías"),
+        withFallback(
+          dealsService.search({
             ...(cat.parent_id ? { subcategory_id: cat.id } : { category_id: cat.id }),
             limit: 48,
-          })
-          .catch(() => []),
+          }),
+          [],
+          "Error cargando los chollos de la categoría",
+        ),
       ]);
       return { cat, tops, categories, deals };
     } catch {

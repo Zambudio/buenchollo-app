@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
+  ArrowRight,
   BatteryCharging,
   Camera,
   Cpu,
@@ -18,8 +19,8 @@ import {
 } from "lucide-react";
 import { categoriesService } from "@/services/api/categories";
 import { dealsService } from "@/services/api/deals";
-import { ArrowRight } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
+import { withFallback } from "@/lib/fallback";
 
 const SITE = "https://buenchollotech.com";
 
@@ -44,8 +45,8 @@ export const Route = createFileRoute("/categorias")({
   component: CategoriesPage,
   loader: async () => {
     const [cats, deals] = await Promise.all([
-      categoriesService.getAll().catch(() => []),
-      dealsService.getLatest(50).catch(() => []),
+      withFallback(categoriesService.getAll(), [], "Error cargando el listado de categorías"),
+      withFallback(dealsService.getLatest(50), [], "Error cargando portadas de categorías"),
     ]);
     const covers: Record<string, string> = {};
     for (const deal of deals) {
