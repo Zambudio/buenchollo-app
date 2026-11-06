@@ -26,3 +26,11 @@ status: "active"
   en oferta»).
 - Trabajar `develop` en un clon/worktree local (`C:\Users\fadwe\dev\bct-develop`), nunca
   cambiando de rama en el share del NAS (TD-31). Relacionado: [[project_entorno_local_pruebas]].
+- **2026-11-06, petición de Pedro:** cada publicación de Telegram queda registrada
+  (`telegram_publications`, panel y programados). Al reactivarse o bajar de precio
+  (≥ 5 %), el canal Admin recibe el aviso y después la última publicación con el precio
+  corregido, lista para reenviar. La bajada se mide contra el último aviso; nunca mueve
+  `offer_price`.
+- **Telegram en local/tests:** solo lo apaga `TELEGRAM_ENABLED=false`. Vaciar las variables
+  no sirve (PowerShell las borra y `Settings` lee el `.env` real); así se enviaron avisos
+  reales al canal Admin el 05-06/11.
