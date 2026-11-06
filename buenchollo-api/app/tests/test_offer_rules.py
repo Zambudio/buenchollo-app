@@ -35,7 +35,7 @@ def _state(status="active", *, offer="100", previous=None, reason=None):
 
 @pytest.mark.parametrize(
     "price, expected",
-    [("110.01", ("end", "price_increase")), ("110", ("keep", None)), ("90", ("keep", None))],
+    [("110.01", ("end", "price_increase")), ("110", ("keep", None)), ("96", ("keep", None)), ("90", ("drop", "price_drop"))],
 )
 def test_active_sube_mas_de_tolerancia_termina(price, expected):
     assert decide(_state(offer="100"), _obs(price), CFG) == expected
@@ -175,3 +175,21 @@ def test_no_reactiva_una_oferta_cuya_fecha_de_fin_ya_paso():
     future = OfferState("expired", "out_of_stock", Decimal("80"), None, expires_at=now + timedelta(days=1))
     assert decide(past, _obs("80"), CFG, now=now) == ("none", None)
     assert decide(future, _obs("80"), CFG, now=now) == ("reactivate", None)
+
+
+def test_activo_que_baja_de_precio_se_avisa():
+    """Petición 2026-11-06: avisar también si una oferta activa baja de precio."""
+    state = _state(offer="100")
+    assert decide(state, _obs("95"), CFG) == ("drop", "price_drop")
+    assert decide(state, _obs("95.01"), CFG) == ("keep", None)
+    assert decide(state, _obs("80"), RulesConfig(price_drop_percent=25)) == ("keep", None)
+
+
+def test_bajada_no_aplica_si_la_oferta_debe_terminar():
+    assert decide(_state(offer="100"), _obs("90", in_stock=False), CFG) == ("end", "out_of_stock")
+
+
+def test_rules_config_from_price_drop():
+    assert rules_config_from({"price_drop_percent": 10}).price_drop_percent == 10
+    assert rules_config_from({"price_drop_percent": 0}).price_drop_percent == 5
+    assert rules_config_from({"price_drop_percent": "x"}).price_drop_percent == 5

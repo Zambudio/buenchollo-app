@@ -7,15 +7,16 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 _FrequencyPreset = Literal["daily", "weekly", "biweekly", "monthly"]
 _Reason = Literal[
     "price_increase", "no_longer_deal", "out_of_stock", "not_found",
-    "deal_again", "listing_purged", "product_purged",
+    "deal_again", "price_drop", "listing_purged", "product_purged",
 ]
-_Transition = Literal["offer_ended", "reactivated", "purged"]
+_Transition = Literal["offer_ended", "reactivated", "price_dropped", "purged"]
 
 # Rangos admitidos para las claves conocidas de la config de price_check.
 _CONFIG_RANGES = {
     "price_tolerance_percent": (0, 100),
     "min_discount_percent": (0, 90),
     "purge_after_days": (7, 365),
+    "price_drop_percent": (1, 90),
 }
 
 

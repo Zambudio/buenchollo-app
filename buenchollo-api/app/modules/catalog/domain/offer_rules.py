@@ -22,10 +22,12 @@ from typing import Literal
 
 from app.modules.catalog.domain.models import AVAILABLE, NOT_FOUND, UNAVAILABLE
 
-Decision = Literal["keep", "end", "reactivate", "none"]
+Decision = Literal["keep", "end", "reactivate", "drop", "none"]
 
 DEFAULT_TOLERANCE_PERCENT = Decimal("10")
 DEFAULT_MIN_DISCOUNT_PERCENT = 5
+# Bajada mínima, frente al precio de la oferta, para avisar al canal Admin.
+DEFAULT_PRICE_DROP_PERCENT = 5
 
 # Motivos de fin que la revisión diaria puede deshacer. Los fines por fecha
 # (`expired_date`) o manuales los decidió una persona: no se reactivan solos.
@@ -58,6 +60,7 @@ class OfferState:
 class RulesConfig:
     tolerance_percent: Decimal = DEFAULT_TOLERANCE_PERCENT
     min_discount_percent: int = DEFAULT_MIN_DISCOUNT_PERCENT
+    price_drop_percent: int = DEFAULT_PRICE_DROP_PERCENT
 
 
 def rules_config_from(config: dict) -> RulesConfig:
@@ -73,7 +76,13 @@ def rules_config_from(config: dict) -> RulesConfig:
             min_discount = DEFAULT_MIN_DISCOUNT_PERCENT
     except (TypeError, ValueError):
         min_discount = DEFAULT_MIN_DISCOUNT_PERCENT
-    return RulesConfig(tolerance, min_discount)
+    try:
+        price_drop = int(config.get("price_drop_percent", DEFAULT_PRICE_DROP_PERCENT))
+        if not 1 <= price_drop <= 90:
+            price_drop = DEFAULT_PRICE_DROP_PERCENT
+    except (TypeError, ValueError):
+        price_drop = DEFAULT_PRICE_DROP_PERCENT
+    return RulesConfig(tolerance, min_discount, price_drop)
 
 
 def availability_of(obs: Observation) -> str:
@@ -87,7 +96,11 @@ def decide(
 ) -> tuple[Decision, str | None]:
     if state.status == "active":
         reason = _end_reason(state, obs, cfg)
-        return ("end", reason) if reason else ("keep", None)
+        if reason:
+            return ("end", reason)
+        if _dropped(state, obs, cfg):
+            return ("drop", "price_drop")
+        return ("keep", None)
     if state.status == "expired" and state.offer_end_reason in REACTIVATABLE_REASONS:
         if state.expires_at is not None and now is not None and state.expires_at <= now:
             return ("none", None)
@@ -116,6 +129,12 @@ def _end_reason(state: OfferState, obs: Observation, cfg: RulesConfig) -> str | 
     ):
         return "no_longer_deal"
     return None
+
+
+def _dropped(state: OfferState, obs: Observation, cfg: RulesConfig) -> bool:
+    if state.offer_price is None or obs.price is None:
+        return False
+    return obs.price <= state.offer_price * (Decimal("1") - Decimal(cfg.price_drop_percent) / Decimal("100"))
 
 
 def _is_deal_again(state: OfferState, obs: Observation, cfg: RulesConfig) -> bool:

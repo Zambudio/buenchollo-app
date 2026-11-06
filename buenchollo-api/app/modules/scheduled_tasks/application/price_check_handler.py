@@ -198,6 +198,8 @@ class PriceCheckHandler:
                 transition = "offer_ended"
             elif decision == "reactivate":
                 transition, reason = "reactivated", "deal_again"
+            elif decision == "drop":
+                transition = "price_dropped"
         return _Outcome(transition, reason, availability, since, purge)
 
     @staticmethod
@@ -242,6 +244,9 @@ class PriceCheckHandler:
         if outcome.transition == "offer_ended":
             deal.status = "expired"
             deal.offer_end_reason = outcome.reason
+        elif outcome.transition == "price_dropped":
+            # Sigue en oferta a un precio mejor: pasa a ser su precio de referencia.
+            deal.offer_price = check.observation.price
         else:
             deal.status = "active"
             deal.offer_end_reason = None

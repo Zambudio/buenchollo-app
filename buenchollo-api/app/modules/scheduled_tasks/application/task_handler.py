@@ -5,7 +5,7 @@ from typing import Literal, Protocol
 
 from app.modules.products.domain.entities import ProductPreview
 
-Transition = Literal["offer_ended", "reactivated", "purged"]
+Transition = Literal["offer_ended", "reactivated", "price_dropped", "purged"]
 
 
 @dataclass

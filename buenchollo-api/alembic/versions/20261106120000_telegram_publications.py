@@ -34,7 +34,19 @@ def upgrade() -> None:
     )
     op.create_index("ix_telegram_publications_deal_sent", "telegram_publications", ["deal_id", "sent_at"])
     op.execute("ALTER TABLE public.telegram_publications ENABLE ROW LEVEL SECURITY")
+    # Aviso de bajada de precio en ofertas activas (por defecto ≥ 5 %).
+    op.execute(
+        """
+        UPDATE scheduled_tasks
+        SET config = ('{"price_drop_percent": 5}'::jsonb || coalesce(config::jsonb, '{}'::jsonb))::json
+        WHERE task_type = 'price_check'
+        """
+    )
 
 
 def downgrade() -> None:
+    op.execute(
+        "UPDATE scheduled_tasks SET config = (config::jsonb - 'price_drop_percent')::json "
+        "WHERE task_type = 'price_check'"
+    )
     op.drop_table("telegram_publications")

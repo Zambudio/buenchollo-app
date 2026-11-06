@@ -198,15 +198,15 @@ async def test_lote_fallido_no_toca_nada():
 async def test_actualiza_precio_sin_transicion():
     listing, deal = _listing(), _deal()
     applied = await _handler().apply(
-        [ListingCheck(listing, deal, _obs("95", reference="130", discount=27))], CONFIG, NOW
+        [ListingCheck(listing, deal, _obs("97", reference="130", discount=25))], CONFIG, NOW
     )
     assert applied == []
-    assert listing.current_price == Decimal("95") and listing.reference_price == Decimal("130")
+    assert listing.current_price == Decimal("97") and listing.reference_price == Decimal("130")
     assert listing.availability == "available" and listing.last_checked_at == NOW
-    assert deal.current_price == Decimal("95")
+    assert deal.current_price == Decimal("97")
     assert deal.previous_price == Decimal("130")
-    assert deal.discount_percentage == 27
-    assert deal.savings_amount == Decimal("35")
+    assert deal.discount_percentage == 25
+    assert deal.savings_amount == Decimal("33")
     assert deal.last_price_check_at == NOW
     assert deal.offer_price == Decimal("100")
 
@@ -330,3 +330,14 @@ async def test_apply_limpia_productos_huerfanos():
     repo = FakeCatalogRepo()
     await _handler(repo=repo).apply([], CONFIG, NOW)
     assert repo.orphan_cleanups == 1
+
+
+@pytest.mark.asyncio
+async def test_bajada_de_precio_en_activo_mantiene_la_oferta_y_fija_el_nuevo_precio():
+    deal = _deal(offer_price=Decimal("100"))
+    applied = await _handler().apply([ListingCheck(_listing(), deal, _obs("90"))], CONFIG, NOW)
+    assert deal.status == "active" and deal.offer_price == Decimal("90")
+    assert deal.published_at == NOW - timedelta(days=10)  # no se recoloca en «Últimos»
+    assert [(c.transition, c.reason, c.old_price, c.new_price) for c in applied] == [
+        ("price_dropped", "price_drop", Decimal("100"), Decimal("90"))
+    ]
