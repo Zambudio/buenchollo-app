@@ -1,5 +1,12 @@
 # PROJECT_STATUS — BuenCholloTech
-*Actualización de producción: 2026-11-04 — Chollos de usuarios desplegado en web, API y scheduler (merge `9772ddd`), con los arreglos de la prueba exhaustiva (XSS en JSON-LD, ASIN en minúsculas, estado de chollo, enlaces internos) y el entorno local `local-env/`. CI de `main` en verde.*
+*Actualización de producción: 2026-11-06 — Catálogo permanente y registro de Telegram desplegados en web, API y scheduler (merge `3d9c1d9`). CI de `main` en verde; migraciones aplicadas hasta `20261106120000`.*
+
+## 2026-11-06 · Despliegue del catálogo y Telegram en el NAS
+
+- Con autorización de Pedro, backup previo `pg_dump -Fc` de producción realizado con cliente PostgreSQL 17 y validado con `pg_restore -l`: `/var/services/homes/AdminZambu/backups/buenchollo/bct-prod-pre-catalog-20261106T151117Z.dump` (1,3 MB; SHA-256 `f0ed54e242d07f860cdd713e649766f1a57cf5bf9296ad05d29c90472b75f8b4`). No se mostraron credenciales.
+- Copia del share limpia en `main`, actualizada por avance rápido a `3d9c1d9`. `docker-compose build && docker-compose up -d` reconstruyó y reinició API y scheduler; el túnel volvió a arrancar. Alembic confirma `20261106120000 (head)`.
+- Producción: `/health`, `/health/ready` y `/v1/deals/sitemap` responden 200; API `healthy`, scheduler y túnel activos. Backfill: 152 `products`, 152 `product_listings` y 152 `deals`; `telegram_publications` empieza en 0. `price_check` está habilitado y diario, con umbrales 5 % / 30 días / 5 %; `TELEGRAM_ENABLED=True`.
+- [CI de la PR #65](https://github.com/Zambudio/buenchollo-app/actions/runs/42224606927) y [CI del merge a `main`](https://github.com/Zambudio/buenchollo-app/actions/runs/42225036896) correctas. Queda observar la primera ejecución diaria y sus posibles avisos reales al canal Admin.
 
 ## 2026-11-06 · Registro de publicaciones de Telegram y aviso con la publicación corregida (en `develop`)
 

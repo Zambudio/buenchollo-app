@@ -14,9 +14,9 @@
 - `TELEGRAM_ENABLED` tiene valor por defecto `true`; está en `false` en el entorno local y las pruebas. `PUBLIC_SITE_URL` tiene por defecto `https://buenchollotech.com`. `price_check` usa `min_discount_percent` (5), `purge_after_days` (30) y `price_drop_percent` (5) como valores iniciales de migración, conservando la configuración previa donde corresponda.
 - Las consultas a Creators API se espacian y solo envían ASIN válidos. Un fallo de lote no altera precio, disponibilidad ni estado de la oferta.
 
-## Despliegue de la API en el NAS (pendiente de autorización de Pedro)
+## Despliegue de la API en el NAS (realizado el 2026-11-06)
 
-La web se despliega automáticamente tras el merge a `main`; la API y el scheduler del NAS requieren un paso independiente. Hasta entonces, la web nueva puede solicitar `/v1/deals/sitemap` y `/v1/telegram/publications` que la API antigua no ofrece. Procedimiento: [NAS-SSH §1.1](../guides/NAS-SSH.md).
+La web se despliega automáticamente tras el merge a `main`; la API y el scheduler del NAS requieren un paso independiente. Procedimiento: [NAS-SSH §1.1](../guides/NAS-SSH.md). Pasos ejecutados y evidencia en [PROJECT_STATUS](../../PROJECT_STATUS.md).
 
 1. Hacer `pg_dump` de la base de producción **antes de cualquier cambio** y comprobar que el backup existe.
 2. Parar `local-env` si está arrancado sobre el share.
@@ -26,6 +26,8 @@ La web se despliega automáticamente tras el merge a `main`; la API y el schedul
 6. Comprobar que `TELEGRAM_ENABLED` no está a `false` en el `.env` del NAS, sin mostrar su contenido ni otros secretos.
 
 La primera ejecución diaria puede consultar Amazon para todo el catálogo y enviar avisos reales al canal Admin.
+
+**Resultado:** backup `pg_dump` validado antes de actualizar el share; merge `3d9c1d9` desplegado; Alembic `20261106120000 (head)`; los tres endpoints comprobados con HTTP 200. `price_check` está habilitado y diario, y Telegram permanece habilitado. La primera ejecución diaria aún debe observarse.
 
 ## Riesgos y rollback
 

@@ -8,8 +8,8 @@
 > (DDNS Synology, reverse proxy DSM, "Cloudflare Pages/Vercel") describen el
 > **enfoque anterior / la transición** y se conservan como histórico/contexto.
 
-> **Cierre de noviembre de 2026:** para el catálogo permanente y el registro de
-> publicaciones de Telegram, seguir el [checklist operativo](cambios-2026-11-catalogo-permanente.md#despliegue-de-la-api-en-el-nas-pendiente-de-autorización-de-pedro).
+> **Desplegado el 2026-11-06:** para el catálogo permanente y el registro de
+> publicaciones de Telegram, ver el [checklist operativo](cambios-2026-11-catalogo-permanente.md#despliegue-de-la-api-en-el-nas-realizado-el-2026-11-06).
 > El merge a `main` despliega la web por Workers Builds, pero la API del NAS
 > requiere `git pull` en la copia del share y `docker-compose build && docker-compose up -d`
 > tras un `pg_dump`. Las migraciones `20261105120000` y `20261106120000` se
