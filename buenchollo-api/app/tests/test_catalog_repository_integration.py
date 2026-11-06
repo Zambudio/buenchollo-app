@@ -166,3 +166,18 @@ async def test_get_purgeable(session):
     assert listing.id in ids
     ids = {item.id for item in await repo.get_purgeable(now - timedelta(days=40))}
     assert listing.id not in ids
+
+
+async def test_delete_product_if_orphan(session):
+    repo = CatalogRepository(session)
+    first = await _add_linked(session, repo, _deal("B0REPOA008", status="expired"))
+    second = await _add_linked(session, repo, _deal("b0repoa008"))
+    product_id = first.product_id
+
+    assert await repo.delete_product_if_orphan(product_id) is False
+    await session.delete(first)
+    await session.delete(second)
+    await session.flush()
+    assert await repo.delete_product_if_orphan(product_id) is True
+    session.expunge_all()
+    assert await session.get(Product, product_id) is None

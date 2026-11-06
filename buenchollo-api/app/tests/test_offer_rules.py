@@ -83,11 +83,31 @@ def test_expired_vuelve_a_su_precio_se_reactiva(reason):
     assert decide(state, _obs("79.99"), CFG) == ("reactivate", None)
 
 
-def test_expired_descuento_tienda_5_se_reactiva():
-    state = _state("expired", offer="80", reason="price_increase")
-    assert decide(state, _obs("90", discount=5), CFG) == ("reactivate", None)
-    assert decide(state, _obs("90", discount=4), CFG) == ("none", None)
-    assert decide(state, _obs("90"), CFG) == ("none", None)
+def test_expired_por_subida_solo_se_reactiva_al_volver_a_su_precio():
+    """Regresión (datos reales): subió de 114,15 a 123,29 y Amazon le seguía
+    marcando un 10 % frente a su referencia; reactivarlo por ese descuento
+    convertía una subida en un «vuelve a estar en oferta»."""
+    state = _state("expired", offer="114.15", reason="price_increase")
+    assert decide(state, _obs("123.29", discount=10), CFG) == ("none", None)
+    assert decide(state, _obs("114.16", discount=40), CFG) == ("none", None)
+    assert decide(state, _obs("114.15"), CFG) == ("reactivate", None)
+
+
+def test_expired_por_no_rebajado_se_reactiva_si_vuelve_el_descuento():
+    state = _state("expired", offer="80", reason="no_longer_deal")
+    assert decide(state, _obs("85", discount=5), CFG) == ("reactivate", None)
+    assert decide(state, _obs("85", discount=4), CFG) == ("none", None)
+    assert decide(state, _obs("85"), CFG) == ("none", None)
+    # Fuera de la tolerancia (80 × 1,10 = 88) no vale ni con descuento alto
+    assert decide(state, _obs("88.01", discount=30), CFG) == ("none", None)
+
+
+@pytest.mark.parametrize("reason", ["out_of_stock", "not_found"])
+def test_expired_sin_stock_vuelve_dentro_de_la_tolerancia(reason):
+    state = _state("expired", offer="80", reason=reason)
+    assert decide(state, _obs("88"), CFG) == ("reactivate", None)
+    assert decide(state, _obs("88.01"), CFG) == ("none", None)
+    assert decide(state, _obs("85", discount=0), CFG) == ("none", None)
 
 
 def test_expired_sin_stock_o_no_encontrado_no_se_reactiva():
@@ -133,3 +153,13 @@ def test_availability_of():
     assert availability_of(_obs(None, found=False, in_stock=False)) == "not_found"
     assert availability_of(_obs(in_stock=False)) == "unavailable"
     assert availability_of(_obs()) == "available"
+
+
+@pytest.mark.parametrize("reason", ["price_increase", "no_longer_deal", "out_of_stock", "not_found"])
+def test_nunca_reactiva_lo_que_terminaria_en_la_misma_revision(reason):
+    """Sin esta guarda alternaría terminar/reactivar cada día (y avisaría al canal)."""
+    state = _state("expired", offer="80", previous="100", reason=reason)
+    assert decide(state, _obs("80", discount=0), CFG) == ("none", None)
+    assert decide(state, _obs("80"), CFG) == ("reactivate", None)
+    reactivated_state = _state("active", offer="80", previous="100")
+    assert decide(reactivated_state, _obs("80"), CFG) == ("keep", None)

@@ -339,3 +339,17 @@ async def test_reactivar_deal_sin_listing_lo_enlaza():
     await service.create_deal({"title": "X", "current_price": 5.0, "external_id": "B0DABC1234"}, "user-1")
 
     catalog.link_new_deal.assert_awaited_once_with(existing)
+
+
+@pytest.mark.asyncio
+async def test_borrar_deal_limpia_su_producto_si_queda_huerfano():
+    _, repo, _ = _build_service()
+    repo.get_by_id = AsyncMock(return_value=_stub_deal(product_id="product-1"))
+    catalog = MagicMock()
+    catalog.delete_product_if_orphan = AsyncMock(return_value=True)
+    service = DealService(repo, None, catalog)
+
+    assert await service.delete_deal("11111111-1111-1111-1111-111111111111") is True
+
+    repo.delete.assert_awaited_once()
+    catalog.delete_product_if_orphan.assert_awaited_once_with("product-1")

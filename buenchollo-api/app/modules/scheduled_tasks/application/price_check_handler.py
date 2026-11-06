@@ -6,11 +6,16 @@ actualiza el listing y su deal principal y aplica las reglas de
 tienda del producto tras `purge_after_days` sin disponibilidad confirmada; si
 el producto se queda sin tiendas, el repositorio elimina producto y deals.
 
-Un fallo de Amazon en un lote deja ese lote intacto: ni precio, ni
-disponibilidad, ni transiciones, ni purga.
+Un fallo de Amazon en un lote (tras un reintento) deja ese lote intacto: ni
+precio, ni disponibilidad, ni transiciones, ni purga. Las peticiones se
+espacian (la Creators API admite ~1 por segundo y responde 429 si se excede) y
+solo se consultan identificadores con formato ASIN: uno inválido haría que
+Amazon rechazase el lote entero con un 400.
 """
 
 import logging
+import re
+import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
@@ -37,6 +42,10 @@ logger = logging.getLogger(__name__)
 DEFAULT_PURGE_AFTER_DAYS = 30
 _PURGE_RANGE = range(7, 366)
 _CENT = Decimal("0.01")
+# Patrón que la propia Creators API exige a cada itemId.
+_ASIN = re.compile(r"^(?:[0-9]{9}[0-9X]|[A-Z][A-Z0-9]{9})$")
+MIN_SECONDS_BETWEEN_REQUESTS = 1.1
+RETRY_DELAY_SECONDS = 2.0
 _NOT_FOUND = Observation(found=False, in_stock=False, price=None, reference_price=None, discount_percentage=None)
 
 
@@ -71,32 +80,53 @@ def purge_after_days_from(config: dict) -> int:
 
 
 class PriceCheckHandler:
-    def __init__(self, product_verifier: ProductVerifier, catalog_repo):
+    def __init__(self, product_verifier: ProductVerifier, catalog_repo, sleep=time.sleep):
         self.product_verifier = product_verifier
         self.catalog_repo = catalog_repo
+        self._sleep = sleep
+        self._last_request: float | None = None
 
     async def collect(self) -> list[ListingCheck]:
         pairs = await self.catalog_repo.get_checkable()
         return await run_in_threadpool(self.fetch, pairs)
 
     def fetch(self, pairs: list[tuple]) -> list[ListingCheck]:
-        checks: list[ListingCheck] = []
-        for i in range(0, len(pairs), MAX_ITEMS_PER_REQUEST):
-            batch = pairs[i : i + MAX_ITEMS_PER_REQUEST]
+        valid = [(listing, deal) for listing, deal in pairs if _ASIN.match(listing.external_id or "")]
+        invalid = [(listing, deal) for listing, deal in pairs if not _ASIN.match(listing.external_id or "")]
+        if invalid:
+            logger.warning(
+                "%d listing(s) con identificador que no es un ASIN válido; no se consultan: %s",
+                len(invalid), [listing.external_id for listing, _ in invalid][:10],
+            )
+        checks = [ListingCheck(listing, deal, None) for listing, deal in invalid]
+        for i in range(0, len(valid), MAX_ITEMS_PER_REQUEST):
+            batch = valid[i : i + MAX_ITEMS_PER_REQUEST]
+            products = self._fetch_batch([listing.external_id for listing, _ in batch])
+            for listing, deal in batch:
+                observation = None if products is None else self._observe(products.get(listing.external_id))
+                checks.append(ListingCheck(listing, deal, observation))
+        return checks
+
+    def _fetch_batch(self, asins: list[str]) -> dict | None:
+        """Una petición espaciada respecto a la anterior, con un reintento. None
+        si Amazon falla las dos veces."""
+        for attempt in (1, 2):
+            self._pace(RETRY_DELAY_SECONDS if attempt == 2 else MIN_SECONDS_BETWEEN_REQUESTS)
             try:
-                products = self.product_verifier.get_product_previews(
-                    [listing.external_id for listing, _ in batch]
-                )
+                return self.product_verifier.get_product_previews(asins)
             except Exception:
                 logger.warning(
-                    "Fallo consultando Amazon para un lote de %d listings; se deja intacto",
-                    len(batch), exc_info=True,
+                    "Fallo consultando Amazon (intento %d/2) para %d ASIN", attempt, len(asins),
+                    exc_info=attempt == 2,
                 )
-                checks.extend(ListingCheck(listing, deal, None) for listing, deal in batch)
-                continue
-            for listing, deal in batch:
-                checks.append(ListingCheck(listing, deal, self._observe(products.get(listing.external_id))))
-        return checks
+        return None
+
+    def _pace(self, min_interval: float) -> None:
+        if self._last_request is not None:
+            wait = min_interval - (time.monotonic() - self._last_request)
+            if wait > 0:
+                self._sleep(wait)
+        self._last_request = time.monotonic()
 
     @staticmethod
     def _observe(product) -> Observation:

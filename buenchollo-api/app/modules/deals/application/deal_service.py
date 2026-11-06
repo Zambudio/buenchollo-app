@@ -133,7 +133,12 @@ class DealService:
         deal = await self.repo.get_by_id(deal_id)
         if not deal:
             return False
+        product_id = deal.product_id
         await self.repo.delete(deal)
+        # Borrado manual del último chollo de un producto: no dejar la ficha y
+        # sus tiendas huérfanas (la revisión diaria las seguiría consultando).
+        if self.catalog is not None and product_id:
+            await self.catalog.delete_product_if_orphan(product_id)
         return True
 
     async def process_vote(self, deal_id: str, user_id: str, vote: int) -> dict:

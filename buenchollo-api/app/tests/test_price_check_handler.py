@@ -51,14 +51,16 @@ def _obs(price="100", *, found=True, in_stock=True, reference=None, discount=Non
 
 
 class FakeVerifier:
-    def __init__(self, products=None, fail=False):
+    def __init__(self, products=None, fail=False, fail_times=0):
         self.products = products or {}
         self.fail = fail
+        self.fail_times = fail_times
         self.batch_calls: list[list[str]] = []
 
     def get_product_previews(self, asins):
         self.batch_calls.append(list(asins))
-        if self.fail:
+        if self.fail or self.fail_times > 0:
+            self.fail_times -= 1
             raise RuntimeError("Amazon caído")
         return {asin: self.products.get(asin) for asin in asins}
 
@@ -77,8 +79,9 @@ class FakeCatalogRepo:
         return list(self.deleted_ids)
 
 
-def _handler(verifier=None, repo=None):
-    return PriceCheckHandler(verifier or FakeVerifier(), repo or FakeCatalogRepo())
+def _handler(verifier=None, repo=None, sleeps=None):
+    pauses = sleeps if sleeps is not None else []
+    return PriceCheckHandler(verifier or FakeVerifier(), repo or FakeCatalogRepo(), sleep=pauses.append)
 
 
 # --- fetch / collect ---
@@ -90,6 +93,31 @@ def test_fetch_consulta_en_lotes_de_10():
     checks = _handler(verifier).fetch(pairs)
     assert [len(b) for b in verifier.batch_calls] == [MAX_ITEMS_PER_REQUEST, MAX_ITEMS_PER_REQUEST, 3]
     assert len(checks) == 23
+
+
+def test_fetch_espacia_las_peticiones_a_amazon():
+    pairs = [(_listing(id=f"l{i}", external_id=f"B0000000{i:02d}"), None) for i in range(21)]
+    sleeps: list[float] = []
+    _handler(FakeVerifier(), sleeps=sleeps).fetch(pairs)
+    # 3 peticiones → 2 pausas de al menos ~1 s (la Creators API admite 1 TPS)
+    assert len(sleeps) == 2 and all(pause >= 1.0 for pause in sleeps)
+
+
+def test_fetch_reintenta_una_vez_un_lote_fallido():
+    verifier = FakeVerifier({"B0D9WH9WLD": ProductPreview(current_price=10, in_stock=True)}, fail_times=1)
+    checks = _handler(verifier).fetch([(_listing(), _deal())])
+    assert len(verifier.batch_calls) == 2
+    assert checks[0].observation.found is True
+
+
+def test_fetch_excluye_ids_que_no_son_asin_validos():
+    """Un id inválido hace que Amazon rechace el lote entero con un 400."""
+    verifier = FakeVerifier({"B0D9WH9WLD": ProductPreview(current_price=10, in_stock=True)})
+    pairs = [(_listing(id="bad", external_id="B0RUNDETAIL1"), None), (_listing(), _deal())]
+    checks = {c.listing.id: c for c in _handler(verifier).fetch(pairs)}
+    assert verifier.batch_calls == [["B0D9WH9WLD"]]
+    assert checks["bad"].observation is None
+    assert checks["listing-1"].observation.found is True
 
 
 def test_fetch_lote_fallido_deja_observacion_none():

@@ -2,8 +2,17 @@
 
 Una oferta ya no se borra: termina (`end`) o se reactiva (`reactivate`) según
 lo que la tienda informa en la revisión diaria. Fin de oferta = las reglas que
-ya aplicaba `PriceCheckHandler`; reactivación = vuelve al precio al que fue
-chollo o la tienda vuelve a marcarlo rebajado.
+ya aplicaba `PriceCheckHandler`. Reactivación, con histéresis según por qué
+terminó (para no alternar terminar/reactivar cada día):
+
+- subió de precio → solo si vuelve a su precio de oferta (`offer_price`);
+- agotado / retirado → si vuelve con stock dentro de la tolerancia;
+- dejó de estar rebajado → si la tienda vuelve a marcar descuento ≥
+  `min_discount_percent` y el precio está dentro de la tolerancia.
+
+El descuento que informa la tienda es frente a SU precio de referencia: por sí
+solo no prueba que el precio haya vuelto a bajar (datos reales: un producto
+que subió de 114,15 a 123,29 € seguía marcado con un 10 %).
 """
 
 from dataclasses import dataclass
@@ -104,6 +113,16 @@ def _end_reason(state: OfferState, obs: Observation, cfg: RulesConfig) -> str | 
 def _is_deal_again(state: OfferState, obs: Observation, cfg: RulesConfig) -> bool:
     if not (obs.found and obs.in_stock) or obs.price is None:
         return False
-    if state.offer_price is not None and obs.price <= state.offer_price:
+    discounted = obs.discount_percentage is not None and obs.discount_percentage >= cfg.min_discount_percent
+    if state.offer_price is None:
+        return discounted
+    if _end_reason(state, obs, cfg) is not None:
+        return False
+    if obs.price <= state.offer_price:
         return True
-    return obs.discount_percentage is not None and obs.discount_percentage >= cfg.min_discount_percent
+    if state.offer_end_reason == "price_increase":
+        return False
+    within_tolerance = obs.price <= state.offer_price * (Decimal("1") + cfg.tolerance_percent / Decimal("100"))
+    if not within_tolerance:
+        return False
+    return discounted if state.offer_end_reason == "no_longer_deal" else True

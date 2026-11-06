@@ -145,6 +145,15 @@ class CatalogRepository:
         await self.session.flush()
         return deleted
 
+    async def delete_product_if_orphan(self, product_id: str) -> bool:
+        """Elimina el producto (y sus listings, en cascada) si ya no le queda
+        ningún deal. Devuelve si lo eliminó."""
+        if (await self.session.execute(select(Deal.id).where(Deal.product_id == product_id).limit(1))).first():
+            return False
+        await self.session.execute(delete(Product).where(Product.id == product_id))
+        await self.session.flush()
+        return True
+
     async def _free_slug(self, slug: str) -> str:
         taken = (await self.session.execute(select(Product.id).where(Product.slug == slug))).first()
         if taken is None:

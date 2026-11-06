@@ -79,7 +79,7 @@ def test_update_scheduled_task_cambia_config(integration_client):
 def test_preview_sin_candidatos_devuelve_lista_vacia(integration_client):
     task_id = _get_price_check_task_id(integration_client)
 
-    with _only_listing("B0NOEXISTE0", None):
+    with _only_listing("B0NOEXIST0", None):
         response = integration_client.post(f"/v1/admin/scheduled-tasks/{task_id}/preview")
 
     assert response.status_code == 200, response.text
@@ -131,7 +131,7 @@ def _run_price_increase(client, task_id: str, deal: dict) -> dict:
 
 def test_confirm_termina_la_oferta_sin_borrar_el_deal(integration_client):
     task_id = _get_price_check_task_id(integration_client)
-    deal = _create_deal(integration_client, asin="B0TESTPRICE")
+    deal = _create_deal(integration_client, asin="B0TESTPRC1")
     try:
         run = _run_price_increase(integration_client, task_id, deal)
         assert run["trigger_type"] == "manual"
@@ -150,7 +150,7 @@ def test_confirm_termina_la_oferta_sin_borrar_el_deal(integration_client):
 
 def test_confirm_reactiva_y_el_registro_lo_indica(integration_client):
     task_id = _get_price_check_task_id(integration_client)
-    deal = _create_deal(integration_client, asin="B0TESTREACT")
+    deal = _create_deal(integration_client, asin="B0TESTRCT1")
     try:
         _run_price_increase(integration_client, task_id, deal)
         back = ProductPreview(current_price=deal["current_price"], in_stock=True)
@@ -167,7 +167,7 @@ def test_confirm_reactiva_y_el_registro_lo_indica(integration_client):
 
 def test_list_runs_devuelve_el_run_recien_creado(integration_client):
     task_id = _get_price_check_task_id(integration_client)
-    deal = _create_deal(integration_client, asin="B0RUNLIST01")
+    deal = _create_deal(integration_client, asin="B0RUNLST01")
     try:
         run = _run_price_increase(integration_client, task_id, deal)
 
@@ -181,7 +181,7 @@ def test_list_runs_devuelve_el_run_recien_creado(integration_client):
 
 def test_get_run_detail_incluye_los_items(integration_client):
     task_id = _get_price_check_task_id(integration_client)
-    deal = _create_deal(integration_client, asin="B0RUNDETAIL1")
+    deal = _create_deal(integration_client, asin="B0RUNDETL1")
     try:
         run = _run_price_increase(integration_client, task_id, deal)
 
@@ -212,7 +212,7 @@ def test_update_rechaza_config_fuera_de_rango(integration_client):
 
 def test_delete_run_lo_elimina(integration_client):
     task_id = _get_price_check_task_id(integration_client)
-    deal = _create_deal(integration_client, asin="B0DELETERUN1")
+    deal = _create_deal(integration_client, asin="B0DELRUN01")
     try:
         run = _run_price_increase(integration_client, task_id, deal)
 
@@ -227,8 +227,8 @@ def test_delete_run_lo_elimina(integration_client):
 
 def test_bulk_delete_runs_borra_varios(integration_client):
     task_id = _get_price_check_task_id(integration_client)
-    deal_a = _create_deal(integration_client, asin="B0BULK000001")
-    deal_b = _create_deal(integration_client, asin="B0BULK000002")
+    deal_a = _create_deal(integration_client, asin="B0BULK0001")
+    deal_b = _create_deal(integration_client, asin="B0BULK0002")
     try:
         run_a = _run_price_increase(integration_client, task_id, deal_a)
         run_b = _run_price_increase(integration_client, task_id, deal_b)
