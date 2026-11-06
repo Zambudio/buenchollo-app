@@ -169,7 +169,7 @@ def test_get_product_previews_hace_una_sola_peticion_para_varios_asin(monkeypatc
     monkeypatch.setattr(client, "_get_token", lambda: "fake-token")
     calls = []
 
-    def fake_fetch_items(asins, token):
+    def fake_fetch_response(asins, token):
         calls.append(list(asins))
         return [
             {
@@ -186,9 +186,9 @@ def test_get_product_previews_hace_una_sola_peticion_para_varios_asin(monkeypatc
                 },
             }
             for asin in asins
-        ]
+        ], []
 
-    monkeypatch.setattr(client, "_fetch_items", fake_fetch_items)
+    monkeypatch.setattr(client, "_fetch_response", fake_fetch_response)
 
     result = client.get_product_previews(["B001", "B002", "B003"])
 
@@ -207,7 +207,9 @@ def test_get_product_previews_no_troceA_internamente_es_cosa_del_caller(monkeypa
     client = AmazonProductClient(settings)
     monkeypatch.setattr(client, "_get_token", lambda: "fake-token")
     calls = []
-    monkeypatch.setattr(client, "_fetch_items", lambda asins, token: calls.append(list(asins)) or [])
+    monkeypatch.setattr(
+        client, "_fetch_response", lambda asins, token: calls.append(list(asins)) or ([{"asin": asins[0]}], [])
+    )
 
     asins = [f"B{i:03d}" for i in range(MAX_ITEMS_PER_REQUEST + 5)]
     client.get_product_previews(asins)
@@ -216,15 +218,39 @@ def test_get_product_previews_no_troceA_internamente_es_cosa_del_caller(monkeypa
     assert len(calls[0]) == MAX_ITEMS_PER_REQUEST + 5
 
 
-def test_get_product_previews_marca_none_los_asin_no_encontrados(monkeypatch) -> None:
+def _previews_client(monkeypatch, items, errors):
     settings = Settings(amazon_client_id="client", amazon_client_secret="secret", amazon_affiliate_tag="tag-21")
     client = AmazonProductClient(settings)
     monkeypatch.setattr(client, "_get_token", lambda: "fake-token")
-    monkeypatch.setattr(client, "_fetch_items", lambda asins, token: [])  # Amazon no devuelve nada
+    monkeypatch.setattr(client, "_fetch_response", lambda asins, token: (items, errors))
+    return client
 
-    result = client.get_product_previews(["B001", "B002"])
 
-    assert result == {"B001": None, "B002": None}
+def test_get_product_previews_marca_none_solo_los_que_amazon_declara_inexistentes(monkeypatch) -> None:
+    errors = [
+        {"code": "InvalidParameterValue", "message": "The ItemIds B0BBBBBBBB provided in the request is invalid."},
+        {"code": "ItemNotAccessible", "message": "The ItemId B0CCCCCCCC is not accessible through the API."},
+    ]
+    client = _previews_client(monkeypatch, [{"asin": "B0AAAAAAAA"}], errors)
+
+    result = client.get_product_previews(["B0AAAAAAAA", "B0BBBBBBBB", "B0CCCCCCCC", "B0DDDDDDDD"])
+
+    assert result["B0AAAAAAAA"] is not None
+    assert result["B0BBBBBBBB"] is None and result["B0CCCCCCCC"] is None
+    # Ausente sin explicación: desconocido, no "no encontrado"
+    assert "B0DDDDDDDD" not in result
+
+
+def test_get_product_previews_respuesta_vacia_sin_errores_por_item_es_fallo_del_lote(monkeypatch) -> None:
+    from app.modules.products.application.preview_product_from_url import ProductProviderUnavailableError
+
+    client = _previews_client(monkeypatch, [], [])
+    with pytest.raises(ProductProviderUnavailableError):
+        client.get_product_previews(["B0AAAAAAAA", "B0BBBBBBBB"])
+
+    other = _previews_client(monkeypatch, [], [{"code": "TooManyRequests", "message": "B0AAAAAAAA throttled"}])
+    with pytest.raises(ProductProviderUnavailableError):
+        other.get_product_previews(["B0AAAAAAAA"])
 
 
 def test_get_product_previews_vacio_no_llama_a_amazon(monkeypatch) -> None:

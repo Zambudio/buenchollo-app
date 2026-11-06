@@ -205,8 +205,11 @@ ASIN (`submissions/application/review_submission.py`), y el alta desde el panel 
 ### 5.6 Ejecución manual desde el panel
 
 Se mantiene la vista previa: muestra qué ofertas terminarían, cuáles se reactivarían y qué se
-purgaría. «Confirmar» aplica **todas** las transiciones de la vista previa (sin selección
-individual, igual que la ejecución automática). El registro de ejecuciones muestra el tipo de
+purgaría. «Confirmar» vuelve a consultar Amazon y aplica **todas** las transiciones de ese
+momento (sin selección individual, igual que la ejecución automática); el diálogo lo avisa.
+*Ajuste de la revisión final (2026-11-06):* el worker y el panel no pueden ejecutarla a la vez
+(marca `scheduled_tasks.running_since`, 409 «ya se está ejecutando»), y la consulta a Amazon
+se hace sin transacción abierta. El registro de ejecuciones muestra el tipo de
 transición de cada elemento.
 
 ### 5.7 Lo que se retira

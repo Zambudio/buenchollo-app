@@ -4,7 +4,7 @@ from typing import Literal
 
 from app.core.audit import audit_log
 from app.modules.scheduled_tasks.application.task_handler import Candidate, PreviewResult, TaskHandler
-from app.modules.scheduled_tasks.domain.exceptions import ScheduledTaskNotFound
+from app.modules.scheduled_tasks.domain.exceptions import ScheduledTaskNotFound, TaskAlreadyRunningError
 from app.modules.scheduled_tasks.domain.models import ScheduledTask, ScheduledTaskRun, ScheduledTaskRunItem
 
 logger = logging.getLogger(__name__)
@@ -57,8 +57,10 @@ class ScheduledTaskService:
         """Qué haría la tarea ahora mismo, sin escribir nada."""
         task = await self._get_task_or_404(task_id)
         handler = self.handlers[task.task_type]
-        checks = await handler.collect()
-        return handler.evaluate(checks, task.config, datetime.now(timezone.utc))
+        config = task.config
+        # Sin transacción abierta mientras se consulta Amazon (PgBouncer).
+        checks = await handler.collect(between=self.session.commit)
+        return handler.evaluate(checks, config, datetime.now(timezone.utc))
 
     async def confirm(self, task_id: str, triggered_by: str) -> ScheduledTaskRun:
         """Ejecución manual desde el panel: aplica todas las transiciones."""
@@ -72,9 +74,16 @@ class ScheduledTaskService:
     ) -> ScheduledTaskRun:
         task = await self._get_task_or_404(task_id)
         handler = self.handlers[task.task_type]
+        # Exclusión mutua worker / panel: la marca se guarda ya (commit) para que
+        # la vea el otro proceso; se quita al terminar, también si falla.
+        if not await self.repo.claim_run(task_id):
+            raise TaskAlreadyRunningError(task_id)
+        await self.session.commit()
         total_checked = 0
         try:
-            checks = await handler.collect()
+            # `between` cierra la transacción tras cargar el catálogo: la consulta
+            # a Amazon (minutos con un catálogo grande) no retiene una conexión.
+            checks = await handler.collect(between=self.session.commit)
             total_checked = len(checks)
             applied = await handler.apply(checks, task.config, datetime.now(timezone.utc))
             run = await self._persist_run(
@@ -82,6 +91,7 @@ class ScheduledTaskService:
                 applied=applied, triggered_by=triggered_by,
             )
             task.last_run_at = datetime.now(timezone.utc)
+            await self.repo.release_run(task_id)
             await self.repo.update_task(task)
             return run
         except Exception as exc:
@@ -100,6 +110,10 @@ class ScheduledTaskService:
                     triggered_by=triggered_by, error_message=str(exc)[:500],
                 )
             )
+            await self.repo.release_run(task_id)
+            # Se guarda ya: en la ejecución manual el rollback de la petición
+            # se llevaría el registro del fallo y dejaría la marca puesta.
+            await self.session.commit()
             raise
 
     async def list_runs(self, task_id: str, limit: int = 50, offset: int = 0) -> list[ScheduledTaskRun]:

@@ -220,8 +220,9 @@ export function ScheduledTaskConfigPanel({ task }: { readonly task: ScheduledTas
             <AlertDialogDescription asChild>
               <div className="max-h-80 overflow-y-auto overflow-x-auto mt-2">
                 <p className="mb-2 text-xs">
-                  Se aplican todos los cambios y además se actualiza el precio de los{" "}
-                  {pendingPreview?.total_checked ?? 0} productos revisados. Las eliminaciones son
+                  Al aplicar se vuelve a consultar Amazon para los{" "}
+                  {pendingPreview?.total_checked ?? 0} productos y se aplica lo que haya en ese
+                  momento (puede variar un poco respecto a esta vista previa). Las eliminaciones son
                   definitivas.
                 </p>
                 <table className="w-full text-sm text-left">

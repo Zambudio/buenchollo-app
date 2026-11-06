@@ -163,3 +163,15 @@ def test_nunca_reactiva_lo_que_terminaria_en_la_misma_revision(reason):
     assert decide(state, _obs("80"), CFG) == ("reactivate", None)
     reactivated_state = _state("active", offer="80", previous="100")
     assert decide(reactivated_state, _obs("80"), CFG) == ("keep", None)
+
+
+def test_no_reactiva_una_oferta_cuya_fecha_de_fin_ya_paso():
+    """Revisión del 2026-11-06: se reactivaba (aviso incluido) y a los 5 min
+    mark_expired_deals la volvía a caducar por fecha."""
+    from datetime import datetime, timedelta, timezone
+
+    now = datetime(2026, 11, 6, 4, 0, tzinfo=timezone.utc)
+    past = OfferState("expired", "out_of_stock", Decimal("80"), None, expires_at=now - timedelta(hours=1))
+    future = OfferState("expired", "out_of_stock", Decimal("80"), None, expires_at=now + timedelta(days=1))
+    assert decide(past, _obs("80"), CFG, now=now) == ("none", None)
+    assert decide(future, _obs("80"), CFG, now=now) == ("reactivate", None)

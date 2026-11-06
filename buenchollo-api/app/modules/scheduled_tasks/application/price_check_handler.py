@@ -86,8 +86,13 @@ class PriceCheckHandler:
         self._sleep = sleep
         self._last_request: float | None = None
 
-    async def collect(self) -> list[ListingCheck]:
+    async def collect(self, between=None) -> list[ListingCheck]:
+        """Carga los listings y consulta Amazon. `between` (p. ej. el commit de
+        la sesión) se llama entre ambas cosas para no tener una transacción
+        abierta durante las llamadas HTTP."""
         pairs = await self.catalog_repo.get_checkable()
+        if between is not None:
+            await between()
         return await run_in_threadpool(self.fetch, pairs)
 
     def fetch(self, pairs: list[tuple]) -> list[ListingCheck]:
@@ -103,7 +108,11 @@ class PriceCheckHandler:
             batch = valid[i : i + MAX_ITEMS_PER_REQUEST]
             products = self._fetch_batch([listing.external_id for listing, _ in batch])
             for listing, deal in batch:
-                observation = None if products is None else self._observe(products.get(listing.external_id))
+                # Ausente del resultado = desconocido (no se toca); None = no existe.
+                if products is None or listing.external_id not in products:
+                    observation = None
+                else:
+                    observation = self._observe(products[listing.external_id])
                 checks.append(ListingCheck(listing, deal, observation))
         return checks
 
@@ -153,6 +162,9 @@ class PriceCheckHandler:
         return PreviewResult(total_checked=len(checks), candidates=candidates)
 
     async def apply(self, checks: list[ListingCheck], config: dict, now: datetime) -> list[Candidate]:
+        removed = await self.catalog_repo.delete_orphan_products()
+        if removed:
+            logger.info("Catálogo: %d producto(s) sin chollos eliminados", removed)
         applied: list[Candidate] = []
         for check in checks:
             outcome = self._outcome(check, config, now)
@@ -181,7 +193,7 @@ class PriceCheckHandler:
         purge = since is not None and since <= now - timedelta(days=purge_after_days_from(config))
         transition = reason = None
         if check.deal is not None and not purge:
-            decision, reason = decide(self._state(check.deal), obs, rules_config_from(config))
+            decision, reason = decide(self._state(check.deal), obs, rules_config_from(config), now=now)
             if decision == "end":
                 transition = "offer_ended"
             elif decision == "reactivate":
@@ -195,6 +207,7 @@ class PriceCheckHandler:
             offer_end_reason=deal.offer_end_reason,
             offer_price=_money(deal.offer_price),
             previous_price=_money(deal.previous_price),
+            expires_at=getattr(deal, "expires_at", None),
         )
 
     @staticmethod

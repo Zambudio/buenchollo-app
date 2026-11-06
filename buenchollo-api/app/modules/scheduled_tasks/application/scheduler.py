@@ -22,6 +22,7 @@ from app.modules.scheduled_tasks.application.scheduled_task_service import (
     ScheduledTaskService,
     is_task_due,
 )
+from app.modules.scheduled_tasks.domain.exceptions import TaskAlreadyRunningError
 from app.modules.scheduled_tasks.infrastructure.repository import ScheduledTaskRepository
 
 logger = logging.getLogger(__name__)
@@ -53,15 +54,20 @@ async def _execute_due_tasks(repo, service, session, now_local: datetime, notifi
         try:
             run = await service.run_automatic(task_id)
             executed += 1
+        except TaskAlreadyRunningError:
+            logger.info("Tarea programada %s ya en curso (p. ej. lanzada desde el panel): se omite", task_id)
         except Exception:
             logger.exception("Fallo al ejecutar la tarea programada %s", task_id)
         await session.commit()
         if run is not None and notifier is not None:
-            await _notify_reactivations(notifier, run, session)
+            await notify_reactivations(notifier, run, session)
     return executed
 
 
-async def _notify_reactivations(notifier, run, session) -> None:
+async def notify_reactivations(notifier, run, session) -> None:
+    """Avisa de las reactivaciones de un run YA guardado y guarda el antispam.
+    Compartida por el worker y por "Ejecutar ahora" del panel: un fallo se
+    registra y nunca afecta a lo ya aplicado."""
     deal_ids = reactivated_deal_ids(run)
     if not deal_ids:
         return

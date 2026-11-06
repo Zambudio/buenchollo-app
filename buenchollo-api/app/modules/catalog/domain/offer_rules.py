@@ -16,6 +16,7 @@ que subió de 114,15 a 123,29 € seguía marcado con un 10 %).
 """
 
 from dataclasses import dataclass
+from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from typing import Literal
 
@@ -48,6 +49,9 @@ class OfferState:
     offer_end_reason: str | None
     offer_price: Decimal | None
     previous_price: Decimal | None
+    # Fin de oferta fijado a mano: pasado, no se reactiva (mark_expired_deals
+    # la volvería a caducar por fecha a los pocos minutos).
+    expires_at: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -78,11 +82,15 @@ def availability_of(obs: Observation) -> str:
     return AVAILABLE if obs.in_stock else UNAVAILABLE
 
 
-def decide(state: OfferState, obs: Observation, cfg: RulesConfig) -> tuple[Decision, str | None]:
+def decide(
+    state: OfferState, obs: Observation, cfg: RulesConfig, now: datetime | None = None
+) -> tuple[Decision, str | None]:
     if state.status == "active":
         reason = _end_reason(state, obs, cfg)
         return ("end", reason) if reason else ("keep", None)
     if state.status == "expired" and state.offer_end_reason in REACTIVATABLE_REASONS:
+        if state.expires_at is not None and now is not None and state.expires_at <= now:
+            return ("none", None)
         return ("reactivate", None) if _is_deal_again(state, obs, cfg) else ("none", None)
     return ("none", None)
 

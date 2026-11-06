@@ -181,3 +181,17 @@ async def test_delete_product_if_orphan(session):
     assert await repo.delete_product_if_orphan(product_id) is True
     session.expunge_all()
     assert await session.get(Product, product_id) is None
+
+
+async def test_get_checkable_y_limpieza_ignoran_productos_sin_chollos(session):
+    """Un chollo borrado fuera de DealService (SQL, cascadas) deja su producto
+    huérfano: no se consulta a Amazon y la revisión diaria lo elimina."""
+    repo = CatalogRepository(session)
+    deal = await _add_linked(session, repo, _deal("B0REPOA009"))
+    listing_id, product_id = deal.listing_id, deal.product_id
+    await session.execute(text("DELETE FROM deals WHERE id = :d"), {"d": deal.id})
+    session.expunge_all()
+
+    assert listing_id not in {listing.id for listing, _ in await repo.get_checkable()}
+    assert await repo.delete_orphan_products() >= 1
+    assert await session.get(Product, product_id) is None

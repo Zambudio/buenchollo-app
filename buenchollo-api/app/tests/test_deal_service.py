@@ -353,3 +353,44 @@ async def test_borrar_deal_limpia_su_producto_si_queda_huerfano():
 
     repo.delete.assert_awaited_once()
     catalog.delete_product_if_orphan.assert_awaited_once_with("product-1")
+
+
+@pytest.mark.asyncio
+async def test_reactivar_limpia_los_datos_de_la_oferta_anterior():
+    """Sin esto, un chollo caducado por fecha revivía con su expires_at pasado y
+    mark_expired_deals lo volvía a caducar en < 5 min (tras avisar a las alertas)."""
+    service, repo, _ = _build_service()
+    existing = _expired_existing(
+        offer_end_reason="expired_date", expires_at="2026-10-01T00:00:00Z", coupon_code="VIEJO10",
+        previous_price=150.0, discount_percentage=33, savings_amount=50.0, scheduled_for=None,
+    )
+    repo.find_by_external_id = AsyncMock(return_value=existing)
+    repo.get_by_id = AsyncMock(return_value=existing)
+    repo.reload = AsyncMock(return_value=existing)
+
+    await service.create_deal({"title": "X", "current_price": 90.0, "external_id": "B0DABC1234"}, "user-1")
+
+    assert existing.expires_at is None
+    assert existing.coupon_code is None
+    assert existing.previous_price is None
+    assert existing.discount_percentage is None
+    assert existing.savings_amount is None
+
+
+@pytest.mark.asyncio
+async def test_reactivar_conserva_los_datos_de_oferta_que_vienen_en_el_alta():
+    service, repo, _ = _build_service()
+    existing = _expired_existing(expires_at="2026-10-01T00:00:00Z", coupon_code="VIEJO10")
+    repo.find_by_external_id = AsyncMock(return_value=existing)
+    repo.get_by_id = AsyncMock(return_value=existing)
+    repo.reload = AsyncMock(return_value=existing)
+
+    await service.create_deal(
+        {"title": "X", "current_price": 90.0, "external_id": "B0DABC1234",
+         "expires_at": "2026-12-31T23:59:00Z", "coupon_code": "NUEVO5", "previous_price": 120.0},
+        "user-1",
+    )
+
+    assert existing.expires_at == "2026-12-31T23:59:00Z"
+    assert existing.coupon_code == "NUEVO5"
+    assert existing.previous_price == 120.0

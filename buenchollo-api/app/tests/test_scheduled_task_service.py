@@ -55,10 +55,13 @@ def _build_service(task, handler):
     repo.get_by_id = AsyncMock(return_value=task)
     repo.update_task = AsyncMock(side_effect=lambda t: t)
     repo.create_run = AsyncMock(side_effect=lambda run: run)
+    repo.claim_run = AsyncMock(return_value=True)
+    repo.release_run = AsyncMock()
     session = MagicMock()
     session.add = MagicMock()
     session.flush = AsyncMock()
     session.rollback = AsyncMock()
+    session.commit = AsyncMock()
     service = ScheduledTaskService(repo, {"price_check": handler}, session)
     return service, repo
 
@@ -270,7 +273,10 @@ async def test_run_automatic_no_relee_task_id_del_orm_tras_el_rollback():
     repo = MagicMock()
     repo.get_by_id = AsyncMock(return_value=task)
     repo.create_run = AsyncMock(side_effect=lambda run: run)
+    repo.claim_run = AsyncMock(return_value=True)
+    repo.release_run = AsyncMock()
     session = MagicMock()
+    session.commit = AsyncMock()
     session.rollback = AsyncMock(side_effect=task.expire)
     handler = _handler(collect_error=RuntimeError("Amazon caído"))
     service = ScheduledTaskService(repo, {"price_check": handler}, session)
@@ -325,3 +331,40 @@ async def test_bulk_delete_runs_delega_en_el_repositorio():
 
     assert count == 3
     repo.delete_runs_by_ids.assert_awaited_once_with(["r1", "r2", "r3"])
+
+
+@pytest.mark.asyncio
+async def test_run_rechaza_si_ya_hay_una_ejecucion_en_curso():
+    from app.modules.scheduled_tasks.domain.exceptions import TaskAlreadyRunningError
+
+    handler = _handler()
+    service, repo = _build_service(_task(), handler)
+    repo.claim_run = AsyncMock(return_value=False)
+
+    with pytest.raises(TaskAlreadyRunningError):
+        await service.confirm("task-1", triggered_by="admin-1")
+    handler.collect.assert_not_awaited()
+    repo.create_run.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_run_cierra_la_transaccion_antes_de_consultar_amazon_y_libera_la_marca():
+    task = _task(running_since="marca")
+    handler = _handler()
+    service, repo = _build_service(task, handler)
+
+    await service.run_automatic("task-1")
+
+    assert handler.collect.await_args.kwargs["between"] is service.session.commit
+    repo.release_run.assert_awaited_once_with("task-1")
+
+
+@pytest.mark.asyncio
+async def test_run_fallido_libera_la_marca_y_guarda_el_registro():
+    service, repo = _build_service(_task(), _handler(collect_error=RuntimeError("Amazon caído")))
+
+    with pytest.raises(RuntimeError):
+        await service.confirm("task-1", triggered_by="admin-1")
+
+    repo.release_run.assert_awaited_once_with("task-1")
+    assert service.session.commit.await_count >= 2  # marca + registro del fallo

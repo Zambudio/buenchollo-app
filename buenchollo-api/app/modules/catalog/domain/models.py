@@ -82,7 +82,7 @@ class ProductListing(Base):
         ForeignKey("stores.id", ondelete="SET NULL"), type_=Uuid(as_uuid=False), nullable=True
     )
     source: Mapped[str] = mapped_column(String(16), default=SOURCE_MANUAL, nullable=False)
-    external_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    external_id: Mapped[str | None] = mapped_column(String, nullable=True)
     canonical_url: Mapped[str | None] = mapped_column(String, nullable=True)
     affiliate_url: Mapped[str | None] = mapped_column(String, nullable=True)
     current_price: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)

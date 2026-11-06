@@ -1,5 +1,3 @@
-from datetime import datetime, timezone
-
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,9 +15,9 @@ from app.modules.scheduled_tasks.api.schemas import (
     ScheduledTaskResponse,
     ScheduledTaskUpdate,
 )
-from app.modules.catalog.application.reactivation_notifier import reactivated_deal_ids
 from app.modules.scheduled_tasks.application.factory import build_reactivation_notifier, build_task_handlers
 from app.modules.scheduled_tasks.application.scheduled_task_service import ScheduledTaskService
+from app.modules.scheduled_tasks.application.scheduler import notify_reactivations
 from app.modules.scheduled_tasks.domain.exceptions import ScheduledTaskRunNotFound
 from app.modules.scheduled_tasks.infrastructure.repository import ScheduledTaskRepository
 
@@ -88,10 +86,7 @@ async def confirm_scheduled_task(
     avisan tras el commit, igual que en la ejecución automática."""
     run = await service.confirm(task_id, str(current_user.id))
     await db.commit()
-    deal_ids = reactivated_deal_ids(run)
-    if deal_ids:
-        notifier = build_reactivation_notifier(db, settings)
-        await notifier.notify(deal_ids, datetime.now(timezone.utc))
+    await notify_reactivations(build_reactivation_notifier(db, settings), run, db)
     return run
 
 

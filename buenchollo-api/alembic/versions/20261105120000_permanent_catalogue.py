@@ -129,7 +129,8 @@ def upgrade() -> None:
         sa.Column("product_id", _UUID, sa.ForeignKey("products.id", ondelete="CASCADE"), nullable=False),
         sa.Column("store_id", _UUID, sa.ForeignKey("stores.id", ondelete="SET NULL"), nullable=True),
         sa.Column("source", sa.String(16), nullable=False, server_default="manual"),
-        sa.Column("external_id", sa.String(64), nullable=True),
+        # Sin límite: deals.external_id tampoco lo tiene y el backfill no puede fallar.
+        sa.Column("external_id", sa.String(), nullable=True),
         sa.Column("canonical_url", sa.String(), nullable=True),
         sa.Column("affiliate_url", sa.String(), nullable=True),
         sa.Column("current_price", sa.Numeric(10, 2), nullable=True),
@@ -169,6 +170,8 @@ def upgrade() -> None:
         "scheduled_task_run_items",
         sa.Column("transition", sa.String(16), nullable=False, server_default="offer_ended"),
     )
+    # Marca de ejecución en curso (exclusión mutua entre el worker y el panel).
+    op.add_column("scheduled_tasks", sa.Column("running_since", sa.DateTime(timezone=True), nullable=True))
 
     backfill_catalog(op.get_bind())
 
@@ -193,6 +196,7 @@ def downgrade() -> None:
         "UPDATE scheduled_tasks SET enabled = false, frequency_preset = 'weekly' "
         "WHERE task_type = 'price_check'"
     )
+    op.drop_column("scheduled_tasks", "running_since")
     op.drop_column("scheduled_task_run_items", "transition")
     op.drop_index("ix_deals_listing_id", table_name="deals")
     op.drop_index("ix_deals_product_id", table_name="deals")

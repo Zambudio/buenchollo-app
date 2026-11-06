@@ -32,6 +32,8 @@ class ScheduledTask(Base):
     run_hour: Mapped[int] = mapped_column(SmallInteger, default=4, nullable=False)
     config: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     last_run_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Marca de "ejecución en curso" (exclusión mutua entre el worker y el panel).
+    running_since: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), default=lambda: datetime.now(timezone.utc)
     )

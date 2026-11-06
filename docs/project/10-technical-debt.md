@@ -24,10 +24,11 @@
 
 - **TD-41 — La ejecución manual de `price_check` es una petición HTTP síncrona.** Vista
   previa y «Aplicar» consultan Amazon dentro de la petición (≈ 1 s por cada 10 productos:
-  ~18 s con 157). Con más de ~900 productos superaría los 100 s de Cloudflare. Proponer
-  para Fase 3: ejecución en segundo plano con estado consultable y cadencia por prioridad
-  (ofertas activas a diario, catálogo frío cada 3 días), además del cupo diario de la
-  Creators API, que depende de las ventas.
+  ~18 s con 157). Con más de ~900 productos superaría los 100 s de Cloudflare (524). Ya no
+  retiene conexión de BD durante la consulta ni puede solaparse con el worker. Proponer para
+  Fase 3: ejecución en segundo plano (202 + estado del run), cadencia por prioridad (ofertas
+  activas a diario, catálogo frío cada 3 días) y control del cupo diario de la Creators API,
+  que depende de las ventas.
 - **TD-39 — Precio de más de 24 h en las tarjetas si Amazon falla varios días.** La ficha
   avisa («Precio de hace N días: puede haber cambiado») y la de un chollo sin oferta oculta
   el precio, pero portada, listados y búsqueda siguen mostrando el último precio conocido.

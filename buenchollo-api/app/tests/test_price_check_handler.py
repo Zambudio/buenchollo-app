@@ -78,6 +78,10 @@ class FakeCatalogRepo:
         self.purged.append(listing.id)
         return list(self.deleted_ids)
 
+    async def delete_orphan_products(self):
+        self.orphan_cleanups = getattr(self, "orphan_cleanups", 0) + 1
+        return 0
+
 
 def _handler(verifier=None, repo=None, sleeps=None):
     pauses = sleeps if sleeps is not None else []
@@ -118,6 +122,19 @@ def test_fetch_excluye_ids_que_no_son_asin_validos():
     assert verifier.batch_calls == [["B0D9WH9WLD"]]
     assert checks["bad"].observation is None
     assert checks["listing-1"].observation.found is True
+
+
+def test_fetch_asin_omitido_en_la_respuesta_queda_intacto():
+    """Solo es not_found lo que Amazon declara inexistente (valor None); lo que
+    falta sin explicación no se toca."""
+    class PartialVerifier(FakeVerifier):
+        def get_product_previews(self, asins):
+            return {"B0D9WH9WLD": None}
+
+    pairs = [(_listing(), _deal()), (_listing(id="l2", external_id="B0OTHER001"), None)]
+    checks = {c.listing.id: c for c in _handler(PartialVerifier()).fetch(pairs)}
+    assert checks["listing-1"].observation.found is False
+    assert checks["l2"].observation is None
 
 
 def test_fetch_lote_fallido_deja_observacion_none():
@@ -298,3 +315,18 @@ async def test_listing_sin_deal_se_purga_sin_item_de_registro():
         [ListingCheck(listing, None, _obs(None, found=False, in_stock=False))], CONFIG, NOW
     )
     assert repo.purged == ["listing-1"] and applied == []
+
+
+@pytest.mark.asyncio
+async def test_no_reactiva_si_la_fecha_de_fin_del_chollo_ya_paso():
+    deal = _deal(status="expired", offer_end_reason="out_of_stock", offer_price=Decimal("80"),
+                 expires_at=NOW - timedelta(hours=2))
+    applied = await _handler().apply([ListingCheck(_listing(), deal, _obs("78"))], CONFIG, NOW)
+    assert applied == [] and deal.status == "expired"
+
+
+@pytest.mark.asyncio
+async def test_apply_limpia_productos_huerfanos():
+    repo = FakeCatalogRepo()
+    await _handler(repo=repo).apply([], CONFIG, NOW)
+    assert repo.orphan_cleanups == 1

@@ -10,6 +10,12 @@ from app.modules.alerts.application.alert_matcher import AlertMatcher
 logger = logging.getLogger(__name__)
 
 
+# Datos propios de una oferta concreta: al reactivar un chollo con un alta nueva
+# no se arrastran los de la oferta anterior (p. ej. un expires_at ya pasado lo
+# volvería a caducar en minutos) salvo que el alta los traiga.
+_OFFER_FIELDS = ("expires_at", "scheduled_for", "coupon_code", "previous_price", "discount_percentage", "savings_amount")
+
+
 class DealService:
     def __init__(self, repo: DealRepository, matcher: AlertMatcher | None = None, catalog=None):
         """`matcher` es opcional: cuando se inyecta, los altas/actualizaciones de
@@ -94,6 +100,9 @@ class DealService:
     async def _revive(self, deal: Deal, deal_data: dict) -> Deal:
         """Reutiliza el chollo existente con los datos nuevos (sin tocar su slug,
         votos ni fecha de creación) y lo vuelve a poner en oferta."""
+        for field in _OFFER_FIELDS:
+            if field not in deal_data:
+                setattr(deal, field, None)
         for field, value in deal_data.items():
             if field != "slug":
                 setattr(deal, field, value)

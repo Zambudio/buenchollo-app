@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import delete, exists, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -32,7 +32,12 @@ class CatalogRepository:
             (
                 await self.session.execute(
                     select(ProductListing)
-                    .where(ProductListing.source == SOURCE_AMAZON, ProductListing.external_id.is_not(None))
+                    .where(
+                        ProductListing.source == SOURCE_AMAZON,
+                        ProductListing.external_id.is_not(None),
+                        # Productos sin ningún chollo (huérfanos) no se consultan.
+                        exists().where(Deal.product_id == ProductListing.product_id),
+                    )
                     .order_by(ProductListing.id)
                 )
             ).scalars()
@@ -144,6 +149,19 @@ class CatalogRepository:
             await self.session.execute(delete(Product).where(Product.id == product_id))
         await self.session.flush()
         return deleted
+
+    async def delete_orphan_products(self) -> int:
+        """Elimina productos (y sus listings) sin ningún chollo: quedan así si un
+        chollo se borra fuera de DealService (SQL directo, cascadas)."""
+        result = await self.session.execute(
+            delete(Product)
+            .where(~exists().where(Deal.product_id == Product.id))
+            .returning(Product.id)
+            .execution_options(synchronize_session=False)
+        )
+        removed = len(result.all())
+        await self.session.flush()
+        return removed
 
     async def delete_product_if_orphan(self, product_id: str) -> bool:
         """Elimina el producto (y sus listings, en cascada) si ya no le queda

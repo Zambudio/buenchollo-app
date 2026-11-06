@@ -189,3 +189,28 @@ def test_build_service_cablea_dependencias_sin_nameerror():
     assert isinstance(service, ScheduledTaskService)
     assert service.handlers["price_check"].catalog_repo is not None
     assert "price_check" in service.handlers
+
+
+@pytest.mark.asyncio
+async def test_execute_due_tasks_omite_sin_error_si_ya_hay_una_ejecucion_en_curso(caplog):
+    from app.modules.scheduled_tasks.domain.exceptions import TaskAlreadyRunningError
+
+    repo = FakeRepo([_task("task-1", run_hour=0)])
+    service = MagicMock()
+    service.run_automatic = AsyncMock(side_effect=TaskAlreadyRunningError("task-1"))
+    session = MagicMock()
+    session.commit = AsyncMock()
+
+    with caplog.at_level("INFO"):
+        executed = await _execute_due_tasks(repo, service, session, datetime(2026, 8, 10, 5, tzinfo=timezone.utc))
+
+    assert executed == 0
+    assert not [r for r in caplog.records if r.levelname == "ERROR"]
+    assert "en curso" in caplog.text
+
+
+def test_router_y_worker_comparten_el_aviso_protegido():
+    from app.modules.scheduled_tasks.api import router as api_router
+    from app.modules.scheduled_tasks.application import scheduler as worker
+
+    assert api_router.notify_reactivations is worker.notify_reactivations

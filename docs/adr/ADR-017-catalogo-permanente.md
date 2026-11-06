@@ -60,6 +60,13 @@ permanente y multitienda, con la sección de chollos y Telegram como capa rápid
   ciclo petición/respuesta HTTP (TD-41).
 - `downgrade` de la migración desactiva `price_check`: el código anterior borraba lo que
   revisaba.
+- Exclusión mutua entre el worker y «Ejecutar ahora» con una marca atómica
+  (`scheduled_tasks.running_since`, caduca a los 30 min) en lugar de un advisory lock: la
+  transacción se cierra antes de consultar Amazon para no retener conexiones de PgBouncer.
+- Solo es «no encontrado» lo que Amazon declara inexistente en `errors`; una respuesta vacía
+  sin errores por producto es un fallo del lote. Reactivar limpia los datos de la oferta
+  anterior (fecha de fin, cupón, precio «antes») y nunca se reactiva una oferta cuya fecha de
+  fin ya pasó. Los productos sin ningún chollo se eliminan en la revisión diaria.
 
 ## Alternativas descartadas
 

@@ -162,3 +162,20 @@ async def test_backfill_es_idempotente(conn):
     await conn.run_sync(backfill)
     products_after = (await conn.execute(text("SELECT count(*) FROM products"))).scalar_one()
     assert products_after == products_before
+
+
+async def test_backfill_admite_external_id_largo(conn):
+    """deals.external_id no tiene límite de longitud: el backfill (que corre al
+    arrancar el contenedor de producción) no puede fallar por uno largo."""
+    long_id = "SKU-" + "X" * 90
+    deal_id = await _insert_deal(
+        conn, external_id=long_id, status="active", published_at=datetime.now(timezone.utc), price=10
+    )
+    await conn.run_sync(_load_backfill())
+    stored = (
+        await conn.execute(
+            text("SELECT l.external_id FROM deals d JOIN product_listings l ON l.id = d.listing_id WHERE d.id = :d"),
+            {"d": deal_id},
+        )
+    ).scalar_one()
+    assert stored == long_id.upper()
