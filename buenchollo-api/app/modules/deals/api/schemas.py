@@ -35,6 +35,7 @@ class AuthorBasic(BaseModel):
 class DealCardResponse(BaseModel):
     id: str
     title: str
+    short_description: str | None = None
     slug: str
     image_url: str | None = None
     images: list[str] = []

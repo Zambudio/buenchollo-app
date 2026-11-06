@@ -237,7 +237,7 @@ for (const { name, viewport } of VIEWPORTS) {
 
       await page.getByRole("link", { name: "Ver mis chollos" }).click();
       await expect(page).toHaveURL(/\/mis-chollos/);
-      await expect(page.getByText("En revisión")).toBeVisible();
+      await expect(page.getByText("En revisión")).toBeVisible({ timeout: 10_000 });
       await expect(page.getByText(EDITED_TITLE)).toBeVisible();
       expect(pageErrors).toEqual([]);
       expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);

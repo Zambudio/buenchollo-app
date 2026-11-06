@@ -1,4 +1,13 @@
 # PROJECT_STATUS — BuenCholloTech
+*Desarrollo en `develop` (2026-11-06): rediseño de portada, navegación, categorías y tarjetas; tops comunitarios automáticos por producto. Validación local completa; publicación pendiente. Producción permanece en `main` con Alembic `20261106120000`.*
+
+## 2026-11-06 · Rediseño de descubrimiento y tops de productos (en `develop`)
+
+- Portada con banner de voto, feed de tarjetas horizontales y módulos laterales de chollos y blog; navegación y directorio visual de categorías renovados. Loaders SSR para portada y categorías. Diseño comprobado a 390 y 1440 px sin desbordamiento.
+- ADR-018: todos los productos públicos de cada categoría/subcategoría compiten automáticamente; podio de tres y lista hasta diez. Voto positivo reversible por usuario autenticado en `product_top_votes`, migración `20261107120000`. Borradores excluidos. Tres endpoints nuevos en `/v1/catalog`.
+- Validación local: 686 tests backend sin integración y 58 de integración sobre PostgreSQL 17, 457 Vitest, 33 Playwright, build SSR, TypeScript y lint sin errores. Migración aplicada únicamente a la base de `local-env`. Detalle operativo en [rediseño y tops](docs/project/redisenio-web-y-tops-2026-11.md).
+- **Siguiente desarrollo pendiente:** definir puntos por acciones, límites contra abuso y recompensas. Requiere diseño de producto independiente.
+
 *Actualización de producción: 2026-11-06 — Catálogo permanente y registro de Telegram desplegados en web, API y scheduler (merge `3d9c1d9`). CI de `main` en verde; migraciones aplicadas hasta `20261106120000`.*
 
 ## 2026-11-06 · Despliegue del catálogo y Telegram en el NAS

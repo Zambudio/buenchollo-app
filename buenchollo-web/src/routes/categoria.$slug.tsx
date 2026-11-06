@@ -1,12 +1,12 @@
-import { logError } from "@/lib/logger";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
-import { DealCard, type DealCardData } from "@/features/deals/components/DealCard";
+import { DealCard } from "@/features/deals/components/DealCard";
 import { useMyVotes } from "@/features/deals/hooks/useMyVotes";
 import { categoriesService, type Category } from "@/services/api/categories";
 import { dealsService } from "@/services/api/deals";
 import { serializeJsonLd } from "@/lib/json-ld";
+import { catalogService } from "@/services/api/catalog";
+import { TopProducts } from "@/features/catalog/TopProducts";
 
 const SITE = "https://buenchollotech.com";
 
@@ -15,9 +15,19 @@ export const Route = createFileRoute("/categoria/$slug")({
   loader: async ({ params }) => {
     try {
       const cat = await categoriesService.getBySlug(params.slug);
-      return { cat };
+      const [tops, categories, deals] = await Promise.all([
+        catalogService.top(params.slug).catch(() => []),
+        categoriesService.getAll().catch(() => []),
+        dealsService
+          .search({
+            ...(cat.parent_id ? { subcategory_id: cat.id } : { category_id: cat.id }),
+            limit: 48,
+          })
+          .catch(() => []),
+      ]);
+      return { cat, tops, categories, deals };
     } catch {
-      return { cat: null };
+      return { cat: null, tops: [], categories: [], deals: [] };
     }
   },
   head: ({ params, loaderData }) => {
@@ -53,26 +63,10 @@ export const Route = createFileRoute("/categoria/$slug")({
 
 function CategoryPage() {
   const { slug } = Route.useParams();
-  const [cat, setCat] = useState<Category | null>(null);
-  const [deals, setDeals] = useState<DealCardData[]>([]);
+  const { cat, tops, categories, deals } = Route.useLoaderData();
   const myVotes = useMyVotes(deals.map((d) => d.id));
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const c = await categoriesService.getBySlug(slug);
-        setCat(c);
-        if (!c) return;
-        const data = await dealsService.search({
-          ...(c.parent_id ? { subcategory_id: c.id } : { category_id: c.id }),
-          limit: 48,
-        });
-        setDeals(data);
-      } catch (error) {
-        logError("Error cargando la categoría o sus chollos", error);
-      }
-    })();
-  }, [slug]);
+  const subcategories = categories.filter((category) => category.parent_id === cat?.id);
 
   return (
     <Layout>
@@ -86,12 +80,23 @@ function CategoryPage() {
         <p className="text-muted-foreground font-mono text-sm mb-8">
           {deals.length} chollos activos
         </p>
+        {subcategories.length > 0 && (
+          <nav aria-label={`Subcategorías de ${cat?.name}`} className="category-subnav">
+            {subcategories.map((subcategory) => (
+              <Link key={subcategory.id} to="/categoria/$slug" params={{ slug: subcategory.slug }}>
+                {subcategory.name}
+              </Link>
+            ))}
+          </nav>
+        )}
+        <TopProducts slug={slug} initialProducts={tops} />
+        <h2 className="feed-section-title">Chollos activos de {cat?.name ?? "esta categoría"}</h2>
         {deals.length === 0 ? (
           <p className="text-muted-foreground font-mono">
             No hay chollos por ahora en esta categoría.
           </p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="deal-feed-grid">
             {deals.map((d) => (
               <DealCard key={d.id} deal={d} myVote={myVotes[d.id]} />
             ))}

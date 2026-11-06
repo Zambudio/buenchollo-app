@@ -99,3 +99,15 @@ class ProductListing(Base):
 
     product: Mapped[Product] = relationship("Product", back_populates="listings")
     store = relationship("Store")
+
+
+class ProductTopVote(Base):
+    __tablename__ = "product_top_votes"
+    __table_args__ = (UniqueConstraint("product_id", "user_id", name="uq_product_top_votes_product_user"),)
+
+    id: Mapped[str] = mapped_column(Uuid(as_uuid=False), primary_key=True, server_default=func.gen_random_uuid())
+    product_id: Mapped[str] = mapped_column(
+        ForeignKey("products.id", ondelete="CASCADE"), type_=Uuid(as_uuid=False), nullable=False, index=True
+    )
+    user_id: Mapped[str] = mapped_column(Uuid(as_uuid=False), nullable=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)

@@ -1,6 +1,4 @@
-import { logError } from "@/lib/logger";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
 import {
   BatteryCharging,
   Camera,
@@ -18,7 +16,9 @@ import {
   Wifi,
   type LucideIcon,
 } from "lucide-react";
-import { categoriesService, type Category } from "@/services/api/categories";
+import { categoriesService } from "@/services/api/categories";
+import { dealsService } from "@/services/api/deals";
+import { ArrowRight } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 
 const SITE = "https://buenchollotech.com";
@@ -42,6 +42,19 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
 
 export const Route = createFileRoute("/categorias")({
   component: CategoriesPage,
+  loader: async () => {
+    const [cats, deals] = await Promise.all([
+      categoriesService.getAll().catch(() => []),
+      dealsService.getLatest(50).catch(() => []),
+    ]);
+    const covers: Record<string, string> = {};
+    for (const deal of deals) {
+      if (deal.category?.slug && deal.image_url && !covers[deal.category.slug]) {
+        covers[deal.category.slug] = deal.image_url;
+      }
+    }
+    return { cats, covers };
+  },
   head: () => ({
     meta: [
       { title: "Todas las categorías de chollos · BuenChollo Tech" },
@@ -62,63 +75,76 @@ export const Route = createFileRoute("/categorias")({
 });
 
 function CategoriesPage() {
-  const [cats, setCats] = useState<Category[]>([]);
-  useEffect(() => {
-    categoriesService
-      .getAll()
-      .then(setCats)
-      .catch((error) => logError("Error cargando el listado de categorías", error));
-  }, []);
+  const { cats, covers } = Route.useLoaderData();
   const top = cats.filter((c) => !c.parent_id);
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
-        <div className="font-mono text-cyan-glow text-xs mb-2">&gt; CATEGORIAS</div>
-        <h1 className="text-3xl sm:text-4xl font-bold tracking-tighter mb-8">
-          Todas las categorías
-        </h1>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <span className="eyebrow">Explora a tu manera</span>
+        <h1 className="category-page-title">Encuentra tu próximo favorito</h1>
+        <p className="category-page-lead">
+          Entra en una categoría para ver sus chollos y votar los productos que merecen estar
+          arriba.
+        </p>
+        <nav aria-label="Categorías principales" className="category-visual-strip">
+          {top.map((category) => {
+            const Icon = CATEGORY_ICONS[category.slug] ?? Package;
+            return (
+              <Link
+                key={category.id}
+                to="/categoria/$slug"
+                params={{ slug: category.slug }}
+                className="category-visual-item"
+              >
+                <span className="category-visual-image">
+                  <Icon size={42} strokeWidth={1.4} aria-hidden="true" />
+                  {covers[category.slug] && (
+                    <img
+                      src={covers[category.slug]}
+                      alt=""
+                      loading="lazy"
+                      width="104"
+                      height="104"
+                      onError={(event) => {
+                        event.currentTarget.style.display = "none";
+                      }}
+                    />
+                  )}
+                </span>
+                <span>{category.name}</span>
+              </Link>
+            );
+          })}
+        </nav>
+        <div className="category-directory-heading">
+          <h2>Todas las categorías</h2>
+          <span>Elige una subcategoría y descubre su top</span>
+        </div>
+        <div className="category-directory">
           {top.map((t) => {
             const subs = cats.filter((c) => c.parent_id === t.id);
             const Icon = CATEGORY_ICONS[t.slug] ?? Package;
             return (
-              <div
-                key={t.id}
-                className="group relative overflow-hidden bg-surface-800 border border-surface-700 p-5 hover:border-cyan-glow transition-colors"
-              >
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute right-4 top-4 flex size-14 items-center justify-center rounded-xl border border-cyan-glow/25 bg-gradient-to-br from-cyan-glow/20 to-blue-500/5 text-cyan-glow shadow-[0_0_20px_rgba(0,229,255,0.12)] transition-all duration-300 group-hover:scale-105 group-hover:border-cyan-glow/60 group-hover:shadow-[0_0_26px_rgba(0,229,255,0.28)]"
-                >
-                  <Icon
-                    className="size-8 drop-shadow-[0_0_8px_rgba(0,229,255,0.45)]"
-                    strokeWidth={1.8}
-                  />
-                </div>
-                <Link
-                  to="/categoria/$slug"
-                  params={{ slug: t.slug }}
-                  className="relative block min-h-12 pr-14 mb-3 font-bold text-lg hover:text-cyan-glow"
-                >
-                  {t.name}
-                </Link>
-                <ul className="space-y-1.5">
+              <section key={t.id} className="category-directory-card">
+                <h3>
+                  <Icon size={22} strokeWidth={1.8} aria-hidden="true" />
+                  <Link to="/categoria/$slug" params={{ slug: t.slug }}>
+                    {t.name} <ArrowRight size={16} aria-hidden="true" />
+                  </Link>
+                </h3>
+                <ul>
                   {subs.map((s) => (
                     <li key={s.id}>
-                      <Link
-                        to="/categoria/$slug"
-                        params={{ slug: s.slug }}
-                        className="text-sm text-muted-foreground hover:text-foreground font-mono"
-                      >
-                        › {s.name}
+                      <Link to="/categoria/$slug" params={{ slug: s.slug }}>
+                        {s.name}
                       </Link>
                     </li>
                   ))}
                   {subs.length === 0 && (
-                    <li className="text-xs text-muted-foreground font-mono">Sin subcategorías</li>
+                    <li className="text-xs text-muted-foreground">Sin subcategorías</li>
                   )}
                 </ul>
-              </div>
+              </section>
             );
           })}
         </div>

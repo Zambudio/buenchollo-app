@@ -1,5 +1,5 @@
-import { logError } from "@/lib/logger";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowRight, Trophy } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { DealCard, type DealCardData } from "@/features/deals/components/DealCard";
@@ -9,6 +9,8 @@ import { useMyVotes } from "@/features/deals/hooks/useMyVotes";
 import { useAuth } from "@/hooks/useAuth";
 import { dealsService, favoritesApi } from "@/services/api/deals";
 import { serializeJsonLd } from "@/lib/json-ld";
+import { HomeSidebar } from "@/features/home/HomeSidebar";
+import { blogService } from "@/services/api/blog";
 
 const SITE = "https://buenchollotech.com";
 const PAGE_SIZE = 30;
@@ -37,6 +39,20 @@ function toHomeSearch(filter: HomeFilterKey, page: number): HomeSearch {
 export const Route = createFileRoute("/")({
   component: HomePage,
   validateSearch: parseHomeSearch,
+  loaderDeps: ({ search }) => ({ sort: search.sort ?? "popular", page: search.page ?? 1 }),
+  loader: async ({ deps }) => {
+    const [page, popular, posts] = await Promise.all([
+      dealsService
+        .getPage({ sort: deps.sort, page: deps.page, page_size: PAGE_SIZE })
+        .catch(() => ({ items: [], total_pages: 1, page: 1, page_size: PAGE_SIZE, total: 0 })),
+      dealsService.getPopular(3).catch(() => []),
+      blogService
+        .getPosts({ page_size: 3 })
+        .then((result) => result.items)
+        .catch(() => []),
+    ]);
+    return { ...page, popular, posts };
+  },
   head: () => ({
     meta: [
       { title: "BuenChollo Tech — Chollos y ofertas de tecnología en España" },
@@ -105,10 +121,10 @@ function HomePage() {
   const navigate = Route.useNavigate();
   const filter = search.sort ?? "popular";
   const page = search.page ?? 1;
-  const [deals, setDeals] = useState<DealCardData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [totalPages, setTotalPages] = useState(1);
-  const currentPage = Math.min(page, totalPages);
+  const data = Route.useLoaderData();
+  const deals = data.items as DealCardData[];
+  const totalPages = data.total_pages;
+  const currentPage = data.page;
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
   const dealsHeadingRef = useRef<HTMLHeadingElement>(null);
   const myVotes = useMyVotes(deals.map((d) => d.id));
@@ -118,34 +134,13 @@ function HomePage() {
   };
 
   useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    dealsService
-      .getPage({ sort: filter, page, page_size: PAGE_SIZE })
-      .then((data) => {
-        if (cancelled) return;
-        setDeals(data.items);
-        setTotalPages(data.total_pages);
-        if (data.page !== page) {
-          void navigate({ search: toHomeSearch(filter, data.page), replace: true });
-        }
-      })
-      .catch((error) => {
-        if (cancelled) return;
-        logError("Error cargando chollos de portada", error);
-        setDeals([]);
-        setTotalPages(1);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [filter, navigate, page]);
+    if (currentPage !== page) {
+      void navigate({ search: toHomeSearch(filter, currentPage), replace: true });
+    }
+  }, [currentPage, filter, navigate, page]);
 
   const changePage = (nextPage: number) => {
-    if (loading || nextPage < 1 || nextPage > totalPages || nextPage === currentPage) return;
+    if (nextPage < 1 || nextPage > totalPages || nextPage === currentPage) return;
     void navigate({ search: toHomeSearch(filter, nextPage) });
     const headingTop = dealsHeadingRef.current?.getBoundingClientRect().top;
     if (headingTop != null) {
@@ -168,69 +163,76 @@ function HomePage() {
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground mb-6">
-          Chollos y Ofertas de Tecnología Verificadas
-        </h1>
-        <details className="seo-accordion group mb-6 border-b border-surface-700 pb-3 text-sm text-muted-foreground">
-          <summary className="cursor-pointer list-none font-mono text-xs text-cyan-glow hover:text-foreground transition-colors marker:content-none">
-            <span className="group-open:hidden">
-              + Más información sobre los chollos de tecnología...
-            </span>
-            <span className="hidden group-open:inline">− Menos información</span>
-          </summary>
-          <p className="mt-3 max-w-3xl leading-relaxed">
-            En BuenChollo Tech somos especialistas en rastrear, verificar y seleccionar diariamente
-            las mejores ofertas y descuentos en tecnología. Monitorizamos los precios de Amazon y
-            principales tiendas para traerte chollos en informática, telefonía, consolas, gaming,
-            TV, audio, domótica y cualquier dispositivo electrónico al precio mínimo histórico.
-            Compara ofertas verificadas y ahorra tiempo y dinero en tus compras tech.
-          </p>
-        </details>
-        <HomeFilterTabs value={filter} onChange={handleFilterChange} />
-
-        <section aria-labelledby="home-deals-heading" className="mt-6" aria-busy={loading}>
-          <h2 ref={dealsHeadingRef} id="home-deals-heading" className="sr-only">
-            {filter === "popular"
-              ? "Chollos más populares"
-              : filter === "recent"
-                ? "Nuevos chollos"
-                : "Chollos con mayor descuento"}
-          </h2>
-          <div className={`deal-feed-grid transition-opacity ${loading ? "opacity-60" : ""}`}>
-            {deals.map((d, index) => (
-              <DealCard
-                key={d.id}
-                deal={d}
-                isFavorite={favIds.has(d.id)}
-                myVote={myVotes[d.id]}
-                imageLoading={index < 3 ? "eager" : "lazy"}
-              />
-            ))}
+        <div className="home-intro">
+          <div>
+            <span className="eyebrow">Tecnología que merece la pena</span>
+            <h1>Chollos de tecnología que apetece descubrir</h1>
+            <p>
+              Ofertas seleccionadas, productos que permanecen y una comunidad que decide cuáles
+              destacan.
+            </p>
           </div>
+        </div>
+        <section className="top-banner" aria-labelledby="top-banner-heading">
+          <span className="top-banner-icon">
+            <Trophy size={30} aria-hidden="true" />
+          </span>
+          <div>
+            <span className="eyebrow">Nuevos tops por categoría</span>
+            <h2 id="top-banner-heading">¿Cuál merece el primer puesto?</h2>
+            <p>
+              Descubre los productos de cada categoría y vota tus favoritos. Todos los publicados
+              participan.
+            </p>
+          </div>
+          <Link to="/categorias" className="top-banner-cta">
+            Explorar y votar <ArrowRight size={17} />
+          </Link>
         </section>
+        <div className="home-content-layout">
+          <div className="home-feed-column">
+            <HomeFilterTabs value={filter} onChange={handleFilterChange} />
 
-        {loading && (
-          <div className="py-8 text-center font-mono text-xs text-muted-foreground animate-pulse">
-            CARGANDO...
+            <section aria-labelledby="home-deals-heading" className="mt-6">
+              <h2 ref={dealsHeadingRef} id="home-deals-heading" className="sr-only">
+                {filter === "popular"
+                  ? "Chollos más populares"
+                  : filter === "recent"
+                    ? "Nuevos chollos"
+                    : "Chollos con mayor descuento"}
+              </h2>
+              <div className="deal-feed-grid">
+                {deals.map((d, index) => (
+                  <DealCard
+                    key={d.id}
+                    deal={d}
+                    isFavorite={favIds.has(d.id)}
+                    myVote={myVotes[d.id]}
+                    imageLoading={index < 3 ? "eager" : "lazy"}
+                  />
+                ))}
+              </div>
+            </section>
+
+            {deals.length === 0 && (
+              <p className="py-10 text-center font-mono text-sm text-muted-foreground">
+                No hay chollos disponibles en este momento.
+              </p>
+            )}
+
+            {deals.length > 0 && (
+              <div className="mt-8 border-t border-surface-700 pt-6">
+                <DealPagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  loading={false}
+                  onPageChange={changePage}
+                />
+              </div>
+            )}
           </div>
-        )}
-
-        {!loading && deals.length === 0 && (
-          <p className="py-10 text-center font-mono text-sm text-muted-foreground">
-            No hay chollos disponibles en este momento.
-          </p>
-        )}
-
-        {deals.length > 0 && (
-          <div className="mt-8 border-t border-surface-700 pt-6">
-            <DealPagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              loading={loading}
-              onPageChange={changePage}
-            />
-          </div>
-        )}
+          <HomeSidebar popular={data.popular} posts={data.posts} />
+        </div>
       </div>
     </Layout>
   );
