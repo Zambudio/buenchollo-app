@@ -37,7 +37,10 @@ permanente y multitienda, con la sección de chollos y Telegram como capa rápid
    informa Amazon es frente a su propia referencia y, por sí solo, no prueba una bajada.
 4. **Aviso al canal Admin** (nunca al oficial) tras el commit de cada ejecución, como mucho
    uno por deal cada 7 días salvo que el precio baje más; las alertas de usuario se
-   disparan con el mismo antispam. La web reactiva sin aprobación.
+   disparan con el mismo antispam. La web reactiva sin aprobación. *Ampliado el
+   2026-11-06:* también avisa de las bajadas de precio de ofertas activas
+   (`price_drop_percent`) y el aviso va seguido de la última publicación de Telegram del
+   chollo (tabla `telegram_publications`) con el precio corregido, lista para reenviar.
 5. **Única eliminación automática:** un listing con disponibilidad confirmada como
    `unavailable`/`not_found` durante `purge_after_days` (30). Si al producto le quedan otras
    tiendas solo se quita esa; si no, se eliminan producto y deals. Un fallo de Amazon nunca
