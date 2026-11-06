@@ -50,10 +50,11 @@ app/
     ├── ai/            # motor unificado LLM, fallback multi-modelo, copywriting, categorización, chatbot
     ├── deals/
     │   ├── domain/        # modelos SQLAlchemy (Deal)
-    │   ├── application/   # casos de uso, cleaner_service
+    │   ├── application/   # casos de uso, cleaner_service (caducidad por fecha; ya no borra)
     │   ├── infrastructure/# repositorios, adapters externos
     │   └── api/           # router FastAPI, schemas Pydantic
     ├── products/          # preview Amazon (DIP con Protocols e integración ProductAIEnricher)
+    ├── catalog/           # catálogo permanente: products + product_listings, reglas de oferta, aviso de reactivación (ADR-017)
     ├── telegram/          # publicación al canal, formato emoji premium, hashtags IA
     ├── categories/
     ├── stores/

@@ -24,7 +24,10 @@ sys.modules.setdefault("amazon_paapi.errors", MagicMock())
 # ── Variables de entorno ──────────────────────────────────────────────────────
 from dotenv import load_dotenv
 env_path = Path(__file__).parent / ".env"
-load_dotenv(dotenv_path=env_path, override=True)
+# override=False: lo exportado en la shell (p. ej. DATABASE_URL hacia la base de
+# test, docs/guides/LOCAL-ENV.md) gana al .env; con override=True un .env real
+# mandaba los tests de integración a la base de producción.
+load_dotenv(dotenv_path=env_path, override=False)
 
 # ── Registro completo del grafo de modelos SQLAlchemy ────────────────────────
 # Los relationship("Category"|"Store"|...) se resuelven por nombre en la

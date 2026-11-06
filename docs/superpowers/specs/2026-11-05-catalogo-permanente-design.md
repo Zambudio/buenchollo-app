@@ -147,10 +147,17 @@ mínimo tipo Keepa o `previous_price` manual:
 En esos casos → `expired` con `offer_end_reason`. **No se borra.** Si no se cumple ninguno,
 solo se actualiza el precio.
 
-**Reactivación (deal `expired` por precio/stock/no encontrado)**: listing disponible **y**
-(precio ≤ `offer_price` **o** descuento informado por la tienda ≥ `min_discount_percent`,
-configurable, **por defecto 5 %**). Es decir: vuelve al precio al que ya fue chollo, o la
-tienda vuelve a marcarlo rebajado.
+**Reactivación (deal `expired` por precio/stock/no encontrado)** — *corregida el
+2026-11-06 tras probar con datos reales de Amazon (ver ADR-017)*. Listing disponible, que la
+misma revisión no lo terminaría y, según el motivo de fin:
+
+- `price_increase` → precio ≤ `offer_price`;
+- `out_of_stock` / `not_found` → precio ≤ `offer_price` × (1 + tolerancia);
+- `no_longer_deal` → precio ≤ `offer_price`, o dentro de la tolerancia con descuento de la
+  tienda ≥ `min_discount_percent` (configurable, por defecto 5 %).
+
+La regla inicial («precio ≤ `offer_price` o descuento ≥ 5 %») reactivaba subidas de precio:
+Amazon seguía marcando descuento frente a su propia referencia.
 
 - Reactivación →
   `status = active`, `published_at = ahora` (sube en «Últimos»), `offer_end_reason = null`,

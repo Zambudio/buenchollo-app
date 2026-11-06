@@ -69,4 +69,5 @@ afiliación (dinero) en el dominio, testeable sin red y extensible.
 - La migración es aditiva: revertir el código no requiere tocar la BD.
 - Los chollos anteriores necesitan `canonical_url`: `scripts/backfill_canonical_urls.py`
   (idempotente; se re-ejecuta tras el despliegue).
-- Aprobar borra los chollos **expirados** del mismo producto (comportamiento del spec).
+- ~~Aprobar borra los chollos **expirados** del mismo producto~~. Sustituido por ADR-017
+  (2026-11-06): aprobar **reactiva** el chollo expirado del mismo producto.
