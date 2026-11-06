@@ -9,10 +9,12 @@ import { ShareDialog } from "@/features/deals/components/ShareBox";
 import { DealVoteControl } from "@/features/deals/components/DealVoteControl";
 import { StoreAvailability } from "@/features/deals/components/StoreAvailability";
 import { DealAuthor } from "@/features/deals/components/DealAuthor";
+import { ProductVoteButton } from "@/features/catalog/ProductVoteButton";
 import type { DealAuthor as DealAuthorData } from "@/services/api/submissions";
 
 export interface DealCardData {
   id: string;
+  product_id?: string | null;
   title: string;
   short_description?: string | null;
   slug: string;
@@ -230,6 +232,7 @@ export function DealCardView({
             disabled={preview || voting}
             onVote={onVote}
           />
+          {!preview && deal.product_id && <ProductVoteButton productId={deal.product_id} />}
           <div className="social-actions">
             <button
               type="button"

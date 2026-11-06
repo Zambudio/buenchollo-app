@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { formatPrice } from "@/lib/format";
 import { catalogService, type TopProduct } from "@/services/api/catalog";
+import { PRODUCT_VOTE_EVENT, publishProductVote } from "./productVoteEvents";
 
 export function TopProducts({
   slug,
@@ -21,6 +22,33 @@ export function TopProducts({
   useEffect(() => {
     setProducts(initialProducts);
   }, [initialProducts]);
+
+  useEffect(() => {
+    const syncVote = (event: Event) => {
+      const { productId, voted, source } = (
+        event as CustomEvent<{
+          productId: string;
+          voted: boolean;
+          source: string;
+        }>
+      ).detail;
+      if (source === "top") return;
+      setMyVotes((previous) => {
+        const next = new Set(previous);
+        if (voted) next.add(productId);
+        else next.delete(productId);
+        return next;
+      });
+      void catalogService
+        .top(slug)
+        .then(setProducts)
+        .catch(() => {
+          setError("Voto guardado. Recarga la página para actualizar las posiciones.");
+        });
+    };
+    window.addEventListener(PRODUCT_VOTE_EVENT, syncVote);
+    return () => window.removeEventListener(PRODUCT_VOTE_EVENT, syncVote);
+  }, [slug]);
 
   useEffect(() => {
     if (!user || !products.length) {
@@ -46,6 +74,7 @@ export function TopProducts({
     setError("");
     try {
       const result = await catalogService.vote(id);
+      publishProductVote(id, result.voted, "top");
       setMyVotes((previous) => {
         const next = new Set(previous);
         if (result.voted) next.add(id);

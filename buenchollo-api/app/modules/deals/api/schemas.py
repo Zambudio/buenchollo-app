@@ -34,6 +34,7 @@ class AuthorBasic(BaseModel):
 
 class DealCardResponse(BaseModel):
     id: str
+    product_id: str | None = None
     title: str
     short_description: str | None = None
     slug: str
