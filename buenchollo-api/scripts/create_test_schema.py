@@ -32,6 +32,7 @@ import app.modules.scheduled_tasks.domain.models  # noqa: F401, E402
 import app.modules.blog.domain.models  # noqa: F401, E402
 import app.modules.blog_comments.domain.models  # noqa: F401, E402
 import app.modules.submissions.domain.models  # noqa: F401, E402
+import app.modules.telegram.domain.models  # noqa: F401, E402
 import app.core.audit.models  # noqa: F401, E402
 
 from sqlalchemy import text  # noqa: E402

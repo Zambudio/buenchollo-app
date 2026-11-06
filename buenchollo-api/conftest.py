@@ -44,6 +44,7 @@ import app.modules.categories.domain.models  # noqa: F401, E402
 import app.modules.stores.domain.models  # noqa: F401, E402
 import app.modules.deals.domain.models  # noqa: F401, E402
 import app.modules.submissions.domain.models  # noqa: F401, E402
+import app.modules.telegram.domain.models  # noqa: F401, E402
 import app.modules.alerts.domain.models  # noqa: F401, E402
 import app.modules.notifications.domain.models  # noqa: F401, E402
 import app.modules.comments.domain.models  # noqa: F401, E402
