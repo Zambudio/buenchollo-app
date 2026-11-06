@@ -4,7 +4,7 @@
 > Solo items **abiertos**: cuando uno se cierra, se elimina de aquí (el histórico
 > resuelto vive en [`PROJECT_STATUS.md`](../../PROJECT_STATUS.md)). Para consultar el diseño de arquitectura, ver [`docs/master/`](../master/00-index.md).
 
-Última revisión: **2026-11-06** (catálogo permanente, Fase 1: TD-39 a TD-43; cierre de chollos de usuarios: TD-23 a TD-35; entorno local y prueba exhaustiva: TD-36 a TD-38).
+Última revisión: **2026-11-06** (catálogo permanente, Fase 1: TD-39 a TD-44; cierre de chollos de usuarios: TD-23 a TD-35; entorno local y prueba exhaustiva: TD-36 a TD-38).
 
 ---
 
@@ -40,6 +40,13 @@
 - **TD-43 — Volver a dar de alta desde el panel un producto sin ASIN crea otro chollo.**
   El panel solo reconoce el producto por `external_id`; las propuestas sí buscan también
   por URL canónica y reactivan el existente. Unificar la búsqueda en `DealService`.
+- **TD-44 — Menores de la revisión final del catálogo permanente.** (1) Un producto que
+  entra y sale de stock a diario se reactiva cada día y sube a «Últimos» (el aviso a Admin
+  sí está limitado a 1 cada 7 días). (2) Sin credenciales de Amazon todos los lotes fallan
+  y aun así el run queda `completed`: registrar cuántos lotes fallaron o marcarlo fallido.
+  (3) Revivir un chollo caducado como `scheduled` oculta su ficha indexada hasta la hora
+  programada. (4) Sin savepoint por listing: un error de BD en uno revierte la revisión
+  entera. (5) `started_at` y `finished_at` del run son el mismo instante (previo).
 - **TD-40 — Columnas `restored_at`/`restored_deal_id` sin uso** en
   `scheduled_task_run_items` desde que no hay nada que restaurar. Se conservaron para no
   tocar el histórico; eliminarlas en una migración posterior cuando deje de importar.
