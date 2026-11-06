@@ -87,6 +87,15 @@ class DealDetailResponse(DealCardResponse):
 
     model_config = ConfigDict(from_attributes=True)
 
+class DealSitemapEntry(BaseModel):
+    slug: str
+    status: str
+    updated_at: datetime | None = None
+    published_at: datetime | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class VoteRequest(BaseModel):
     vote: Literal[-1, 1]
 

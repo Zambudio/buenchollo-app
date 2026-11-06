@@ -9,6 +9,7 @@ from app.modules.deals.infrastructure.repository import DealRepository
 from app.modules.deals.application.deal_service import DealService
 from app.modules.deals.domain.exceptions import DealNotFound
 from app.modules.deals.api.schemas import (
+    DealSitemapEntry,
     DealCardResponse,
     DealCreate,
     DealDetailResponse,
@@ -42,6 +43,13 @@ def get_deal_service(db: AsyncSession = Depends(get_db)) -> DealService:
 
 
 # ── Endpoints públicos ────────────────────────────────────────────────────────
+
+@router.get("/sitemap", response_model=list[DealSitemapEntry])
+async def get_deals_sitemap(repo: DealRepository = Depends(get_deal_repository)):
+    """Entradas del sitemap web (activos y sin oferta). Declarada antes de
+    `/{slug}` para que esa ruta no la capture."""
+    return await repo.get_sitemap_entries()
+
 
 @router.get("/latest", response_model=list[DealCardResponse])
 async def get_latest_deals(

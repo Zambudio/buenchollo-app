@@ -266,6 +266,17 @@ class DealRepository:
         )
         return list(result.scalars().all())
 
+    async def get_sitemap_entries(self, limit: int = 5000) -> list:
+        """URLs públicas permanentes (catálogo permanente): ofertas activas y
+        chollos sin oferta. Solo las columnas que necesita el sitemap."""
+        result = await self.session.execute(
+            select(Deal.slug, Deal.status, Deal.updated_at, Deal.published_at)
+            .where(Deal.status.in_(("active", "expired")))
+            .order_by(Deal.published_at.desc())
+            .limit(limit)
+        )
+        return list(result.all())
+
     async def user_has_profile(self, user_id: str) -> bool:
         """Comprueba si existe un perfil en la tabla profiles para el user_id dado."""
         result = await self.session.execute(
