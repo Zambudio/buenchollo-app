@@ -137,3 +137,20 @@ def test_redireccion_dentro_de_amazon_se_sigue():
     with patch.object(amazon_client, "_resolves_to_private_ip", return_value=False):
         new_req = handler.redirect_request(req, None, 302, "Found", {}, "https://www.amazon.es/dp/B0CP2PSM8L")
     assert new_req.full_url == "https://www.amazon.es/dp/B0CP2PSM8L"
+
+
+def test_link_amazon_pasa_por_amzlinks_y_se_resuelve():
+    """Regresión 2026-11-07: link.amazon redirige vía amzlinks.in; la validación
+    por salto lo rechazaba y el panel respondía «No se ha encontrado el producto»."""
+    import urllib.request
+
+    handler = amazon_client._AllowlistRedirectHandler()
+    with patch.object(amazon_client, "_resolves_to_private_ip", return_value=False):
+        hop1 = handler.redirect_request(
+            urllib.request.Request("https://link.amazon/B01eQCJsW"), None, 301, "Moved", {},
+            "https://amzlinks.in/B01eQCJsW",
+        )
+        hop2 = handler.redirect_request(
+            hop1, None, 302, "Found", {}, "https://www.amazon.es/dp/B0H7X5D6QN?tag=buenchollo0b-21",
+        )
+    assert hop2.full_url.startswith("https://www.amazon.es/dp/B0H7X5D6QN")
