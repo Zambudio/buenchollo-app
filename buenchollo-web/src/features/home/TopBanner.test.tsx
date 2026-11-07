@@ -54,7 +54,8 @@ describe("TopBanner", () => {
     fireEvent.click(screen.getByRole("button", { name: "Siguiente top" }));
     expect(screen.getByRole("link", { name: /Puesto 1: Informática 1/ })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Puesto 1: Audio/ })).not.toBeInTheDocument();
-    expect(screen.getByText("Estrena los votos de este top")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Top Informática" })).toBeInTheDocument();
+    expect(screen.queryByText("Estrena los votos de este top")).not.toBeInTheDocument();
   });
   it("keeps a useful link when no rankings are available", () => {
     render(<TopBanner tops={[]} />);

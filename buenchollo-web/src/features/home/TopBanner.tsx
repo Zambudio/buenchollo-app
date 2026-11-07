@@ -91,20 +91,13 @@ export function TopBanner({ tops }: { tops: BannerTop[] }) {
                 <ChevronLeft size={16} />
               </button>
             )}
-            <div className="top-banner-label">
-              <Link
-                className="top-banner-category"
-                to="/categoria/$slug"
-                params={{ slug: top.slug }}
-              >
-                Top {top.name} <ArrowRight size={13} aria-hidden="true" />
-              </Link>
-              <span>
-                {top.products.every((p) => p.vote_count === 0)
-                  ? "Estrena los votos de este top"
-                  : "Elegidos por la comunidad"}
-              </span>
-            </div>
+            <Link
+              className="top-banner-label top-banner-category"
+              to="/categoria/$slug"
+              params={{ slug: top.slug }}
+            >
+              Top {top.name}
+            </Link>
             {tops.length > 1 && (
               <button type="button" onClick={() => change(1)} aria-label="Siguiente top">
                 <ChevronRight size={16} />
