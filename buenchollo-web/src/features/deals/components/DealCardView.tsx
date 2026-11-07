@@ -169,13 +169,25 @@ export function DealCardView({
             SIN_IMAGEN
           </div>
         )}
-        {discount != null && discount > 0 && !isExpired && (
-          <div className="badge-discount absolute top-3 right-3 z-10">-{discount}%</div>
-        )}
       </CardLink>
 
       <div className="deal-card-body flex flex-col flex-1">
-        <h3 className="deal-title card-title text-foreground text-base sm:text-lg">
+        <div className="deal-card-top">
+          <div className="deal-card-votes">
+            <DealVoteControl
+              temperature={temperature}
+              myVote={myVote}
+              disabled={preview || voting}
+              onVote={onVote}
+            />
+            {!preview && deal.product_id && <ProductVoteButton productId={deal.product_id} />}
+          </div>
+          <span className="posted-date deal-card-posted">
+            Publicado {formatRelativeTime(deal.published_at)}
+          </span>
+        </div>
+
+        <h3 className="deal-title card-title text-foreground">
           <CardLink
             preview={preview}
             slug={deal.slug}
@@ -185,64 +197,30 @@ export function DealCardView({
           </CardLink>
         </h3>
 
+        <div className="deal-card-priceline">
+          <span className="deal-price">
+            <span className="price-now product-price card-price font-mono tabular-nums leading-none">
+              {preview && !(deal.current_price > 0) ? "— €" : formatPrice(deal.current_price)}
+            </span>
+            {deal.previous_price && deal.previous_price > deal.current_price && (
+              <span className="price-old previous-price font-mono tabular-nums">
+                <del>{formatPrice(deal.previous_price)}</del>
+              </span>
+            )}
+            {discount != null && discount > 0 && !isExpired && (
+              <span className="deal-discount">-{discount}%</span>
+            )}
+          </span>
+          {deal.store && <StoreAvailability store={deal.store} linked={!preview} />}
+          {deal.author && <DealAuthor author={deal.author} size="sm" />}
+        </div>
+
         {deal.short_description && (
           <p className="deal-card-description">{deal.short_description}</p>
         )}
 
-        <div className="deal-price flex items-end gap-3 mb-2">
-          <span className="price-now product-price card-price font-mono tabular-nums leading-none">
-            {preview && !(deal.current_price > 0) ? "— €" : formatPrice(deal.current_price)}
-          </span>
-          {deal.previous_price && deal.previous_price > deal.current_price && (
-            <span className="price-old previous-price font-mono tabular-nums pb-1">
-              <del>{formatPrice(deal.previous_price)}</del>
-            </span>
-          )}
-        </div>
-
-        {deal.store && <StoreAvailability store={deal.store} linked={!preview} />}
-
-        {deal.author && (
-          <div className="mb-3 min-w-0">
-            <DealAuthor author={deal.author} size="sm" />
-          </div>
-        )}
-
-        <div className="deal-card-meta flex items-center justify-between gap-3">
-          <span className="posted-date font-mono uppercase tracking-wider">
-            {formatRelativeTime(deal.published_at)}
-          </span>
-          <a
-            href={preview ? undefined : (deal.affiliate_url ?? undefined)}
-            target="_blank"
-            rel="noopener noreferrer nofollow sponsored"
-            onClick={preview ? undefined : onCtaClick}
-            aria-disabled={preview || !deal.affiliate_url}
-            aria-label={`Ver oferta de ${deal.title} en ${deal.store?.name ?? "la tienda"}`}
-            className="deal-cta btn-cta inline-flex items-center gap-1.5 font-mono text-xs px-4 py-2 transition-colors shrink-0"
-          >
-            IR AL CHOLLO <ExternalLink className="size-3.5" />
-          </a>
-        </div>
-
-        <div className="product-social-row card-social-row">
-          <DealVoteControl
-            temperature={temperature}
-            myVote={myVote}
-            disabled={preview || voting}
-            onVote={onVote}
-          />
-          {!preview && deal.product_id && <ProductVoteButton productId={deal.product_id} />}
+        <div className="deal-card-actions product-social-row">
           <div className="social-actions">
-            <button
-              type="button"
-              onClick={onToggleFav}
-              disabled={preview || favLoading}
-              aria-label={fav ? "Quitar de favoritos" : "Guardar"}
-              className={fav ? "is-active" : ""}
-            >
-              <Heart className={fav ? "fill-current" : ""} />
-            </button>
             <button
               type="button"
               aria-label="Ver comentarios"
@@ -261,7 +239,27 @@ export function DealCardView({
                 trigger={shareButton}
               />
             )}
+            <button
+              type="button"
+              onClick={onToggleFav}
+              disabled={preview || favLoading}
+              aria-label={fav ? "Quitar de favoritos" : "Guardar"}
+              className={fav ? "is-active" : ""}
+            >
+              <Heart className={fav ? "fill-current" : ""} />
+            </button>
           </div>
+          <a
+            href={preview ? undefined : (deal.affiliate_url ?? undefined)}
+            target="_blank"
+            rel="noopener noreferrer nofollow sponsored"
+            onClick={preview ? undefined : onCtaClick}
+            aria-disabled={preview || !deal.affiliate_url}
+            aria-label={`Ver oferta de ${deal.title} en ${deal.store?.name ?? "la tienda"}`}
+            className="deal-cta btn-cta inline-flex items-center gap-1.5 shrink-0 transition-colors"
+          >
+            Ir al chollo <ExternalLink className="size-4" />
+          </a>
         </div>
       </div>
     </article>
