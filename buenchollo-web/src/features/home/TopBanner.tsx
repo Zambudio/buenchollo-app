@@ -100,11 +100,9 @@ export function TopBanner({ tops }: { tops: BannerTop[] }) {
                 : "Elegidos por la comunidad"}
             </span>
             {tops.length > 1 && (
-              <>
-                <button type="button" onClick={() => change(1)} aria-label="Siguiente top">
-                  <ChevronRight size={16} />
-                </button>
-              </>
+              <button type="button" onClick={() => change(1)} aria-label="Siguiente top">
+                <ChevronRight size={16} />
+              </button>
             )}
           </div>
         </div>

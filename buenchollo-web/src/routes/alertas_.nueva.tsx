@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { useAuth } from "@/hooks/useAuth";
+import { useRequireLogin } from "@/hooks/useRequireLogin";
 import { alertsApi } from "@/services/api/alerts";
 import { categoriesService, type Category } from "@/services/api/categories";
 import { storesService, type Store } from "@/services/api/stores";
@@ -50,7 +51,7 @@ export const Route = createFileRoute("/alertas_/nueva")({
 });
 
 function NewAlertPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const nav = useNavigate();
   const [cats, setCats] = useState<Category[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
@@ -64,9 +65,7 @@ function NewAlertPage() {
   const [maxPrice, setMaxPrice] = useState("");
   const [minDiscount, setMinDiscount] = useState("");
 
-  useEffect(() => {
-    if (!authLoading && !user) nav({ to: "/login" });
-  }, [authLoading, user, nav]);
+  useRequireLogin();
 
   useEffect(() => {
     Promise.all([categoriesService.getAll(), storesService.getAll()])

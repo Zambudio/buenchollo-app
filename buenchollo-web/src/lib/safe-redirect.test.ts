@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { loginSearch, safeRedirect } from "@/lib/safe-redirect";
+import { currentPageLoginSearch, loginSearch, safeRedirect } from "@/lib/safe-redirect";
 
 describe("safeRedirect", () => {
   it("acepta rutas relativas con query", () => {
@@ -39,5 +39,17 @@ describe("loginSearch", () => {
   });
   it("conserva redirect seguro", () => {
     expect(loginSearch("/publicar")).toEqual({ redirect: "/publicar" });
+  });
+});
+
+describe("currentPageLoginSearch", () => {
+  it("conserva la ruta y la query de la página actual", () => {
+    window.history.replaceState(null, "", "/alertas/nueva?q=rtx");
+    expect(currentPageLoginSearch()).toEqual({ redirect: "/alertas/nueva?q=rtx" });
+  });
+
+  it("no añade redirect desde la portada", () => {
+    window.history.replaceState(null, "", "/");
+    expect(currentPageLoginSearch()).toEqual({});
   });
 });

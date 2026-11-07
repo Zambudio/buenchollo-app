@@ -139,7 +139,7 @@ describe("RecommendedAlertsBlock", () => {
     expect(buttons[0]).toBeDefined();
     await user.click(buttons[0]!);
 
-    expect(mocks.mockNavigate).toHaveBeenCalledWith({ to: "/login" });
+    expect(mocks.mockNavigate).toHaveBeenCalledWith({ to: "/login", search: {} });
     expect(mocks.alertsCreate).not.toHaveBeenCalled();
   });
 
