@@ -1,4 +1,4 @@
-﻿import { Link } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { ArrowRight, ChevronLeft, ChevronRight, Crown, Package, Pause, Play } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { BannerTop } from "./bannerTops";
@@ -121,9 +121,15 @@ export function TopBanner({ tops }: { tops: BannerTop[] }) {
                   <button
                     type="button"
                     onClick={() => setPaused((value) => !value)}
+                    className="top-banner-rotation"
                     aria-label={paused ? "Activar rotación de tops" : "Pausar rotación de tops"}
                   >
-                    {paused ? <Play size={14} /> : <Pause size={14} />}
+                    {paused ? (
+                      <Play size={14} aria-hidden="true" />
+                    ) : (
+                      <Pause size={14} aria-hidden="true" />
+                    )}
+                    {paused ? "Activar cambio automático" : "Pausar cambio automático"}
                   </button>
                 )}
               </>
