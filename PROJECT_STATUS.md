@@ -3,7 +3,7 @@
 
 ## 2026-11-07 · Fotos cuadradas en las tarjetas de chollos
 
-- Petición de Pedro: en la tarjeta horizontal (portada, categorías y explorar) la foto era una tira estrecha estirada a toda la altura. Ahora es un cuadrado blanco con esquinas redondeadas y borde suave, centrado en su columna: 114 px en móvil y 198 px desde 640 px (`.deal-feed-grid .deal-card-media` en `styles.css`, sin cambios de componente). Verificado con Playwright en 320/375/390/640/1024/1280 px y ambos temas: imagen 1:1, dentro de la tarjeta y sin scroll horizontal.
+- Petición de Pedro: en la tarjeta horizontal (portada, categorías y explorar) la foto era una tira estrecha estirada a toda la altura. Ahora es un cuadrado blanco con esquinas redondeadas y borde suave, centrado en su columna: 114 px en móvil y 198 px desde 640 px (`.deal-feed-grid .deal-card > .deal-card-media` en `styles.css`, sin cambios de componente). Ajuste posterior: la regla `.deal-card > a:first-child { margin-bottom: 0 }` era más específica y anulaba el margen inferior, así que la foto quedaba ~13 px más baja; ahora el margen es igual arriba y abajo en todos los anchos. Verificado con Playwright en 320/375/390/640/1024/1280 px y ambos temas: imagen 1:1, dentro de la tarjeta y sin scroll horizontal.
 
 ## 2026-11-07 · Revisión general: seguridad, correcciones y coherencia (desplegado)
 

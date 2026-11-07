@@ -307,7 +307,7 @@
 .deal-card-media { aspect-ratio: 4 / 3; border-bottom: 1px solid var(--color-surface-700); }
 /* Tarjeta horizontal: la foto es un cuadrado blanco centrado en su columna (antes una tira estirada a toda la altura). */
 .deal-feed-grid .deal-card { display: grid; grid-template-columns: 124px minmax(0, 1fr); height: auto; }
-.deal-feed-grid .deal-card-media { align-self: center; aspect-ratio: 1; height: auto; min-height: 0; margin: .6rem 0 .6rem .6rem; border: 1px solid var(--color-surface-700); border-radius: 12px; }
+.deal-feed-grid .deal-card > .deal-card-media { align-self: center; aspect-ratio: 1; height: auto; min-height: 0; margin: .6rem 0 .6rem .6rem; border: 1px solid var(--color-surface-700); border-radius: 12px; }
 .deal-card-media img { padding: .45rem; }
 .deal-card-body { min-width: 0; padding: .8rem; }
 .deal-card .card-title { min-height: 0; margin-bottom: .45rem; font-size: .96rem; font-weight: 700; line-height: 1.35; }
@@ -383,7 +383,7 @@
 
   .category-visual-item { flex-basis: 128px; }
   .deal-feed-grid .deal-card { grid-template-columns: 212px minmax(0,1fr); }
-  .deal-feed-grid .deal-card-media { margin: .85rem 0 .85rem .85rem; border-radius: 14px; }
+  .deal-feed-grid .deal-card > .deal-card-media { margin: .85rem 0 .85rem .85rem; border-radius: 14px; }
   .deal-card-body { padding: 1rem 1.2rem; }
   .deal-card .card-title { font-size: 1.1rem; }
   .deal-feed-grid .deal-card-description { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; margin-bottom: .65rem; }
@@ -819,11 +819,6 @@
   align-items: center;
   justify-content: center;
   gap: 2px;
-}
-.top-banner-label > span {
-  font-size: 0.65rem;
-  line-height: 1.2;
-  color: var(--muted-foreground);
 }
 .top-banner-controls button {
   display: grid;
