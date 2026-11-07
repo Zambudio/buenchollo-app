@@ -3,14 +3,16 @@
 Se ejecuta cada noche para recopilar chollos coincidentes y enviarlos en un único
 resumen consolidado a los usuarios con aviso por email activado.
 """
+from collections.abc import Iterable
 from datetime import date, datetime, timedelta, timezone
-from decimal import Decimal
 import logging
 
-from sqlalchemy import select, and_, text
+from sqlalchemy import select, text
+from sqlalchemy.orm import selectinload
 
 from app.core.config import Settings
 from app.core.database import AsyncSessionLocal
+from app.modules.alerts.application.matching import matches_alert
 from app.modules.alerts.domain.models import Alert
 from app.modules.deals.domain.models import Deal
 from app.modules.emails.application.rendering import (
@@ -23,89 +25,85 @@ from app.modules.emails.infrastructure.smtp import SmtpEmailSender
 
 logger = logging.getLogger(__name__)
 
+DIGEST_WINDOW = timedelta(hours=24)
+
+
+def _to_digest_deal(branding: EmailBranding, deal: Deal, alert_names: tuple[str, ...]) -> DigestDeal:
+    store = deal.store
+    return build_digest_deal(
+        branding=branding,
+        title=deal.title,
+        slug=deal.slug,
+        image_url=deal.image_url,
+        current_price=deal.current_price,
+        previous_price=deal.previous_price,
+        discount_percentage=deal.discount_percentage,
+        store_name=store.name if store else None,
+        short_description=deal.short_description or (deal.description[:120] if deal.description else None),
+        expires_at=deal.expires_at,
+        asin=deal.external_id,
+        show_price_history=bool(deal.show_keepa_chart),
+        alert_names=alert_names,
+    )
+
+
+def build_user_digests(
+    branding: EmailBranding,
+    alerts: Iterable[Alert],
+    deals: Iterable[Deal],
+) -> dict[str, list[DigestDeal]]:
+    """Agrupa por usuario los chollos que coinciden con alguna de sus alertas.
+
+    Función pura (sin BD ni I/O). Cada chollo aparece una sola vez por usuario,
+    con los nombres de todas las alertas que lo han disparado.
+    """
+    alerts_by_user: dict[str, list[Alert]] = {}
+    for alert in alerts:
+        alerts_by_user.setdefault(str(alert.user_id), []).append(alert)
+
+    deals = list(deals)
+    digests: dict[str, list[DigestDeal]] = {}
+    for user_id, user_alerts in alerts_by_user.items():
+        matched: list[DigestDeal] = []
+        for deal in deals:
+            names = tuple(alert.name for alert in user_alerts if matches_alert(alert, deal))
+            if names:
+                matched.append(_to_digest_deal(branding, deal, names))
+        if matched:
+            digests[user_id] = matched
+    return digests
+
 
 async def _process_nightly_alert_digest(settings: Settings) -> None:
     sender = SmtpEmailSender(settings)
     branding = EmailBranding()
     today = date.today()
+    since = datetime.now(timezone.utc) - DIGEST_WINDOW
 
     async with AsyncSessionLocal() as session:
-        # 1. Obtener alertas activas con aviso por correo
-        alerts_result = await session.execute(
-            select(Alert).where(and_(Alert.is_active == True, Alert.notify_email == True))
-        )
-        active_alerts = alerts_result.scalars().all()
-        if not active_alerts:
-            logger.info("Resumen de alertas: No hay alertas activas con aviso por email.")
+        alerts = (
+            await session.execute(
+                select(Alert).where(Alert.is_active.is_(True), Alert.notify_email.is_(True))
+            )
+        ).scalars().all()
+        if not alerts:
+            logger.info("Resumen de alertas: no hay alertas activas con aviso por email.")
             return
 
-        # 2. Agrupar alertas por user_id
-        user_alerts: dict[str, list[Alert]] = {}
-        for alert in active_alerts:
-            user_alerts.setdefault(alert.user_id, []).append(alert)
-
-        # 3. Obtener chollos activos recientes (últimas 24h)
-        since = datetime.now(timezone.utc) - timedelta(hours=24)
-        deals_result = await session.execute(
-            select(Deal).where(and_(Deal.is_active == True, Deal.created_at >= since))
-        )
-        recent_deals = deals_result.scalars().all()
-        if not recent_deals:
-            logger.info("Resumen de alertas: No hay chollos nuevos en las últimas 24h.")
+        deals = (
+            await session.execute(
+                select(Deal)
+                .options(selectinload(Deal.store))
+                .where(Deal.status == "active", Deal.published_at >= since)
+            )
+        ).scalars().all()
+        if not deals:
+            logger.info("Resumen de alertas: no hay chollos publicados en las últimas 24 h.")
             return
 
-        # 4. Para cada usuario, casar chollos con sus alertas
-        for user_id, alerts in user_alerts.items():
-            matched_deals: list[DigestDeal] = []
-            matched_deal_ids = set()
-
-            for deal in recent_deals:
-                matching_alert_names = []
-                for alert in alerts:
-                    # Comprobación de palabras clave
-                    if alert.keyword and alert.keyword.lower() not in (deal.title or "").lower():
-                        continue
-                    # Comprobación de categoría
-                    if alert.category_id and deal.category_id != alert.category_id:
-                        continue
-                    # Comprobación de tienda
-                    if alert.store_id and deal.store_id != alert.store_id:
-                        continue
-                    # Comprobación de precio máximo
-                    if alert.max_price is not None and deal.price is not None and deal.price > alert.max_price:
-                        continue
-                    # Comprobación de descuento mínimo
-                    if alert.min_discount is not None and (deal.discount or 0) < alert.min_discount:
-                        continue
-
-                    matching_alert_names.append(alert.name)
-
-                if matching_alert_names and deal.id not in matched_deal_ids:
-                    matched_deal_ids.add(deal.id)
-                    digest_deal = build_digest_deal(
-                        branding=branding,
-                        title=deal.title,
-                        slug=deal.slug or str(deal.id),
-                        image_url=deal.image_url,
-                        current_price=Decimal(str(deal.price)) if deal.price is not None else Decimal("0.00"),
-                        previous_price=Decimal(str(deal.original_price)) if deal.original_price is not None else None,
-                        discount_percentage=deal.discount,
-                        store_name=deal.store.name if getattr(deal, "store", None) else None,
-                        short_description=deal.short_description or (deal.description[:120] if deal.description else None),
-                        expires_at=getattr(deal, "expires_at", None),
-                        asin=getattr(deal, "asin", None),
-                        show_price_history=bool(getattr(deal, "asin", None)),
-                        alert_names=tuple(matching_alert_names),
-                    )
-                    matched_deals.append(digest_deal)
-
-            if not matched_deals:
-                continue
-
-            unsubscribe_url = f"{branding.base_url}/perfil?tab=alertas"
-
+        unsubscribe_url = f"{branding.site_url}/perfil?tab=alertas"
+        for user_id, matched_deals in build_user_digests(branding, alerts, deals).items():
             try:
-                # Obtener email y display_name del usuario
                 user_row = (
                     await session.execute(
                         text(
@@ -119,41 +117,41 @@ async def _process_nightly_alert_digest(settings: Settings) -> None:
                 ).mappings().first()
 
                 if not user_row or not user_row.get("email"):
-                    logger.warning("No se pudo obtener el email de auth.users para el usuario %s", user_id)
+                    logger.warning("Resumen de alertas: usuario %s sin email en auth.users", user_id)
                     continue
-
-                user_email = user_row["email"]
-                display_name = user_row.get("display_name")
 
                 rendered = render_alert_digest(
                     branding,
-                    name=display_name,
+                    name=user_row.get("display_name"),
                     digest_date=today,
                     deals=matched_deals,
                     unsubscribe_url=unsubscribe_url,
                 )
-
-                outgoing = OutgoingEmail(
-                    to=user_email,
-                    subject=rendered.subject,
-                    html=rendered.html,
-                    text=rendered.text,
-                    headers={"List-Unsubscribe": f"<{unsubscribe_url}>"},
+                sent = sender.send(
+                    OutgoingEmail(
+                        to=user_row["email"],
+                        subject=rendered.subject,
+                        html=rendered.html,
+                        text=rendered.text,
+                        headers={"List-Unsubscribe": f"<{unsubscribe_url}>"},
+                    )
                 )
-
-                sent = sender.send(outgoing)
+                # Solo user_id en logs: el email es PII (SECURITY_AUDIT.md SEC-09).
                 if sent:
-                    logger.info("Resumen nocturno enviado con éxito a %s (%d chollos)", user_email, len(matched_deals))
+                    logger.info(
+                        "Resumen nocturno enviado a user_id=%s (%d chollos)", user_id, len(matched_deals)
+                    )
                 else:
-                    logger.warning("Fallo al enviar resumen nocturno a %s", user_email)
-            except Exception as exc:
-                logger.error("Error al procesar resumen de alertas para usuario %s: %s", user_id, exc)
+                    logger.warning("Fallo al enviar resumen nocturno a user_id=%s", user_id)
+            except Exception:
+                logger.exception("Error al procesar el resumen de alertas de user_id=%s", user_id)
 
 
 def run_due_alert_digest(settings: Settings) -> None:
     """Entrypoint síncrono para el BackgroundScheduler de APScheduler."""
     import asyncio
+
     try:
         asyncio.run(_process_nightly_alert_digest(settings))
-    except Exception as exc:
-        logger.error("Fallo general en ejecución de resumen nocturno de alertas: %s", exc)
+    except Exception:
+        logger.exception("Fallo general en la ejecución del resumen nocturno de alertas")
