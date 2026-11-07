@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { useAuth } from "@/hooks/useAuth";
+import { useRequireLogin } from "@/hooks/useRequireLogin";
 import { supabase } from "@/integrations/supabase/client";
 import { removeStoredAvatar, uploadAvatar } from "@/lib/avatar-upload";
 import { googleAvatarUrl, googleDisplayName, isGoogleLinkedAccount } from "@/lib/google-profile";
@@ -56,9 +57,7 @@ function ProfilePage() {
   const googleAvatar = googleAvatarUrl(user) || null;
   const isGoogleAccount = isGoogleLinkedAccount(user);
 
-  useEffect(() => {
-    if (!authLoading && !user) nav({ to: "/login" });
-  }, [authLoading, user, nav]);
+  useRequireLogin();
 
   useEffect(() => {
     setEmail(user?.email ?? "");

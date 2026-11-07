@@ -21,7 +21,6 @@ import {
   Mouse,
   HardDrive,
   Cable,
-  ShoppingBag,
   SlidersHorizontal,
 } from "lucide-react";
 import { alertsApi, type AlertCreate } from "@/services/api/alerts";
@@ -29,6 +28,7 @@ import { useAuth } from "@/hooks/useAuth";
 import type { DealDetailData } from "@/services/api/deals";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { currentPageLoginSearch } from "@/lib/safe-redirect";
 
 interface RecommendedAlertsBlockProps {
   deal: DealDetailData;
@@ -634,7 +634,7 @@ export function RecommendedAlertsBlock({ deal, className }: RecommendedAlertsBlo
   const handleToggleCandidate = (c: AlertCandidate) => {
     if (!user) {
       toast.info("Inicia sesión para activar alertas de chollos");
-      nav({ to: "/login" });
+      nav({ to: "/login", search: currentPageLoginSearch() });
       return;
     }
 

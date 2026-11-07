@@ -1,7 +1,8 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { useAuth } from "@/hooks/useAuth";
+import { useRequireLogin } from "@/hooks/useRequireLogin";
 import { alertsApi, type Alert } from "@/services/api/alerts";
 import { Plus, Trash2, Power, Tag, Store, Euro, Percent, Search } from "lucide-react";
 import { toast } from "sonner";
@@ -23,14 +24,11 @@ export const Route = createFileRoute("/alertas")({
 });
 
 function AlertsPage() {
-  const { user, loading: authLoading } = useAuth();
-  const nav = useNavigate();
+  const { user } = useAuth();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!authLoading && !user) nav({ to: "/login" });
-  }, [authLoading, user, nav]);
+  useRequireLogin();
 
   const load = useCallback(async () => {
     if (!user) return;

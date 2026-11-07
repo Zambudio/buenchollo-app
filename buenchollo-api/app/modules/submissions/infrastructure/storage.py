@@ -14,7 +14,7 @@ BUCKET = "deal-images"
 class SubmissionImageStorage:
     def __init__(self, client_factory: Callable[[], Any], supabase_url: str) -> None:
         self._client_factory = client_factory
-        self._base_url = supabase_url.split("/rest/v1")[0].rstrip("/")
+        self._base_url = supabase_url.rstrip("/")
 
     def public_url(self, path: str) -> str:
         return f"{self._base_url}/storage/v1/object/public/{BUCKET}/{path}"

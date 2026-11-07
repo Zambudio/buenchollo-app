@@ -21,3 +21,9 @@ export function loginSearch(redirect: string | undefined): { redirect?: string }
   const safe = safeRedirect(redirect);
   return safe === "/" ? {} : { redirect: safe };
 }
+
+/** `loginSearch` para volver a la página actual (solo en el navegador). */
+export function currentPageLoginSearch(): { redirect?: string } {
+  if (typeof window === "undefined") return {};
+  return loginSearch(window.location.pathname + window.location.search);
+}

@@ -8,7 +8,6 @@ Cubre:
 - Si `sentry_sdk.init` lanza excepción, `init_sentry` la captura y devuelve False.
 """
 from unittest.mock import patch
-import pytest
 
 from app.core.config import Settings
 from app.core.request_id import _request_id_ctx

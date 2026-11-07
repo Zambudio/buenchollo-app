@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from dataclasses import dataclass
 
@@ -47,8 +48,7 @@ class AuthenticatedUser:
 
 
 def _clean_supabase_url(settings: Settings) -> str:
-    # Limpiar URL de forma defensiva por si contiene /rest/v1/
-    return settings.supabase_url.split("/rest/v1")[0].rstrip("/")
+    return settings.supabase_base_url
 
 
 def get_supabase_client(settings: Settings = Depends(get_settings)) -> Client:
@@ -130,7 +130,8 @@ async def get_current_user(
     try:
         claims = _decode_local(token, settings)
         if claims is None:
-            user = _get_user_via_supabase(token, settings)
+            # Llamada HTTP síncrona: fuera del event loop para no bloquear la API.
+            user = await asyncio.to_thread(_get_user_via_supabase, token, settings)
         else:
             sub = claims.get("sub")
             if not sub:
@@ -146,6 +147,7 @@ async def get_current_user(
     except Exception as e:
         logger.warning("JWT inválido o expirado: %s", str(e))
         raise HTTPException(
+
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Credenciales inválidas",
             headers={"WWW-Authenticate": "Bearer"},

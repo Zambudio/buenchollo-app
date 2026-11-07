@@ -5,7 +5,6 @@ tienda, marca, precio máximo, descuento mínimo) con SimpleNamespace para no
 arrastrar el mapper SQLAlchemy.
 """
 from types import SimpleNamespace
-import pytest
 
 from app.modules.alerts.application.matching import matches_alert
 

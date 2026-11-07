@@ -3,11 +3,19 @@
 import json
 import logging
 from typing import Any
+from urllib.parse import urljoin, urlparse
+
 import requests
+
+from app.core.ssrf import resolves_to_private_ip
 
 logger = logging.getLogger(__name__)
 
 _BASE = "https://api.telegram.org/bot{token}/{method}"
+
+# Límite de Telegram para fotos subidas por multipart.
+MAX_IMAGE_BYTES = 10 * 1024 * 1024
+MAX_IMAGE_REDIRECTS = 3
 
 
 class TelegramBot:
@@ -20,6 +28,16 @@ class TelegramBot:
 
     def _url(self, method: str) -> str:
         return _BASE.format(token=self._token, method=method)
+
+    def _redact(self, value: object) -> str:
+        """Texto de un error sin el token del bot.
+
+        Las excepciones de `requests` incluyen la URL de la petición
+        (`.../bot<TOKEN>/sendMessage`): nunca deben llegar a logs, Sentry ni
+        a `last_error` (que se devuelve al panel admin) con el token dentro.
+        """
+        text = str(value)
+        return text.replace(self._token, "<token>") if self._token else text
 
     def _resolve_chat(self, chat_id: str | None) -> str:
         resolved = chat_id or self._default_chat_id
@@ -41,26 +59,55 @@ class TelegramBot:
             desc = data.get("description")
             if desc:
                 return f"Telegram error {resp.status_code}: {desc}"
-        except Exception:
-            pass
+        except ValueError:
+            pass  # cuerpo no JSON: se devuelve el texto en bruto
         return f"HTTP {resp.status_code}: {resp.text[:200]}"
 
     @staticmethod
-    def _download_image(url: str) -> tuple[bytes, str] | None:
+    def _is_downloadable(url: str) -> bool:
+        parsed = urlparse(url)
+        return parsed.scheme in ("http", "https") and bool(parsed.hostname) and not resolves_to_private_ip(url)
+
+    @classmethod
+    def _download_image(cls, url: str) -> tuple[bytes, str] | None:
         """Descarga la imagen con cabeceras de navegador para subirla como binario a Telegram.
-        Evita que Telegram falle con 'failed to get HTTP URL content' en CDNs con protección."""
+        Evita que Telegram falle con 'failed to get HTTP URL content' en CDNs con protección.
+
+        Defensa SSRF: cada salto de redirección se valida (sin IPs internas) y la
+        descarga se corta al superar el límite de Telegram. Si no se puede, el
+        caller cae al envío por URL, que descarga Telegram desde sus servidores.
+        """
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+            ),
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+        }
+        current = url
         try:
-            headers = {
-                "User-Agent": (
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-                ),
-                "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
-            }
-            resp = requests.get(url, headers=headers, timeout=12)
-            if resp.ok and resp.content:
-                content_type = resp.headers.get("content-type", "image/jpeg").split(";")[0].strip()
-                return resp.content, content_type
+            for _ in range(MAX_IMAGE_REDIRECTS + 1):
+                if not cls._is_downloadable(current):
+                    logger.warning("Imagen para Telegram rechazada: destino no permitido")
+                    return None
+                with requests.get(
+                    current, headers=headers, timeout=12, stream=True, allow_redirects=False
+                ) as resp:
+                    if resp.is_redirect:
+                        current = urljoin(current, resp.headers.get("location", ""))
+                        continue
+                    if not resp.ok:
+                        return None
+                    content = bytearray()
+                    for chunk in resp.iter_content(64 * 1024):
+                        content.extend(chunk)
+                        if len(content) > MAX_IMAGE_BYTES:
+                            logger.warning("Imagen para Telegram demasiado grande; se envía por URL")
+                            return None
+                    if not content:
+                        return None
+                    content_type = resp.headers.get("content-type", "image/jpeg").split(";")[0].strip()
+                    return bytes(content), content_type
         except Exception as exc:
             logger.warning("No se pudo pre-descargar la imagen %s para Telegram: %s", url, exc)
         return None
@@ -88,7 +135,6 @@ class TelegramBot:
 
             data: dict[str, Any] = {"chat_id": chat, "caption": caption}
             if entities is not None:
-                import json
                 data["caption_entities"] = json.dumps(entities)
             elif parse_mode:
                 data["parse_mode"] = parse_mode
@@ -102,8 +148,8 @@ class TelegramBot:
                 self.last_error = self._extract_error(resp)
                 logger.warning("Telegram sendPhoto con archivo multipart falló: %s", self.last_error)
             except Exception as exc:
-                self.last_error = f"Excepción en envío multipart: {exc}"
-                logger.warning("Excepción en Telegram sendPhoto multipart: %s", exc)
+                self.last_error = f"Excepción en envío multipart: {self._redact(exc)}"
+                logger.warning("Excepción en Telegram sendPhoto multipart: %s", self.last_error)
 
         # 2. Fallback: enviar la URL directamente a la Bot API
         try:
@@ -126,8 +172,8 @@ class TelegramBot:
             logger.error("Telegram sendPhoto con URL falló: %s", self.last_error)
             return False
         except Exception as exc:
-            self.last_error = f"Excepción en envío por URL: {exc}"
-            logger.exception("Excepción en Telegram sendPhoto con URL")
+            self.last_error = f"Excepción en envío por URL: {self._redact(exc)}"
+            logger.error("Telegram sendPhoto con URL falló: %s", self.last_error)
             return False
 
     # ── Envío de post formateado (panel Telegram) ──────────────────────────────
@@ -167,8 +213,8 @@ class TelegramBot:
             logger.error("Telegram sendMessage falló: %s", self.last_error)
             return False
         except Exception as exc:
-            self.last_error = str(exc)
-            logger.exception("Telegram send_preformatted falló")
+            self.last_error = self._redact(exc)
+            logger.error("Telegram send_preformatted falló: %s", self.last_error)
             return False
 
     # ── Envío rápido (checkbox "publicar al guardar") ─────────────────────────
@@ -218,8 +264,8 @@ class TelegramBot:
             logger.error("Telegram send_deal sendMessage falló: %s", self.last_error)
             return False
         except Exception as exc:
-            self.last_error = str(exc)
-            logger.exception("Telegram send_deal falló")
+            self.last_error = self._redact(exc)
+            logger.error("Telegram send_deal falló: %s", self.last_error)
             return False
 
     def send_admin_notification(self, text: str, chat_id: str | None = None) -> bool:
@@ -232,8 +278,8 @@ class TelegramBot:
             )
             resp.raise_for_status()
             return True
-        except Exception:
-            logger.exception("Telegram send_admin_notification fallo")
+        except Exception as exc:
+            logger.error("Telegram send_admin_notification falló: %s", self._redact(exc))
             return False
 
     @staticmethod

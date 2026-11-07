@@ -2,6 +2,7 @@ import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-rout
 import { useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { useAuth } from "@/hooks/useAuth";
+import { currentPageLoginSearch } from "@/lib/safe-redirect";
 import {
   Package,
   FolderTree,
@@ -25,7 +26,7 @@ function AdminLayout() {
   const nav = useNavigate();
   useEffect(() => {
     if (loading) return;
-    if (!user) nav({ to: "/login" });
+    if (!user) nav({ to: "/login", search: currentPageLoginSearch(), replace: true });
     else if (!isAdmin) nav({ to: "/" });
   }, [user, isAdmin, loading, nav]);
 

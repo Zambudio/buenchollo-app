@@ -38,7 +38,7 @@ es falsificable (ver recomendación en `08-deployment.md`).
 | `POST /v1/deals/comments` | 10/min |
 | `POST /v1/deals/{id}/vote` | 30/min |
 | `POST /v1/deals/{id}/click` | 60/min |
-| `POST /v1/products/preview-from-url` | 10/min |
+| `POST /v1/products/preview-from-url` | 10/min (además exige `require_admin` desde 2026-11-07) |
 | `POST /v1/telegram/publish` | 5/min |
 | `POST /v1/submissions/check-link` | 20/min **por usuario** |
 | `POST /v1/submissions` | 10/min **por usuario** |
@@ -119,8 +119,12 @@ Decisiones en [ADR-015](../adr/ADR-015-ingesta-imagenes-backend.md) y
 | Fuga de propuestas no aprobadas | Tabla `deal_submissions` separada con RLS activado; los listados públicos nunca la consultan |
 | Inyección en correos | Plantillas `.html.j2` con autoescape de Jinja (`_env` en `emails/application/rendering.py`); el asunto colapsa espacios y saltos de línea con `_one_line` (mismo fichero) |
 
-Deuda abierta relacionada: TD-23 (preview de Amazon sin autenticación), TD-24
-(imágenes huérfanas), TD-25 (DNS rebinding), TD-29 (cuota no atómica).
+| SSRF al resolver acortadores de Amazon (`preview-from-url`, `check-link`) | Allowlist de hosts Amazon y bloqueo de IP interna **en cada salto** de redirección (`_AllowlistRedirectHandler` en `products/infrastructure/amazon_client.py`), no solo en la URL final |
+| SSRF al pre-descargar la imagen que se sube a Telegram | `TelegramBot._download_image` solo admite `http(s)` hacia IP pública, revalida cada redirección (máx. 3) y corta a 10 MB; si no puede, envía la URL y la descarga Telegram |
+| Fuga del token del bot de Telegram | Las excepciones de `requests` incluyen la URL `…/bot<TOKEN>/…`: `TelegramBot._redact` lo sustituye por `<token>` en logs, Sentry y `last_error` (que ve el panel). Sin `logger.exception` con trazas que lo contengan |
+
+Deuda abierta relacionada: TD-24 (imágenes huérfanas), TD-25 (DNS rebinding, también
+en la descarga de imágenes para Telegram), TD-29 (cuota no atómica).
 
 ### 🔑 Secretos y configuración
 

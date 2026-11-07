@@ -1,8 +1,8 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { CheckCheck } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
-import { useAuth } from "@/hooks/useAuth";
+import { useRequireLogin } from "@/hooks/useRequireLogin";
 import { formatRelativeTime } from "@/lib/format";
 import {
   useMarkNotificationsRead,
@@ -33,15 +33,11 @@ export const Route = createFileRoute("/notificaciones")({
 });
 
 function NotificationsPage() {
-  const { user, loading: authLoading } = useAuth();
-  const nav = useNavigate();
   const { data: items = [], isLoading, isError } = useNotificationsList();
   const markRead = useMarkNotificationsRead();
   const markOneRead = useMarkNotificationRead();
 
-  useEffect(() => {
-    if (!authLoading && !user) nav({ to: "/login" });
-  }, [authLoading, user, nav]);
+  useRequireLogin();
 
   useEffect(() => {
     if (isError) toast.error("No se pudieron cargar las notificaciones");

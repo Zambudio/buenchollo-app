@@ -12,6 +12,7 @@ import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
 
+from app.core.config import Settings
 from app.core.rate_limit import limiter
 from app.core.security import AuthenticatedUser, get_current_user
 from app.main import app
@@ -329,7 +330,9 @@ async def test_storage_fallo_es_503_de_dominio():
 @pytest.mark.asyncio
 async def test_url_devuelta_pasa_is_allowed_image(monkeypatch, supabase_url):
     monkeypatch.setattr(schemas, "get_settings", lambda: SimpleNamespace(supabase_url=supabase_url))
-    storage = SubmissionImageStorage(lambda: fake_client(FakeBucket()), supabase_url)
+    # El router pasa la URL ya normalizada por `Settings.supabase_base_url`.
+    base_url = Settings(supabase_url=supabase_url).supabase_base_url
+    storage = SubmissionImageStorage(lambda: fake_client(FakeBucket()), base_url)
     url = await storage.upload("00000000-0000-0000-0000-000000000000", b"x")
     assert schemas.is_allowed_image(url)
 

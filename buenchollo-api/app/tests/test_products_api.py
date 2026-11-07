@@ -1,7 +1,8 @@
 """API tests for product preview endpoints."""
 
-from fastapi.testclient import TestClient
+import pytest
 
+from app.core.security import get_current_user, require_admin
 from app.main import app
 from app.modules.deals.api.router import get_deal_repository
 from app.modules.products.api.router import get_preview_use_case
@@ -65,12 +66,44 @@ def test_health(integration_client) -> None:
     assert response.json()["status"] == "ok"
 
 
-def test_preview_from_url_requires_url(integration_client) -> None:
+@pytest.fixture
+def as_admin():
+    app.dependency_overrides[require_admin] = lambda: object()
+    yield
+    app.dependency_overrides.pop(require_admin, None)
+
+
+def test_preview_from_url_requires_authentication(integration_client) -> None:
+    response = integration_client.post(
+        "/v1/products/preview-from-url", json={"url": "https://www.amazon.es/dp/B08TEST123"}
+    )
+    assert response.status_code in (401, 403)
+
+
+def test_preview_from_url_rejects_non_admin(integration_client) -> None:
+    from fastapi import HTTPException
+
+    def _not_admin():
+        raise HTTPException(status_code=403, detail="No tienes permisos de administrador")
+
+    app.dependency_overrides[get_current_user] = lambda: object()
+    app.dependency_overrides[require_admin] = _not_admin
+    try:
+        response = integration_client.post(
+            "/v1/products/preview-from-url", json={"url": "https://www.amazon.es/dp/B08TEST123"}
+        )
+    finally:
+        app.dependency_overrides.pop(get_current_user, None)
+        app.dependency_overrides.pop(require_admin, None)
+    assert response.status_code == 403
+
+
+def test_preview_from_url_requires_url(integration_client, as_admin) -> None:
     response = integration_client.post("/v1/products/preview-from-url", json={})
     assert response.status_code == 422
 
 
-def test_preview_from_url_returns_normalized_response(integration_client) -> None:
+def test_preview_from_url_returns_normalized_response(integration_client, as_admin) -> None:
     app.dependency_overrides[get_preview_use_case] = override_use_case
     app.dependency_overrides[get_deal_repository] = lambda: FakeDealRepoNoDuplicate()
 
@@ -89,7 +122,7 @@ def test_preview_from_url_returns_normalized_response(integration_client) -> Non
     assert body["store"] == "Amazon"
 
 
-def test_preview_from_url_duplicate_asin_short_circuits(integration_client) -> None:
+def test_preview_from_url_duplicate_asin_short_circuits(integration_client, as_admin) -> None:
     """Si el ASIN ya tiene un chollo, se corta antes de invocar el caso de
     uso (que es quien llama a Amazon Creators API + OpenAI)."""
     from unittest.mock import MagicMock

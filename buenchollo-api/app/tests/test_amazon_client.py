@@ -46,8 +46,8 @@ def test_extract_asin_from_link_amazon_short_url(monkeypatch) -> None:
 
     monkeypatch.setattr(amazon_client, "_resolves_to_private_ip", lambda _url: False)
     monkeypatch.setattr(
-        amazon_client.urllib.request,
-        "urlopen",
+        amazon_client._redirect_opener,
+        "open",
         lambda _request, timeout: RedirectResponse(),
     )
 

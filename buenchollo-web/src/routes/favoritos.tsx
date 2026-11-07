@@ -1,11 +1,12 @@
 import { logError } from "@/lib/logger";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { favoritesApi } from "@/services/api/deals";
 import { Layout } from "@/components/layout/Layout";
 import { DealCard, type DealCardData } from "@/features/deals/components/DealCard";
 import { useMyVotes } from "@/features/deals/hooks/useMyVotes";
 import { useAuth } from "@/hooks/useAuth";
+import { useRequireLogin } from "@/hooks/useRequireLogin";
 
 export const Route = createFileRoute("/favoritos")({
   component: FavoritesPage,
@@ -23,14 +24,11 @@ export const Route = createFileRoute("/favoritos")({
 });
 
 function FavoritesPage() {
-  const { user, loading: authLoading } = useAuth();
-  const nav = useNavigate();
+  const { user } = useAuth();
   const [deals, setDeals] = useState<DealCardData[]>([]);
   const myVotes = useMyVotes(deals.map((d) => d.id));
 
-  useEffect(() => {
-    if (!authLoading && !user) nav({ to: "/login" });
-  }, [authLoading, user, nav]);
+  useRequireLogin();
 
   useEffect(() => {
     if (!user) return;
