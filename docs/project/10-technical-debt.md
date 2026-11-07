@@ -4,7 +4,7 @@
 > Solo items **abiertos**: cuando uno se cierra, se elimina de aquí (el histórico
 > resuelto vive en [`PROJECT_STATUS.md`](../../PROJECT_STATUS.md)). Para consultar el diseño de arquitectura, ver [`docs/master/`](../master/00-index.md).
 
-Última revisión: **2026-11-06** (catálogo permanente, Fase 1: TD-39 a TD-45; cierre de chollos de usuarios: TD-23 a TD-35; entorno local y prueba exhaustiva: TD-36 a TD-38).
+Última revisión: **2026-11-07** (revisión general: cerrados TD-19, TD-23, TD-26, TD-32 y TD-38 b; ver `PROJECT_STATUS.md`). Anteriores: catálogo permanente, Fase 1: TD-39 a TD-45; chollos de usuarios: TD-24 a TD-35; entorno local: TD-36 a TD-38.
 
 ---
 
@@ -61,29 +61,18 @@
 
 ## 🟠 Media — chollos de usuarios (cierre 2026-11-04)
 
-- **TD-23 — `POST /v1/products/preview-from-url` no exige autenticación.** Solo lo
-  limita `10/min` por IP; cada llamada hace HTTP a Amazon Creators y al motor de IA.
-  Es anterior a las propuestas, pero `check-link` (autenticado, 20/min por usuario) ya
-  cubre el caso de usuarios. Proponer: exigir `require_admin` si solo lo usa el panel,
-  o al menos usuario autenticado.
-
 - **TD-24 — Imágenes huérfanas en `deal-images/submissions/`.** Una imagen subida y
   nunca enviada en una propuesta (usuario que abandona el formulario) o las de una
   cuenta eliminada no se borran. Falta una tarea programada (ADR-012) que borre objetos
   sin referencia en `deal_submissions.images` / `deals.images` con antigüedad suficiente.
 
-- **TD-25 — Ventana de DNS rebinding en el fetcher de imágenes.** `core/ssrf.py`
-  resuelve el host y valida la IP, pero `httpx` vuelve a resolverlo al conectar; un DNS
-  malicioso podría responder distinto la segunda vez. Mitigación: conectar a la IP ya
-  validada (con `Host`/SNI del original) o transporte con resolver propio.
-
-- **TD-26 — El resumen nocturno de alertas lee atributos que no existen en `Deal`.**
-  `emails/application/digest_worker.py` usa `deal.price`, `deal.original_price` y
-  `deal.discount`; el modelo tiene `current_price`, `previous_price` y
-  `discount_percentage`. Al montar el resumen de un chollo que coincide, `deal.price`
-  debería lanzar `AttributeError`. Hallado al analizar el cierre de la feature (lectura de
-  código); el efecto en producción no está comprobado (el digest solo actúa a las 21:00 con
-  alertas activas y chollos recientes). Revisar y añadir un test con un `Deal` real.
+- **TD-25 — Ventana de DNS rebinding en los fetchers de URL externas.** `core/ssrf.py`
+  resuelve el host y valida la IP, pero `httpx`/`requests`/`urllib` vuelven a resolverlo
+  al conectar; un DNS malicioso podría responder distinto la segunda vez. Afecta al
+  fetcher de imágenes de propuestas, a la pre-descarga de imágenes para Telegram y a la
+  resolución de acortadores de Amazon (esta última acotada por la allowlist de hosts).
+  Mitigación: conectar a la IP ya validada (con `Host`/SNI del original) o transporte
+  con resolver propio.
 
 - **TD-28 — Rate limit con almacenamiento en memoria por worker.** `slowapi`/`limits`
   sin Redis: con 2 workers los límites efectivos se duplican y se reinician al reiniciar
@@ -107,9 +96,8 @@
 
 - **TD-32 — Duplicación menor de lógica.** El cálculo de `canonical_url` está duplicado entre
   `DealService._canonical_url_for` (`deal_service.py`) y `compute_canonical`
-  (`scripts/backfill_canonical_urls.py`); `submissions/infrastructure/storage.py` repite en
-  línea la limpieza de la URL de Supabase (`split("/rest/v1")[0].rstrip("/")`) que ya existe
-  como `_clean_supabase_url` en `core/security.py`.
+  (`scripts/backfill_canonical_urls.py`). (La limpieza de la URL de Supabase ya está
+  centralizada en `Settings.supabase_base_url` desde 2026-11-07.)
 
 - **TD-33 — `external_id` no Amazon en mayúsculas al aprobar.** Puede no detectar un
   duplicado con SKU en minúsculas (`canonical_url` sí lo detecta).
@@ -146,8 +134,7 @@
 
 - **TD-38 — Menores vistos en la prueba exhaustiva en local (2026-11-04).**
   (a) `AppearanceToggle` (menú lateral) provoca un *hydration mismatch* en consola
-  (el tema se lee de `localStorage` solo en cliente). (b) `/admin/propuestas` sin sesión
-  redirige a `/login` sin `?redirect=`, a diferencia de `/mis-chollos`. (c) Una subida de
+  (el tema se lee de `localStorage` solo en cliente). (c) Una subida de
   más de 5 MB que se salta la validación del cliente recibe la conexión cerrada en vez del
   413 (la web ya valida antes de subir).
 
@@ -175,20 +162,6 @@
   [`docs/superpowers/plans/2026-09-05-supabase-advisor-hardening.md`](../superpowers/plans/2026-09-05-supabase-advisor-hardening.md) Task 4.
   Impacto bajo (no expone datos; endurece cuentas de usuario contra
   credential stuffing).
-
-- **TD-19 — El worker de tareas programadas se traga cualquier fallo de arranque.**
-  `scheduled_tasks/application/scheduler.py::_run()` envuelve el cableado del
-  servicio y la ejecución en un único `except Exception` que hace
-  `logger.exception("Fallo global del worker de tareas programadas")` y devuelve
-  `0`. Un `NameError` por un import perdido (ver `PROJECT_STATUS.md` § 3.duovicies)
-  estuvo ~3 días fallando en cada tick horario sin que saltara ninguna alarma: en
-  APScheduler el job figuraba como *"executed successfully"* y la única señal era
-  una línea `ERROR` en los logs del contenedor. Propuesta: separar el fallo de
-  cableado (`_build_service`) del fallo de ejecución de una tarea concreta y dejar
-  que el primero propague / llegue a Sentry; o añadir un smoke check al arrancar
-  `run_scheduler.py` que construya el servicio una vez y falle ruidosamente si el
-  import está roto. Revisar el mismo patrón en `scheduled_deals` y `blog`. Impacto
-  bajo (no corrompe datos), pero anula la observabilidad de un proceso desatendido.
 
 ---
 

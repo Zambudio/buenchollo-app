@@ -55,10 +55,18 @@ app/
     │   ├── infrastructure/# repositorios, adapters externos
     │   └── api/           # router FastAPI, schemas Pydantic
     ├── products/          # preview Amazon (DIP con Protocols e integración ProductAIEnricher)
-    ├── catalog/           # catálogo permanente: products + product_listings, reglas de oferta, aviso de reactivación (ADR-017)
+    ├── catalog/           # catálogo permanente: products + product_listings, reglas de oferta, aviso de reactivación (ADR-017), tops y votos de productos (ADR-018)
     ├── submissions/       # propuestas de chollos de usuarios: check-link, imágenes (Pillow→WebP), moderación admin
     ├── affiliates/        # dominio puro: canonicalización de URL y reescritores de afiliado por tienda
     ├── telegram/          # publicación al canal, formato emoji premium, hashtags IA
+    ├── alerts/            # alertas de usuario y matching puro (`matches_alert`)
+    ├── notifications/     # notificaciones in-app
+    ├── emails/            # SMTP, plantillas Jinja, bienvenida y resumen nocturno de alertas
+    ├── comments/          # comentarios de chollos
+    ├── blog/ · blog_comments/  # CMS del blog (ADR-011) y sus comentarios
+    ├── analytics/         # analítica first-party (ADR-014)
+    ├── scheduled_deals/   # publicaciones programadas (web + Telegram)
+    ├── scheduled_tasks/   # motor de tareas programadas: revisión diaria de precios (ADR-012)
     ├── categories/
     ├── stores/
     └── users/             # /auth/me, Profile model
@@ -171,13 +179,14 @@ Para conectar por SSH al NAS y hacer rebuild/redeploy de `buenchollo-api` (Docke
 
 ---
 
-## Estado actual (2026-06-14)
+## Estado actual (2026-11-07)
 
 - **Web en producción** en `https://buenchollotech.com` (frontend TanStack Start SSR como **Cloudflare Worker**; deploy automático al hacer push a `main` vía Workers Builds).
 - **API** FastAPI en el NAS Synology, expuesta en `https://api.buenchollotech.com` vía **Cloudflare Tunnel** (sin abrir puertos, sin DDNS). `APP_ENV=production`, CORS cerrado al dominio.
 - **Cloudflare endurecido**: TLS Full (strict) + HSTS, redirect `www`→raíz, WAF + rate limiting + Bot Fight Mode. Detalle y bitácora en [`docs/guides/Cloudflare.md`](docs/guides/Cloudflare.md).
 - Login Google (Supabase) OK · Panel admin funcionando · CI de `main` en verde · flujo `main`/`develop` operativo.
-- **Deuda técnica**: registro vivo y completo en [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md). Lo más urgente: cifras de tests por reconciliar (TD-01) y `CORS_ORIGINS` que exige JSON array en vez de CSV (TD-02).
+- Funcionalidad viva: chollos y catálogo permanente con revisión diaria de precios, propuestas de usuarios, tops comunitarios con votos y banner en portada, alertas (in-app y resumen por correo), blog, Telegram con registro de publicaciones. Historial en [`PROJECT_STATUS.md`](PROJECT_STATUS.md).
+- **Deuda técnica**: registro vivo y completo en [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md). Lo más urgente: rotar el token del Cloudflare Tunnel (TD-21) y que el NAS ejecute la copia de trabajo del share (TD-31: mantenerla en `main`).
 
 ---
 
