@@ -5,6 +5,7 @@ from starlette.concurrency import run_in_threadpool
 
 from app.core.config import Settings, get_settings
 from app.core.rate_limit import limiter
+from app.core.security import require_admin
 from app.modules.deals.api.router import get_deal_repository
 from app.modules.deals.domain.exceptions import DuplicateDealError
 from app.modules.deals.infrastructure.repository import DealRepository
@@ -46,7 +47,13 @@ def get_preview_use_case(
     return PreviewProductFromUrlUseCase(amazon_client, category_client, ai_assistant)
 
 
-@router.post("/preview-from-url", response_model=ProductPreviewResponse)
+# Solo admin (TD-23): cada llamada consume cupo de Amazon Creators y del motor de IA.
+# Los usuarios proponen chollos por `/submissions/check-link`.
+@router.post(
+    "/preview-from-url",
+    response_model=ProductPreviewResponse,
+    dependencies=[Depends(require_admin)],
+)
 @limiter.limit("10/minute")  # caro: hace HTTP a Amazon Creators + OpenAI
 async def preview_from_url(
     request: Request,

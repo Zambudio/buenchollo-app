@@ -3,6 +3,7 @@
 import logging
 import re
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from typing import Any
@@ -108,6 +109,41 @@ def _j(obj: Any, *keys: str, default: Any = None) -> Any:
     return obj if obj is not None else default
 
 
+class _AllowlistRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Valida CADA salto de redirección antes de seguirlo.
+
+    `urlopen` sigue redirecciones por su cuenta: sin esto, un acortador permitido
+    podría redirigir a un host interno y la petición saldría antes de que se
+    revalidara la URL final.
+    """
+
+    max_redirections = 5
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if not _is_safe_amazon_url(newurl):
+            raise urllib.error.URLError("redirección a un host no permitido")
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_redirect_opener = urllib.request.build_opener(_AllowlistRedirectHandler)
+
+
+def _is_safe_amazon_url(url: str) -> bool:
+    parsed = urllib.parse.urlparse(url)
+    return (
+        parsed.scheme in ("http", "https")
+        and _is_allowed_host(url)
+        and not _resolves_to_private_ip(url)
+    )
+
+
+def _resolve_final_url(url: str) -> str:
+    """Sigue las redirecciones de un acortador de Amazon y devuelve la URL final."""
+    request = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    with _redirect_opener.open(request, timeout=10) as response:
+        return response.geturl()
+
+
 def extract_asin_from_url(url_or_asin: str) -> str | None:
     """Extrae un ASIN de Amazon a partir de una URL o lo acepta directamente.
 
@@ -137,9 +173,7 @@ def extract_asin_from_url(url_or_asin: str) -> str | None:
         return None
 
     try:
-        request = urllib.request.Request(url_or_asin, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(request, timeout=10) as response:
-            final_url = response.geturl()
+        final_url = _resolve_final_url(url_or_asin)
     except Exception:
         logger.info("No se pudo resolver redirección de URL Amazon.", exc_info=True)
         return None

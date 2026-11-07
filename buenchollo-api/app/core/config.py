@@ -200,6 +200,11 @@ class Settings(BaseSettings):
     database_url: str = ""
 
     @property
+    def supabase_base_url(self) -> str:
+        """URL base del proyecto Supabase, tolerando que el `.env` traiga `/rest/v1`."""
+        return self.supabase_url.split("/rest/v1")[0].rstrip("/")
+
+    @property
     def effective_analytics_hash_secret(self) -> str:
         return self.analytics_hash_secret or self.supabase_key
 

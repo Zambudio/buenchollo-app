@@ -4,8 +4,10 @@ Verifican que sólo se aceptan URLs de la allowlist Amazon y que cualquier
 URL apuntando a IP privada/loopback es rechazada antes del fetch HTTP.
 Ver SECURITY_AUDIT.md SEC-06.
 """
+import pytest
 from unittest.mock import patch
 
+from app.modules.products.infrastructure import amazon_client
 from app.core.ssrf import resolves_to_private_ip as _resolves_to_private_ip
 
 from app.modules.products.infrastructure.amazon_client import (
@@ -70,23 +72,20 @@ def test_extract_rechaza_url_no_amazon_aunque_lleve_dp_path():
 def test_extract_no_hace_fetch_a_localhost():
     # URL sin ASIN inline + host no amazon → debe devolver None SIN llamar
     # a urlopen (lo verificamos asegurando que urlopen no se invoca).
-    with patch("urllib.request.urlopen") as mock_urlopen:
+    with patch.object(amazon_client._redirect_opener, "open") as mock_urlopen:
         result = extract_asin_from_url("http://localhost/algo")
         assert result is None
         mock_urlopen.assert_not_called()
 
 
 def test_extract_no_hace_fetch_a_ip_privada():
-    with patch("urllib.request.urlopen") as mock_urlopen:
+    with patch.object(amazon_client._redirect_opener, "open") as mock_urlopen:
         result = extract_asin_from_url("http://192.168.1.1/dp")
         assert result is None
         mock_urlopen.assert_not_called()
 
 
 # ── rangos no globales (CGNAT/Tailscale, multicast, IETF) ────────────────────
-
-import pytest
-
 
 @pytest.mark.parametrize("ip", ["100.64.0.1", "100.100.100.100", "224.0.0.1", "192.0.0.8", "::ffff:127.0.0.1", "::ffff:100.64.0.1"])
 def test_ips_no_globales_bloqueadas(ip):
@@ -106,3 +105,35 @@ def test_host_con_una_ip_publica_y_otra_privada_se_bloquea():
 def test_host_solo_publico_se_permite():
     with patch("app.core.ssrf.socket.getaddrinfo", return_value=[(2, 1, 6, "", ("93.184.216.34", 0))]):
         assert _resolves_to_private_ip("http://publico.example/x") is False
+
+
+# ── redirecciones: cada salto se valida antes de seguirlo ────────────────────
+
+def test_redireccion_a_host_interno_se_bloquea_antes_de_seguirla():
+    import urllib.error
+    import urllib.request
+
+    handler = amazon_client._AllowlistRedirectHandler()
+    req = urllib.request.Request("https://amzn.to/abc")
+    with pytest.raises(urllib.error.URLError):
+        handler.redirect_request(req, None, 302, "Found", {}, "http://192.168.1.10/admin")
+
+
+def test_redireccion_a_host_fuera_de_allowlist_se_bloquea():
+    import urllib.error
+    import urllib.request
+
+    handler = amazon_client._AllowlistRedirectHandler()
+    req = urllib.request.Request("https://amzn.to/abc")
+    with pytest.raises(urllib.error.URLError):
+        handler.redirect_request(req, None, 302, "Found", {}, "https://evil.example/dp/B0CP2PSM8L")
+
+
+def test_redireccion_dentro_de_amazon_se_sigue():
+    import urllib.request
+
+    handler = amazon_client._AllowlistRedirectHandler()
+    req = urllib.request.Request("https://amzn.to/abc")
+    with patch.object(amazon_client, "_resolves_to_private_ip", return_value=False):
+        new_req = handler.redirect_request(req, None, 302, "Found", {}, "https://www.amazon.es/dp/B0CP2PSM8L")
+    assert new_req.full_url == "https://www.amazon.es/dp/B0CP2PSM8L"
