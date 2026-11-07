@@ -801,6 +801,7 @@
   color: var(--muted-foreground);
 }
 .top-banner-controls {
+  flex-wrap: wrap;
   min-height: 44px;
   margin-top: 0.4rem;
   display: flex;
