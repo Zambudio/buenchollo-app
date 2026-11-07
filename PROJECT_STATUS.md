@@ -1,6 +1,11 @@
 # PROJECT_STATUS — BuenCholloTech
 *Actualización de producción: 2026-11-06 — Rediseño y tops comunitarios de productos desplegados en web, API y scheduler (merge `477166f`, PR #67). Alembic `20261107120000`.*
 
+## 2026-11-08 · Tarjetas de chollo con la distribución de un listado de chollos
+
+- Petición de Pedro (referencia: tarjetas de Chollómetro): las tarjetas se veían vacías. Nuevo orden en `DealCardView`: arriba votos del chollo y «Votar producto» con «Publicado hace X» a la derecha; título; línea de precio actual, anterior tachado y descuento en verde muy visible (`.deal-discount`, claro y oscuro), seguido de «Disponible en <tienda>» y «Compartido por <usuario>» si lo ha propuesto la comunidad; descripción en dos líneas; abajo comentarios, compartir y guardar a la izquierda e «Ir al chollo» a la derecha. El descuento sale de la foto (ya no se repite). En móvil (feed) la fila de votos y la de acciones ocupan todo el ancho y la foto queda junto a título y precio; separadores verticales solo en la tarjeta horizontal desde 900 px. Sin cambios de API.
+- Verificado con Playwright en 320/375/390/640/1280 px y ambos temas (sin elementos fuera de la tarjeta ni scroll horizontal), tarjeta vertical a 290 px y tarjeta con autor. 475 Vitest, TypeScript, ESLint sin errores y build SSR.
+
 ## 2026-11-07 · Incidente: el autocompletado de Amazon no encontraba productos
 
 - Tras desplegar la revisión general, el panel respondía «No se ha encontrado el producto de Amazon» con enlaces `link.amazon`. Causa: la nueva validación de cada salto de redirección (SSRF) no conocía `amzlinks.in`, el salto intermedio real de `link.amazon` (`link.amazon/<id>` → `amzlinks.in/<id>` → `www.amazon.es/dp/...`). Antes solo se validaba la URL final. Corregido añadiendo `amzlinks.in` a `_ALLOWED_HOSTS`, con test de regresión de la cadena real; comprobado contra el enlace real (resuelve `B0H7X5D6QN`). Lección: al endurecer una integración externa, probar con enlaces reales antes de desplegar, no solo con mocks.
