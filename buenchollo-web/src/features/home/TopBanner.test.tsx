@@ -64,18 +64,17 @@ describe("TopBanner", () => {
     );
     expect(screen.queryByRole("button", { name: "Siguiente top" })).not.toBeInTheDocument();
   });
-  it("rotates after eight seconds and can be paused", () => {
+  it("rotates every five seconds and continues after using the arrows", () => {
     vi.useFakeTimers();
-    vi.spyOn(window, "matchMedia").mockReturnValue({
-      matches: false,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-    } as unknown as MediaQueryList);
     render(<TopBanner tops={tops} />);
-    act(() => vi.advanceTimersByTime(8000));
+    expect(screen.getAllByRole("button")).toHaveLength(2);
+    act(() => vi.advanceTimersByTime(4999));
+    expect(screen.getByRole("link", { name: "Top Audio" })).toBeInTheDocument();
+    act(() => vi.advanceTimersByTime(1));
     expect(screen.getByRole("link", { name: "Top Informática" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Pausar rotación de tops" }));
-    act(() => vi.advanceTimersByTime(16000));
+    fireEvent.click(screen.getByRole("button", { name: "Siguiente top" }));
+    expect(screen.getByRole("link", { name: "Top Audio" })).toBeInTheDocument();
+    act(() => vi.advanceTimersByTime(5000));
     expect(screen.getByRole("link", { name: "Top Informática" })).toBeInTheDocument();
   });
   it("respects reduced motion", () => {

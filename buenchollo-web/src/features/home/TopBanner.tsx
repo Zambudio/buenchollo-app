@@ -1,13 +1,10 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, ChevronLeft, ChevronRight, Crown, Package, Pause, Play } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Crown, Package } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { BannerTop } from "./bannerTops";
 
 export function TopBanner({ tops }: { tops: BannerTop[] }) {
   const [index, setIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
-  const [hovered, setHovered] = useState(false);
-  const [focused, setFocused] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(true);
   const activeIndex = tops.length ? index % tops.length : 0;
   const top = tops[activeIndex];
@@ -19,27 +16,17 @@ export function TopBanner({ tops }: { tops: BannerTop[] }) {
     return () => query.removeEventListener("change", update);
   }, []);
   useEffect(() => {
-    if (tops.length < 2 || paused || hovered || focused || reducedMotion) return;
+    if (tops.length < 2 || reducedMotion) return;
     const timer = window.setInterval(() => {
       if (!document.hidden) setIndex((value) => (value + 1) % tops.length);
-    }, 8000);
+    }, 5000);
     return () => window.clearInterval(timer);
-  }, [tops.length, paused, hovered, focused, reducedMotion]);
+  }, [tops.length, reducedMotion, index]);
   const change = (direction: number) => {
-    setPaused(true);
     setIndex((value) => (value + direction + tops.length) % tops.length);
   };
   return (
-    <section
-      className="top-banner"
-      aria-labelledby="top-banner-heading"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      onFocusCapture={() => setFocused(true)}
-      onBlurCapture={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false);
-      }}
-    >
+    <section className="top-banner" aria-labelledby="top-banner-heading">
       <div className="top-banner-copy">
         <span className="eyebrow">Tops de la comunidad</span>
         <h2 id="top-banner-heading">
@@ -117,21 +104,6 @@ export function TopBanner({ tops }: { tops: BannerTop[] }) {
                 <button type="button" onClick={() => change(1)} aria-label="Siguiente top">
                   <ChevronRight size={16} />
                 </button>
-                {!reducedMotion && (
-                  <button
-                    type="button"
-                    onClick={() => setPaused((value) => !value)}
-                    className="top-banner-rotation"
-                    aria-label={paused ? "Activar rotación de tops" : "Pausar rotación de tops"}
-                  >
-                    {paused ? (
-                      <Play size={14} aria-hidden="true" />
-                    ) : (
-                      <Pause size={14} aria-hidden="true" />
-                    )}
-                    {paused ? "Activar cambio automático" : "Pausar cambio automático"}
-                  </button>
-                )}
               </>
             )}
           </div>
