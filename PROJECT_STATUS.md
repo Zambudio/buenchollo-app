@@ -1,6 +1,10 @@
 # PROJECT_STATUS — BuenCholloTech
 *Actualización de producción: 2026-11-06 — Rediseño y tops comunitarios de productos desplegados en web, API y scheduler (merge `477166f`, PR #67). Alembic `20261107120000`.*
 
+## 2026-11-07 · Incidente: el autocompletado de Amazon no encontraba productos
+
+- Tras desplegar la revisión general, el panel respondía «No se ha encontrado el producto de Amazon» con enlaces `link.amazon`. Causa: la nueva validación de cada salto de redirección (SSRF) no conocía `amzlinks.in`, el salto intermedio real de `link.amazon` (`link.amazon/<id>` → `amzlinks.in/<id>` → `www.amazon.es/dp/...`). Antes solo se validaba la URL final. Corregido añadiendo `amzlinks.in` a `_ALLOWED_HOSTS`, con test de regresión de la cadena real; comprobado contra el enlace real (resuelve `B0H7X5D6QN`). Lección: al endurecer una integración externa, probar con enlaces reales antes de desplegar, no solo con mocks.
+
 ## 2026-11-07 · Fotos cuadradas en las tarjetas de chollos
 
 - Petición de Pedro: en la tarjeta horizontal (portada, categorías y explorar) la foto era una tira estrecha estirada a toda la altura. Ahora es un cuadrado blanco con esquinas redondeadas y borde suave, centrado en su columna: 114 px en móvil y 198 px desde 640 px (`.deal-feed-grid .deal-card > .deal-card-media` en `styles.css`, sin cambios de componente). Ajuste posterior: la regla `.deal-card > a:first-child { margin-bottom: 0 }` era más específica y anulaba el margen inferior, así que la foto quedaba ~13 px más baja; ahora el margen es igual arriba y abajo en todos los anchos. Verificado con Playwright en 320/375/390/640/1024/1280 px y ambos temas: imagen 1:1, dentro de la tarjeta y sin scroll horizontal.

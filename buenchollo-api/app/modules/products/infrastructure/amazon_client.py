@@ -34,6 +34,10 @@ _ALLOWED_HOSTS = {
     "amazon.co.jp", "www.amazon.co.jp",
     "amazon.com.mx", "www.amazon.com.mx",
     "amzn.to", "amzn.eu", "a.co", "link.amazon",
+    # Salto intermedio real de `link.amazon` (acortador de Amazon Associates):
+    # link.amazon/<id> → amzlinks.in/<id> → www.amazon.es/dp/... Sin él, la
+    # validación por salto rechazaba todos los enlaces de SiteStripe.
+    "amzlinks.in",
     "m.media-amazon.com", "media-amazon.com",
 }
 
