@@ -214,3 +214,19 @@ def test_router_y_worker_comparten_el_aviso_protegido():
     from app.modules.scheduled_tasks.application import scheduler as worker
 
     assert api_router.notify_reactivations is worker.notify_reactivations
+
+
+@pytest.mark.asyncio
+async def test_run_propaga_un_fallo_de_cableado(monkeypatch):
+    """TD-19: un error al construir el servicio (p. ej. un import roto) ya no se
+    traga como «fallo global»: se propaga para que APScheduler/Sentry lo vean."""
+    from app.modules.scheduled_tasks.application import scheduler as worker
+
+    def _cableado_roto(_session, _settings):
+        raise NameError("DealRepository")
+
+    monkeypatch.setattr(worker, "_build_service", _cableado_roto)
+    settings = Settings(database_url="postgresql+asyncpg://user:pass@localhost/db")
+
+    with pytest.raises(NameError):
+        await _run(settings)

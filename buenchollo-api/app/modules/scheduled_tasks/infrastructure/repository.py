@@ -7,7 +7,6 @@ from sqlalchemy.orm import selectinload
 from app.modules.scheduled_tasks.domain.models import (
     ScheduledTask,
     ScheduledTaskRun,
-    ScheduledTaskRunItem,
 )
 
 

@@ -4,7 +4,6 @@ from datetime import date
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 from app.modules.emails.application.rendering import (
     EmailBranding,
     build_digest_deal,

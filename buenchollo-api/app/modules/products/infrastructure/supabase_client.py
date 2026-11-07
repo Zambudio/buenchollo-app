@@ -18,12 +18,9 @@ class SupabaseCategoryClient:
     def client(self):
         """Lazy initialization of the Supabase client."""
         if self._client is None:
-            url = self.settings.supabase_url
+            url = self.settings.supabase_base_url
             if not url or not self.settings.supabase_key:
                 raise ValueError("Faltan credenciales de Supabase en la configuración.")
-            
-            # Limpiar URL si trae /rest/v1/
-            url = url.split("/rest/v1")[0].rstrip("/")
             self._client = create_client(url, self.settings.supabase_key)
         return self._client
 

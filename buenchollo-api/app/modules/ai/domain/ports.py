@@ -5,7 +5,6 @@ from typing import Any, Protocol
 from app.modules.ai.domain.entities import (
     AIChatMessage,
     AIChatResponse,
-    AIProductEnrichment,
     LLMGenerationResult,
 )
 

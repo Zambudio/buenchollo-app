@@ -106,13 +106,16 @@ async def _run(settings: Settings) -> int:
     session_factory = async_sessionmaker(engine, expire_on_commit=False)
     try:
         async with session_factory() as session:
+            # El cableado queda FUERA del try (TD-19): un import roto o una
+            # dependencia mal construida es un fallo de despliegue, no de una
+            # tarea concreta, y debe propagarse para que APScheduler lo marque
+            # como error del job y llegue a Sentry en lugar de quedar como una
+            # línea más en los logs en cada tick.
+            repo, service = _build_service(session, settings)
+            notifier = build_reactivation_notifier(session, settings)
             try:
-                repo, service = _build_service(session, settings)
-
                 now_local = datetime.now(timezone.utc).astimezone()
-                notifier = build_reactivation_notifier(session, settings)
-                executed = await _execute_due_tasks(repo, service, session, now_local, notifier)
-                return executed
+                return await _execute_due_tasks(repo, service, session, now_local, notifier)
             except Exception:
                 await session.rollback()
                 logger.exception("Fallo global del worker de tareas programadas")
