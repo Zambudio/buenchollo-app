@@ -1,5 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Trophy } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { DealCard } from "@/features/deals/components/DealCard";
@@ -12,6 +11,8 @@ import { serializeJsonLd } from "@/lib/json-ld";
 import { withFallback } from "@/lib/fallback";
 import { HomeSidebar } from "@/features/home/HomeSidebar";
 import { blogService } from "@/services/api/blog";
+import { TopBanner } from "@/features/home/TopBanner";
+import { loadBannerTops } from "@/features/home/bannerTops";
 
 const SITE = "https://buenchollotech.com";
 const PAGE_SIZE = 30;
@@ -42,12 +43,13 @@ export const Route = createFileRoute("/")({
   validateSearch: parseHomeSearch,
   loaderDeps: ({ search }) => ({ sort: search.sort ?? "popular", page: search.page ?? 1 }),
   loader: async ({ deps }) => {
-    const [page, popular, posts] = await Promise.all([
+    const [page, tops, popular, posts] = await Promise.all([
       withFallback(
         dealsService.getPage({ sort: deps.sort, page: deps.page, page_size: PAGE_SIZE }),
         { items: [], total_pages: 1, page: 1, page_size: PAGE_SIZE, total: 0 },
         "Error cargando chollos de portada",
       ),
+      withFallback(loadBannerTops(), [], "Error cargando tops de portada"),
       withFallback(dealsService.getPopular(3), [], "Error cargando chollos populares"),
       withFallback(
         blogService.getPosts({ page_size: 3 }).then((result) => result.items),
@@ -55,7 +57,7 @@ export const Route = createFileRoute("/")({
         "Error cargando artículos del blog",
       ),
     ]);
-    return { ...page, popular, posts };
+    return { ...page, popular, posts, tops };
   },
   head: () => ({
     meta: [
@@ -169,22 +171,7 @@ function HomePage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {/* Sin texto visible de cabecera (decisión de diseño); el H1 se mantiene para SEO y lectores de pantalla. */}
         <h1 className="sr-only">Chollos y ofertas de tecnología verificadas</h1>
-        <section className="top-banner" aria-labelledby="top-banner-heading">
-          <span className="top-banner-icon">
-            <Trophy size={30} aria-hidden="true" />
-          </span>
-          <div>
-            <span className="eyebrow">Nuevos tops por categoría</span>
-            <h2 id="top-banner-heading">¿Cuál merece el primer puesto?</h2>
-            <p>
-              Descubre los productos de cada categoría y vota tus favoritos. Todos los publicados
-              participan.
-            </p>
-          </div>
-          <Link to="/categorias" className="top-banner-cta">
-            Explorar y votar <ArrowRight size={17} />
-          </Link>
-        </section>
+        <TopBanner tops={data.tops} />
         {/* Filtros fuera de la rejilla: el primer chollo y la columna lateral arrancan a la misma altura. */}
         <HomeFilterTabs value={filter} onChange={handleFilterChange} />
         <div className="home-content-layout mt-6">
