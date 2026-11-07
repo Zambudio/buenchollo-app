@@ -185,11 +185,11 @@ function HomePage() {
             Explorar y votar <ArrowRight size={17} />
           </Link>
         </section>
-        <div className="home-content-layout">
+        {/* Filtros fuera de la rejilla: el primer chollo y la columna lateral arrancan a la misma altura. */}
+        <HomeFilterTabs value={filter} onChange={handleFilterChange} />
+        <div className="home-content-layout mt-6">
           <div className="home-feed-column">
-            <HomeFilterTabs value={filter} onChange={handleFilterChange} />
-
-            <section aria-labelledby="home-deals-heading" className="mt-6">
+            <section aria-labelledby="home-deals-heading">
               <h2 ref={dealsHeadingRef} id="home-deals-heading" className="sr-only">
                 {filter === "popular"
                   ? "Chollos más populares"
