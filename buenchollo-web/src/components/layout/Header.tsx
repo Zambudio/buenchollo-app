@@ -85,14 +85,14 @@ export function Header() {
                 <NotificationsPopover />
                 <Link
                   to="/favoritos"
-                  className="hidden sm:block p-2 hover:text-cyan-glow transition-colors"
+                  className="hidden md:block p-2 hover:text-cyan-glow transition-colors"
                   title="Favoritos"
                 >
                   <Heart className="size-5" />
                 </Link>
                 <Link
                   to="/alertas/nueva"
-                  className="hidden sm:block p-2 hover:text-cyan-glow transition-colors"
+                  className="hidden md:block p-2 hover:text-cyan-glow transition-colors"
                   title="Crear alerta"
                 >
                   <BellPlus className="size-5" />
