@@ -1,6 +1,10 @@
 # PROJECT_STATUS — BuenCholloTech
 *Actualización de producción: 2026-11-06 — Rediseño y tops comunitarios de productos desplegados en web, API y scheduler (merge `477166f`, PR #67). Alembic `20261107120000`.*
 
+## 2026-11-07 · Fotos cuadradas en las tarjetas de chollos
+
+- Petición de Pedro: en la tarjeta horizontal (portada, categorías y explorar) la foto era una tira estrecha estirada a toda la altura. Ahora es un cuadrado blanco con esquinas redondeadas y borde suave, centrado en su columna: 114 px en móvil y 198 px desde 640 px (`.deal-feed-grid .deal-card-media` en `styles.css`, sin cambios de componente). Verificado con Playwright en 320/375/390/640/1024/1280 px y ambos temas: imagen 1:1, dentro de la tarjeta y sin scroll horizontal.
+
 ## 2026-11-07 · Revisión general: seguridad, correcciones y coherencia (desplegado)
 
 - **Seguridad.** (1) `POST /v1/products/preview-from-url` exige `require_admin` (cierra **TD-23**): era anónimo y cada llamada gastaba cupo de Amazon Creators y del motor de IA; solo lo usa el panel. (2) La resolución de acortadores de Amazon validaba la URL final, pero `urlopen` ya había seguido las redirecciones por su cuenta: ahora se valida host y destino **en cada salto** (`_AllowlistRedirectHandler`). (3) Las excepciones de `requests` contra la Bot API incluyen `…/bot<TOKEN>/…` y llegaban a logs, Sentry y `last_error` (visible en el panel) vía `logger.exception`/`raise_for_status`: `TelegramBot._redact` sustituye el token. (4) La pre-descarga de imágenes para Telegram no tenía control de destino ni de tamaño: ahora solo `http(s)` a IP pública, redirecciones revalidadas (máx. 3) y corte a 10 MB. (5) La validación remota del JWT (`supabase.auth.get_user`, síncrona) se ejecuta en un hilo y no bloquea el event loop.
