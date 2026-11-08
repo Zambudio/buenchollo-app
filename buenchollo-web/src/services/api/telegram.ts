@@ -13,6 +13,9 @@ export interface TelegramGenerateRequest {
   description?: string | null;
   affiliate_url?: string;
   expires_at?: string | null;
+  /** Redes de afiliación: línea de envío y aviso adicional del programa. */
+  shipping_info?: string | null;
+  notice?: string | null;
 }
 
 export interface TelegramGenerateResponse {

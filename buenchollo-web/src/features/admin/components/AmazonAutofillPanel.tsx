@@ -1,5 +1,6 @@
-/** Panel "Autocompletar desde Amazon" del admin (TD-03). */
-import { Bot, Loader2, Wand2 } from "lucide-react";
+/** Panel "Autocompletar desde URL" del admin (TD-03): Amazon (flujo de siempre)
+ *  y tiendas de Awin / Tradedoubler configuradas en el registro de afiliación. */
+import { Bot, Link2, Loader2, Wand2 } from "lucide-react";
 import { adminInputCls as inputCls } from "../deal-form";
 
 interface Props {
@@ -9,6 +10,8 @@ interface Props {
   readonly onUrlChange: (value: string) => void;
   readonly onProviderChange: (value: string) => void;
   readonly onAutofill: () => void;
+  /** Solo enlace afiliado (Awin / Tradedoubler), sin buscar la ficha. */
+  readonly onLinkOnly?: () => void;
 }
 
 export function AmazonAutofillPanel({
@@ -18,13 +21,16 @@ export function AmazonAutofillPanel({
   onUrlChange,
   onProviderChange,
   onAutofill,
+  onLinkOnly,
 }: Props) {
   return (
     <div className="bg-surface-800 border border-cyan-glow/40 p-4 mb-4">
       <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
         <div className="flex items-center gap-2">
           <Wand2 className="size-4 text-cyan-glow" />
-          <h3 className="font-mono text-xs uppercase text-cyan-glow">Autocompletar desde Amazon</h3>
+          <h3 className="font-mono text-xs uppercase text-cyan-glow">
+            Autocompletar desde Amazon, Awin o Tradedoubler
+          </h3>
         </div>
         <div className="flex items-center gap-2">
           <Bot className="size-3.5 text-cyan-glow" />
@@ -48,13 +54,14 @@ export function AmazonAutofillPanel({
         </div>
       </div>
       <p className="font-mono text-[10px] text-muted-foreground mb-3">
-        Pega tu URL de afiliado de Amazon y rellenaremos título, imagen, marca, copywriting y
-        precios automáticamente.
+        Pega la URL del producto. Amazon: título, imagen, marca, copywriting y precios. Awin /
+        Tradedoubler: enlace afiliado oficial y la ficha del catálogo autorizado, si existe. Nada se
+        publica solo.
       </p>
       <div className="flex flex-col sm:flex-row gap-2">
         <input
           type="url"
-          placeholder="https://www.amazon.es/dp/..."
+          placeholder="https://www.amazon.es/dp/... · https://www.pccomponentes.com/..."
           value={url}
           onChange={(e) => onUrlChange(e.target.value)}
           className={inputCls + " flex-1"}
@@ -68,6 +75,16 @@ export function AmazonAutofillPanel({
           {busy ? <Loader2 className="size-4 animate-spin" /> : <Wand2 className="size-4" />}
           {busy ? "PROCESANDO..." : "AUTOCOMPLETAR"}
         </button>
+        {onLinkOnly && (
+          <button
+            type="button"
+            onClick={onLinkOnly}
+            disabled={busy}
+            className="border border-cyan-glow/50 text-cyan-glow font-mono text-xs px-4 py-2 flex items-center justify-center gap-2 hover:bg-cyan-glow/10 disabled:opacity-50 whitespace-nowrap"
+          >
+            <Link2 className="size-4" /> SOLO ENLACE
+          </button>
+        )}
       </div>
     </div>
   );

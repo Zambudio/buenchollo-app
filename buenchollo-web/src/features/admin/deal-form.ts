@@ -6,6 +6,7 @@
 import { calculateDiscount, slugify, toDatetimeLocal } from "@/lib/format";
 import type { Category } from "@/services/api/categories";
 import type { DealCreatePayload, DealDetailData } from "@/services/api/deals";
+import type { ImportResponse } from "@/services/api/affiliates";
 
 export type DealStatus = "active" | "expired" | "scheduled" | "draft";
 
@@ -32,6 +33,15 @@ export interface DealForm {
   external_id: string;
   show_keepa_chart: boolean;
   telegram_text?: string;
+  /** Redes de afiliación (Awin / Tradedoubler). Vacíos en Amazon/manual. */
+  affiliate_program_id: string;
+  data_source: string;
+  data_provider_updated_at: string; // ISO
+  data_imported_at: string; // ISO
+  price_verified_at: string; // ISO; comprobación manual en tienda
+  price_reference_type: string;
+  price_reference_evidence: string;
+  import_snapshot: Record<string, string> | null;
 }
 
 /** Clase compartida de inputs del panel admin (estética terminal). */
@@ -42,6 +52,17 @@ export const adminInputCls =
 export function isAmazonProductReference(value: string): boolean {
   return /amazon\./i.test(value) || /amzn\./i.test(value) || /\.amazon(?:[/?#:]|$)/i.test(value);
 }
+
+const EMPTY_NETWORK_FIELDS = {
+  affiliate_program_id: "",
+  data_source: "",
+  data_provider_updated_at: "",
+  data_imported_at: "",
+  price_verified_at: "",
+  price_reference_type: "",
+  price_reference_evidence: "",
+  import_snapshot: null,
+};
 
 export function emptyForm(): DealForm {
   return {
@@ -64,6 +85,7 @@ export function emptyForm(): DealForm {
     scheduled_for: "",
     external_id: "",
     show_keepa_chart: false,
+    ...EMPTY_NETWORK_FIELDS,
   };
 }
 
@@ -88,6 +110,14 @@ export function dealToForm(d: DealDetailData): DealForm {
     scheduled_for: toDatetimeLocal(d.scheduled_for),
     external_id: d.external_id ?? "",
     show_keepa_chart: d.show_keepa_chart ?? false,
+    affiliate_program_id: d.affiliate_program_id ?? "",
+    data_source: d.data_source ?? "",
+    data_provider_updated_at: d.data_provider_updated_at ?? "",
+    data_imported_at: d.data_imported_at ?? "",
+    price_verified_at: d.price_verified_at ?? "",
+    price_reference_type: d.price_reference_type ?? "",
+    price_reference_evidence: d.price_reference_evidence ?? "",
+    import_snapshot: (d.import_snapshot as Record<string, string> | null) ?? null,
   };
 }
 
@@ -178,8 +208,153 @@ export function buildDealPayload(
     external_id: form.external_id || null,
     show_keepa_chart: form.show_keepa_chart,
   };
+  if (isNetworkForm(form)) {
+    payload.affiliate_program_id = form.affiliate_program_id || null;
+    payload.data_source = form.data_source || null;
+    payload.data_provider_updated_at = form.data_provider_updated_at || null;
+    payload.data_imported_at = form.data_imported_at || null;
+    payload.price_verified_at = form.price_verified_at || null;
+    payload.price_reference_type = form.price_reference_type || null;
+    payload.price_reference_evidence = form.price_reference_evidence.trim().slice(0, 500) || null;
+    payload.import_snapshot = form.import_snapshot;
+  }
   if (form.status === "active" && !editing) {
     payload.published_at = new Date().toISOString();
   }
   return payload;
+}
+
+// ── Redes de afiliación ──────────────────────────────────────────────────────
+
+/** Chollo importado de Awin/Tradedoubler: aplica sus reglas de publicación. */
+export function isNetworkForm(
+  form: Pick<DealForm, "affiliate_program_id" | "data_source">,
+): boolean {
+  return (
+    !!form.affiliate_program_id ||
+    ["awin_feed", "tradedoubler_api", "link_only"].includes(form.data_source)
+  );
+}
+
+/** Tipos de "precio anterior" que SÍ lo justifican (el backend usa la misma lista). */
+export const PROOF_REFERENCE_TYPES = [
+  "provider_price_history_30d",
+  "store_strikethrough_verified",
+  "manual_verified",
+];
+
+export const REFERENCE_TYPE_LABELS: Record<string, string> = {
+  none: "Sin precio anterior",
+  rrp: "PVP recomendado (no justifica el «antes»)",
+  feed_original_price: "Precio original del feed sin fecha (no justifica)",
+  provider_price_history_30d: "Mínimo de 30 días según el historial de la red",
+  store_strikethrough_verified: "Precio tachado comprobado en la tienda",
+  manual_verified: "Otra evidencia comprobada a mano",
+};
+
+type ImportableField =
+  | "title"
+  | "short_description"
+  | "description"
+  | "brand"
+  | "current_price"
+  | "previous_price"
+  | "shipping_info"
+  | "image_url"
+  | "affiliate_url"
+  | "store_id"
+  | "external_id"
+  | "price_reference_type"
+  | "price_reference_evidence";
+
+export const IMPORT_FIELD_LABELS: Record<ImportableField, string> = {
+  title: "Título",
+  short_description: "Descripción corta",
+  description: "Descripción larga",
+  brand: "Marca",
+  current_price: "Precio actual",
+  previous_price: "Precio anterior",
+  shipping_info: "Envío",
+  image_url: "Imagen principal",
+  affiliate_url: "Enlace afiliado",
+  store_id: "Tienda",
+  external_id: "ID de producto",
+  price_reference_type: "Tipo de precio anterior",
+  price_reference_evidence: "Evidencia del precio anterior",
+};
+
+export interface ImportConflict {
+  field: ImportableField;
+  current: string;
+  imported: string;
+}
+
+/** Valores que aporta la importación (solo los que trae la fuente). */
+export function importedValues(result: ImportResponse): Partial<Record<ImportableField, string>> {
+  const o = result.offer;
+  if (!o) return {};
+  const out: Partial<Record<ImportableField, string>> = {};
+  const put = (field: ImportableField, value: string | null | undefined) => {
+    if (value != null && String(value).trim() !== "") out[field] = String(value);
+  };
+  put("title", o.title);
+  put("short_description", o.short_description);
+  put("description", o.description);
+  put("brand", o.brand);
+  put("current_price", o.current_price);
+  // Solo una referencia con significado y evidencia se propone como "antes".
+  if (o.reference_price && o.reference_type && PROOF_REFERENCE_TYPES.includes(o.reference_type)) {
+    put("previous_price", o.reference_price);
+    put("price_reference_type", o.reference_type);
+    put("price_reference_evidence", o.reference_evidence);
+  }
+  put("shipping_info", o.shipping_info);
+  put("image_url", o.image_url);
+  put("affiliate_url", o.affiliate_url);
+  put("store_id", o.store_id);
+  put("external_id", o.external_id);
+  return out;
+}
+
+/** Aplica una importación al formulario sin pisar en silencio lo editado a
+ *  mano: un campo con valor propio distinto del importado (y distinto de la
+ *  importación anterior) se deja como está y se devuelve como conflicto. */
+export function applyImport(
+  form: DealForm,
+  result: ImportResponse,
+): { form: DealForm; conflicts: ImportConflict[] } {
+  const values = importedValues(result);
+  const previous = form.import_snapshot ?? {};
+  const next: DealForm = { ...form };
+  const conflicts: ImportConflict[] = [];
+  for (const [field, imported] of Object.entries(values) as [ImportableField, string][]) {
+    const current = String(next[field] ?? "");
+    if (!current.trim() || current === imported || current === previous[field]) {
+      (next as unknown as Record<string, unknown>)[field] = imported;
+    } else {
+      conflicts.push({ field, current, imported });
+    }
+  }
+  const image = next.image_url;
+  if (image && values.image_url === image && !next.images.includes(image)) {
+    next.images = [image, ...next.images];
+  }
+  if (result.offer) {
+    next.affiliate_program_id = result.offer.affiliate_program_id;
+    next.data_source = result.offer.data_source;
+    next.show_keepa_chart = false;
+  }
+  next.data_imported_at = result.provenance?.imported_at ?? new Date().toISOString();
+  next.data_provider_updated_at = result.provenance?.provider_updated_at ?? "";
+  next.import_snapshot = { ...previous, ...values } as Record<string, string>;
+  return { form: next, conflicts };
+}
+
+/** Aplica el valor importado de un conflicto (decisión explícita del editor). */
+export function resolveConflict(form: DealForm, conflict: ImportConflict): DealForm {
+  const next = { ...form, [conflict.field]: conflict.imported } as DealForm;
+  if (conflict.field === "image_url") {
+    next.images = [conflict.imported, ...form.images.filter((img) => img !== conflict.imported)];
+  }
+  return next;
 }

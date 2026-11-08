@@ -10,6 +10,10 @@ from app.core.database import get_db
 from app.core.rate_limit import limiter
 from app.core.security import require_admin
 from app.modules.deals.infrastructure.repository import DealRepository
+from app.modules.deals.application.deal_service import _GUARD_FIELDS
+from app.modules.affiliates.application.programs import PublicationBlocked, PublicationGuard
+from app.modules.affiliates.domain.offers import NETWORK_TRACKING_HOSTS
+from app.modules.affiliates.infrastructure.repository import AffiliateRepository
 from app.modules.telegram.application.post_generator import TelegramPostGenerator
 from app.modules.telegram.application.publications import channel_kind, record_safely, with_current_price
 from app.modules.telegram.infrastructure.publication_repository import TelegramPublicationRepository
@@ -107,6 +111,8 @@ async def generate_post(
         description=payload.description,
         affiliate_url=payload.affiliate_url,
         expires_at=payload.expires_at,
+        shipping_info=payload.shipping_info,
+        notice=payload.notice,
     )
 
     categories = repo.load()
@@ -133,6 +139,21 @@ async def generate_post(
 
 # ── Publicación ────────────────────────────────────────────────────────────────
 
+async def _ensure_network_deal_publishable(db: AsyncSession, payload: TelegramNotifyRequest) -> None:
+    """Un post con enlace de Awin/Tradedoubler solo sale si su chollo guardado
+    cumple las reglas de publicación (precio anterior con evidencia, envío,
+    imagen autorizada, programa aprobado, dato no caducado...)."""
+    text = f"{payload.text or ''} {payload.affiliate_url or ''}"
+    if not any(host in text for host in NETWORK_TRACKING_HOSTS):
+        return
+    deal = await DealRepository(db).get_by_id(str(payload.deal_id)) if payload.deal_id else None
+    if deal is None:
+        raise PublicationBlocked(["affiliate_url"]) from None
+    data = {column: getattr(deal, column) for column in _GUARD_FIELDS}
+    data["status"] = "active"
+    await PublicationGuard(AffiliateRepository(db)).ensure_publishable(data)
+
+
 @router.post("/notify")
 @limiter.limit("5/minute")  # publicación admin: evita doble envío accidental
 async def notify_deal(
@@ -148,6 +169,7 @@ async def notify_deal(
     - Si no → construye el mensaje en MarkdownV2 (flujo rápido del checkbox)
     """
     bot = _get_bot(settings)
+    await _ensure_network_deal_publishable(db, payload)
 
     # Resuelve el canal destino
     channel_id = (

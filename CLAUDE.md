@@ -57,7 +57,7 @@ app/
     ├── products/          # preview Amazon (DIP con Protocols e integración ProductAIEnricher)
     ├── catalog/           # catálogo permanente: products + product_listings, reglas de oferta, aviso de reactivación (ADR-017), tops y votos de productos (ADR-018)
     ├── submissions/       # propuestas de chollos de usuarios: check-link, imágenes (Pillow→WebP), moderación admin
-    ├── affiliates/        # dominio puro: canonicalización de URL y reescritores de afiliado por tienda
+    ├── affiliates/        # canonicalización/reescritores de URL + Awin/Tradedoubler: registro de programas, feeds, importación al editor y reglas de publicación (ADR-019)
     ├── telegram/          # publicación al canal, formato emoji premium, hashtags IA
     ├── alerts/            # alertas de usuario y matching puro (`matches_alert`)
     ├── notifications/     # notificaciones in-app

@@ -13,6 +13,7 @@ import {
   Clock,
   Activity,
   Inbox,
+  Handshake,
 } from "lucide-react";
 import { SubmissionsNavBadge } from "@/features/admin/components/SubmissionsNavBadge";
 
@@ -88,6 +89,13 @@ function AdminLayout() {
               className="flex items-center gap-2 px-3 py-2 font-mono text-xs uppercase hover:bg-surface-700"
             >
               <ShoppingBag className="size-4" /> Tiendas
+            </Link>
+            <Link
+              to="/admin/afiliacion"
+              activeProps={{ className: "bg-surface-700 text-cyan-glow" }}
+              className="flex items-center gap-2 px-3 py-2 font-mono text-xs uppercase hover:bg-surface-700"
+            >
+              <Handshake className="size-4" /> Afiliación
             </Link>
             <Link
               to="/admin/blog"

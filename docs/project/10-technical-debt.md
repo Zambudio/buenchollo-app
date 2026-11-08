@@ -20,6 +20,22 @@
   fecha/evidencia en `docs/guides/Cloudflare.md`. No copiar el valor nuevo a Git,
   documentación, logs ni chat.
 
+## 🟠 Media — redes de afiliación (Awin / Tradedoubler, 2026-11-08)
+
+- **TD-46 — Integración Awin/Tradedoubler sin validar en vivo.** Probada solo con fixtures
+  y la API local. Falta: credenciales (`AWIN_ACCESS_TOKEN`, `AWIN_FEED_API_KEY`,
+  `TRADEDOUBLER_PRODUCTS_TOKEN`, `TRADEDOUBLER_SITE_ID`), programas aprobados y contrastar
+  con datos reales las columnas del feed Awin, la respuesta de la Products API (`offers`,
+  `priceHistory`, `productImage`) y la zona horaria de `last_updated`. Guía:
+  `docs/guides/AFFILIATE-NETWORKS.md` §7.
+- **TD-47 — Deeplink de Tradedoubler sin ficha no documentado públicamente.** Solo se usa
+  si el propietario lo confirma por programa («Deeplink verificado»).
+- **TD-48 — Programar publicaciones exige ASIN.** Los chollos de redes no se pueden
+  programar todavía (`scheduled_deals`); se publican a mano tras revisar.
+- **TD-49 — Catálogo local de feeds sin purga por desuso.** Una sincronización sustituye
+  la generación anterior, pero un feed deseleccionado conserva sus filas hasta borrarlo.
+  Añadir borrado al deseleccionar o a los N días según las condiciones de cada programa.
+
 ## 🟠 Media — catálogo permanente (Fase 1, 2026-11-06)
 
 - **TD-41 — La ejecución manual de `price_check` es una petición HTTP síncrona.** Vista

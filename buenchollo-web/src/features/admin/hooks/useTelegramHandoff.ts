@@ -26,6 +26,8 @@ export function telegramDataFromDeal(d: DealDetailData): TelegramPanelData {
     description: d.short_description || null,
     affiliate_url: d.affiliate_url ?? "",
     expires_at: d.expires_at,
+    // Redes de afiliación: el post lleva la línea de envío (Amazon, igual que antes).
+    ...(d.affiliate_program_id ? { shipping_info: d.shipping_info ?? null } : {}),
     images: allImages,
     image_url: allImages[0] ?? null,
   };
