@@ -81,13 +81,13 @@ class AwinClient:
     # ── Link Builder ────────────────────────────────────────────────────────
 
     def generate_link(self, advertiser_id: str, destination_url: str, clickref: str | None = None) -> str:
-        body: dict = {"advertiserId": int(advertiser_id), "destinationUrl": destination_url, "shorten": False}
+        body: dict = {"advertiserId": int(advertiser_id), "destinationUrl": destination_url, "shorten": True}
         if clickref:
             body["parameters"] = {"clickref": clickref[:50]}
         status, data = self.http.json(
             "POST", f"{API_BASE}/publishers/{self.publisher_id}/linkbuilder/generate", headers=self._auth(), json=body
         )
-        url = data.get("url") if isinstance(data, dict) else None
+        url = (data.get("shortUrl") or data.get("url")) if isinstance(data, dict) else None
         if status != 200 or not isinstance(url, str):
             detail = data.get("description") if isinstance(data, dict) else None
             raise AwinLinkUnavailable(
@@ -302,6 +302,9 @@ def iter_feed_rows(path: Path, max_uncompressed: int, max_rows: int) -> Iterator
     csv.field_size_limit(1024 * 1024)
     with _open_feed(path, max_uncompressed) as text:
         reader = csv.DictReader(text)
+        columns = set(reader.fieldnames or [])
+        if "product_name" not in columns or not columns.intersection({"aw_product_id", "product_id", "merchant_product_id"}):
+            raise NetworkError("Formato de feed no compatible: se requiere CSV Awin con identificador y product_name.")
         for count, raw in enumerate(reader, start=1):
             if count > max_rows:
                 raise NetworkError("El feed supera el número máximo de filas configurado.")

@@ -317,3 +317,15 @@ def test_tradedoubler_por_ean():
     result = run(uc, url="https://www.mediamarkt.es/es/product/otra-url.html", ean="8400000000031")
     assert result.status == "imported"
     assert td.calls[0][1] == "8400000000031" and td.calls[0][3] is None
+
+
+def test_import_disabled_does_not_search_catalog():
+    program = _program(supports_import=False)
+    repo = FakeRepo([program])
+    async def forbidden(*args, **kwargs):
+        raise AssertionError("Catalog must not be queried")
+    repo.find_feed_products = forbidden
+    result = asyncio.run(ImportOfferUseCase(repo, FakeAwin(), FakeTD()).execute(
+        ImportRequest("https://www.pccomponentes.com/product"), NOW
+    ))
+    assert result.status == "catalog_unavailable"

@@ -42,6 +42,7 @@ from app.modules.affiliates.domain.offers import (
     describe_blockers,
     destination_url,
     lowest_price_last_30_days,
+    is_network_tracking_url,
     missing_fields,
     normalize_product_url,
     parse_money,
@@ -51,7 +52,7 @@ from app.modules.affiliates.domain.offers import (
 from app.modules.affiliates.infrastructure.awin_client import AwinClient, AwinLinkUnavailable
 from app.modules.affiliates.infrastructure.http import NetworkAuthError, NetworkError, NetworkRateLimited, redact
 from app.modules.affiliates.infrastructure.repository import AffiliateRepository, active_generations
-from app.modules.affiliates.infrastructure.tradedoubler_client import TradedoublerClient, map_td_product
+from app.modules.affiliates.infrastructure.tradedoubler_client import TD_TRACKING_HOSTS, TradedoublerClient, map_td_product
 
 logger = logging.getLogger(__name__)
 
@@ -204,7 +205,7 @@ class ImportOfferUseCase:
         status = None
 
         if not req.link_only:
-            if not active_generations(program):
+            if not program.supports_import or not active_generations(program):
                 status = ST_CATALOG_UNAVAILABLE
             else:
                 matches = await self.repo.find_feed_products(
@@ -306,7 +307,7 @@ class ImportOfferUseCase:
         status = None
 
         if not req.link_only:
-            if not feeds:
+            if not program.supports_import or not feeds:
                 status = ST_CATALOG_UNAVAILABLE
             else:
                 target = normalize_product_url(url)
@@ -402,7 +403,7 @@ class ImportOfferUseCase:
             return {"status": "unavailable", "message": "El programa no admite generación de enlaces en el registro."}
         if product and product.get("tracking_url"):
             host = (urlsplit(product["tracking_url"]).hostname or "").lower()
-            if host.endswith("tradedoubler.com"):
+            if host in TD_TRACKING_HOSTS and is_network_tracking_url(product["tracking_url"]):
                 return {"status": "generated", "affiliate_url": product["tracking_url"], "source": "tradedoubler_product"}
         if program.deeplink_verified_at is not None:
             try:

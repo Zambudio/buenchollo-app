@@ -65,6 +65,14 @@ def _td(handler):
 
 # ── Awin Link Builder ────────────────────────────────────────────────────────
 
+def test_linkbuilder_solicita_y_prefiere_enlace_corto():
+    def handler(request):
+        assert json.loads(request.content)["shorten"] is True
+        return httpx.Response(200, json={"url": "https://www.awin1.com/long", "shortUrl": "https://tidd.ly/example"})
+
+    assert _awin(handler).generate_link("20982", "https://www.pccomponentes.com/x") == "https://tidd.ly/example"
+
+
 def test_linkbuilder_envia_destino_y_auth_bearer():
     seen = {}
 
@@ -272,3 +280,61 @@ def test_td_respuesta_maliciosa_no_rompe():
     handler2 = lambda r: httpx.Response(200, json={"products": ["x", 1, None, {"name": "<script>x</script>"}]})  # noqa: E731
     items = _td(handler2).search_products("1", query="x")
     assert len(items) == 1 and map_td_product(items[0], "1") is None
+
+
+def test_td_requests_original_url_and_history():
+    def handler(request):
+        assert ";sourceproducturl=true" in str(request.url)
+        assert ";priceHistory=true" in str(request.url)
+        return httpx.Response(200, json={"products": []})
+    assert _td(handler).search_products("123") == []
+
+
+def test_td_zero_shipping_is_preserved():
+    data = json.loads((FIX / "td_products.json").read_text(encoding="utf-8"))["products"][0]
+    data["offers"][0]["shippingCost"] = 0
+    assert map_td_product(data, "55501")["shipping"] == "0"
+
+
+def test_unselected_or_unavailable_feeds_not_searchable():
+    from types import SimpleNamespace
+    from app.modules.affiliates.infrastructure.repository import active_generations
+    program = SimpleNamespace(feeds=[
+        {"feed_id": "1", "generation": 1, "selected": False},
+        {"feed_id": "2", "generation": 2, "selected": True, "available": False},
+        {"feed_id": "3", "generation": 3, "selected": True, "available": True},
+    ])
+    assert active_generations(program) == [("3", 3)]
+
+
+@pytest.mark.parametrize("url", ["javascript://tidd.ly/x", "https://user:pass@tidd.ly/x", "https://tidd.ly:444/x"])
+def test_tracking_url_requires_safe_https(url):
+    from app.modules.affiliates.domain.offers import is_network_tracking_url
+    assert not is_network_tracking_url(url)
+
+
+def test_nonfinite_prices_are_missing():
+    from app.modules.affiliates.domain.offers import parse_money
+    assert parse_money(float("nan")) is None
+
+
+def test_td_tracking_host_must_be_exact():
+    from types import SimpleNamespace
+    from app.modules.affiliates.application.import_offer import ImportOfferUseCase
+    program = SimpleNamespace(supports_links=True, deeplink_verified_at=None)
+    result = ImportOfferUseCase(None, None, None)._td_link(
+        program, {"tracking_url": "https://eviltradedoubler.com/x"}, "https://www.mediamarkt.es/x"
+    )
+    assert result["status"] == "unavailable"
+
+
+def test_td_feed_uses_documented_modification_time():
+    client = _td(lambda r: httpx.Response(200, json={"feeds": [{"feedId": 1, "lastModifiedTime": "2026-11-08T10:00:00Z"}]}))
+    assert client.product_feeds()[0]["last_imported"] == "2026-11-08T10:00:00Z"
+
+
+def test_feed_unknown_schema_is_error_not_empty_catalog(tmp_path):
+    path = tmp_path / "invalid.csv"
+    path.write_text("id,title,price\n1,Product,100\n", encoding="utf-8")
+    with pytest.raises(NetworkError):
+        list(iter_feed_rows(path, 10000, 10))

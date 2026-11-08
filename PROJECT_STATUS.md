@@ -1178,3 +1178,8 @@ buenchollo-web/
 │   ├── components/    # UI sin lógica de datos
 │   └── hooks/         # useAuth, otros hooks de estado
 ```
+
+
+## Revisi?n de afiliaci?n previa a producci?n ? 2026-11-08
+
+Awin/Tradedoubler revisados con regresiones para campos opcionales de API, env?o cero, selecci?n de feeds, hosts de seguimiento, importaci?n deshabilitada, NaN y esquema CSV incompatible. Token de ambas redes validado; sin feeds de tiendas objetivo accesibles. Gu?a e informe: `docs/guides/AFFILIATE-VALIDATION-2026-11-08.md`. Se conserva el bloqueo por adhesi?n y los programas deshabilitados. Pendientes: TD-46 a TD-49 y validaci?n real por tienda. Frontend: 484 Vitest, 37 E2E, typecheck/lint y build; integraci?n PostgreSQL ORM: 59 correctos.

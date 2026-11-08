@@ -257,7 +257,8 @@ def _as_admin():
         yield session
 
     app.dependency_overrides[get_db] = _db
-    settings = Settings(awin_publisher_id="3148595", awin_access_token=SECRET, awin_feed_api_key=SECRET + "f")
+    settings = Settings(awin_publisher_id="3148595", awin_access_token=SECRET, awin_feed_api_key=SECRET + "f",
+                        tradedoubler_products_token="", tradedoubler_site_id="")
     app.dependency_overrides[get_settings] = lambda: settings
 
 

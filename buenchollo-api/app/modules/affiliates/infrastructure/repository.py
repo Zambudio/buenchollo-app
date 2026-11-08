@@ -13,7 +13,7 @@ def active_generations(program: AffiliateProgram) -> list[tuple[str, int]]:
     out = []
     for feed in program.feeds or []:
         gen = feed.get("generation")
-        if feed.get("feed_id") and isinstance(gen, int):
+        if feed.get("selected") and feed.get("available") is not False and feed.get("feed_id") and isinstance(gen, int):
             out.append((str(feed["feed_id"]), gen))
     return out
 

@@ -70,7 +70,10 @@ def is_network_tracking_url(url: str | None) -> bool:
     if not url:
         return False
     try:
-        host = urlsplit(url.strip()).hostname or ""
+        parts = urlsplit(url.strip())
+        host = parts.hostname or ""
+        if parts.scheme != "https" or parts.username or parts.password or parts.port not in (None, 443):
+            return False
     except ValueError:
         return False
     return host.lower() in NETWORK_TRACKING_HOSTS
@@ -233,7 +236,7 @@ def parse_money(value) -> Decimal | None:
         amount = Decimal(raw).quantize(_CENT, rounding=ROUND_HALF_UP)
     except (InvalidOperation, ValueError):
         return None
-    if amount < 0 or not amount.is_finite():
+    if not amount.is_finite() or amount < 0:
         return None
     return amount
 

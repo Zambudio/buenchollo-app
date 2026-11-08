@@ -155,3 +155,8 @@ Para Tradedoubler (MediaMarkt): `TRADEDOUBLER_PRODUCTS_TOKEN` (+ `TRADEDOUBLER_S
 COMPROBAR ADHESIÓN, seleccionar el feed descubierto y verificar antes las condiciones de
 imágenes. Validar en vivo la forma real de la respuesta (los mapeos se escribieron con la
 documentación y fixtures).
+
+
+## Revisi?n de integraci?n (2026-11-08)
+
+Credenciales de ambas redes configuradas; Awin y Tradedoubler responden a la consulta de feeds. Las tiendas objetivo siguen sin cat?logo accesible. Ver [informe de validaci?n](AFFILIATE-VALIDATION-2026-11-08.md) para resultados, correcciones y limitaciones. Awin solicita enlaces cortos; Tradedoubler conserva el enlace oficial del producto, sin acortamiento propio.

@@ -66,6 +66,7 @@ class TradedoublerClient:
             matrix += f";spId={_matrix_value(sp_id)}"
         if query:
             matrix += f";q={_matrix_value(query)}"
+        matrix += ";sourceproducturl=true;priceHistory=true"
         matrix += f";pageSize={max(1, min(page_size, 50))}"
         status, data = self.http.json(
             "GET",
@@ -97,7 +98,7 @@ class TradedoublerClient:
                     "name": str(feed.get("name", ""))[:200],
                     "program_ids": program_ids,
                     "products": feed.get("numberOfProducts"),
-                    "last_imported": feed.get("lastUpdated") or feed.get("updated"),
+                    "last_imported": feed.get("lastModifiedTime") or feed.get("lastUpdated") or feed.get("updated"),
                     "language": feed.get("languageISOCode"),
                 }
             )
@@ -188,7 +189,7 @@ def map_td_product(product: dict, feed_id: str) -> dict | None:
         "price": current,
         "currency": currency,
         "price_history": history,
-        "shipping": (str(offer.get("shippingCost") or "")[:64]) or None,
+        "shipping": ((str(offer["shippingCost"]) if offer.get("shippingCost") is not None else "")[:64]) or None,
         "delivery_time": (str(offer.get("deliveryTime") or "")[:64]) or None,
         "in_stock": in_stock,
         "program_name": str(offer.get("programName") or "")[:120] or None,
