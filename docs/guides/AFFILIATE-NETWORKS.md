@@ -1,9 +1,12 @@
 # Redes de afiliación: Awin y Tradedoubler
 
 > Guía viva. Decisión de diseño en [ADR-019](../adr/ADR-019-redes-afiliacion-awin-tradedoubler.md).
-> Estado a 2026-11-08: **código en `develop`, sin credenciales ni programas
-> verificados**. Nada se ha validado todavía contra las APIs reales de Awin o
-> Tradedoubler: solo con fixtures sintéticas (`buenchollo-api/app/tests/fixtures/affiliates/`).
+> Estado a 2026-11-08: **en producción** (PR #78, merge `c47269c`, Alembic `20261108120000`)
+> con las credenciales de ambas redes configuradas en el NAS. **Ninguna tienda aprobada**
+> todavía: todos los programas siguen deshabilitados. El parser solo se ha probado con
+> fixtures sintéticas (`buenchollo-api/app/tests/fixtures/affiliates/`).
+>
+> **Para activar una tienda cuando la aprueben: [`AFFILIATE-ACTIVATION-RUNBOOK.md`](AFFILIATE-ACTIVATION-RUNBOOK.md).**
 
 ## 1. Qué hace
 
@@ -134,29 +137,13 @@ feeds seleccionados, restricciones (Marketplace, vendedores, canales) y, en Trad
   `https://clk.tradedoubler.com/click?p=<programa>&a=<site ID>&url=<destino>` marca
   «Deeplink verificado» y se usa. Si no, la interfaz muestra la limitación.
 
-## 7. Activar la primera tienda aprobada (pasos)
+## 7. Activar una tienda aprobada
 
-1. Desplegar `develop` a producción cuando Pedro lo decida (migración `20261108120000`, sin deps nuevas).
-2. Añadir `AWIN_PUBLISHER_ID=3148595`, `AWIN_ACCESS_TOKEN` y `AWIN_FEED_API_KEY` al `.env` del
-   NAS y reiniciar API y scheduler. Comprobar `Admin → Afiliación`: los indicadores en verde.
-3. Pulsar **COMPROBAR ADHESIÓN**. Solo los programas que Awin devuelva como `joined` sirven.
-4. En el programa aprobado: vincular la tienda, revisar dominios, leer las condiciones del
-   programa y marcar espacios promocionales y permiso de imágenes solo si lo autorizan,
-   ajustar el aviso adicional, **Habilitado**, GUARDAR.
-5. **SINCRONIZAR FEEDS AWIN** (descubre los feeds), seleccionar el feed en español y
-   sincronizar ese programa. Ver «última sync: ok (N filas)».
-6. Probar en Admin → Chollos con una URL real de la tienda: debe salir «Producto importado»
-   y un enlace `awin1.com`. Comprobar el enlace a mano y guardar como **borrador**.
-7. Completar categoría, precio anterior con evidencia y comprobación en tienda; cuando el
-   bloque diga «Lista para publicar», publicar en la web y, si se quiere, en Telegram
-   (primero en el canal Admin para revisar).
+El procedimiento paso a paso (comprobación de estado con
+`scripts/check_affiliate_status.py`, condiciones del programa, configuración, sincronización,
+validación del parser con datos reales, primera importación, publicación, cierre y marcha atrás)
+está en [`AFFILIATE-ACTIVATION-RUNBOOK.md`](AFFILIATE-ACTIVATION-RUNBOOK.md).
 
-Para Tradedoubler (MediaMarkt): `TRADEDOUBLER_PRODUCTS_TOKEN` (+ `TRADEDOUBLER_SITE_ID`),
-COMPROBAR ADHESIÓN, seleccionar el feed descubierto y verificar antes las condiciones de
-imágenes. Validar en vivo la forma real de la respuesta (los mapeos se escribieron con la
-documentación y fixtures).
+## Revisión de integración (2026-11-08)
 
-
-## Revisi?n de integraci?n (2026-11-08)
-
-Credenciales de ambas redes configuradas; Awin y Tradedoubler responden a la consulta de feeds. Las tiendas objetivo siguen sin cat?logo accesible. Ver [informe de validaci?n](AFFILIATE-VALIDATION-2026-11-08.md) para resultados, correcciones y limitaciones. Awin solicita enlaces cortos; Tradedoubler conserva el enlace oficial del producto, sin acortamiento propio.
+Credenciales de ambas redes configuradas; Awin y Tradedoubler responden a la consulta de feeds. Las tiendas objetivo siguen sin catálogo accesible. Ver [informe de validación](AFFILIATE-VALIDATION-2026-11-08.md) para resultados, correcciones y limitaciones. Awin solicita enlaces cortos; Tradedoubler conserva el enlace oficial del producto, sin acortamiento propio.

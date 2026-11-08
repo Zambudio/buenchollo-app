@@ -29,26 +29,39 @@ La copia NAS permanece en la rama develop que dejó la sesión anterior; no se h
 
 Referencia del contrato de enlace: https://help.awin.com/apidocs/generatelink
 
-## Revisi?n previa al despliegue
+## Revisión previa al despliegue
 
-Correcciones con pruebas de regresi?n que fallaban antes del cambio:
+Correcciones con pruebas de regresión que fallaban antes del cambio:
 - Awin solicita enlace corto y prefiere shortUrl; mantiene el largo si el proveedor no devuelve uno corto.
-- Tradedoubler solicita sourceproducturl=true y priceHistory=true: la comparaci?n exacta por URL y el historial necesitan esos campos opcionales.
-- Se conserva shippingCost=0 como env?o gratuito, sin confundirlo con un dato ausente.
+- Tradedoubler solicita sourceproducturl=true y priceHistory=true: la comparación exacta por URL y el historial necesitan esos campos opcionales.
+- Se conserva shippingCost=0 como envío gratuito, sin confundirlo con un dato ausente.
 - La lista de feeds reconoce lastModifiedTime documentado por Tradedoubler.
-- Los feeds deseleccionados o marcados como no disponibles dejan de participar en las b?squedas.
-- supports_import=false impide consultar el cat?logo, conservando el flujo de solo enlace.
-- Los enlaces de seguimiento requieren HTTPS, host exacto permitido, sin credenciales y puerto est?ndar; se rechazan dominios que solo terminan en tradedoubler.com.
-- NaN se trata como precio ausente en lugar de lanzar una excepci?n.
-- El test de estado usa credenciales expl?citas de fixture, independiente de las credenciales reales del equipo.
+- Los feeds deseleccionados o marcados como no disponibles dejan de participar en las búsquedas.
+- supports_import=false impide consultar el catálogo, conservando el flujo de solo enlace.
+- Los enlaces de seguimiento requieren HTTPS, host exacto permitido, sin credenciales y puerto estándar; se rechazan dominios que solo terminan en tradedoubler.com.
+- NaN se trata como precio ausente en lugar de lanzar una excepción.
+- El test de estado usa credenciales explícitas de fixture, independiente de las credenciales reales del equipo.
 
-Revisados: detecci?n por dominio/ruta, estados de adhesi?n, selecci?n de variantes, importaci?n y procedencia, sincronizaci?n por generaciones, guarda de publicaci?n y Telegram, formulario y conflictos de reimportaci?n, migraci?n aditiva, configuraci?n Docker y CI.
+Revisados: detección por dominio/ruta, estados de adhesión, selección de variantes, importación y procedencia, sincronización por generaciones, guarda de publicación y Telegram, formulario y conflictos de reimportación, migración aditiva, configuración Docker y CI.
 
-Limitaciones que siguen abiertas: validaci?n de cada feed real (especialmente formato Google frente a CSV Awin); programaci?n no Amazon (TD-49); acortamiento Tradedoubler no implementado; cuota Awin limitada por proceso, no global entre workers; las condiciones e im?genes deben verificarse por programa. No se promete que la aceptaci?n de un programa baste para publicar autom?ticamente.
+Limitaciones que siguen abiertas: validación de cada feed real (especialmente formato Google frente a CSV Awin); programación no Amazon (TD-48); acortamiento Tradedoubler no implementado; cuota Awin limitada por proceso, no global entre workers; las condiciones e imágenes deben verificarse por programa. No se promete que la aceptación de un programa baste para publicar automáticamente.
 
 Contrato contrastado: https://dev.tradedoubler.com/products/publisher/
 
-- Un CSV con esquema desconocido falla expl?citamente y conserva el cat?logo anterior.
+- Un CSV con esquema desconocido falla explícitamente y conserva el catálogo anterior.
 
-Validaci?n local: 484 Vitest, 37 Playwright, TypeScript, lint (9 avisos existentes) y build SSR correctos. Integraci?n: 59 pruebas correctas sobre base local con esquema ORM de CI; sobre copia Supabase, 57 correctas y dos errores de fixtures preexistentes por FK auth.users.
+Validación local: 484 Vitest, 37 Playwright, TypeScript, lint (9 avisos existentes) y build SSR correctos. Integración: 59 pruebas correctas sobre base local con esquema ORM de CI; sobre copia Supabase, 57 correctas y dos errores de fixtures preexistentes por FK auth.users.
 `pytest -m "not integration"`: 800 correctos tras las correcciones finales; integración: 59 correctos.
+
+## Despliegue (2026-11-08, tarde)
+
+PR #78 fusionada en `main` (merge `c47269c`) con todo el CI en verde. En el NAS se
+reconstruyeron y recrearon `buenchollo-api` y `buenchollo-scheduler` (`cloudflared` sin tocar):
+API `healthy`, Alembic en `20261108120000 (head)`, `/health` en `production` y el job
+`run_awin_feed_sync` registrado en el scheduler.
+
+Comprobación posterior con `scripts/check_affiliate_status.py` (solo lectura): credenciales
+de las dos redes en verde; Awin `pending` en PcComponentes, Coolmod, Fnac, Samsung y
+Miravia 37166, `notjoined` en Miravia 37168; Tradedoubler sin feeds accesibles. Ningún
+programa habilitado. Siguiente paso, cuando haya aprobaciones:
+[`AFFILIATE-ACTIVATION-RUNBOOK.md`](AFFILIATE-ACTIVATION-RUNBOOK.md).

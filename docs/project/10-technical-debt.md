@@ -22,12 +22,12 @@
 
 ## 🟠 Media — redes de afiliación (Awin / Tradedoubler, 2026-11-08)
 
-- **TD-46 — Integración Awin/Tradedoubler sin validar en vivo.** Probada solo con fixtures
-  y la API local. Falta: credenciales (`AWIN_ACCESS_TOKEN`, `AWIN_FEED_API_KEY`,
-  `TRADEDOUBLER_PRODUCTS_TOKEN`, `TRADEDOUBLER_SITE_ID`), programas aprobados y contrastar
-  con datos reales las columnas del feed Awin, la respuesta de la Products API (`offers`,
-  `priceHistory`, `productImage`) y la zona horaria de `last_updated`. Guía:
-  `docs/guides/AFFILIATE-NETWORKS.md` §7.
+- **TD-46 — Integración Awin/Tradedoubler sin validar en vivo.** En producción desde
+  2026-11-08 (PR #78) con credenciales configuradas, pero sin ningún programa aprobado
+  (Awin `pending`, Tradedoubler sin feeds). Parser probado solo con fixtures. Falta:
+  aprobación de las tiendas y contrastar con datos reales las columnas del feed Awin, la
+  respuesta de la Products API (`offers`, `priceHistory`, `productImage`) y la zona horaria
+  de `last_updated`. Procedimiento: `docs/guides/AFFILIATE-ACTIVATION-RUNBOOK.md`.
 - **TD-47 — Deeplink de Tradedoubler sin ficha no documentado públicamente.** Solo se usa
   si el propietario lo confirma por programa («Deeplink verificado»).
 - **TD-48 — Programar publicaciones exige ASIN.** Los chollos de redes no se pueden

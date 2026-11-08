@@ -162,6 +162,8 @@ La guía operativa **viva** de la infraestructura (Cloudflare, túnel, hardening
 
 Para conectar por SSH al NAS y hacer rebuild/redeploy de `buenchollo-api` (Docker, sin `git` en el NAS), sigue [`docs/guides/NAS-SSH.md`](docs/guides/NAS-SSH.md) — procedimiento verificado, permite operar sin intervención manual del usuario salvo en acciones de impacto real.
 
+Cuando una tienda de **Awin o Tradedoubler** apruebe la solicitud de afiliación, sigue [`docs/guides/AFFILIATE-ACTIVATION-RUNBOOK.md`](docs/guides/AFFILIATE-ACTIVATION-RUNBOOK.md): estado actual, script de comprobación de solo lectura y pasos de activación, validación, publicación y cierre.
+
 ---
 
 ## Workflows disponibles (`.agents/workflows/`)

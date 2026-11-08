@@ -1,7 +1,9 @@
 # PROJECT_STATUS — BuenCholloTech
-*Actualización de producción: 2026-11-06 — Rediseño y tops comunitarios de productos desplegados en web, API y scheduler (merge `477166f`, PR #67). Alembic `20261107120000`.*
+*Actualización de producción: 2026-11-08 — Awin y Tradedoubler en el editor de chollos desplegados en web, API y scheduler (merge `c47269c`, PR #78). Alembic `20261108120000`.*
 
-## 2026-11-08 · Awin y Tradedoubler en el editor de chollos (en `develop`, sin desplegar)
+## 2026-11-08 · Awin y Tradedoubler en el editor de chollos (en producción, sin tiendas aprobadas)
+
+- **Desplegado** (PR #78, merge `c47269c`): API y scheduler recreados, Alembic `20261108120000`, job `run_awin_feed_sync` activo. Credenciales de las dos redes en el `.env` del NAS. Todas las tiendas siguen `pending` (Awin) o sin feeds (Tradedoubler) y deshabilitadas. Para activarlas cuando aprueben: `docs/guides/AFFILIATE-ACTIVATION-RUNBOOK.md` (incluye `scripts/check_affiliate_status.py`, comprobación de solo lectura que se ejecuta en el contenedor de producción).
 
 - Pegar una URL de una tienda de Awin/Tradedoubler en Admin → Chollos detecta tienda y programa, comprueba configuración y adhesión, busca el producto en una fuente autorizada (catálogo local de feeds Awin / Products API de Tradedoubler), obtiene el enlace afiliado oficial y rellena el editor como **borrador**, con procedencia, antigüedad, campos pendientes, candidatos y conflictos con lo editado a mano. «SOLO ENLACE» genera solo el enlace. Nada se publica al pegar. Nueva pantalla Admin → Afiliación (registro de programas, feeds, adhesión). Publicar exige precio anterior con evidencia (un PVP no vale), envío, imagen autorizada, programa `joined` y dato fresco (`PublicationGuard`, también en Telegram). Amazon sin cambios. ADR-019, guía `docs/guides/AFFILIATE-NETWORKS.md`.
 - Migración `20261108120000` (aditiva: `affiliate_programs`, `affiliate_feed_products`, columnas de procedencia en `deals`; programas sembrados sin verificar y deshabilitados). Sin dependencias nuevas. Job diario `sync_awin_feeds` en el scheduler (no hace nada sin credenciales).
