@@ -1,0 +1,45 @@
+{
+  "productHeader": {"totalHits": 2},
+  "products": [
+    {
+      "name": "FIXTURE Portátil 15 Ryzen 7 16GB 512GB",
+      "description": "<b>FIXTURE</b> Portátil de 15,6 pulgadas.",
+      "brand": "FixtureBrand",
+      "identifiers": {"ean": "8400000000031", "sku": "TD-SKU-77", "mpn": "FP15R7"},
+      "productImage": {"url": "https://img.fixture.example.com/td77.jpg", "width": 600, "height": 600},
+      "fields": [{"name": "colour", "value": "Plata"}],
+      "offers": [
+        {
+          "id": "TDOFFER-77",
+          "feedId": 55501,
+          "programName": "FIXTURE MediaMarkt",
+          "productUrl": "https://pdt.tradedoubler.com/click?a(0)p(270504)prod(TDOFFER-77)ttid(5)url(https%3A%2F%2Fwww.mediamarkt.es%2Fes%2Fproduct%2F_fixture-portatil-15-77.html)",
+          "sourceProductUrl": "https://www.mediamarkt.es/es/product/_fixture-portatil-15-77.html",
+          "availability": "in stock",
+          "condition": "new",
+          "shippingCost": "0.00",
+          "modified": "2026-11-08T01:00:00Z",
+          "priceHistory": [
+            {"price": {"value": "899.00", "currency": "EUR"}, "date": "2026-09-01T00:00:00Z"},
+            {"price": {"value": "849.00", "currency": "EUR"}, "date": "2026-10-10T00:00:00Z"},
+            {"price": {"value": "699.00", "currency": "EUR"}, "date": "2026-11-07T00:00:00Z"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "FIXTURE Portátil 15 Ryzen 7 32GB 1TB",
+      "description": "Otra capacidad.",
+      "identifiers": {"ean": "8400000000048", "sku": "TD-SKU-78"},
+      "offers": [
+        {
+          "id": "TDOFFER-78",
+          "feedId": 55501,
+          "productUrl": "https://pdt.tradedoubler.com/click?a(0)p(270504)prod(TDOFFER-78)",
+          "sourceProductUrl": "https://www.mediamarkt.es/es/product/_fixture-portatil-15-78.html",
+          "priceHistory": [{"price": {"value": "999.00", "currency": "EUR"}, "date": "2026-11-01T00:00:00Z"}]
+        }
+      ]
+    }
+  ]
+}

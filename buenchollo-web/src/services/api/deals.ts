@@ -148,6 +148,15 @@ export interface DealDetailData extends DealCardData {
   offer_end_reason?: string | null;
   /** Última comprobación de precio y stock en la tienda. */
   last_price_check_at?: string | null;
+  /** Redes de afiliación (Awin / Tradedoubler): procedencia y evidencia del precio. */
+  affiliate_program_id?: string | null;
+  data_source?: string | null;
+  data_provider_updated_at?: string | null;
+  data_imported_at?: string | null;
+  price_verified_at?: string | null;
+  price_reference_type?: string | null;
+  price_reference_evidence?: string | null;
+  import_snapshot?: Record<string, unknown> | null;
 }
 
 /** Payload aceptado por POST /deals/admin. Coincide con el schema DealCreate del backend. */
@@ -175,6 +184,15 @@ export interface DealCreatePayload {
   source?: string;
   external_id?: string | null;
   show_keepa_chart?: boolean;
+  /** Redes de afiliación (Awin / Tradedoubler): procedencia y evidencia del precio. */
+  affiliate_program_id?: string | null;
+  data_source?: string | null;
+  data_provider_updated_at?: string | null;
+  data_imported_at?: string | null;
+  price_verified_at?: string | null;
+  price_reference_type?: string | null;
+  price_reference_evidence?: string | null;
+  import_snapshot?: Record<string, unknown> | null;
 }
 
 /** Payload aceptado por PUT /deals/admin/{id}. Todos los campos opcionales (parcial). */

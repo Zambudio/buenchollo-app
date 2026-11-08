@@ -16,8 +16,27 @@ logger = logging.getLogger(__name__)
 _OFFER_FIELDS = ("expires_at", "scheduled_for", "coupon_code", "previous_price", "discount_percentage", "savings_amount")
 
 
+_GUARD_FIELDS = (
+    "status",
+    "title",
+    "affiliate_url",
+    "current_price",
+    "previous_price",
+    "shipping_info",
+    "short_description",
+    "category_id",
+    "image_url",
+    "affiliate_program_id",
+    "data_source",
+    "data_provider_updated_at",
+    "price_verified_at",
+    "price_reference_type",
+    "price_reference_evidence",
+)
+
+
 class DealService:
-    def __init__(self, repo: DealRepository, matcher: AlertMatcher | None = None, catalog=None):
+    def __init__(self, repo: DealRepository, matcher: AlertMatcher | None = None, catalog=None, publication_guard=None):
         """`matcher` es opcional: cuando se inyecta, los altas/actualizaciones de
         chollos activos disparan notificaciones de alertas coincidentes. Esto
         permite testar `DealService` aislado sin tocar el módulo de alerts.
@@ -27,6 +46,9 @@ class DealService:
         self.repo = repo
         self.matcher = matcher
         self.catalog = catalog
+        # PublicationGuard (affiliates): chollos de Awin/Tradedoubler solo se
+        # publican si cumplen las reglas; como borrador siempre se guardan.
+        self.publication_guard = publication_guard
 
     async def _check_external_id_unique(
         self, external_id: str | None, *, exclude_id: str | None = None
@@ -72,6 +94,9 @@ class DealService:
                     existing_slug=existing.slug,
                     existing_title=existing.title,
                 )
+
+        if self.publication_guard is not None:
+            await self.publication_guard.ensure_publishable(deal_data)
 
         if await self.repo.user_has_profile(user_id):
             deal_data["created_by"] = user_id
@@ -127,6 +152,10 @@ class DealService:
             await self._check_external_id_unique(
                 update_data["external_id"], exclude_id=deal_id
             )
+        if self.publication_guard is not None:
+            merged = {column: getattr(deal, column) for column in _GUARD_FIELDS}
+            merged.update({k: v for k, v in update_data.items() if k in _GUARD_FIELDS})
+            await self.publication_guard.ensure_publishable(merged)
         for field, value in update_data.items():
             setattr(deal, field, value)
         if "affiliate_url" in update_data or "external_id" in update_data:

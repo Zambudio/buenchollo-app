@@ -30,6 +30,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TelegramRouteImport } from './routes/telegram'
 import { Route as TerminosYCondicionesRouteImport } from './routes/terminos-y-condiciones'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminAfiliacionRouteImport } from './routes/admin.afiliacion'
 import { Route as AdminAnaliticaRouteImport } from './routes/admin.analitica'
 import { Route as AdminBlogRouteImport } from './routes/admin.blog'
 import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
@@ -153,6 +154,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAfiliacionRoute = AdminAfiliacionRouteImport.update({
+  id: '/afiliacion',
+  path: '/afiliacion',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminAnaliticaRoute = AdminAnaliticaRouteImport.update({
   id: '/analitica',
   path: '/analitica',
@@ -260,6 +266,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/telegram': typeof TelegramRoute
   '/terminos-y-condiciones': typeof TerminosYCondicionesRoute
+  '/admin/afiliacion': typeof AdminAfiliacionRoute
   '/admin/analitica': typeof AdminAnaliticaRoute
   '/admin/blog': typeof AdminBlogRoute
   '/admin/categorias': typeof AdminCategoriasRoute
@@ -299,6 +306,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/telegram': typeof TelegramRoute
   '/terminos-y-condiciones': typeof TerminosYCondicionesRoute
+  '/admin/afiliacion': typeof AdminAfiliacionRoute
   '/admin/analitica': typeof AdminAnaliticaRoute
   '/admin/blog': typeof AdminBlogRoute
   '/admin/categorias': typeof AdminCategoriasRoute
@@ -340,6 +348,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/telegram': typeof TelegramRoute
   '/terminos-y-condiciones': typeof TerminosYCondicionesRoute
+  '/admin/afiliacion': typeof AdminAfiliacionRoute
   '/admin/analitica': typeof AdminAnaliticaRoute
   '/admin/blog': typeof AdminBlogRoute
   '/admin/categorias': typeof AdminCategoriasRoute
@@ -382,6 +391,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/telegram'
     | '/terminos-y-condiciones'
+    | '/admin/afiliacion'
     | '/admin/analitica'
     | '/admin/blog'
     | '/admin/categorias'
@@ -421,6 +431,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/telegram'
     | '/terminos-y-condiciones'
+    | '/admin/afiliacion'
     | '/admin/analitica'
     | '/admin/blog'
     | '/admin/categorias'
@@ -461,6 +472,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/telegram'
     | '/terminos-y-condiciones'
+    | '/admin/afiliacion'
     | '/admin/analitica'
     | '/admin/blog'
     | '/admin/categorias'
@@ -657,6 +669,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/afiliacion': {
+      id: '/admin/afiliacion'
+      path: '/afiliacion'
+      fullPath: '/admin/afiliacion'
+      preLoaderRoute: typeof AdminAfiliacionRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/analitica': {
       id: '/admin/analitica'
       path: '/analitica'
@@ -780,6 +799,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminAfiliacionRoute: typeof AdminAfiliacionRoute
   AdminAnaliticaRoute: typeof AdminAnaliticaRoute
   AdminBlogRoute: typeof AdminBlogRoute
   AdminCategoriasRoute: typeof AdminCategoriasRoute
@@ -796,6 +816,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAfiliacionRoute: AdminAfiliacionRoute,
   AdminAnaliticaRoute: AdminAnaliticaRoute,
   AdminBlogRoute: AdminBlogRoute,
   AdminCategoriasRoute: AdminCategoriasRoute,

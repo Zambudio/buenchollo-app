@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict
 
 
 # ── Canal ─────────────────────────────────────────────────────────────────────
@@ -21,6 +21,10 @@ class TelegramGenerateRequest(BaseModel):
     description: str | None = None          # descripción corta o larga
     affiliate_url: str = ""
     expires_at: str | None = None           # ISO string
+    # Redes de afiliación: línea de envío y aviso adicional del programa.
+    # Vacíos en Amazon → el texto queda exactamente como antes.
+    shipping_info: str | None = Field(default=None, max_length=200)
+    notice: str | None = Field(default=None, max_length=300)
 
 
 class TelegramGenerateResponse(BaseModel):

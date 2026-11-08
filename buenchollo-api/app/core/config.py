@@ -113,6 +113,22 @@ class Settings(BaseSettings):
     amazon_oauth_scope: str = "creatorsapi::default"
     amazon_supported_credential_versions: tuple[str, ...] = Field(default=("3.2", "3.1", "3.3"))
 
+    # ── Redes de afiliación (Awin / Tradedoubler) ──────────────────────────────
+    # Solo se usan en el servidor; nunca se devuelven al navegador ni se loguean.
+    # AWIN_ACCESS_TOKEN: token OAuth2 de la Publisher API (Link Builder y programmes).
+    # AWIN_FEED_API_KEY: clave de feeds de producto (distinta del token anterior).
+    awin_publisher_id: str = ""
+    awin_access_token: str = ""
+    awin_feed_api_key: str = ""
+    awin_rate_limit_per_minute: int = 20
+    # Límites de la sincronización de feeds (descarga comprimida / descomprimida / filas).
+    awin_feed_max_download_mb: int = 200
+    awin_feed_max_uncompressed_mb: int = 1500
+    awin_feed_max_rows: int = 300_000
+    # TRADEDOUBLER_SITE_ID: ID del espacio promocional (sitio), no el de cuenta ni de programa.
+    tradedoubler_site_id: str = ""
+    tradedoubler_products_token: str = ""
+
     openai_api_key: str = ""
     openai_model: str = "gpt-4o"
 

@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from typing import Literal
+from typing import Any, Literal
 from datetime import datetime
 
 # Límites razonables para los campos de texto de un chollo. Defensa en
@@ -86,6 +86,15 @@ class DealDetailResponse(DealCardResponse):
     # Catálogo permanente: por qué terminó la oferta y cuándo se comprobó el precio.
     offer_end_reason: str | None = None
     last_price_check_at: datetime | None = None
+    # Procedencia de redes de afiliación (Awin / Tradedoubler).
+    affiliate_program_id: str | None = None
+    data_source: str | None = None
+    data_provider_updated_at: datetime | None = None
+    data_imported_at: datetime | None = None
+    price_verified_at: datetime | None = None
+    price_reference_type: str | None = None
+    price_reference_evidence: str | None = None
+    import_snapshot: dict[str, Any] | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -110,6 +119,15 @@ class VoteResponse(BaseModel):
 # Estados válidos de un chollo (mismos que DealStatus del panel admin). Texto
 # libre dejaba guardar chollos con un estado que ningún listado muestra.
 DealStatus = Literal["active", "expired", "scheduled", "draft"]
+DataSource = Literal["amazon", "awin_feed", "tradedoubler_api", "link_only", "manual"]
+ReferenceType = Literal[
+    "none",
+    "rrp",
+    "feed_original_price",
+    "provider_price_history_30d",
+    "store_strikethrough_verified",
+    "manual_verified",
+]
 
 
 class DealCreate(BaseModel):
@@ -136,6 +154,14 @@ class DealCreate(BaseModel):
     external_id: str | None = Field(default=None, max_length=_EXTERNAL_ID_MAX)
     show_keepa_chart: bool = False
     coupon_code: str | None = Field(default=None, max_length=_COUPON_MAX)
+    affiliate_program_id: str | None = None
+    data_source: DataSource | None = None
+    data_provider_updated_at: datetime | None = None
+    data_imported_at: datetime | None = None
+    price_verified_at: datetime | None = None
+    price_reference_type: ReferenceType | None = None
+    price_reference_evidence: str | None = Field(default=None, max_length=500)
+    import_snapshot: dict[str, Any] | None = None
 
     @field_validator("title")
     @classmethod
@@ -167,6 +193,14 @@ class DealUpdate(BaseModel):
     external_id: str | None = Field(default=None, max_length=_EXTERNAL_ID_MAX)
     show_keepa_chart: bool | None = None
     coupon_code: str | None = Field(default=None, max_length=_COUPON_MAX)
+    affiliate_program_id: str | None = None
+    data_source: DataSource | None = None
+    data_provider_updated_at: datetime | None = None
+    data_imported_at: datetime | None = None
+    price_verified_at: datetime | None = None
+    price_reference_type: ReferenceType | None = None
+    price_reference_evidence: str | None = Field(default=None, max_length=500)
+    import_snapshot: dict[str, Any] | None = None
 
     @field_validator("title")
     @classmethod

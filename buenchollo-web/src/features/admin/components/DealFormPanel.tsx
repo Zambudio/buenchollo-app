@@ -27,6 +27,10 @@ interface Props {
   readonly submitDisabled?: boolean;
   /** Evita el envío implícito al pulsar Enter en un input: hay que usar el botón. */
   readonly preventImplicitSubmit?: boolean;
+  /** Bloque extra para chollos de redes de afiliación (Awin / Tradedoubler). */
+  readonly networkSection?: ReactNode;
+  /** Si viene, el botón de Telegram se desactiva y muestra el motivo. */
+  readonly telegramDisabledReason?: string | null;
 }
 
 export function DealFormPanel({
@@ -47,6 +51,8 @@ export function DealFormPanel({
   extraActions,
   submitDisabled = false,
   preventImplicitSubmit = false,
+  networkSection,
+  telegramDisabledReason,
 }: Props) {
   const { uploading, fileRef, addImageUrl, handleFiles, removeImage, moveImage } = images;
   const filteredSubcats = subcats.filter((s) => s.parent_id === form.category_id);
@@ -228,6 +234,7 @@ export function DealFormPanel({
         onChange={(e) => setForm({ ...form, affiliate_url: e.target.value })}
         className={inputCls}
       />
+      {networkSection}
       <div className="grid sm:grid-cols-4 gap-3">
         <select
           aria-label="Tienda"
@@ -344,13 +351,20 @@ export function DealFormPanel({
         </p>
       )}
       {showTelegramButton && form.status !== "scheduled" && (
-        <button
-          type="button"
-          onClick={onOpenTelegram}
-          className="w-full border border-cyan-glow/50 text-cyan-glow font-mono text-xs py-2 flex items-center justify-center gap-2 hover:bg-cyan-glow/10"
-        >
-          <Send className="size-3.5" /> 🚀 Publicar en Telegram
-        </button>
+        <div className="space-y-1">
+          <button
+            type="button"
+            onClick={onOpenTelegram}
+            disabled={!!telegramDisabledReason}
+            title={telegramDisabledReason ?? undefined}
+            className="w-full border border-cyan-glow/50 text-cyan-glow font-mono text-xs py-2 flex items-center justify-center gap-2 hover:bg-cyan-glow/10 disabled:opacity-40 disabled:hover:bg-transparent"
+          >
+            <Send className="size-3.5" /> 🚀 Publicar en Telegram
+          </button>
+          {telegramDisabledReason && (
+            <p className="font-mono text-[10px] text-muted-foreground">{telegramDisabledReason}</p>
+          )}
+        </div>
       )}
 
       {footer}

@@ -22,6 +22,7 @@ from app.modules.categories.domain.models import Category  # noqa: F401
 from app.modules.stores.domain.models import Store  # noqa: F401
 from app.modules.users.domain.models import Profile  # noqa: F401
 from app.modules.catalog.domain.models import Product, ProductListing, ProductTopVote  # noqa: F401
+from app.modules.affiliates.domain.models import AffiliateProgram, AffiliateFeedProduct  # noqa: F401
 from app.modules.telegram.domain.models import TelegramPublication  # noqa: F401
 from app.modules.deals.domain.models import Deal, DealVote, Favorite  # noqa: F401
 from app.modules.alerts.domain.models import Alert  # noqa: F401

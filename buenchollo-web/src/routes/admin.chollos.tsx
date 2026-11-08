@@ -17,6 +17,13 @@ import {
   type DealUpdatePayload,
 } from "@/services/api/deals";
 import { productsApi, type AmazonPreviewResponse } from "@/services/api/products";
+import {
+  affiliatesApi,
+  type AffiliateProgram,
+  type ImportRequest,
+  type ImportResponse,
+  type ReadinessResponse,
+} from "@/services/api/affiliates";
 import { calculateDiscount, toDatetimeLocal } from "@/lib/format";
 import { errorMessage } from "@/lib/errors";
 import { DEAL_STATUS_OPTIONS } from "@/lib/constants";
@@ -26,13 +33,19 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import type { TelegramScheduleRequest } from "@/features/telegram/components/TelegramPanel";
 import {
+  applyImport,
   buildDealPayload,
   dealToForm,
   emptyForm,
   isAmazonProductReference,
+  isNetworkForm,
   resolveCategorySelection,
+  resolveConflict,
   type DealForm,
+  type ImportConflict,
 } from "@/features/admin/deal-form";
+import { AffiliateImportPanel } from "@/features/admin/components/AffiliateImportPanel";
+import { NetworkDealSection } from "@/features/admin/components/NetworkDealSection";
 import { useAdminDeals } from "@/features/admin/hooks/useAdminDeals";
 import { useDealImages } from "@/features/admin/hooks/useDealImages";
 import { useTelegramHandoff } from "@/features/admin/hooks/useTelegramHandoff";
@@ -75,6 +88,21 @@ function AdminDeals() {
     return "omniroute";
   });
   const images = useDealImages(form, setForm, user?.id);
+  // Redes de afiliación (Awin / Tradedoubler): resultado de la última
+  // importación, conflictos con lo editado a mano y validación del backend.
+  const [importResult, setImportResult] = useState<ImportResponse | null>(null);
+  const [importRequest, setImportRequest] = useState<ImportRequest | null>(null);
+  const [importConflicts, setImportConflicts] = useState<ImportConflict[]>([]);
+  const [readiness, setReadiness] = useState<ReadinessResponse | null>(null);
+  const [programs, setPrograms] = useState<AffiliateProgram[]>([]);
+  useEffect(() => {
+    affiliatesApi
+      .programs()
+      .then(setPrograms)
+      .catch(() => setPrograms([]));
+  }, []);
+  const networkForm = isNetworkForm(form);
+  const formProgram = programs.find((p) => p.id === form.affiliate_program_id);
   const nav = useNavigate();
   const handleCalendarOpen = useCallback(() => setCalendarDealId(null), []);
   const handleCalendarChanged = useCallback(() => {
@@ -108,6 +136,8 @@ function AdminDeals() {
   const startNew = () => {
     setEditing(null);
     setForm(emptyForm());
+    setImportResult(null);
+    setImportConflicts([]);
     setShowForm(true);
   };
   const startEdit = (d: DealDetailData) => {
@@ -118,19 +148,91 @@ function AdminDeals() {
     }
     setEditing(d);
     setForm(dealToForm(d));
+    setImportConflicts([]);
     setShowForm(true);
   };
 
-  const autofillFromAmazon = async () => {
+  /** Awin / Tradedoubler: importa y rellena el formulario SIN publicar ni
+   *  abrir Telegram. Lo editado a mano no se pisa (se listan conflictos). */
+  const runAffiliateImport = async (req: ImportRequest) => {
+    setAutofilling(true);
+    try {
+      const result = await affiliatesApi.importOffer(req);
+      setImportRequest(req);
+      setImportResult(result);
+      setImportConflicts([]);
+      if (result.status === "use_amazon_flow") {
+        toast.info("Es un enlace de Amazon: usa AUTOCOMPLETAR");
+        return;
+      }
+      if (!result.offer) {
+        toast.warning(result.message);
+        return;
+      }
+      const base = showForm ? form : emptyForm();
+      const applied = applyImport(base, result);
+      setForm({ ...applied.form, status: editing ? applied.form.status : "draft" });
+      setImportConflicts(applied.conflicts);
+      if (!showForm) {
+        setEditing(null);
+        setShowForm(true);
+      }
+      toast.success(
+        result.stage === "product_imported" ? "Producto importado (borrador)" : "Enlace generado",
+      );
+    } catch (e: unknown) {
+      toast.error(errorMessage(e));
+    } finally {
+      setAutofilling(false);
+    }
+  };
+
+  const autofill = () => {
     const url = amazonUrl.trim();
     if (!url) {
       toast.error("Introduce una URL");
       return;
     }
-    if (!isAmazonProductReference(url)) {
-      toast.error("La URL no parece de Amazon");
+    if (isAmazonProductReference(url)) {
+      void autofillFromAmazon(url);
       return;
     }
+    void runAffiliateImport({ url });
+  };
+
+  const linkOnly = () => {
+    const url = amazonUrl.trim();
+    if (!url) {
+      toast.error("Introduce una URL");
+      return;
+    }
+    if (isAmazonProductReference(url)) {
+      toast.info("En Amazon el enlace afiliado ya lo genera AUTOCOMPLETAR");
+      return;
+    }
+    void runAffiliateImport({ url, link_only: true });
+  };
+
+  const retryImport = (extra: Partial<ImportRequest>) => {
+    if (!importRequest) return;
+    void runAffiliateImport({
+      ...importRequest,
+      link_only: false,
+      program_id: importResult?.program?.id ?? importRequest.program_id,
+      ...extra,
+    });
+  };
+
+  const openExistingDeal = (dealId: string) => {
+    const target = deals.find((d) => d.id === dealId);
+    if (!target) {
+      toast.info("El chollo existente no está en el listado actual: cambia el filtro de estado");
+      return;
+    }
+    startEdit(target);
+  };
+
+  const autofillFromAmazon = async (url: string) => {
     setAutofilling(true);
     try {
       let d: AmazonPreviewResponse;
@@ -221,8 +323,14 @@ function AdminDeals() {
         expires_at: form.expires_at ? new Date(form.expires_at).toISOString() : null,
         images: allImages,
         image_url: allImages[0] ?? null,
+        ...(networkForm
+          ? {
+              shipping_info: form.shipping_info || null,
+              notice: formProgram?.disclosure_text ?? null,
+            }
+          : {}),
       },
-      !editing,
+      !editing && !networkForm,
     );
   };
 
@@ -346,12 +454,15 @@ function AdminDeals() {
       toast.error(parsed.error.issues[0]?.message ?? "Datos inválidos");
       return;
     }
-    const categorySelection = resolveCategorySelection(
-      form.category_id,
-      form.subcategory_id,
-      cats,
-      subcats,
-    );
+    if (networkForm && form.status !== "draft" && readiness && !readiness.ready) {
+      toast.error("Aún no cumple las reglas de publicación: guárdalo como BORRADOR");
+      return;
+    }
+    // En chollos de redes la categoría la elige una persona: sin "Varios" por defecto.
+    const categorySelection =
+      networkForm && !form.category_id
+        ? { category_id: "", subcategory_id: "" }
+        : resolveCategorySelection(form.category_id, form.subcategory_id, cats, subcats);
 
     const formToSave = { ...form, ...categorySelection };
     const payload = buildDealPayload(formToSave, editing);
@@ -485,8 +596,30 @@ function AdminDeals() {
         provider={aiProvider}
         onUrlChange={setAmazonUrl}
         onProviderChange={handleAiProviderChange}
-        onAutofill={autofillFromAmazon}
+        onAutofill={autofill}
+        onLinkOnly={linkOnly}
       />
+
+      {importResult && importResult.status !== "use_amazon_flow" && (
+        <AffiliateImportPanel
+          result={importResult}
+          conflicts={importConflicts}
+          ready={!!readiness?.applies && readiness.ready}
+          busy={autofilling}
+          onChooseProgram={(programId) => retryImport({ program_id: programId })}
+          onChooseCandidate={(productKey) => retryImport({ product_key: productKey })}
+          onSearchIds={(ids) => retryImport({ ...ids, product_key: null })}
+          onResolveConflict={(conflict) => {
+            setForm((f) => resolveConflict(f, conflict));
+            setImportConflicts((list) => list.filter((c) => c.field !== conflict.field));
+          }}
+          onOpenExisting={openExistingDeal}
+          onDismiss={() => {
+            setImportResult(null);
+            setImportConflicts([]);
+          }}
+        />
+      )}
 
       <ScheduledDealsCalendar
         refreshToken={calendarRefresh}
@@ -510,6 +643,20 @@ function AdminDeals() {
           onSubmit={save}
           onCancel={() => setShowForm(false)}
           onOpenTelegram={openTelegramPanelFromForm}
+          networkSection={
+            networkForm ? (
+              <NetworkDealSection form={form} setForm={setForm} onReadiness={setReadiness} />
+            ) : undefined
+          }
+          telegramDisabledReason={
+            !networkForm
+              ? null
+              : !editing
+                ? "Guarda primero el chollo (borrador) para poder publicarlo en Telegram."
+                : !readiness?.ready
+                  ? "No cumple aún las reglas de publicación (ver la lista de arriba)."
+                  : null
+          }
         />
       )}
 

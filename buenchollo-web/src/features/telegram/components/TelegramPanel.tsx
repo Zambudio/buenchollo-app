@@ -159,6 +159,8 @@ export function TelegramPanel({
         description: dealData.description,
         affiliate_url: dealData.affiliate_url,
         expires_at: dealData.expires_at,
+        shipping_info: dealData.shipping_info ?? null,
+        notice: dealData.notice ?? null,
       });
       setText(result.text);
       const suggestedCats =

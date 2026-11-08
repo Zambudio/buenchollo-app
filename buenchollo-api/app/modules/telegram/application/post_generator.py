@@ -88,6 +88,8 @@ class TelegramPostGenerator:
         description: str | None = None,
         affiliate_url: str = "",
         expires_at: str | None = None,
+        shipping_info: str | None = None,
+        notice: str | None = None,
     ) -> str:
         """Construye el texto del post con emojis en el formato estándar de BuenChollo."""
         price_str = f"{_format_price_es(current_price)} €"
@@ -106,6 +108,9 @@ class TelegramPostGenerator:
         else:
             msg += "\n"
 
+        if shipping_info and shipping_info.strip():
+            msg += f"🚚 {shipping_info.strip()}\n\n"
+
         msg += f"🛒 {affiliate_url}\n\n"
 
         if description:
@@ -118,6 +123,9 @@ class TelegramPostGenerator:
                 msg += f"⚠️ Finaliza el {dt.day} de {_MONTHS_ES[dt.month]}\n\n"
             except Exception:
                 pass
+
+        if notice and notice.strip():
+            msg += f"ℹ️ {notice.strip()}\n\n"
 
         msg += f"🔗 {LINK_TEXT}\n\n"
 

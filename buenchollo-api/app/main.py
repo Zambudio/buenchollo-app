@@ -40,6 +40,7 @@ from app.modules.analytics.api.router import router as analytics_router
 from app.modules.emails.api.router import router as emails_router
 from app.modules.submissions.api.router import router as submissions_router
 from app.modules.submissions.api.admin_router import router as admin_submissions_router
+from app.modules.affiliates.api.router import router as affiliates_router
 
 settings = get_settings()
 configure_logging(settings.log_level, fmt=settings.log_format)
@@ -217,6 +218,7 @@ v1.include_router(analytics_router)
 v1.include_router(emails_router)
 v1.include_router(submissions_router)
 v1.include_router(admin_submissions_router)
+v1.include_router(affiliates_router)
 
 app.include_router(v1)
 app.include_router(health_router)  # /health y /health/ready — sin /v1

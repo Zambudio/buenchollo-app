@@ -15,6 +15,7 @@ from app.modules.blog.application.scheduler import run_due_scheduled_posts
 from app.modules.scheduled_tasks.application.scheduler import run_due_scheduled_tasks
 from app.modules.analytics.application.cleanup import run_analytics_cleanup
 from app.modules.emails.application.digest_worker import run_due_alert_digest
+from app.modules.affiliates.application.feed_sync_job import run_awin_feed_sync
 
 
 def build_deals_scheduler(settings: Settings) -> tuple[BackgroundScheduler, DealCleanerService]:
@@ -75,6 +76,18 @@ def build_deals_scheduler(settings: Settings) -> tuple[BackgroundScheduler, Deal
         minute=0,
         args=[settings],
         id="nightly_alert_digest",
+        max_instances=1,
+        coalesce=True,
+    )
+    # Feeds de producto Awin seleccionados: una vez al día (la lista de feeds
+    # dice si cambió cada uno; sin credenciales de feeds el job no hace nada).
+    scheduler.add_job(
+        run_awin_feed_sync,
+        "cron",
+        hour=5,
+        minute=17,
+        args=[settings],
+        id="sync_awin_feeds",
         max_instances=1,
         coalesce=True,
     )

@@ -1,6 +1,12 @@
 # PROJECT_STATUS — BuenCholloTech
 *Actualización de producción: 2026-11-06 — Rediseño y tops comunitarios de productos desplegados en web, API y scheduler (merge `477166f`, PR #67). Alembic `20261107120000`.*
 
+## 2026-11-08 · Awin y Tradedoubler en el editor de chollos (en `develop`, sin desplegar)
+
+- Pegar una URL de una tienda de Awin/Tradedoubler en Admin → Chollos detecta tienda y programa, comprueba configuración y adhesión, busca el producto en una fuente autorizada (catálogo local de feeds Awin / Products API de Tradedoubler), obtiene el enlace afiliado oficial y rellena el editor como **borrador**, con procedencia, antigüedad, campos pendientes, candidatos y conflictos con lo editado a mano. «SOLO ENLACE» genera solo el enlace. Nada se publica al pegar. Nueva pantalla Admin → Afiliación (registro de programas, feeds, adhesión). Publicar exige precio anterior con evidencia (un PVP no vale), envío, imagen autorizada, programa `joined` y dato fresco (`PublicationGuard`, también en Telegram). Amazon sin cambios. ADR-019, guía `docs/guides/AFFILIATE-NETWORKS.md`.
+- Migración `20261108120000` (aditiva: `affiliate_programs`, `affiliate_feed_products`, columnas de procedencia en `deals`; programas sembrados sin verificar y deshabilitados). Sin dependencias nuevas. Job diario `sync_awin_feeds` en el scheduler (no hace nada sin credenciales).
+- Verificado: 788 tests unitarios + 59 de integración (Postgres local), migración arriba/abajo sobre el esquema real copiado, smoke en vivo contra la API local (estados reales sin credenciales, bloqueo de publicación, SSRF, Amazon Creators API real), 484 Vitest, TypeScript, ESLint, build SSR y E2E (5, móvil y escritorio). **Sin validar en vivo con Awin/Tradedoubler**: faltan credenciales y aprobaciones (TD-46).
+
 ## 2026-11-08 · Tarjetas de chollo con la distribución de un listado de chollos
 
 - Petición de Pedro (referencia: tarjetas de Chollómetro): las tarjetas se veían vacías. Nuevo orden en `DealCardView`: arriba votos del chollo y «Votar producto» con «Publicado hace X» a la derecha; título; línea de precio actual, anterior tachado y descuento en verde muy visible (`.deal-discount`, claro y oscuro), seguido de «Disponible en <tienda>» y «Compartido por <usuario>» si lo ha propuesto la comunidad; descripción en dos líneas; abajo comentarios, compartir y guardar a la izquierda e «Ir al chollo» a la derecha. El descuento sale de la foto (ya no se repite). En móvil (feed) la fila de votos y la de acciones ocupan todo el ancho y la foto queda junto a título y precio; separadores verticales solo en la tarjeta horizontal desde 900 px. Sin cambios de API.
@@ -1172,3 +1178,8 @@ buenchollo-web/
 │   ├── components/    # UI sin lógica de datos
 │   └── hooks/         # useAuth, otros hooks de estado
 ```
+
+
+## Revisi?n de afiliaci?n previa a producci?n ? 2026-11-08
+
+Awin/Tradedoubler revisados con regresiones para campos opcionales de API, env?o cero, selecci?n de feeds, hosts de seguimiento, importaci?n deshabilitada, NaN y esquema CSV incompatible. Token de ambas redes validado; sin feeds de tiendas objetivo accesibles. Gu?a e informe: `docs/guides/AFFILIATE-VALIDATION-2026-11-08.md`. Se conserva el bloqueo por adhesi?n y los programas deshabilitados. Pendientes: TD-46 a TD-49 y validaci?n real por tienda. Frontend: 484 Vitest, 37 E2E, typecheck/lint y build; integraci?n PostgreSQL ORM: 59 correctos.

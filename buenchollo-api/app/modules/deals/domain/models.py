@@ -9,6 +9,8 @@ from app.core.database import Base
 import app.modules.users.domain.models  # noqa: F401
 # FK product_id / listing_id al catálogo permanente
 import app.modules.catalog.domain.models  # noqa: F401
+# FK affiliate_program_id al registro de programas de afiliación
+import app.modules.affiliates.domain.models  # noqa: F401
 
 class Deal(Base):
     __tablename__ = "deals"
@@ -63,6 +65,22 @@ class Deal(Base):
     last_price_check_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     admin_notified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     admin_notified_price: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
+
+    # Importación desde redes de afiliación (Awin / Tradedoubler). Procedencia y
+    # antigüedad del dato, y qué significa el precio "antes" y con qué evidencia:
+    # sin evidencia válida el chollo puede guardarse como borrador pero no publicarse.
+    affiliate_program_id: Mapped[str | None] = mapped_column(
+        ForeignKey("affiliate_programs.id", ondelete="SET NULL"), type_=Uuid(as_uuid=False), nullable=True
+    )
+    data_source: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    data_provider_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    data_imported_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    price_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    price_reference_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    price_reference_evidence: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    # Valores tal como llegaron en la última importación: al reimportar se
+    # compara con ellos para no pisar en silencio lo que se editó a mano.
+    import_snapshot: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     # Foreign keys
     category_id: Mapped[str | None] = mapped_column(ForeignKey("categories.id", ondelete="SET NULL"), type_=Uuid(as_uuid=False), nullable=True)
