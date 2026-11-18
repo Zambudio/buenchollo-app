@@ -166,6 +166,15 @@ class Settings(BaseSettings):
             raise ValueError("AMAZON_AFFILIATE_TAG es obligatorio con APP_ENV=production")
         return self
 
+    @model_validator(mode="after")
+    def forbid_wildcard_cors_in_production(self) -> "Settings":
+        if self.app_env == "production" and "*" in self.cors_origins:
+            raise ValueError(
+                "CORS_ORIGINS no puede contener '*' con APP_ENV=production: "
+                "define la lista exacta de dominios"
+            )
+        return self
+
     @field_validator("ai_fallback_models", mode="before")
     @classmethod
     def parse_ai_fallback_models(cls, v: str | list) -> list[str]:
