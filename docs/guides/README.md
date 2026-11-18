@@ -8,6 +8,7 @@ Runbooks vigentes para operar el proyecto. La operativa general (instalar, confi
 | Conectar por SSH al NAS, reiniciar o reconstruir la API | [`NAS-SSH.md`](NAS-SSH.md) |
 | Ver o cambiar la configuración de Cloudflare (túnel, TLS, WAF, caché) | [`Cloudflare.md`](Cloudflare.md) |
 | Crear o aplicar migraciones de base de datos | [`MIGRATIONS.md`](MIGRATIONS.md) |
+| Comprobar las copias de seguridad o restaurar la base de datos | [`BACKUP-RESTORE.md`](BACKUP-RESTORE.md) |
 | Validar un release a mano antes de publicar | [`SMOKE-TEST.md`](SMOKE-TEST.md) |
 | Entender cómo funcionan Awin y Tradedoubler | [`AFFILIATE-NETWORKS.md`](AFFILIATE-NETWORKS.md) |
 | Activar una tienda de Awin o Tradedoubler cuando la aprueben | [`AFFILIATE-ACTIVATION-RUNBOOK.md`](AFFILIATE-ACTIVATION-RUNBOOK.md) |
