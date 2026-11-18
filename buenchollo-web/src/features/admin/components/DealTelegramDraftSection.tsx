@@ -15,6 +15,12 @@ import { adminInputCls as inputCls, appendHashtags } from "../deal-form";
 import type { AiProvider } from "@/lib/ai-providers";
 import { AiProviderSelect } from "./AiProviderSelect";
 
+const CHANNEL_LABEL: Record<TelegramPublication["channel_kind"], string> = {
+  main: "canal general",
+  admin: "canal Admin",
+  other: "otro canal",
+};
+
 interface Props {
   readonly dealId: string;
   readonly value: string;
@@ -90,8 +96,7 @@ export function DealTelegramDraftSection({
           <summary className="font-mono text-[11px] text-muted-foreground cursor-pointer flex flex-wrap items-center gap-x-2">
             <History className="size-3.5 inline" />
             Último envío {formatRelativeTime(last.sent_at)} (
-            {new Date(last.sent_at).toLocaleString("es-ES")}) ·{" "}
-            {last.channel_kind === "main" ? "canal general" : "otro canal"}
+            {new Date(last.sent_at).toLocaleString("es-ES")}) · {CHANNEL_LABEL[last.channel_kind]}
             {last.price != null && <> · a {formatPrice(last.price)}</>}
           </summary>
           <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-xs text-foreground/80">

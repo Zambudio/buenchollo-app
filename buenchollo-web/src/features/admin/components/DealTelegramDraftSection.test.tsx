@@ -62,13 +62,14 @@ describe("DealTelegramDraftSection", () => {
     expect(mocks.generate).toHaveBeenCalledWith({ ...request, ai_copy: true, provider: "openai" });
   });
 
-  it("muestra el último envío y permite reutilizarlo con el precio actual", async () => {
+  // Se publica en el canal Admin y se reenvía desde allí: ese envío cuenta.
+  it("muestra el último envío (también del canal Admin) y permite reutilizarlo con el precio actual", async () => {
     const user = userEvent.setup();
     mocks.listPublications.mockResolvedValue([
       {
         id: "p1",
         deal_id: "d1",
-        channel_kind: "main",
+        channel_kind: "admin",
         source: "panel",
         text: "Precio: 299,00 €",
         image_url: null,
@@ -82,6 +83,7 @@ describe("DealTelegramDraftSection", () => {
     const onChange = renderSection();
 
     await user.click(await screen.findByText(/último envío/i));
+    expect(screen.getByText(/canal Admin/)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /usar este texto con el precio actual/i }));
 
     expect(onChange).toHaveBeenCalledWith("Precio: 269,00 €");
