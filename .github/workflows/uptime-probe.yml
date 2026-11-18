@@ -1,0 +1,20 @@
+name: Sonda temporal del monitor
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Probar accesos
+        run: |
+          UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 BuenCholloUptime/1.0"
+          for url in https://api.buenchollotech.com/health/ready https://api.buenchollotech.com/v1/deals/latest?limit=1 https://buenchollotech.com/ ; do
+            echo "curl: $(curl -s -o /dev/null -w '%{http_code}' "$url") $url"
+            echo "navegador: $(curl -s -o /dev/null -w '%{http_code}' -A "$UA" -H 'Accept: text/html,application/json' -H 'Accept-Language: es-ES' "$url") $url"
+          done
