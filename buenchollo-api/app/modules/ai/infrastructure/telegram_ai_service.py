@@ -207,8 +207,10 @@ class TelegramAIService:
             {"role": "system", "content": "Eres un copywriter experto en chollos tecnológicos. Respondes solo con el texto pedido."},
             {"role": "user", "content": prompt},
         ]
+        # Sin max_tokens, como el autocompletado: algunos modelos gratuitos razonan
+        # antes de responder y con un tope bajo devolvían la frase cortada.
         try:
-            result = await self.llm_client.agenerate_text(messages, temperature=0.7, max_tokens=300, provider=provider)
+            result = await self.llm_client.agenerate_text(messages, temperature=0.7, provider=provider)
         except Exception as exc:
             logger.warning("Error en TelegramAIService al generar el copy: %s", exc)
             return None
