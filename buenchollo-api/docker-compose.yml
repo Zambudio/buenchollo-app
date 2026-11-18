@@ -44,6 +44,21 @@ services:
     healthcheck:
       disable: true
 
+  # Copia de seguridad diaria de la base de datos (AUD-03): pg_dump validado,
+  # 14 días de retención en ./backups (fuera de git). Ver
+  # docs/guides/BACKUP-RESTORE.md para restaurar. La copia fuera del NAS es
+  # decisión del propietario (destino y credenciales).
+  db-backup:
+    image: postgres:17-alpine
+    container_name: buenchollo-db-backup
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - ./scripts/db_backup.sh:/db_backup.sh:ro
+      - ./backups:/backups
+    entrypoint: ["sh", "/db_backup.sh"]
+
   # Cloudflare Tunnel — expone la API en api.buenchollotech.com SIN abrir puertos
   # ni depender de la IP pública (conexión saliente). Por estar en este mismo
   # compose, alcanza la API por el nombre de servicio: http://buenchollo-api:8000

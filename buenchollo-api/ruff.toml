@@ -1,0 +1,6 @@
+# Lint bloqueante en CI: errores de sintaxis y pyflakes (nombres sin definir,
+# imports y variables sin uso). Ampliar las reglas de forma gradual (AUD-21).
+target-version = "py311"
+
+[lint]
+select = ["E9", "F"]

@@ -2,7 +2,6 @@
 ninguna llamada sale a Internet; nada de esto valida la integración en vivo)."""
 
 import gzip
-import io
 import json
 import zipfile
 from decimal import Decimal

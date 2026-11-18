@@ -1,0 +1,37 @@
+name: Monitor de disponibilidad
+
+# Comprueba cada 15 minutos que la web y la API responden (AUD-04). Si falla,
+# GitHub envía un correo al propietario del repositorio (aviso de workflow
+# fallido). GitHub desactiva los workflows programados tras 60 días sin
+# actividad en el repositorio: si eso ocurre, reactivarlo desde la pestaña
+# Actions.
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: uptime
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Web y API en línea
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: API lista (/health/ready comprueba la base de datos)
+        run: curl --fail --silent --show-error --retry 3 --retry-delay 20 --retry-all-errors --max-time 15 https://api.buenchollotech.com/health/ready
+
+      - name: Portada de la web
+        run: curl --fail --silent --show-error --retry 3 --retry-delay 20 --retry-all-errors --max-time 20 --output /dev/null https://buenchollotech.com/
+
+      - name: Ficha de un chollo (SSR + API)
+        # La portada puede servirse aunque la API falle; una ficha real no.
+        run: |
+          slug=$(curl --fail --silent --max-time 15 --retry 3 --retry-all-errors https://api.buenchollotech.com/v1/deals/latest?limit=1 | python3 -c "import json,sys; print(json.load(sys.stdin)[0]['slug'])")
+          curl --fail --silent --show-error --retry 3 --retry-delay 20 --retry-all-errors --max-time 20 --output /dev/null "https://buenchollotech.com/chollo/${slug}"

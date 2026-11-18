@@ -9,7 +9,6 @@ sin fabricar URL, cuota agotada, datos caducados, deduplicación y URLs no váli
 import asyncio
 import json
 from datetime import datetime, timedelta, timezone
-from decimal import Decimal
 from pathlib import Path
 from types import SimpleNamespace
 

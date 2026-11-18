@@ -39,7 +39,6 @@ from app.modules.affiliates.domain.offers import (
     ProductData,
     ProviderRef,
     data_freshness,
-    describe_blockers,
     destination_url,
     lowest_price_last_30_days,
     is_network_tracking_url,
