@@ -4,11 +4,7 @@
 > Solo items **abiertos**: cuando uno se cierra, se elimina de aquí (el histórico
 > resuelto vive en [`PROJECT_STATUS.md`](../../PROJECT_STATUS.md)). Para consultar las decisiones de arquitectura, ver [`docs/adr/`](../adr/00-index.md).
 
-Última revisión: **2026-11-07** (revisión general: cerrados TD-19, TD-23, TD-26, TD-32 y TD-38 b; ver `PROJECT_STATUS.md`). Anteriores: catálogo permanente, Fase 1: TD-39 a TD-45; chollos de usuarios: TD-24 a TD-35; entorno local: TD-36 a TD-38.
-
-> **Auditoría técnica 2026-11-18**: los hallazgos AUD-01 a AUD-26 y los de prioridad baja
-> están en [`12-auditoria-tecnica-2026-11.md`](12-auditoria-tecnica-2026-11.md), con su plan
-> de acción. Se pasarán a este registro como TD-xx a medida que se acepten o se planifiquen.
+Última revisión: **2026-11-18** (auditoría técnica: lo corregido se cierra en `PROJECT_STATUS.md` y en el § 9 de [`12-auditoria-tecnica-2026-11.md`](12-auditoria-tecnica-2026-11.md); lo pendiente entra aquí como TD-52 a TD-62). Anteriores: catálogo permanente, Fase 1: TD-39 a TD-45; chollos de usuarios: TD-24 a TD-35; entorno local: TD-36 a TD-38.
 
 ---
 
@@ -23,6 +19,59 @@
   `https://api.buenchollotech.com/health` y dejar
   fecha/evidencia en `docs/guides/Cloudflare.md`. No copiar el valor nuevo a Git,
   documentación, logs ni chat.
+
+## 🔴 Alta — requieren al propietario (auditoría 2026-11-18)
+
+- **TD-52 — Copia de seguridad fuera del NAS.** El servicio `db-backup` hace un `pg_dump`
+  diario validado con 14 días de retención, pero en el propio NAS: si se pierde el NAS, se
+  pierden las copias y el `.env` (todas las credenciales). Decidir destino externo (Synology
+  Hyper Backup de `buenchollo-api/backups/` y de una copia cifrada del `.env`) y, si se
+  quiere RPO menor de 24 h, un plan de Supabase con backups gestionados o PITR. Ver
+  `docs/guides/BACKUP-RESTORE.md`.
+- **TD-53 — Alta en Google Search Console y Bing Webmaster Tools.** Verificar el dominio por
+  DNS en Cloudflare, enviar `/sitemap.xml`, revisar el informe de páginas no indexadas tras
+  el despliegue SEO y activar *Crawler Hints* (IndexNow). Ver `13-seo.md` § 5.
+
+## 🟠 Media — auditoría técnica 2026-11-18 (pendiente)
+
+- **TD-54 — Transacciones confirmadas en varios sitios (AUD-11).** `get_db`, algunos routers
+  (`submissions`, `scheduled_tasks`) y repositorios (`catalog/top_repository`,
+  `affiliates/repository`) hacen `commit()`; el de `get_db` ocurre tras enviar la respuesta.
+  Unificar la unidad de trabajo antes de responder y prohibir `commit()` en repositorios.
+- **TD-55 — `GET /deals/{slug}` devuelve borradores y programados (AUD-12)** y campos internos
+  (`import_snapshot`, `price_reference_evidence`). La ficha pública ya los marca `noindex`,
+  pero la API los sirve a quien adivine el slug. Requiere mover la vista previa de borradores
+  del admin a un endpoint de admin antes de filtrar el público.
+- **TD-56 — Reenvío de una publicación programada si falla la BD justo después de enviarla.**
+  AUD-10 confirma cada programación por separado; queda el caso de fallo al guardar el
+  estado final de la misma. Solución completa: marcar «publicando» antes de enviar
+  (patrón *outbox*).
+- **TD-57 — Frontend: bundle inicial de 776 kB y componentes grandes (AUD-17, AUD-18).**
+  Analizar el chunk inicial y separar por ruta; extraer hooks y subcomponentes de
+  `chollo.$slug.tsx`, `RecommendedAlertsBlock`, `TelegramPanel`, `admin.chollos.tsx` y
+  `ScheduledDealsCalendar`; un único patrón de carga de datos (TanStack Query) y
+  `QueryClient` por petición en el Worker.
+- **TD-58 — Accesibilidad (AUD-19).** Lightbox de la ficha y panel de Telegram con diálogos
+  hechos a mano (sin foco ni Escape); ≈ 80 controles sin etiqueta asociada; textos de 10 px.
+- **TD-59 — Huecos de test (AUD-22).** Tests de contrato con respuestas grabadas de Amazon y
+  OmniRoute; tests propios de `notifications`; un E2E de humo contra la API real.
+- **TD-60 — Versión desplegada visible y latido del scheduler (AUD-04, AUD-23).** `/health` no
+  dice qué commit corre y nada avisa si el scheduler deja de ejecutar jobs (el monitor de
+  GitHub Actions solo comprueba web y API).
+- **TD-61 — Despliegue por imagen versionada (AUD-02).** Complementa TD-31: construir la imagen
+  con el código dentro y una etiqueta por versión, para tener rollback real.
+
+## 🟡 Baja — auditoría técnica 2026-11-18 (higiene)
+
+- **TD-62 — Menores de la auditoría.** Utilidades repetidas (formato de precio, slug,
+  paginación, `amazon.es/dp/…`); tres pilas HTTP (`requests`, `httpx`, `urllib`, relacionado
+  con TD-25); `DealCreate`/`DealUpdate` con 28 campos duplicados; funciones de complejidad
+  alta en afiliación y analítica; fugas de capas puntuales (router de Telegram con lógica de
+  publicación); clientes con estado creados por petición; `selectinload` en relaciones
+  muchos-a-uno; `avatar_url` sin lista de hosts; `X-Request-Id` sin límite; IDs no UUID que
+  dan 500; `ilike` sin escapar; correo del destinatario en logs INFO; `cloudflared` recibe
+  todo el `.env`; logos de marca enlazados desde Wikimedia; tipos de la API escritos a mano;
+  componentes de `components/ui` sin uso. Detalle en el § 5.3 del informe de auditoría.
 
 ## 🟡 Baja — dependencias (2026-11-18)
 
@@ -123,7 +172,7 @@
   solo registra el fallo; el usuario conserva la notificación in-app.
 
 - **TD-31 — El runtime del NAS depende de la copia de trabajo de desarrollo.** Los
-  contenedores montan `.:/app` y el NAS ve la misma carpeta que `Z:`: la rama activa al
+  contenedores montan `.:/app` y el NAS ve la misma carpeta que la unidad mapeada de desarrollo: la rama activa al
   reiniciar o reconstruir es lo que ejecuta producción. Trabajar en `develop` cambia en
   silencio lo que correría tras un reinicio (a 2026-11-04 la API se caería: sin `Pillow` en
   la imagen y, al volver a `main`, Alembic no encuentra la revisión). Proponer desplegar
@@ -191,11 +240,11 @@
   Auth no comprueba las contraseñas nuevas contra HaveIBeenPwned.org. Los otros
   3 sub-items de este TD (funciones `SECURITY DEFINER` expuestas por RPC,
   `pg_trgm` en `public`, política de `user_roles` sin optimizar) ya están
-  cerrados — ver `PROJECT_STATUS.md` § 3.quattuorvicies. Este último requiere
+  cerrados (ver el histórico de `PROJECT_STATUS.md`). Este último requiere
   un toggle manual en el dashboard (Authentication → Policies): no hay
   migración ni tool del conector MCP que lo aplique. Detalle completo (por si
-  se automatiza en el futuro vía Management API) en
-  [`docs/superpowers/plans/2026-09-05-supabase-advisor-hardening.md`](../superpowers/plans/2026-09-05-supabase-advisor-hardening.md) Task 4.
+  se automatiza en el futuro vía Management API): la configuración vive en el
+  panel de Supabase Auth, no en el repositorio.
   Impacto bajo (no expone datos; endurece cuentas de usuario contra
   credential stuffing).
 

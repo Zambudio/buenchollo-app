@@ -144,6 +144,16 @@ El procedimiento paso a paso (comprobación de estado con
 validación del parser con datos reales, primera importación, publicación, cierre y marcha atrás)
 está en [`AFFILIATE-ACTIVATION-RUNBOOK.md`](AFFILIATE-ACTIVATION-RUNBOOK.md).
 
-## Revisión de integración (2026-11-08)
+## 8. Hallazgos de la validación inicial (2026-11-08)
 
-Credenciales de ambas redes configuradas; Awin y Tradedoubler responden a la consulta de feeds. Las tiendas objetivo siguen sin catálogo accesible. Ver [informe de validación](AFFILIATE-VALIDATION-2026-11-08.md) para resultados, correcciones y limitaciones. Awin solicita enlaces cortos; Tradedoubler conserva el enlace oficial del producto, sin acortamiento propio.
+Credenciales de ambas redes configuradas; Awin y Tradedoubler responden a la consulta de feeds, pero las tiendas objetivo siguen sin catálogo accesible (Awin `feedList` devolvía 944 feeds, ninguno de ellas; Tradedoubler, cero).
+
+- **Que Link Builder devuelva un enlace no prueba aprobación ni atribución de comisiones**: por eso la aplicación conserva la comprobación de adhesión.
+- **La Promotions API no sustituye a los feeds de producto**: devuelve textos del proveedor (campañas, páginas de categoría), no precios ni fichas verificables. No se importan como chollos.
+- **Awin** solicita enlace corto (`shorten=true`) y prefiere `shortUrl`; si Awin no lo devuelve conserva el largo, así que el acortamiento no está garantizado.
+- **Tradedoubler** pide `sourceproducturl=true` y `priceHistory=true`: la comparación exacta por URL y el historial de 30 días necesitan esos campos opcionales. Conserva el enlace oficial del producto, sin acortamiento propio.
+- Se conserva `shippingCost=0` como envío gratuito (no es dato ausente) y `NaN` se trata como precio ausente.
+- Los enlaces de seguimiento exigen HTTPS, host exacto permitido, sin credenciales y puerto estándar; se rechazan dominios que solo terminan en `tradedoubler.com`.
+- Los feeds deseleccionados o marcados como no disponibles dejan de participar en las búsquedas, y `supports_import=false` impide consultar el catálogo (queda el flujo de solo enlace). Un CSV de Awin con esquema desconocido falla explícitamente y conserva el catálogo anterior.
+
+**Limitaciones abiertas**: formato real de cada feed (Google frente a CSV de Awin) sin validar; programar publicaciones de redes no Amazon (TD-48); acortamiento de Tradedoubler no implementado; cuota de Awin limitada por proceso y no global entre workers; las condiciones e imágenes deben verificarse por programa, y la aceptación de un programa no basta para publicar automáticamente.

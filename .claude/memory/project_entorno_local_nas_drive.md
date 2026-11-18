@@ -1,5 +1,5 @@
 ---
-title: "Entorno local en unidad de red duplicada (N:/Z:) e incidente de otra IA ('Antigravity')"
+title: "Entorno local en unidad de red duplicada e incidente de otra IA (Antigravity)"
 category: "environment"
 date: "2026-08-15"
 status: "active"
@@ -8,19 +8,19 @@ status: "active"
 # Entorno local: unidad de red duplicada + incidente con otro agente de IA
 
 - **Contexto físico**: el repo vive en una unidad de red del NAS
-  (`\\Zambu-nas\nas-drive-pedro`) que la máquina de trabajo tiene mapeada por
-  **dos letras de unidad distintas a la vez**: `N:` y `Z:`. Confirmar con
+  (`<RUTA_SHARE>`) que la máquina de trabajo tiene mapeada por
+  **dos letras de unidad distintas a la vez**. Confirmar con
   `Get-PSDrive -PSProvider FileSystem | Select-Object Name, DisplayRoot`.
-- **Síntoma**: arrancar `buenchollo-web` (`npm run dev`) desde `N:` hace que
-  Vite/TanStack Start mezclen rutas `N:` y `Z:` para el mismo módulo
+- **Síntoma**: arrancar `buenchollo-web` (`npm run dev`) desde una de ellas hace que
+  Vite/TanStack Start mezclen rutas de ambas letras para el mismo módulo
   internamente. Resultado: `Cannot GET /` en toda ruta, sin ningún error en
   consola ni en el log del servidor (el middleware SSR de TanStack Start
   simplemente no llega a registrarse). Con `vite-tsconfig-paths` pasa lo
   mismo con el alias `@/*` (`Failed to run dependency scan`).
-- **Fix aplicado**: arrancar siempre `buenchollo-web` desde `Z:`, no `N:`.
+- **Fix aplicado**: arrancar siempre `buenchollo-web` desde la letra que usa el lanzador de `local-env`.
   Además, `vite.config.ts` ya trae un alias `@` explícito de respaldo
   (`resolve.alias`) por si `vite-tsconfig-paths` vuelve a fallar. Detalle
-  completo en [`PROJECT_STATUS.md § 3.terdecies`](../../PROJECT_STATUS.md) y
+  completo en el histórico de `PROJECT_STATUS.md` y
   en [`docs/project/09-troubleshooting.md`](../../docs/project/09-troubleshooting.md).
 - **Incidente relacionado (2026-08-15)**: otro agente de IA ("Antigravity"),
   al toparse con este mismo síntoma sin diagnosticar la causa real, pasó ~1h
@@ -37,8 +37,8 @@ status: "active"
   probando.
 - **La misma unidad de red la monta el propio NAS**: el directorio real de
   `buenchollo-api` en el NAS
-  (`/volume1/NAS-DRIVE-PEDRO/IA/02_Proyectos/WEB-Buenchollo/BuenCholloTech/buenchollo-api`)
-  es el mismo recurso físico que `N:`/`Z:` — no hace falta subir código para
+  (`<RUTA_SHARE>/BuenCholloTech/buenchollo-api`)
+  es el mismo recurso físico que la unidad mapeada — no hace falta subir código para
   desplegar, solo `docker-compose build && up -d` por SSH. Detalle y trampa
   del proyecto viejo homónimo (`/volume1/docker/buenchollo-auto/`) en
   [`docs/guides/NAS-SSH.md § 1.1`](../../docs/guides/NAS-SSH.md).

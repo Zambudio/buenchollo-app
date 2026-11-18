@@ -16,7 +16,7 @@ presente en producción), todo lo posterior se genera y se aplica con Alembic.
 
 ## Setup inicial (una sola vez)
 
-Si tu BD ya está vivía (caso normal en BuenChollo), hay dos vías para
+Si tu BD ya está viva (caso normal en BuenChollo), hay dos vías para
 sincronizar Alembic con su estado actual.
 
 ### Vía A — Tienes acceso shell a la BD/contenedor

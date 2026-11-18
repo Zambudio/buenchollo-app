@@ -5,7 +5,8 @@
  *  "[object Object]" o cosas peores al usuario.
  */
 import { describe, expect, it } from "vitest";
-import { errorMessage, translateAuthError } from "@/lib/errors";
+import { errorMessage, NETWORK_ERROR_MESSAGE, translateAuthError } from "@/lib/errors";
+import { ApiError } from "@/services/api/client";
 
 describe("errorMessage", () => {
   it("extrae el mensaje de una instancia de Error", () => {
@@ -17,7 +18,43 @@ describe("errorMessage", () => {
   });
 
   it("usa el fallback por defecto con un valor desconocido", () => {
-    expect(errorMessage({ raw: "objeto random" })).toBe("Error inesperado");
+    expect(errorMessage({ raw: "objeto random" })).toBe(
+      "Ha ocurrido un error inesperado. Inténtalo de nuevo.",
+    );
+  });
+
+  it("muestra el detalle de un error 4xx de la API (errores de dominio en español)", () => {
+    const error = new ApiError(409, "Ya existe un chollo con ese enlace", {
+      detail: "Ya existe un chollo con ese enlace",
+    });
+    expect(errorMessage(error, "No se pudo guardar")).toBe("Ya existe un chollo con ese enlace");
+  });
+
+  it("nunca muestra detalles internos de un error 5xx", () => {
+    const error = new ApiError(500, "API Error: 500 Internal Server Error", null);
+    expect(errorMessage(error, "No se pudo guardar")).toBe("No se pudo guardar");
+  });
+
+  it("una validación 422 se presenta como datos no válidos", () => {
+    const error = new ApiError(422, "body.title: Field required", null);
+    expect(errorMessage(error)).toBe("Datos no válidos: body.title: Field required");
+  });
+
+  it("un 4xx sin detalle legible usa el fallback", () => {
+    expect(errorMessage(new ApiError(404, "API Error: 404 Not Found", null), "No existe")).toBe(
+      "No existe",
+    );
+  });
+
+  it("sin conexión o con tiempo agotado muestra un mensaje de conexión", () => {
+    expect(errorMessage(new TypeError("Failed to fetch"))).toBe(NETWORK_ERROR_MESSAGE);
+    const abort = new Error("The operation was aborted");
+    abort.name = "AbortError";
+    expect(errorMessage(abort)).toBe(NETWORK_ERROR_MESSAGE);
+  });
+
+  it("un Error sin mensaje usa el fallback", () => {
+    expect(errorMessage(new Error(""), "vacío")).toBe("vacío");
   });
 
   it("usa el fallback personalizado cuando lo damos", () => {

@@ -1,11 +1,10 @@
-# ☁️ Cloudflare — Guía viva de producción (BuenCholloTech)
+# ☁️ Cloudflare — Guía operativa de producción (BuenCholloTech)
 
-> **Para qué sirve este archivo**: es nuestro mapa para dejar la web segura y
-> estable en producción **sin perder el hilo**. Vamos tarea a tarea; al
-> completar cada una, marcamos su casilla `[x]`. No saltarse el orden salvo que
-> se indique.
+> Estado real de Cloudflare para la web y la API, con cómo está configurado cada
+> ajuste, cómo verificarlo y cómo deshacerlo. Es la guía viva: se actualiza cuando
+> cambia el panel o el túnel.
 
-Última actualización: 2026-06-09
+Última revisión: 2026-11-18
 
 ---
 
@@ -13,82 +12,36 @@
 
 | Pieza | Estado |
 |---|---|
-| Dominio | ✅ `buenchollotech.com` comprado en Cloudflare Registrar |
-| Frontend | ✅ En producción como **Cloudflare Worker** `buenchollotech` (Workers Builds conectado al repo, rama de prod = `main`). Preview: `buenchollotech.pjzambudio.workers.dev` |
-| Login Google (Supabase) | ✅ Funciona. Site URL y Redirect URLs ya apuntan a `https://buenchollotech.com` y `https://www.buenchollotech.com` |
-| API (FastAPI) | ✅ En el NAS, expuesta en `https://api.buenchollotech.com` vía **Cloudflare Tunnel** (`APP_ENV=production`, CORS cerrado al dominio) |
-| DNS | `www`/`@` → Worker (Custom Domain). `api` → túnel (`…cfargotunnel.com`). El antiguo `api → embyzambu.synology.me` se eliminó (T2) |
-| Routes Worker | `buenchollotech.com/*` y `www.buenchollotech.com/*` → Worker |
+| Dominio | `buenchollotech.com`, registrado en Cloudflare Registrar |
+| Frontend | **Cloudflare Worker** `buenchollotech` (Workers Builds conectado al repo; producción = rama `main`). Cada push a otra rama genera un preview `*.workers.dev` |
+| Login Google (Supabase) | Site URL y Redirect URLs apuntan a `https://buenchollotech.com` y `https://www.buenchollotech.com` |
+| API (FastAPI) | En el NAS, expuesta en `https://api.buenchollotech.com` con **Cloudflare Tunnel** (`APP_ENV=production`, CORS cerrado al dominio) |
+| DNS | `@` y `www` → Worker (Custom Domain). `api` → túnel (`…cfargotunnel.com`, lo gestiona el propio túnel) |
+| Rutas del Worker | `buenchollotech.com/*` y `www.buenchollotech.com/*` |
 
-**Infra de la API (para el túnel):** contenedor Docker `buenchollo-api`,
-escucha **interna** en `:8000` (mapeado a `:8001` del host). Healthcheck:
-`/health` y `/health/ready`. Rutas de negocio bajo `/v1/`. Admin en
-`/v1/deals/admin/*` (protegido por JWT `require_admin`).
+La API escucha de forma interna en `:8000` (mapeado a `:8001` en el host). Healthchecks: `/health` y `/health/ready`. Rutas de negocio bajo `/v1/`; la administración, en `/v1/deals/admin/*`, protegida por JWT (`require_admin`).
 
----
+Con el túnel no hace falta abrir puertos, usar DDNS ni certificado de origen: el NAS no queda expuesto a Internet.
 
-## 2. 🔄 Forma de trabajo permanente (a partir de ahora SIEMPRE)
+## 2. 🔄 Flujo de ramas
 
 ```
-main     = PRODUCCIÓN  → buenchollotech.com. Solo recibe merges YA validados.
-develop  = INTEGRACIÓN/PRUEBAS → cada push genera un preview público *.workers.dev.
-           (para tareas concretas se pueden abrir sub-ramas que salen de develop)
+main     = PRODUCCIÓN. Solo recibe merges ya validados.
+develop  = INTEGRACIÓN. Cada push genera un preview público *.workers.dev.
 ```
 
-**Ciclo:** trabajar en `develop` → `git push` → **preview** automático de
-Cloudflare → validar en esa URL (la API se prueba en localhost o contra la real)
-→ cuando TODO funciona → `merge develop → main` → deploy a producción.
+Trabajar en `develop`, validar en el preview (la API se prueba en local o contra la real) y hacer `merge develop → main`. Nunca commits directos a `main`.
 
-> ⚠️ **Importante**: el preview por rama solo cubre **cambios de ficheros del
-> repo** (p.ej. `docker-compose.yml`, docs). Los cambios de **panel Cloudflare /
-> NAS** (túnel, TLS, WAF, CORS del `.env` del NAS) se aplican directamente a
-> producción — por eso cada tarea de abajo trae su **verificación** y su
-> **rollback**. El túnel es *aditivo* (añade `api.`), no rompe lo que ya hay.
-
-> 🔴 **Regla de oro**: nunca commits directos a `main`. Siempre `develop` →
-> preview → validar → merge.
+El preview solo cubre cambios de ficheros del repo. Los cambios de **panel de Cloudflare** o del **`.env` del NAS** (túnel, TLS, WAF, CORS) se aplican directamente a producción: cada ajuste de abajo indica cómo verificarlo y revertirlo.
 
 ---
 
-## 3. ⚠️ 3 correcciones clave del setup actual
+## 3. 🚇 Cloudflare Tunnel
 
-1. **Quitar el DNS `api → embyzambu.synology.me` (proxy ON)**. Es del enfoque
-   "reverse proxy + abrir puertos", incompatible con el túnel. Cuando creemos el
-   túnel y le añadamos el hostname `api.buenchollotech.com`, **Cloudflare crea
-   automáticamente** el DNS correcto (CNAME al túnel `…cfargotunnel.com`). → T2.
-2. **Con túnel NO hace falta**: abrir puertos, DDNS (da igual la IP dinámica),
-   ni certificado de origen. El contenedor `cloudflare-ddns` que dejamos
-   preparado **no se usa** en esta vía (queda comentado). El origen deja de
-   estar expuesto a Internet = lo más seguro.
-3. **NO bloquear `/admin` en el WAF**. El panel admin vive en el frontend
-   (`buenchollotech.com/admin`) y la API admin en `api…/v1/deals/admin/*`,
-   protegidos por JWT. Bloquear `/admin` en el edge rompería tu propio panel.
+**Cómo está montado**
 
----
-
-## 4. 🗺️ Roadmap de tareas
-
-> Marca `[x]` al terminar cada una. Riesgo: 🟢 bajo · 🟡 medio · 🔴 alto.
-
-### ✅ T1 — Crear y desplegar Cloudflare Tunnel para `api.buenchollotech.com` · 🟡 — HECHO (2026-06-09)
-
-**Por qué:** expone la API del NAS sin abrir puertos ni depender de IP fija.
-
-**1.1 Crear el túnel (modo dashboard):**
-1. Cloudflare → **Zero Trust** (`one.dash.cloudflare.com`). Primera vez: elige
-   nombre de equipo y plan **Free**.
-2. **Networks → Tunnels → Create a tunnel** → tipo **Cloudflared** → Next.
-3. Nombre: `buenchollo-nas` → **Save tunnel**.
-4. Copia el **TUNNEL_TOKEN** (`eyJ...`) que muestra. Guárdalo (irá en Docker).
-
-**1.2 Public Hostname:**
-1. En el túnel → **Public Hostnames → Add a public hostname**.
-2. Subdomain `api` · Domain `buenchollotech.com` · Path vacío.
-3. Type **HTTP** · URL **`buenchollo-api:8000`** (nombre de contenedor + puerto
-   interno). **Save hostname**.
-
-**1.3 Desplegar `cloudflared` en el NAS** (añadir al
-`buenchollo-api/docker-compose.yml`, mismo proyecto para compartir red Docker):
+- Túnel `buenchollo-nas` (Zero Trust → Networks → Tunnels), con el *public hostname* `api.buenchollotech.com` → HTTP → `buenchollo-api:8000` (nombre del contenedor y puerto interno).
+- Servicio `cloudflared` en el `docker-compose.yml` del NAS (mismo proyecto, para compartir red Docker):
 
 ```yaml
   cloudflared:
@@ -102,319 +55,112 @@ Cloudflare → validar en esa URL (la API se prueba en localhost o contra la rea
       - buenchollo-api
 ```
 
-En el `.env` del NAS: **`TUNNEL_TOKEN=eyJ...`** (cloudflared lee `TUNNEL_TOKEN`
-de forma nativa).
+- `TUNNEL_TOKEN` vive solo en el `.env` del NAS (cloudflared lo lee de forma nativa). Nunca en Git, chat ni logs.
 
-> ⚠️ **Aprendido a la fuerza (Synology Container Manager):**
-> 1. CM **no interpola** `${VAR}` en el YAML → usar **`env_file`**, no
->    `environment: - X=${VAR}`.
-> 2. La variable debe llamarse **`TUNNEL_TOKEN`** (no `CLOUDFLARE_TUNNEL_TOKEN`).
-> 3. CM guarda **su propia copia** del compose; editar el fichero en disco no
->    basta — hay que reflejarlo en la pestaña *Configuraciones de YAML*.
-> 4. **"Guardar"/"Iniciar" a veces solo REINICIA** el contenedor (conserva el
->    entorno antiguo, token vacío). Para que tome el `.env` nuevo hay que
->    **RECREAR** el contenedor: borrarlo (Contenedor → Eliminar) y recrear, o
->    por SSH `docker-compose -p buenchollo-api up -d --no-deps --force-recreate cloudflared`
->    (ver [`NAS-SSH.md`](NAS-SSH.md) para rutas y `sudo -n`; el proyecto compose
->    actual se llama `buenchollo-api`, ya no `bc-api`).
-> 5. Verificar que el token entró: `docker exec buenchollo-cloudflared printenv
->    TUNNEL_TOKEN | cut -c1-12`.
+**Trampas de Synology Container Manager**
 
-**Comprobaciones:**
+1. No interpola `${VAR}` en el YAML: usar `env_file`, no `environment: - X=${VAR}`.
+2. La variable debe llamarse `TUNNEL_TOKEN`.
+3. Container Manager guarda su propia copia del compose: editar el fichero en disco no basta si el proyecto se gestiona desde su interfaz.
+4. «Iniciar» o un `docker restart` **no recargan el `env_file`**. Para aplicar un `.env` nuevo hay que **recrear** el contenedor: `docker-compose up -d --no-deps --force-recreate cloudflared` por SSH (rutas y `sudo -n` en [`NAS-SSH.md`](NAS-SSH.md); el proyecto Compose se llama `buenchollo-api`).
+5. Para comprobar que el token entró: `docker exec buenchollo-cloudflared printenv TUNNEL_TOKEN | cut -c1-12`.
+6. El `.env` del NAS está excluido del sync de SynologyDrive y es independiente del local: se edita directamente en el NAS.
+
+**Comprobar**
+
 ```bash
 curl -s https://api.buenchollotech.com/health        # {"status":"ok"}
 docker logs buenchollo-cloudflared                   # "Registered tunnel connection" x4
 ```
-Zero Trust → Tunnels: el túnel debe estar **HEALTHY**.
 
-**Rollback:** parar contenedor `cloudflared` + borrar el public hostname. El
-acceso anterior (`embyzambu.synology.me:8000`) sigue intacto por separado.
+En Zero Trust → Tunnels el túnel debe figurar como **HEALTHY**.
 
----
+**Actualizar `cloudflared`**: la imagen está fijada (no `:latest`) y con `--no-autoupdate`, así que actualizar es cambiar el tag en el compose, hacer `pull` y recrear. Mínimo `2026.10.2` por el aviso de certificados intermedios eMudhra/emSign de 2026-10; el NAS corre `2026.10.3` (comprobado el 2026-10-27: 4 conexiones registradas y `/health` en 200).
 
-### ✅ T2 — Borrar DNS `api → embyzambu.synology.me` · 🟢 — HECHO (2026-06-09)
+**Rotar el token** (pendiente, [TD-21](../project/10-technical-debt.md)): el token quedó visible en una conversación y no hay evidencia de rotación. Zero Trust → Tunnels → túnel → *Refresh token*; actualizar el `.env` del NAS y recrear `cloudflared` como arriba; comprobar el health público y anotar aquí la fecha.
 
-**Por qué:** choca con el túnel (corrección §3.1).
-
-**Pasos:** Dashboard → dominio → **DNS → Records**. Borra el CNAME **manual**
-`api → embyzambu.synology.me`. Deja el `api` gestionado por el túnel.
-
-**Comprobación:** `curl https://api.buenchollotech.com/health` sigue `{"status":"ok"}`.
-**Rollback:** recrear el CNAME manual.
+**Rollback**: parar el contenedor `cloudflared` y borrar el *public hostname*.
 
 ---
 
-### ✅ T3 — Cutover: frontend → API nueva + cerrar CORS + redeploy · 🟡 — HECHO (2026-06-09)
+## 4. 🔧 Ajustes del panel (vigentes)
 
-> ⚠️ **OJO con `CORS_ORIGINS` en el `.env`**: pydantic-settings decodifica el
-> valor como **JSON** (es `list[str]`), así que la lista separada por comas
-> **PETÉA el arranque** (`SettingsError: error parsing value for field
-> "cors_origins"` → 502). Hay que ponerlo como **array JSON**:
-> `CORS_ORIGINS=["https://buenchollotech.com","https://www.buenchollotech.com"]`
-> (Pendiente: arreglar `config.py` con `NoDecode` para aceptar comas como dice
-> el `.env.example`, y corregir el ejemplo.)
-> Recuerda: el frontend (Worker) solo se actualiza al hacer build de **`main`**
-> (los builds de `develop` son previews). Y recrear el contenedor para releer
-> el `.env` (reiniciar no basta).
+### CORS y entorno de la API
 
-**Por qué:** el Worker de prod aún llama a `embyzambu.synology.me:8000`.
+En el `.env` del NAS: `APP_ENV=production`, `LOG_LEVEL=INFO` y `CORS_ORIGINS=https://buenchollotech.com,https://www.buenchollotech.com` (lista separada por comas). Tras cambiarlo, **recrear** la API (un reinicio no relee el `.env`). Comprobar en el navegador que las llamadas a `api.buenchollotech.com/v1/...` devuelven `access-control-allow-origin: https://buenchollotech.com` y que los logs no avisan de `CORS=*`.
 
-**3.1 Variable del Worker:** Workers & Pages → `buenchollotech` → **Settings →
-Variables** → `VITE_API_URL` = `https://api.buenchollotech.com` → **redeploy**
-(Deployments → Create deployment, o un commit a `main`). Es build-time.
+`VITE_API_URL=https://api.buenchollotech.com` es una variable **de build** del Worker; solo se aplica al construir `main` (los builds de `develop` son previews).
 
-**3.2 CORS + producción en `.env` del NAS:**
-```
-APP_ENV=production
-LOG_LEVEL=INFO
-CORS_ORIGINS=https://buenchollotech.com,https://www.buenchollotech.com
-```
-Reiniciar API: `docker-compose up -d buenchollo-api`.
-
-**Comprobaciones:** `https://buenchollotech.com` carga chollos; F12 → Network →
-llamada a `api.buenchollotech.com/v1/...` con `access-control-allow-origin:
-https://buenchollotech.com`; logs del NAS sin warning de `CORS=*`.
-**Rollback:** volver `VITE_API_URL` a la URL anterior y `CORS_ORIGINS=*`, redeploy.
-
----
-
-### ✅ T4 — TLS / Edge security · 🟢 — HECHO (2026-06-09): Full (strict), Always HTTPS, Min TLS 1.2, HSTS 6m (sin preload)
-
-Dashboard → **SSL/TLS**:
+### TLS y seguridad del borde
 
 | Ajuste | Dónde | Valor |
 |---|---|---|
-| Encryption mode | SSL/TLS → Overview | **Full (strict)** (NUNCA "Flexible") |
-| Always Use HTTPS | Edge Certificates | **ON** |
-| Automatic HTTPS Rewrites | Edge Certificates | **ON** |
-| Minimum TLS Version | Edge Certificates | **TLS 1.2** |
-| HSTS | Edge Certificates → Enable HSTS | Max-Age **6 months**, Include subdomains **OFF**, **Preload OFF** |
+| Encryption mode | SSL/TLS → Overview | **Full (strict)** (nunca «Flexible») |
+| Always Use HTTPS | Edge Certificates | ON |
+| Automatic HTTPS Rewrites | Edge Certificates | ON |
+| Minimum TLS Version | Edge Certificates | TLS 1.2 |
+| HSTS | Edge Certificates | Max-Age 6 meses, Include subdomains OFF, **Preload OFF** (semi-irreversible) |
 
-> ⚠️ **No actives Preload** hasta estar 100% seguro (es semi-irreversible). La
-> API ya emite HSTS en producción; que coincida con el edge no pasa nada.
-
-**Comprobaciones:**
 ```bash
 curl -sI https://buenchollotech.com | findstr /I "strict-transport"
 curl -sI http://buenchollotech.com            # 301 → https
 ```
-**Rollback:** desactivar HSTS (sin preload, basta apagarlo).
 
----
+Rollback: desactivar HSTS (sin preload basta apagarlo).
 
-### ✅ T5 — Redirect `www → raíz` (301) · 🟢 — HECHO (2026-06-09): regla "www a raíz" activa, conserva path+query
+### Redirección `www` → raíz
 
-**Por qué:** una URL canónica (`buenchollotech.com`), coherente con Supabase.
+Rules → Redirect Rules: `Hostname equals www.buenchollotech.com` → dinámica `concat("https://buenchollotech.com", http.request.uri.path)`, estado **301**, conservando la query string. Comprobar: `curl -sI https://www.buenchollotech.com` → `301 location: https://buenchollotech.com/`. Rollback: borrar la regla.
 
-**Pasos:** **Rules → Redirect Rules → Create rule**:
-- When: `Hostname equals www.buenchollotech.com`
-- Then: Dynamic → `concat("https://buenchollotech.com", http.request.uri.path)`
-  · Status **301** · Preserve query string **ON**.
+### WAF, rate limiting y bots
 
-**Comprobación:** `curl -sI https://www.buenchollotech.com` → `301 location:
-https://buenchollotech.com/`.
-**Rollback:** borrar la regla.
+- **Bot Fight Mode**: ON (gratis). El *Free Managed Ruleset* ya está activo; las reglas OWASP completas son de pago.
+- **Rate limiting** (el plan gratuito incluye una regla): `Hostname eq api.buenchollotech.com`, 100 peticiones / 10 s por IP, acción Block 60 s.
+- **WAF custom**: `http.host eq "api.buenchollotech.com" and not http.request.method in {"GET" "POST" "PUT" "DELETE" "PATCH" "OPTIONS"}` → Block. Consecuencia: un `HEAD` a la API da `403`; para comprobar cabeceras usar `curl -D -` y no `curl -I`.
+- **No bloquear `/admin` ni `/auth`**: el panel vive en el frontend y la API admin va protegida por JWT; bloquearlos rompería el panel y el login.
 
----
+Verificación: unas 150 peticiones rápidas a `api…/health` empiezan a devolver `429` y la web y el login siguen bien. Rollback: desactivar o borrar cada regla.
 
-### ✅ T6 — WAF / Rate limiting / Bots · 🟡 — HECHO (2026-06-09): Bot Fight Mode ON; rate limit api 100/10s (probado: 429); WAF métodos (PROPFIND→403)
+### Caché
 
-**6.1 Bot Fight Mode:** Security → Bots → **ON** (gratis).
+- **Web (SSR)**: no se cachea el HTML (daría contenido obsoleto); no crear Cache Rules sobre `buenchollotech.com`.
+- **API**: Cache Rule solo para los listados públicos con **rutas exactas** (nunca `starts_with`), en `api.buenchollotech.com`:
+  `(http.host eq "api.buenchollotech.com" and http.request.method eq "GET" and http.request.uri.path in {"/v1/deals" "/v1/deals/latest" "/v1/deals/popular" "/v1/categories" "/v1/stores"})` → *Eligible for cache*, Edge TTL «Use cache-control header if present, bypass cache if not» y Browser TTL «Respect origin».
+- El origen manda `Cache-Control` explícito (middleware `app/core/cache_headers.py`): `no-store` en todo `/v1`, salvo los cinco listados públicos exactos, que llevan `public, max-age=0, s-maxage=30` (el navegador siempre revalida; solo el borde cachea 30 s).
+- **Lección**: una primera regla con `starts_with("/v1/deals")` y TTL fijo cacheaba también endpoints por usuario (`/my-votes`, `/favorites`) y servía contadores obsoletos con F5. Tras editar la regla, hacer *Purge* del hostname de la API.
 
-**6.2 Managed Rules:** el *Free Managed Ruleset* ya está activo (mitiga CVEs).
-Las reglas OWASP completas son de pago (Pro+). No tocar.
-
-**6.3 Rate limiting (Free incluye 1 regla):** Security → Rate limiting rules →
-Create:
-- When: `Hostname eq api.buenchollotech.com`
-- 100 requests / **10 s** por IP · Action **Block** 60 s. (Empezar holgado.)
-
-**6.4 WAF custom (Free: hasta 5):** Security → WAF → Custom rules:
-- `http.host eq "api.buenchollotech.com" and not http.request.method in {"GET" "POST" "PUT" "DELETE" "PATCH" "OPTIONS"}` → **Block**.
-
-> ❌ No bloquear `/admin` ni `/auth` (rompe panel y login).
-
-**Comprobación:** ~150 peticiones rápidas a `api…/health` empiezan a dar `429`;
-la web y el login siguen OK.
-**Rollback:** desactivar/borrar cada regla.
-
----
-
-### ✅ T7 — Caching (SSR) · 🟢 — HECHO (no-op): no se cachea HTML (correcto por defecto)
-
-**Qué hacer:** **nada**. El frontend es SSR en el Worker; cachear HTML daría
-contenido obsoleto. Cloudflare por defecto no cachea respuestas dinámicas. No
-crear Cache Rules sobre `buenchollotech.com`. (Futuro: cachear solo `/assets/*`.)
-
----
-
-### ✅ T9 — Cache Rule para GET públicos de la API (TD-11 Fase 1) · v2 activa y verificada
-
-**Por qué:** los listados públicos (`GET /v1/deals`, `/v1/categories`, `/v1/stores`
-sin auth) se piden repetidamente con el mismo resultado en ventanas cortas.
-Cachearlos unos segundos en el borde evita ida y vuelta al NAS. **No** afecta a
-`buenchollotech.com` (eso es T7, que se queda como está) — esto es solo sobre
-`api.buenchollotech.com`.
-
-**Qué falló en la v1 (2026-07-18, misma fecha):**
-- La expresión usaba `starts_with("/v1/deals")` etc., que también matchea
-  endpoints **autenticados y por-usuario** (`/v1/deals/my-votes`,
-  `/v1/deals/favorites`, `/v1/deals/{id}/my-vote`, `/v1/deals/{id}/favorite`)
-  y los **admin** (`/v1/*/admin/*`). La clave de caché no incluye
-  `Authorization` → durante los 30s de TTL la respuesta de un usuario podía
-  servirse a otro (**fuga entre usuarios**).
-- Edge TTL "fijo 30s" **ignora el `Cache-Control` del origen**, y la API no
-  emitía ninguno; el navegador además podía guardar el JSON en disco →
-  **contadores de votos/comentarios obsoletos con F5** (solo Shift+F5 los
-  refrescaba). Detalle: el `no-store` que se creyó ver con `curl -I` era la
-  cabecera de la página 403 del WAF (HEAD bloqueado), no de la API.
-
-**v2 — configuración aplicada en Dashboard → Caching → Cache Rules:**
-El origen manda ahora `Cache-Control` explícito (middleware
-`app/core/cache_headers.py`): `no-store` en todo `/v1` salvo los listados
-públicos exactos (`/v1/deals`, `/v1/deals/latest`, `/v1/deals/popular`,
-`/v1/categories`, `/v1/stores`), que llevan `public, max-age=0, s-maxage=30`
-(el navegador siempre revalida; solo el borde cachea 30s). La regla debe
-limitarse a **respetar al origen**:
-- Expresión (rutas **exactas**, nunca `starts_with`):
-  `(http.host eq "api.buenchollotech.com" and http.request.method eq "GET" and http.request.uri.path in {"/v1/deals" "/v1/deals/latest" "/v1/deals/popular" "/v1/categories" "/v1/stores"})`
-- Then: **Eligible for cache** · Edge TTL: **Use cache-control header if present,
-  bypass cache if not** (respect origin) · Browser TTL: **Respect origin**.
-- Tras editar: **Purge Everything** (o por hostname `api.buenchollotech.com`)
-  para vaciar lo cacheado por la v1.
-
-**Comprobación** (usar `-D -` para forzar GET real; `curl -I` manda HEAD, que el
-WAF de T6.4 bloquea con 403 al no estar en la allowlist de métodos):
 ```bash
 # Listado público: public, max-age=0, s-maxage=30 · MISS → HIT
 curl -s -o /dev/null -D - https://api.buenchollotech.com/v1/deals | grep -iE "cf-cache-status|cache-control"
-# Endpoint por-usuario: no-store · nunca HIT
+# Endpoint por usuario: no-store · nunca HIT
 curl -s -o /dev/null -D - -H "Authorization: Bearer <token>" "https://api.buenchollotech.com/v1/deals/my-votes?ids=<id>" | grep -iE "cf-cache-status|cache-control"
 ```
-Verificado en producción el 2026-07-18: `/v1/deals` devuelve
-`Cache-Control: public, max-age=0, s-maxage=30` y `MISS → HIT`; `my-votes`
-autenticado devuelve `Cache-Control: no-store` y `cf-cache-status: DYNAMIC`.
-Verificación funcional completada el 2026-07-19: votos y comentarios se
-actualizan correctamente tras F5 normal.
-**Rollback:** desactivar/borrar la regla — el origen (NAS) sigue sirviendo todo
-igual sin ella (el middleware de la API emite cabeceras correctas en cualquier caso).
+
+Rollback: desactivar la regla; el origen sirve igual sin ella.
 
 ---
 
-### 🟡 T8 — Tokens / secretos · PARCIAL: almacenado fuera de Git; rotación pendiente
-
-- `TUNNEL_TOKEN` → solo en el `.env` del NAS (gitignored). **No** a git.
-- A 2026-09-26 no hay evidencia documental de que se rotara después de quedar
-  visible en una conversación. Se registra como TD-21 en
-  `docs/project/10-technical-debt.md`; no marcar como cerrado sin revocar el
-  anterior, desplegar el nuevo y verificar el health público.
-- **No** hace falta API Token de Cloudflare (DDNS descartado).
-- Rotación: Zero Trust → Tunnels → tu túnel → **Refresh token** → actualizar
-  `.env` + ejecutar `docker compose up -d --force-recreate cloudflared` desde el
-  directorio del compose. Un `docker restart` no vuelve a cargar `env_file`.
-
----
-
-## 5. ✅ Checklist repetible de verificación
+## 5. ✅ Checklist de verificación
 
 ```bash
 curl -s https://api.buenchollotech.com/health         # {"status":"ok"}
-curl -s https://api.buenchollotech.com/health/ready    # {"status":"ready",...}
-curl -sI http://buenchollotech.com                     # 301 → https
-curl -sI https://www.buenchollotech.com                # 301 → https://buenchollotech.com/
+curl -s https://api.buenchollotech.com/health/ready   # {"status":"ready",...}
+curl -sI http://buenchollotech.com                    # 301 → https
+curl -sI https://www.buenchollotech.com               # 301 → https://buenchollotech.com/
 curl -sI https://buenchollotech.com | findstr /I "strict-transport content-security x-frame"
 ```
-- [ ] `https://buenchollotech.com` carga + chollos visibles.
-- [ ] Login con Google OK.
-- [ ] Petición autenticada (favorito/voto) OK.
-- [ ] Usuario sin rol admin → `api…/v1/deals/admin/*` devuelve **403**.
-- [ ] Túnel **HEALTHY** en Zero Trust.
-- [ ] Logs del NAS sin warning de CORS `*`.
+
+- [ ] `https://buenchollotech.com` carga y se ven chollos.
+- [ ] Login con Google correcto.
+- [ ] Una petición autenticada (favorito o voto) funciona.
+- [ ] Un usuario sin rol admin recibe `403` en `api…/v1/deals/admin/*`.
+- [ ] El túnel figura como HEALTHY en Zero Trust.
+- [ ] Los logs del NAS no avisan de CORS `*`.
 
 ---
 
-## 6. 🗄️ Secuencia histórica de implantación
-
-1. Zero Trust → Create Tunnel `buenchollo-nas`; copiar TUNNEL_TOKEN.
-2. Public Hostname `api.buenchollotech.com` → HTTP → `buenchollo-api:8000`.
-3. Añadir servicio `cloudflared` al `docker-compose.yml` + `TUNNEL_TOKEN` en `.env` del NAS → levantar. Verificar `api…/health`.
-4. Borrar DNS manual `api → embyzambu.synology.me`.
-5. `VITE_API_URL = https://api.buenchollotech.com` en el Worker → redeploy.
-6. `.env` NAS: `APP_ENV=production`, `LOG_LEVEL=INFO`, `CORS_ORIGINS=https://buenchollotech.com,https://www.buenchollotech.com` → reiniciar API.
-7. SSL/TLS: Full (strict) + Always Use HTTPS + Auto HTTPS Rewrites + Min TLS 1.2.
-8. Redirect Rule `www → buenchollotech.com` (301).
-9. HSTS 6m sin preload · Bot Fight Mode ON · Rate limiting `api.` (100/10s).
-10. Pasar el checklist de go-live completo → `merge develop → main`.
-
----
-
-## 7. 📓 Registro de avance (bitácora)
-
-> Anotar aquí fecha + qué se hizo, para no perder el hilo entre sesiones.
-
-- 2026-06-09 — Creada rama `develop` y este `Cloudflare.md`. Pendiente: empezar por T1.
-- 2026-06-09 — T1.1 (túnel `buenchollo-nas`) y T1.2 (public hostname `api` →
-  `buenchollo-api:8000`) hechos. T2 hecho (borrado DNS `api → synology.me`).
-  `cloudflared` añadido al `docker-compose.yml` (pasado de `environment:${}` a
-  `env_file`). `.env` del NAS con `TUNNEL_TOKEN`. **T1.3 BLOQUEADO**: el
-  contenedor `cloudflared` arranca sin token (`requires the ID or name`) porque
-  CM lo **reinicia** en vez de **recrearlo**. Ficheros verificados OK. **Acción
-  al volver:** recrear el contenedor (Opción A borrar+recrear en CM, u Opción B
-  SSH `docker compose -p bc-api up -d --force-recreate cloudflared`) y verificar
-  con `docker exec ... printenv TUNNEL_TOKEN`. Después: T3.
-- 2026-06-09 — ✅ **T1 RESUELTO**. Causa final: el `.env` del **NAS** no tenía
-  la línea `TUNNEL_TOKEN` (SynologyDrive **no la sincronizó** desde el PC —
-  posible conflicto). Solución: añadir `TUNNEL_TOKEN` directamente en el `.env`
-  del NAS + `sudo docker compose -p bc-api up -d --force-recreate cloudflared`
-  (por SSH). Túnel HEALTHY; `https://api.buenchollotech.com/health` → ok desde
-  fuera (pasa por Cloudflare). **T1 y T2 COMPLETADOS.**
-  ⚠️ Pendiente investigar: SynologyDrive no sincroniza fiablemente el `.env` al
-  NAS → para cambios en el `.env` del NAS, editarlo **directamente en el NAS**.
-  🔐 Pendiente: rotar el TUNNEL_TOKEN (quedó en texto plano en el chat).
-  **Siguiente: T3** (VITE_API_URL→api.buenchollotech.com + CORS/APP_ENV prod).
-- 2026-06-09 — ✅ **T3 HECHO**. Frontend de prod apunta a api.buenchollotech.com
-  (build de `main` de16b09). API en `APP_ENV=production` y CORS cerrado a
-  `buenchollotech.com`/`www`. Sustos resueltos: (1) los builds de `develop` son
-  previews → producción necesita build de `main`; (2) `CORS_ORIGINS` debe ir en
-  formato **array JSON** o pydantic-settings peta (502); (3) recrear el
-  contenedor para releer el `.env`. Además se **excluyó `.env` del sync de
-  SynologyDrive** (PC-local y NAS-prod ahora independientes).
-  **Pendientes:** T4 (TLS/HSTS), T5 (redirect www), T6 (WAF/rate/bots);
-  rotar TUNNEL_TOKEN; arreglar `config.py` (cors comma-separated) + `.env.example`.
-- 2026-06-09 — ✅ **T4, T5, T6, T7, T8 HECHOS** → hardening Cloudflare COMPLETO.
-  T4: Full(strict)+Always HTTPS+min TLS 1.2+HSTS 6m. T5: redirect www→raíz 301.
-  T6: Bot Fight Mode ON + rate limit api 100/10s (probado, 429) + WAF métodos
-  (PROPFIND→403). T7: caching SSR sin tocar. T8: token solo en .env del NAS.
-  **Checklist de go-live verificado en verde desde fuera** (health, redirects,
-  HSTS, headers, CORS). **Pendiente (no bloqueante):** confirmar en navegador
-  login Google + 403 admin; rotar TUNNEL_TOKEN; fix `config.py` CORS + `.env.example`.
-- 2026-07-18 — ✅ **T9 HECHO** (cierre TD-11 Fase 1 completa). Cache Rule
-  `Cache API GET publicos` creada en Caching → Cache Rules: GET público de
-  `/v1/deals`, `/v1/categories`, `/v1/stores` sobre `api.buenchollotech.com`,
-  Edge TTL 30s. Verificado con `curl -D -` (no `-I`: el WAF de T6.4 bloquea
-  HEAD con 403, no está en la allowlist de métodos — confundió la primera
-  comprobación). 1ª petición `cf-cache-status: MISS`, 2ª `HIT`. Plan de
-  optimización Fase 1 completo al 100% (ver `PROJECT_STATUS.md`).
-- 2026-07-18 — 🔴 **T9 v1 retirada el mismo día**: causaba los contadores de
-  votos/comentarios obsoletos con F5 (solo Shift+F5 refrescaba) y una **fuga
-  potencial entre usuarios**: `starts_with("/v1/deals")` cacheaba también
-  `/my-votes` y `/favorites` (autenticados) con Edge TTL fijo que ignoraba al
-  origen, y la API no emitía `Cache-Control` alguno. Fix en tres partes:
-  (1) middleware `app/core/cache_headers.py` — `no-store` en todo `/v1`,
-  `public, max-age=0, s-maxage=30` solo en los 5 listados públicos exactos;
-  (2) `fetchWithAuth` del frontend con `cache: "no-store"`; (3) regla v2 en
-  panel con rutas exactas y Edge/Browser TTL "respect origin" + purga
-  (ver § T9). Completado: v1 desactivada y purgada, API/scheduler recreados en
-  el NAS, v2 activada y verificada (`MISS → HIT` público; `no-store` y nunca
-  `HIT` en autenticados).
-- 2026-07-19 — ✅ **T9 validación funcional cerrada**: votos y comentarios se
-  actualizan correctamente con F5 normal. Se confirma resuelto el bug original.
-- 2026-10-27 — 🔐 **Aviso de seguridad de Cloudflare** (certificados intermedios
-  eMudhra/emSign comprometidos; `cloudflared` < 2026.10.2 aún confiaba en
-  ellos). El NAS corría **2026.7.2**. Imagen fijada a
-  `cloudflare/cloudflared:2026.10.3` en lugar de `:latest` (con `:latest`,
-  reiniciar no actualiza: hay que hacer `pull` y recrear). Sin impacto en
-  orígenes: todos los ingress del túnel son HTTP interno. ✅ **Desplegado** por
-  SSH: `docker-compose -p buenchollo-api pull cloudflared` +
-  `up -d --no-deps --force-recreate cloudflared`. Verificado: versión
-  2026.10.3, 4 conexiones registradas (mad01/05/07), `/health` → 200.
+<p align="center">
+  <a href="NAS-SSH.md">🔐 NAS-SSH</a> ·
+  <a href="../project/08-deployment.md">🚀 Despliegue</a> ·
+  <a href="../project/00-index.md">📘 Operativa</a>
+</p>

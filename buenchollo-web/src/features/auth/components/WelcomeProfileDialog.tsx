@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { writeLocal } from "@/lib/storage";
 import { toast } from "sonner";
 import { User as UserIcon } from "lucide-react";
 import {
@@ -85,7 +86,7 @@ export function WelcomeProfileDialog() {
     setSaving(true);
     try {
       if (devPreview && !user) {
-        localStorage.setItem(
+        writeLocal(
           "bct_welcome_preview",
           JSON.stringify({ display_name: displayName, avatar_url: avatarUrl || null }),
         );

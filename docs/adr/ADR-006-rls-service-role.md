@@ -150,8 +150,8 @@ RLS. Corre en cada CI.
 **Regresión conocida (2026-09-02):** `scheduled_deals`
 (`20260720120000_scheduled_deals.py`, 20-jul-2026) se creó sin RLS y Supabase
 lo marcó como `rls_disabled_in_public` crítico. Corregido en
-`20260902120000_enable_rls_scheduled_deals.py` (ver `PROJECT_STATUS.md`
-§ 3.tervicies). El test anterior habría evitado que llegara a producción.
+`20260902120000_enable_rls_scheduled_deals.py` (ver el histórico de
+`PROJECT_STATUS.md`). El test anterior habría evitado que llegara a producción.
 
 ### Auditoría del `anon key`
 

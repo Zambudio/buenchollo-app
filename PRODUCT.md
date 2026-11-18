@@ -26,9 +26,9 @@ Web pública en Cloudflare Workers, API FastAPI en NAS y catálogo en PostgreSQL
 
 - La web habla con la API; no consulta Supabase DB directamente. Auth con Supabase y Google OAuth.
 - Las fichas de chollo y sus URLs ya son permanentes. Los listados de ofertas activas no incluyen las caducadas.
-- El rediseño incluirá tarjetas horizontales, navegación visible, categorías explorables y una zona de tops por subcategoría con podio y puestos 4 a 10.
-- Todos los productos con una oferta pública de cada categoría y subcategoría compiten automáticamente; los vinculados solo a borradores permanecen privados. Los usuarios registrados podrán votar productos en el top, con un voto positivo por usuario y producto que se puede retirar. Los empates priorizan oferta activa y después fecha de creación e ID.
-- El sistema de puntos y recompensas queda pendiente para el siguiente desarrollo; no forma parte de este rediseño.
+- La web incluye tarjetas horizontales, navegación visible, categorías explorables y una zona de tops por subcategoría con podio y puestos 4 a 10.
+- Todos los productos con una oferta pública de cada categoría y subcategoría compiten automáticamente; los vinculados solo a borradores permanecen privados. Los usuarios registrados pueden votar productos en el top, con un voto positivo por usuario y producto que se puede retirar. Los empates priorizan oferta activa y después fecha de creación e ID.
+- El sistema de puntos y recompensas está pendiente como siguiente desarrollo.
 - La publicación requiere CI en verde y despliegue separado de la API del NAS cuando haya cambios de backend.
 
 ## Brand Commitments

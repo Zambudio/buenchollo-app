@@ -15,8 +15,8 @@ class AlertCreate(BaseModel):
 
 class AlertUpdate(BaseModel):
     name: str | None = Field(None, min_length=2, max_length=100)
-    keyword: str | None = None
-    brand: str | None = None
+    keyword: str | None = Field(None, max_length=200)
+    brand: str | None = Field(None, max_length=100)
     category_id: str | None = None
     store_id: str | None = None
     min_price: float | None = None

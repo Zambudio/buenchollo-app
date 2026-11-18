@@ -32,13 +32,14 @@ Proyecto personal en producción — las decisiones técnicas deben ser defendib
 - **Auth**: Supabase Auth (Google OAuth) — el backend valida JWT con `service_role key`
 - **Storage**: Supabase Storage — subida directa desde el frontend (excepción deliberada al patrón API Gateway)
 - **Despliegue**: NAS Synology — Docker container con volumen montado en `buenchollo-api/`
-- **CORS**: configurado via `CORS_ORIGINS` en `.env` — actualmente `["*"]` en desarrollo
+- **CORS**: configurado via `CORS_ORIGINS` en `.env` — lista cerrada al dominio en producción
 
 ### Decisiones de arquitectura vigentes
 
 - **ADR-001**: Monolito Modular con FastAPI y Clean Architecture pragmática
 - **ADR-002**: Migración de BaaS directo a API Gateway — el frontend nunca llama a Supabase DB directamente
-- **ADR-013**: Motor de IA unificado con OmniRoute / OpenCode, fallback de modelos gratuitos y base para Chatbot
+- **ADR-013**: Motor de IA unificado con OmniRoute / OpenCode, fallback de modelos gratuitos
+- **ADR-017 a ADR-019**: catálogo permanente, tops comunitarios y redes de afiliación. Índice completo en [`docs/adr/00-index.md`](docs/adr/00-index.md)
 
 ---
 
@@ -48,7 +49,7 @@ Proyecto personal en producción — las decisiones técnicas deben ser defendib
 app/
 ├── core/          # config, database, security, logging (compartido)
 └── modules/
-    ├── ai/            # motor unificado LLM, fallback multi-modelo, copywriting, categorización, chatbot
+    ├── ai/            # motor unificado LLM, fallback multi-modelo, copywriting, categorización
     ├── deals/
     │   ├── domain/        # modelos SQLAlchemy (Deal)
     │   ├── application/   # casos de uso, cleaner_service (caducidad por fecha; ya no borra)
@@ -132,7 +133,7 @@ El dominio no depende de FastAPI, SQLAlchemy, ni ningún framework externo.
 - **Refactoring**: no hacerlo de forma masiva sin explicar impacto. No cambiar contratos de API sin avisar.
 - **Documentación**: actualizar README o docs si cambia el uso del sistema. Proponer ADR cuando haya decisión técnica relevante.
 - **No romper** funcionalidad existente ni tests existentes.
-- **Recordatorio de deuda técnica y rendimiento**: al **cambiar de tarea** (cuando se cierra algo y se pasa a otra cosa), recuérdame brevemente los ítems de deuda técnica o monitoreo pendientes apuntando a [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md). Mantén ese registro al día: al cerrar un item, bórralo de ahí y anota el cierre en `PROJECT_STATUS.md`. Las optimizaciones de rendimiento completadas están consolidadas en `PROJECT_STATUS.md` (§ 3.duodevicies). No proponer migrar infraestructura a la nube ni asumir gasto mensual sin que el usuario lo pida explícitamente.
+- **Recordatorio de deuda técnica y rendimiento**: al **cambiar de tarea** (cuando se cierra algo y se pasa a otra cosa), recuérdame brevemente los ítems de deuda técnica o monitoreo pendientes apuntando a [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md). Mantén ese registro al día: al cerrar un item, bórralo de ahí y anota el cierre en `PROJECT_STATUS.md`. Las optimizaciones de rendimiento completadas están resumidas en el «Histórico resumido» de `PROJECT_STATUS.md`. No proponer migrar infraestructura a la nube ni asumir gasto mensual sin que el usuario lo pida explícitamente.
 
 ### Flujo de ramas (web en producción)
 
@@ -160,7 +161,7 @@ Las **normas de trabajo y la memoria del proyecto** viven **dentro del repo** en
 
 La guía operativa **viva** de la infraestructura (Cloudflare, túnel, hardening) está en [`docs/guides/Cloudflare.md`](docs/guides/Cloudflare.md); úsala y mantenla al día al tocar infraestructura.
 
-Para conectar por SSH al NAS y hacer rebuild/redeploy de `buenchollo-api` (Docker, sin `git` en el NAS), sigue [`docs/guides/NAS-SSH.md`](docs/guides/NAS-SSH.md) — procedimiento verificado, permite operar sin intervención manual del usuario salvo en acciones de impacto real.
+Para conectar por SSH al NAS y reiniciar o reconstruir `buenchollo-api` (Docker, sin `git` en el NAS), sigue [`docs/guides/NAS-SSH.md`](docs/guides/NAS-SSH.md) y el procedimiento de despliegue de [`docs/project/08-deployment.md`](docs/project/08-deployment.md). Los valores reales de acceso no están en el repo: viven en la base de conocimiento privada (OBSIDIAN VAULT).
 
 Cuando una tienda de **Awin o Tradedoubler** apruebe la solicitud de afiliación, sigue [`docs/guides/AFFILIATE-ACTIVATION-RUNBOOK.md`](docs/guides/AFFILIATE-ACTIVATION-RUNBOOK.md): estado actual, script de comprobación de solo lectura y pasos de activación, validación, publicación y cierre.
 
@@ -181,7 +182,7 @@ Cuando una tienda de **Awin o Tradedoubler** apruebe la solicitud de afiliación
 
 ---
 
-## Estado actual (2026-11-07)
+## Estado actual (2026-11-18)
 
 - **Web en producción** en `https://buenchollotech.com` (frontend TanStack Start SSR como **Cloudflare Worker**; deploy automático al hacer push a `main` vía Workers Builds).
 - **API** FastAPI en el NAS Synology, expuesta en `https://api.buenchollotech.com` vía **Cloudflare Tunnel** (sin abrir puertos, sin DDNS). `APP_ENV=production`, CORS cerrado al dominio.

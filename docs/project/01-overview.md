@@ -62,7 +62,9 @@ y comentan, y el sistema notifica vía **alertas personalizadas** y un
 | 🏪 `stores` | Catálogo maestro (admin) |
 | 👤 `users` | Perfil, roles, stats |
 | 🙋 `submissions` | Chollos de usuarios: comprobar enlace, propuesta, ingesta de imágenes y cola de moderación admin ([ADR-015](../adr/ADR-015-ingesta-imagenes-backend.md), [ADR-016](../adr/ADR-016-propuestas-comunidad-y-afiliados.md)) |
-| 🔗 `affiliates` | Dominio puro: extracción/canonicalización de URL y reescritores de afiliado por tienda |
+| 🗃️ `catalog` | Catálogo permanente (productos y listings por tienda), reglas de oferta y tops con votos de producto ([ADR-017](../adr/ADR-017-catalogo-permanente.md), [ADR-018](../adr/ADR-018-tops-comunitarios-productos.md)) |
+| 🔗 `affiliates` | Canonicalización de URL, reescritores de afiliado y redes Awin/Tradedoubler: registro de programas, feeds e importación al editor ([ADR-019](../adr/ADR-019-redes-afiliacion-awin-tradedoubler.md)) |
+| ✉️ `emails` | SMTP, plantillas Jinja, bienvenida y resumen nocturno de alertas |
 
 ---
 
@@ -164,6 +166,8 @@ Más detalle en [`03 · Estructura del proyecto`](03-project-structure.md).
 - [09 · Troubleshooting](09-troubleshooting.md)
 - [10 · Deuda técnica](10-technical-debt.md)
 - [11 · Estado actual verificado](11-current-state.md)
+- [12 · Auditoría técnica 2026-11](12-auditoria-tecnica-2026-11.md)
+- [13 · SEO y búsqueda con IA](13-seo.md)
 
 ---
 

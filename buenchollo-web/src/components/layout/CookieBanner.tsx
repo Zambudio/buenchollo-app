@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Cookie } from "lucide-react";
+import { readLocal, writeLocal } from "@/lib/storage";
 
 const STORAGE_KEY = "cookie-consent-ack";
 
@@ -8,11 +9,11 @@ export function CookieBanner() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    setVisible(window.localStorage.getItem(STORAGE_KEY) !== "1");
+    setVisible(readLocal(STORAGE_KEY) !== "1");
   }, []);
 
   const dismiss = () => {
-    window.localStorage.setItem(STORAGE_KEY, "1");
+    writeLocal(STORAGE_KEY, "1");
     setVisible(false);
   };
 

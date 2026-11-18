@@ -6,6 +6,7 @@ comportamiento actual de un solo proceso).
 """
 import subprocess
 import sys
+from datetime import datetime
 
 from app.core.config import Settings
 from app.modules.deals.application.scheduler import build_deals_scheduler
@@ -67,3 +68,39 @@ def test_mark_expired_deals_guarda_el_motivo_expired_date():
     cleaner._client = client
     cleaner.mark_expired_deals()
     client.table.return_value.update.assert_called_once_with({"status": "expired", "offer_end_reason": "expired_date"})
+
+
+def test_scheduler_usa_zona_horaria_de_madrid():
+    scheduler, _ = build_deals_scheduler(Settings())
+    assert str(scheduler.timezone) == "Europe/Madrid"
+    digest = next(j for j in scheduler.get_jobs() if j.id == "nightly_alert_digest")
+    # Las 21:00 son hora de Madrid (UTC+1/+2), no UTC.
+    next_run = digest.trigger.get_next_fire_time(None, datetime.now(scheduler.timezone))
+    assert next_run.hour == 21
+    assert next_run.utcoffset().total_seconds() in (3600, 7200)
+
+
+def test_run_scheduler_hace_shutdown_limpio_con_sigterm():
+    import signal
+    from unittest.mock import MagicMock, patch
+
+    import app.run_scheduler as run_scheduler
+
+    fake = MagicMock()
+    handlers = {}
+
+    def fake_signal(signum, handler):
+        handlers[signum] = handler
+
+    with patch.object(run_scheduler, "build_deals_scheduler", return_value=(fake, None)), \
+         patch.object(run_scheduler, "configure_logging"), \
+         patch.object(run_scheduler.signal, "signal", side_effect=fake_signal), \
+         patch.object(run_scheduler.threading, "Event") as ev:
+        stop = ev.return_value
+        # simula `docker stop`: al esperar, llega SIGTERM
+        stop.wait.side_effect = lambda: handlers[signal.SIGTERM](signal.SIGTERM, None)
+        run_scheduler.main()
+
+    stop.set.assert_called_once()
+    fake.start.assert_called_once()
+    fake.shutdown.assert_called_once_with(wait=True)

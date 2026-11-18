@@ -3,6 +3,7 @@
 Mockea `ProfileRepository` con `AsyncMock`; no requiere BD ni red.
 Verifica el cableado de los casos de uso y el manejo de excepciones.
 """
+import threading
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 import pytest
@@ -61,7 +62,6 @@ async def test_get_me_overview_devuelve_admin_true_si_rol_admin():
 async def test_get_me_overview_sin_perfil_devuelve_has_profile_false():
     service, _ = _build_service(
         get_user_roles=AsyncMock(return_value=["user"]),
-        get_username=AsyncMock(return_value=None),
     )
 
     result = await service.get_me_overview(CurrentUser(id="u1", email=None))
@@ -180,6 +180,19 @@ async def test_update_my_profile_lanza_profile_not_found_si_no_existe():
 
     with pytest.raises(ProfileNotFound):
         await service.update_my_profile("u1", display_name="x", bio="")
+
+
+@pytest.mark.asyncio
+async def test_delete_my_account_borra_en_supabase_fuera_del_event_loop():
+    hilos: list[int] = []
+    supabase = MagicMock()
+    supabase.auth.admin.delete_user.side_effect = lambda user_id: hilos.append(threading.get_ident())
+    service = UserService(MagicMock(), supabase)
+
+    await service.delete_my_account("u1")
+
+    supabase.auth.admin.delete_user.assert_called_once_with("u1")
+    assert hilos and hilos[0] != threading.get_ident()
 
 
 # ── admin ───────────────────────────────────────────────────────────────────

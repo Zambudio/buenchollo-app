@@ -12,6 +12,10 @@ logger = logging.getLogger(__name__)
 
 settings = get_settings()
 
+# Compatibilidad con PgBouncer en modo transacción (sin caché de sentencias
+# preparadas). Compartido con los engines de los jobs (`core/jobs.py`).
+PGBOUNCER_CONNECT_ARGS = {"server_settings": {"jit": "off"}, "statement_cache_size": 0}
+
 # Avoid creating the engine if no database URL is provided (e.g. during simple tests)
 engine = None
 AsyncSessionLocal = None
@@ -29,7 +33,7 @@ if settings.database_url:
             pool_size=3,
             max_overflow=2,
             pool_recycle=300,  # evita conexiones colgadas si PgBouncer cierra idles
-            connect_args={"server_settings": {"jit": "off"}, "statement_cache_size": 0},
+            connect_args=PGBOUNCER_CONNECT_ARGS,
         )
         AsyncSessionLocal = async_sessionmaker(
             bind=engine, class_=AsyncSession, expire_on_commit=False

@@ -153,21 +153,6 @@ async def test_purge_listing_unico_borra_producto_deal_y_votos(session):
     assert votes == 0
 
 
-async def test_get_purgeable(session):
-    repo = CatalogRepository(session)
-    now = datetime.now(timezone.utc)
-    deal = await _add_linked(session, repo, _deal("B0REPOA007"))
-    listing = await session.get(ProductListing, deal.listing_id)
-    listing.availability = "not_found"
-    listing.unavailable_since = now - timedelta(days=31)
-    await session.flush()
-
-    ids = {item.id for item in await repo.get_purgeable(now - timedelta(days=30))}
-    assert listing.id in ids
-    ids = {item.id for item in await repo.get_purgeable(now - timedelta(days=40))}
-    assert listing.id not in ids
-
-
 async def test_delete_product_if_orphan(session):
     repo = CatalogRepository(session)
     first = await _add_linked(session, repo, _deal("B0REPOA008", status="expired"))

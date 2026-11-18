@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from app.modules.alerts.domain.models import Alert
@@ -19,6 +19,12 @@ class AlertRepository:
             .order_by(Alert.created_at.desc())
         )
         return list(result.scalars().all())
+
+    async def count_by_user(self, user_id: str) -> int:
+        result = await self.db.execute(
+            select(func.count()).select_from(Alert).where(Alert.user_id == user_id)
+        )
+        return int(result.scalar() or 0)
 
     async def get_by_id(self, alert_id: str, user_id: str) -> Alert | None:
         result = await self.db.execute(

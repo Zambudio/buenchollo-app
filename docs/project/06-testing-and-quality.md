@@ -1,8 +1,8 @@
 # 🧪 06 · Testing y calidad
 
-> **TL;DR** · **511 tests automatizados** verdes en el último CI de producción.
-> Pirámide unit/integration/E2E. Coverage estratégico 100/80/0 con
-> threshold automático en `src/lib/**`. Gates en 3 niveles
+> **TL;DR** · **1 440 tests automatizados** (backend 812 unitarios + 59 de integración,
+> frontend 532 Vitest, 37 E2E). Pirámide unit/integration/E2E. Coverage estratégico
+> 100/80/0 con threshold automático en `src/lib/**`. Gates en 3 niveles
 > (pre-commit, pre-push, CI).
 >
 > 📐 La justificación de la estrategia vive en
@@ -13,23 +13,26 @@
 ## 📊 Suite total
 
 ```
-                    ┌──────────────────────┐
-                    │  🎭 E2E (16)         │   Playwright + chromium
-                    └──────────────────────┘
+                    ┌──────────────────────────┐
+                    │  🎭 E2E (37 tests)       │   12 specs Playwright + chromium
+                    └──────────────────────────┘
               ┌──────────────────────────────────┐
-              │  🔗 Integración backend (37)     │   pytest -m integration · PostgreSQL 16 en CI
+              │  🔗 Integración backend (59)     │   pytest -m integration · Postgres real en CI
               └──────────────────────────────────┘
        ┌────────────────────────────────────────────────┐
-       │  ⚛️ Unit + RTL (458 = 272 pytest + 186 vitest)    │   corren en CI en cada push a main
+       │  ⚛️ Unit + RTL (1 344 = 812 pytest + 532 vitest) │   corren en CI en cada push
        └────────────────────────────────────────────────┘
 
-  Total: 511 tests (verificado 2026-09-26 · Python 3.11 + Node 20)
+  Total: 1 440 tests (verificado 2026-11-18 · Python 3.11 + Node 20)
 ```
 
-> Verificado 2026-11-04 (chollos de usuarios): la CI de la PR #64 pasó todos los trabajos;
-> en local, backend **537** no integración, frontend **433** y **16** E2E de
-> `community-submission` + `admin-submissions`. Las cifras del diagrama de arriba son de
-> 2026-09-26 y no se han recalculado; la autoridad es `ci.yml`.
+| Cobertura | Valor |
+|---|---|
+| Backend | 83 % |
+| Frontend (global) | 39 % |
+| Frontend `src/lib/**` | ≥ 90 % (umbral que rompe el CI) |
+
+Las cifras son una fotografía fechada: la autoridad es `.github/workflows/ci.yml`.
 
 ---
 
@@ -39,7 +42,7 @@
 
 ```bash
 pytest                              # toda la suite (necesita Postgres real para integración)
-pytest -q -m "not integration"      # 272 tests, rápido, sin BD
+pytest -q -m "not integration"      # 812 tests, rápido, sin BD
 pytest app/tests/test_deal_service.py -v   # un fichero concreto
 pytest -k "duplicate"               # tests cuyo nombre incluye "duplicate"
 ```
@@ -48,9 +51,9 @@ pytest -k "duplicate"               # tests cuyo nombre incluye "duplicate"
 
 ```bash
 npm run test                        # vitest watch (desarrollo)
-npm run test:run                    # 186 tests one-shot
+npm run test:run                    # 532 tests one-shot (73 ficheros)
 npm run test:coverage               # + reporte HTML en coverage/
-npm run test:e2e                    # 16 Playwright (levanta dev server)
+npm run test:e2e                    # 37 tests Playwright en 12 specs (levanta dev server)
 npm run test:e2e:ui                 # modo UI interactivo
 npx playwright show-report          # último HTML report
 ```
@@ -206,8 +209,8 @@ Marcados con `pytestmark = pytest.mark.integration` a nivel de módulo.
 Corren en un job separado del CI con PostgreSQL 16 como servicio. El esquema de
 prueba se crea desde los modelos ORM mediante `scripts/create_test_schema.py`;
 el job unitario sigue usando `pytest -m "not integration"` para mantener rápido
-el feedback. El smoke manual de producción continúa documentado en
-[`docs/reference/SMOKE_TEST.md`](../reference/SMOKE_TEST.md).
+el feedback. El smoke manual previo a un release está en
+[`docs/guides/SMOKE-TEST.md`](../guides/SMOKE-TEST.md).
 
 ---
 
@@ -261,7 +264,8 @@ git push --no-verify
 
 | Job | Comprueba |
 |---|---|
-| 🐍 `backend` | `pytest -m "not integration"` (78 unit) |
+| 🐍 `backend` | `pytest -m "not integration"` |
+| 🔗 `backend-integration` | `pytest -m integration` contra PostgreSQL como servicio |
 | ⚛️ `frontend` | typecheck + ESLint + Vitest con coverage threshold |
 | 🎭 `e2e` | Playwright chromium con webServer |
 | 🛡️ `security-audit` | `pip-audit`, `npm run audit:prod` (npm audit de producción con excepciones fechadas), `gitleaks` |
@@ -290,7 +294,7 @@ Tres tiers documentados con umbrales verde/amarillo/rojo:
 | Item | Por qué se asume |
 |---|---|
 | 📷 Visual regression (`toHaveScreenshot`) | Brittleness sin valor en una UI que aún itera |
-| 🎭 Page Object Model elaborado | Con 16 E2E, helpers ad-hoc siguen siendo más legibles; reconsiderar al superar 20 |
+| 🎭 Page Object Model elaborado | Con 12 specs, helpers ad-hoc (`e2e/support/`) siguen siendo más legibles; reconsiderar si crecen mucho |
 | 🛠️ Tests E2E completos del admin | OAuth Google requiere mocks complejos |
 
 ---

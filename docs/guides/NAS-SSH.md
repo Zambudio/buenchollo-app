@@ -1,303 +1,126 @@
-# 🔐 NAS-SSH — Guía viva de conexión SSH al NAS (para IAs)
+# 🔐 NAS-SSH — Conexión SSH al NAS (guía para IAs)
 
-> **Para qué sirve este archivo**: que cualquier agente de IA que trabaje en este
-> repo pueda conectarse por SSH al NAS Synology `ZAMBU-NAS`, inspeccionar
-> contenedores y hacer rebuild/redeploy de `buenchollo-api` sin intervención
-> manual del usuario, siguiendo exactamente el mismo procedimiento verificado
-> que usan el resto de proyectos del usuario.
+> Los valores reales (IP, puerto, usuario, clave y rutas) no se publican en el repositorio: están en la base de conocimiento privada del propietario (OBSIDIAN VAULT, ficha `Entities/Infraestructura-NAS-Synology-DS224.md`).
 
-Última actualización: 2026-08-15 — trasladada desde la raíz del repositorio de
-proyectos (`Guia_Conexion_ssh_NAS.md`) para que quede versionada junto al
-código y cargada automáticamente por Claude Code en cada sesión.
+Para qué sirve: que un agente de IA pueda conectarse por SSH al NAS Synology, inspeccionar contenedores y reiniciar o reconstruir `buenchollo-api` sin intervención manual. En esta guía `<IP_NAS>`, `<PUERTO_SSH>`, `<USUARIO_NAS>`, `<CLAVE_SSH>`, `<ALIAS_NAS>` y `<RUTA_SHARE>` son marcadores.
 
-> **Origen:** documento verificado y probado en `BOTS_Traiding/docs/ConexionSSHnasConsola.md`
-> (2026-08-01). Todo lo descrito aquí ya funciona.
+Última revisión: 2026-11-18.
 
 ---
 
 ## 0. Resumen para quien tenga prisa
 
-- Conectar: `ssh nas-zambu` (alias ya configurado en la máquina de trabajo, ver §2).
-- **Docker no está en el PATH**: hay que usar `sudo -n` + ruta completa
-  (`/volume1/@appstore/ContainerManager/usr/bin/docker`), o el alias definido.
-- Usar `docker-compose` (con guion), **no** `docker compose` (con espacio):
-  este NAS solo tiene el binario clásico.
-- **No hay `git` en el NAS**: el código se sincroniza con `tar` + `scp` (§5).
-- Hay otros proyectos corriendo en el NAS (BuenChollo, OpenClaw, mediahunter-bot,
-  bot_recomendador, honeygain, telegram-notifications): cuidar nombres de
-  contenedor, puertos y redes para no chocar con ellos.
-- El puerto `8000` del NAS está ocupado por un `nginx` interno de DSM (no Docker);
-  `buenchollo-api` ya usa `8001` en el host (ver `docker-compose.yml`) — no
-  reutilizar `8000` para nada nuevo.
-- `scp` necesita la opción `-O` (fuerza protocolo SCP clásico; este NAS rechaza el
-  subsistema SFTP moderno).
-- Principio general: acciones locales y reversibles se ejecutan sin pedir permiso;
-  cualquier acción con impacto real (datos de producción, borrar volúmenes, tocar
-  contenedores de otros proyectos) se confirma antes con el usuario.
+- Conectar: `ssh <ALIAS_NAS>` (alias configurado en la máquina de trabajo, ver §2).
+- **Docker no está en el `PATH`**: usar `sudo -n` con la ruta completa (`/volume1/@appstore/ContainerManager/usr/bin/docker`).
+- Usar `docker-compose` (con guion), **no** `docker compose`: este NAS solo tiene el binario clásico.
+- **No hay `git` en el NAS**. El código de `buenchollo-api` llega porque el NAS ve el share de red en tiempo real (§1.1); el `git pull` se hace desde la máquina de trabajo.
+- Hay otros proyectos del propietario corriendo en el NAS: no chocar con sus nombres de contenedor, puertos ni redes.
+- El puerto `8000` del NAS lo ocupa un `nginx` interno de DSM (no es Docker); `buenchollo-api` usa `8001` en el host. No reutilizar `8000`.
+- `scp` necesita la opción `-O` (protocolo SCP clásico; el NAS rechaza el subsistema SFTP moderno).
+- Acciones locales y reversibles, sin pedir permiso. Acciones con impacto real (datos de producción, borrar volúmenes, tocar contenedores de otros proyectos): confirmar antes con el usuario.
 
 ## 1. Datos de conexión
 
 | Campo | Valor |
 |---|---|
-| Modelo NAS | Synology DS224+ (`ZAMBU-NAS`) |
-| Host | `192.168.1.3` |
-| Puerto SSH | `32` |
-| Usuario | `adminzambu` (cuenta DSM `AdminZambu`, pertenece a `administrators`) |
-| Clave privada (lado asistente/IA) | `~/.ssh/id_ed25519_nas` |
-| Alias SSH | `nas-zambu` |
+| Modelo NAS | Synology DS224+ |
+| Host | `<IP_NAS>` |
+| Puerto SSH | `<PUERTO_SSH>` |
+| Usuario | `<USUARIO_NAS>` (cuenta DSM del grupo `administrators`) |
+| Clave privada (lado asistente/IA) | `~/.ssh/<CLAVE_SSH>` |
+| Alias SSH | `<ALIAS_NAS>` |
 | Binario Docker | `/volume1/@appstore/ContainerManager/usr/bin/docker` |
-| Binario docker-compose | `/volume1/@appstore/ContainerManager/usr/bin/docker-compose` |
-| Versión de Compose | `v2.20.1` (binario clásico) |
+| Binario docker-compose | `/volume1/@appstore/ContainerManager/usr/bin/docker-compose` (Compose `v2.20.1`, clásico) |
 
-La clave privada vive en la máquina desde la que trabaja la IA. La clave pública ya
-está autorizada en `~/.ssh/authorized_keys` del usuario en el NAS y el usuario tiene
-`sudo` sin contraseña acotado a los dos binarios de Docker.
+La clave privada vive en la máquina desde la que trabaja la IA. La pública está autorizada en `~/.ssh/authorized_keys` del usuario en el NAS, y el usuario tiene `sudo` sin contraseña acotado a los dos binarios de Docker.
 
-> 📌 Este mismo host (`192.168.1.3`) es el que sirve **OmniRoute** en el puerto
-> `20128` (ver [`ADR-013`](../adr/ADR-013-motor-ia-unificado-omniroute-modelos-gratuitos.md)
-> y [`04-configuration.md`](../project/04-configuration.md)). Si SSH funciona pero
-> `AI_BASE_URL=http://192.168.1.3:20128/v1` no responde, el problema es del
-> contenedor OmniRoute, no de la conectividad al NAS.
+> 📌 El mismo host sirve **OmniRoute** en el puerto `20128` (ver [`ADR-013`](../adr/ADR-013-motor-ia-unificado-omniroute-modelos-gratuitos.md) y [`04-configuration.md`](../project/04-configuration.md)). Si SSH funciona pero `AI_BASE_URL=http://<IP_NAS>:20128/v1` no responde, el problema es del contenedor OmniRoute, no de la conectividad al NAS.
 
 ## 1.1 Caso concreto: `buenchollo-api` (este proyecto)
 
-- **Ruta real en el NAS**:
-  `/volume1/NAS-DRIVE-PEDRO/IA/02_Proyectos/WEB-Buenchollo/BuenCholloTech/buenchollo-api`
-  (verificado con `docker inspect buenchollo-api --format '{{index .Config.Labels "com.docker.compose.project.working_dir"}}'`).
-  Es el **mismo recurso de red** que `N:`/`Z:` en la máquina de desarrollo — el
-  código ya está ahí en tiempo real, **no hace falta el `tar`+`scp` del §5** para
-  este proyecto concreto. Basta con:
+- **Ruta real en el NAS**: `<RUTA_SHARE>/BuenCholloTech/buenchollo-api` (se verifica con `docker inspect buenchollo-api --format '{{index .Config.Labels "com.docker.compose.project.working_dir"}}'`). Es el **mismo recurso de red** que la unidad mapeada en la máquina de desarrollo: el código ya está ahí en tiempo real, sin `tar` ni `scp`. Reconstruir:
   ```bash
   DC="sudo -n /volume1/@appstore/ContainerManager/usr/bin/docker-compose"
-  ssh -o BatchMode=yes nas-zambu "cd /volume1/NAS-DRIVE-PEDRO/IA/02_Proyectos/WEB-Buenchollo/BuenCholloTech/buenchollo-api && $DC build && $DC up -d"
+  ssh -o BatchMode=yes <ALIAS_NAS> "cd <RUTA_SHARE>/BuenCholloTech/buenchollo-api && $DC build && $DC up -d"
   ```
-- **⚠️ Trampa**: existe también `/volume1/docker/buenchollo-auto/`, un proyecto
-  **viejo y no relacionado** (bot de scraping con sesión de Telegram + SQLite
-  local, `docker-compose.yml` con servicio `buenchollo-auto`). Un `find -iname
-  docker-compose.yml -path '*buenchollo*'` lo encuentra por el nombre y puede
-  confundirse con el proyecto real — verificar siempre el contenido del
-  `docker-compose.yml` (servicios `buenchollo-api`/`buenchollo-scheduler`/
-  `cloudflared`) antes de tocar nada.
-- **`.env` del NAS**: revisar que `APP_ENV=production` esté puesto — si está en
-  `local` (ver `docs/project/04-configuration.md`), la API real acepta CORS
-  desde `localhost:*` y no manda HSTS. Incidente real y fix:
-  [`PROJECT_STATUS.md` § 3.quaterdecies](../../PROJECT_STATUS.md).
+- Sin dependencias nuevas basta reiniciar: `ssh -o BatchMode=yes <ALIAS_NAS> "$DOCKER restart buenchollo-api buenchollo-scheduler"`. El procedimiento completo (backup, share en `main`, verificación y rollback) está en [`08-deployment.md`](../project/08-deployment.md).
+- **⚠️ Trampa**: existe `/volume1/docker/buenchollo-auto/`, un proyecto **viejo y no relacionado** (bot de scraping con sesión de Telegram y SQLite). Una búsqueda de `docker-compose.yml` por el nombre lo encuentra y puede confundirse con el real: comprueba siempre que el `docker-compose.yml` define `buenchollo-api`, `buenchollo-scheduler` y `cloudflared`.
+- **Rama del share**: los contenedores ejecutan la rama activa en el share en cuanto se reinician. Mantenerla en `main` (TD-31).
+- **`.env` del NAS**: es independiente del local y está excluido del sync de SynologyDrive. Comprobar que `APP_ENV=production`: con `local`, la API acepta CORS desde `localhost:*` y no envía HSTS (incidente real de 2026-08-15, ver el histórico de [`PROJECT_STATUS.md`](../../PROJECT_STATUS.md)). Un `docker restart` no recarga el `env_file`; para aplicar cambios del `.env` usar `$DC up -d --force-recreate <servicio>`. No sobrescribirlo sin confirmar con el usuario qué variables cambian.
 
-## 2. Configuración del cliente SSH (ya hecha en la máquina de trabajo)
+## 2. Configuración del cliente SSH (hecha en la máquina de trabajo)
 
-En `~/.ssh/config` (de la máquina local desde la que trabaja la IA):
+En `~/.ssh/config`:
 
 ```
-Host nas-zambu
-    HostName 192.168.1.3
-    Port 32
-    User adminzambu
-    IdentityFile ~/.ssh/id_ed25519_nas
+Host <ALIAS_NAS>
+    HostName <IP_NAS>
+    Port <PUERTO_SSH>
+    User <USUARIO_NAS>
+    IdentityFile ~/.ssh/<CLAVE_SSH>
     IdentitiesOnly yes
 ```
 
-La clave se genera (una sola vez) con:
+La clave se genera una sola vez con `ssh-keygen -t ed25519 -f ~/.ssh/<CLAVE_SSH> -N ""` y el usuario autoriza la pública en el NAS (nunca compartir la contraseña con la IA). El home del usuario SSH debe tener permisos `755`, no `777`, o `sshd` con `StrictModes` rechaza la clave.
+
+El `sudo` acotado a Docker se configuró una única vez, con la contraseña del usuario:
 
 ```bash
-ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_nas -N "" -C "claude-code@bots-trading"
-```
-
-La clave pública se autoriza en el NAS por el usuario (nunca compartir la
-contraseña con la IA). Requisito: el home del usuario SSH debe tener permisos
-`755` (no `777`), o `sshd` con `StrictModes` rechaza la autenticación por clave.
-
-El `sudo` acotado a Docker se configuró así (una única vez, con contraseña del
-usuario):
-
-```bash
-echo 'AdminZambu ALL=(ALL) NOPASSWD: /volume1/@appstore/ContainerManager/usr/bin/docker, /volume1/@appstore/ContainerManager/usr/bin/docker-compose' | sudo tee /etc/sudoers.d/adminzambu-docker
-sudo chmod 440 /etc/sudoers.d/adminzambu-docker
+echo '<USUARIO_NAS> ALL=(ALL) NOPASSWD: /volume1/@appstore/ContainerManager/usr/bin/docker, /volume1/@appstore/ContainerManager/usr/bin/docker-compose' | sudo tee /etc/sudoers.d/docker-nopasswd
+sudo chmod 440 /etc/sudoers.d/docker-nopasswd
 ```
 
 ## 3. Verificar la conexión (siempre con BatchMode)
 
-`BatchMode=yes` es obligatorio para una IA: si la clave falla, el comando falla al
-instante en lugar de quedarse colgado pidiendo una contraseña que la IA no puede
-escribir.
+`BatchMode=yes` es obligatorio para una IA: si la clave falla, el comando falla al instante en lugar de quedarse pidiendo una contraseña.
 
 ```bash
-ssh -o BatchMode=yes nas-zambu "echo ok"
-# Debe devolver: ok
+ssh -o BatchMode=yes <ALIAS_NAS> "echo ok"                      # debe devolver: ok
+ssh -o BatchMode=yes <ALIAS_NAS> "sudo -n /volume1/@appstore/ContainerManager/usr/bin/docker ps"
 ```
 
-Verificar que Docker responde sin contraseña:
-
-```bash
-ssh -o BatchMode=yes nas-zambu "sudo -n /volume1/@appstore/ContainerManager/usr/bin/docker ps"
-```
-
-Si estos dos comandos fallan, **no continuar**: avisar al usuario, porque la clave
-o el `sudo` se han desincronizado.
+Si alguno falla, **no continuar**: avisar al usuario, porque la clave o el `sudo` se han desincronizado.
 
 ## 4. Docker en este NAS
 
-- El binario `docker` no está en el `PATH` de una sesión SSH normal.
-- No existe el subcomando `docker compose`; usar el binario `docker-compose`.
-- El socket `/var/run/docker.sock` es solo-root; por eso se usa `sudo -n` con las
-  rutas completas. Los alias de shell **no se cargan** en sesiones SSH no
-  interactivas de la IA, por eso siempre usar rutas completas.
-
-Definir en cada sesión (o comando):
+- `docker` no está en el `PATH` de una sesión SSH normal y no existe `docker compose`.
+- El socket `/var/run/docker.sock` es solo root: por eso `sudo -n` con rutas completas. Los alias de shell no se cargan en sesiones SSH no interactivas.
 
 ```bash
 DOCKER="sudo -n /volume1/@appstore/ContainerManager/usr/bin/docker"
 DC="sudo -n /volume1/@appstore/ContainerManager/usr/bin/docker-compose"
 ```
 
-Ejemplos:
+## 5. Comandos operativos
 
 ```bash
-ssh -o BatchMode=yes nas-zambu "$DOCKER ps"
-ssh -o BatchMode=yes nas-zambu "$DOCKER ps -a"
-ssh -o BatchMode=yes nas-zambu "$DOCKER logs --tail 100 <contenedor>"
+ssh -o BatchMode=yes <ALIAS_NAS> "$DOCKER ps"                              # contenedores en marcha
+ssh -o BatchMode=yes <ALIAS_NAS> "$DOCKER logs --tail 100 buenchollo-api"  # logs recientes
+ssh -o BatchMode=yes <ALIAS_NAS> "$DOCKER logs --follow --tail 100 buenchollo-api"   # en vivo (Ctrl+C)
+ssh -o BatchMode=yes <ALIAS_NAS> "$DOCKER restart buenchollo-api buenchollo-scheduler"
+ssh -o BatchMode=yes <ALIAS_NAS> "$DOCKER inspect --format='{{.State.Health.Status}}' buenchollo-api"
+ssh -o BatchMode=yes <ALIAS_NAS> "$DOCKER exec buenchollo-api alembic current"
 ```
 
-## 5. Sincronizar código y hacer rebuild (no hay git en el NAS)
+Para ejecutar un script local dentro del contenedor sin reconstruir la imagen, pasarlo por stdin: `ssh ... "$DOCKER exec -i buenchollo-api python -" < script.py` (lanzarlo desde Bash; PowerShell añade BOM y CRLF).
 
-No hay binario `git` en el NAS. El flujo es **tar + scp + docker-compose build/up**.
+Si el repositorio de otro proyecto del propietario necesita llegar al NAS sin share, el flujo es `tar` + `scp -O` + `docker-compose build/up`, excluyendo `.git`, `node_modules`, cachés y el `.env` (que se sube aparte y nunca se muestra).
 
-### 5.1 Empaquetar y subir el código
+## 6. Precauciones y trampas conocidas
 
-Desde la máquina de trabajo, dentro del repo del proyecto:
+1. **Puerto `8000` ocupado** por el `nginx` interno de DSM. Si otro servicio falla con `address already in use`, cambiar el puerto del host. Verificar con `$DOCKER ps` **y** con `wget -S -qO- --timeout=3 http://127.0.0.1:<puerto>/`, porque no todo lo que ocupa un puerto es un contenedor.
+2. **No hay `git`**: nunca `git clone`/`git pull` en el NAS.
+3. **`docker-compose` con guion** y **`scp -O`**.
+4. **No pegar claves ni secretos en el chat ni en logs.**
+5. **No tocar contenedores de otros proyectos** del propietario sin confirmación.
 
-```bash
-TARBALL="/tmp/<proyecto>.tar.gz"
-cd /ruta/al/repo && tar -czf "$TARBALL" \
-  --exclude='.git' --exclude='node_modules' --exclude='dist' \
-  --exclude='__pycache__' --exclude='.pytest_cache' \
-  --exclude='.mypy_cache' --exclude='.ruff_cache' --exclude='.env' \
-  --exclude='*.egg-info' .
+## 7. Si la conexión falla
 
-scp -O -P 32 -i ~/.ssh/id_ed25519_nas "$TARBALL" adminzambu@192.168.1.3:~/
-ssh -o BatchMode=yes nas-zambu "mkdir -p ~/<proyecto> && \
-  tar -xzf ~/<proyecto>.tar.gz -C ~/<proyecto> && \
-  rm ~/<proyecto>.tar.gz"
-```
-
-`scp -O` es imprescindible: sin `-O`, este NAS rechaza el subsistema SFTP moderno
-con `subsystem request failed on channel 0`.
-
-El `.env` se excluye del tar a propósito (contiene secretos). Si hace falta
-actualizarlo, se sube por separado:
-
-```bash
-scp -O -P 32 -i ~/.ssh/id_ed25519_nas .env adminzambu@192.168.1.3:~/<proyecto>/.env
-```
-
-> ⚠️ Para `buenchollo-api` el `.env` del NAS está **excluido del sync de
-> SynologyDrive** y es independiente del `.env` local de desarrollo (ver
-> [`CLAUDE.md`](../../CLAUDE.md) § Flujo de ramas). No sobrescribirlo sin
-> confirmar con el usuario qué variables cambian.
-
-### 5.2 Rebuild y despliegue
-
-```bash
-DC="sudo -n /volume1/@appstore/ContainerManager/usr/bin/docker-compose"
-
-# 1. Construir imágenes (o solo las que cambiaron, ej: api web worker)
-ssh -o BatchMode=yes nas-zambu "cd ~/<proyecto> && $DC build"
-
-# 2. Levantar dependencias primero si el proyecto las usa (postgres, redis...)
-ssh -o BatchMode=yes nas-zambu "cd ~/<proyecto> && $DC up -d postgres redis"
-
-# 3. Levantar el resto del stack
-ssh -o BatchMode=yes nas-zambu "cd ~/<proyecto> && $DC up -d"
-
-# 4. Verificar estado y salud
-ssh -o BatchMode=yes nas-zambu "cd ~/<proyecto> && $DC ps"
-```
-
-Para `buenchollo-api` concretamente el `docker-compose.yml` ya define 3
-servicios (`buenchollo-api`, `buenchollo-scheduler`, `cloudflared`) y el
-contenedor ejecuta `alembic upgrade head` antes de `uvicorn` — no hace falta
-migrar a mano. Verificación tras el rebuild:
-
-```bash
-curl -s https://api.buenchollotech.com/health
-```
-
-### 5.3 Receta completa de actualización (cambios en el código)
-
-```bash
-TARBALL="/tmp/<proyecto>.tar.gz"
-cd /ruta/al/repo && tar -czf "$TARBALL" \
-  --exclude='.git' --exclude='node_modules' --exclude='dist' \
-  --exclude='__pycache__' --exclude='.pytest_cache' \
-  --exclude='.mypy_cache' --exclude='.ruff_cache' --exclude='.env' \
-  --exclude='*.egg-info' .
-
-scp -O -P 32 -i ~/.ssh/id_ed25519_nas "$TARBALL" adminzambu@192.168.1.3:~/
-ssh -o BatchMode=yes nas-zambu "cd ~/<proyecto> && \
-  tar -xzf ~/<proyecto>.tar.gz && rm ~/<proyecto>.tar.gz"
-
-DC="sudo -n /volume1/@appstore/ContainerManager/usr/bin/docker-compose"
-ssh -o BatchMode=yes nas-zambu "cd ~/<proyecto> && $DC build && $DC up -d"
-```
-
-## 6. Comandos operativos útiles
-
-```bash
-# Estado de los contenedores de un proyecto
-ssh -o BatchMode=yes nas-zambu "$DOCKER ps --filter name=<proyecto>"
-
-# Logs recientes de un contenedor
-ssh -o BatchMode=yes nas-zambu "$DOCKER logs --tail 100 <proyecto>-api-1"
-
-# Logs en vivo (cortar con Ctrl+C)
-ssh -o BatchMode=yes nas-zambu "$DOCKER logs --follow --tail 100 <proyecto>-api-1"
-
-# Reiniciar un contenedor
-ssh -o BatchMode=yes nas-zambu "$DOCKER restart <contenedor>"
-
-# Comprobar health de un contenedor
-ssh -o BatchMode=yes nas-zambu "$DOCKER inspect --format='{{.State.Health.Status}}' <contenedor>"
-
-# Ejecutar un comando dentro de un contenedor
-ssh -o BatchMode=yes nas-zambu "$DOCKER exec <contenedor> <comando>"
-```
-
-## 7. Precauciones y trampas conocidas de este NAS
-
-1. **Puerto `8000` ocupado**: un `nginx` interno de DSM escucha en
-   `127.0.0.1:8000` (no es un contenedor). `buenchollo-api` ya usa `8001` en
-   el host para esquivarlo. Si otro servicio falla con
-   `address already in use`, cambiar el puerto host vía variable de entorno.
-   Verificar puertos con `$DOCKER ps` **y** con
-   `wget -S -qO- --timeout=3 http://127.0.0.1:<puerto>/`, porque no todo lo que
-   ocupa un puerto es visible como contenedor.
-2. **No hay `git`**: nunca intentar `git clone`/`git pull` en el NAS.
-3. **`docker-compose` con guion**, nunca `docker compose`.
-4. **`scp -O`** obligatorio.
-5. **No pegar claves/secretos en el chat ni en logs.** El `.env` nunca se sube
-   con el tar; va por `scp` por separado y no se muestra su contenido.
-6. **No tocar contenedores de otros proyectos** (BuenChollo, OpenClaw,
-   mediahunter-bot, bot_recomendador, honeygain, telegram-notifications) sin
-   confirmación del usuario.
-7. **`COOKIE_SECURE`**: en proyectos con login sin HTTPS delante, `.env` usa
-   `COOKIE_SECURE=false`; revertir a `true` solo cuando haya TLS real
-   (Tailscale Serve) y reconstruir la imagen. (No aplica a `buenchollo-api`,
-   que ya tiene TLS real vía Cloudflare Tunnel — ver
-   [`docs/guides/Cloudflare.md`](Cloudflare.md).)
-
-## 8. Si la conexión falla
-
-1. Probar conectividad: `Test-NetConnection -ComputerName 192.168.1.3 -Port 32`.
-2. Probar la clave en modo estricto: `ssh -o BatchMode=yes -i ~/.ssh/id_ed25519_nas adminzambu@192.168.1.3 -p 32 "echo ok"`.
-3. Comprobar que la clave pública sigue en `~/.ssh/authorized_keys` del NAS y que
-   el home es `755`: `ssh -p 32 adminzambu@192.168.1.3 "ls -ld ~ ~/.ssh ~/.ssh/authorized_keys"`.
-4. Comprobar el `sudo`: `ssh -o BatchMode=yes nas-zambu "sudo -n /volume1/@appstore/ContainerManager/usr/bin/docker ps"`.
-5. Si algo falla, **parar y avisar al usuario**; nunca intentar adivinar
-   contraseñas ni modificar permisos/sudoers del NAS por la cuenta del usuario.
-
-## 9. Documentación original
-
-Detalle completo del montaje (generación de claves, resolución de errores,
-Tailscale Serve, retirada del proyecto BOTS_Traiding): `BOTS_Traiding/docs/ConexionSSHnasConsola.md`.
+1. Conectividad: `Test-NetConnection -ComputerName <IP_NAS> -Port <PUERTO_SSH>`.
+2. Clave en modo estricto: `ssh -o BatchMode=yes -i ~/.ssh/<CLAVE_SSH> <USUARIO_NAS>@<IP_NAS> -p <PUERTO_SSH> "echo ok"`.
+3. La clave pública sigue en `~/.ssh/authorized_keys` del NAS y el home es `755`: `ssh <ALIAS_NAS> "ls -ld ~ ~/.ssh ~/.ssh/authorized_keys"`.
+4. El `sudo`: `ssh -o BatchMode=yes <ALIAS_NAS> "sudo -n /volume1/@appstore/ContainerManager/usr/bin/docker ps"`.
+5. Si algo falla, **parar y avisar al usuario**; nunca adivinar contraseñas ni modificar permisos o `sudoers` del NAS.
 
 ---
 

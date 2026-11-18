@@ -6,6 +6,7 @@ si la firma coincide con la clave pública "publicada", y cualquier token
 inválido produce 401. El fallback remoto solo debe activarse cuando no hay
 material de firma local (p. ej. HS256 sin secreto configurado).
 """
+import threading
 import time
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -24,6 +25,9 @@ _PRIVATE_KEY = generate_private_key(SECP256R1())
 _PUBLIC_KEY = _PRIVATE_KEY.public_key()
 # Una segunda clave para simular un atacante firmando con otra clave.
 _ATTACKER_KEY = generate_private_key(SECP256R1())
+
+# Referencia al helper real: el fixture autouse lo sustituye en cada test.
+_REAL_GET_JWKS_CLIENT = security._get_jwks_client
 
 # supabase_jwt_secret se fija explícitamente a "" para que el test sea
 # hermético: el CI exporta SUPABASE_JWT_SECRET=dummy y pydantic-settings
@@ -150,7 +154,7 @@ async def test_hs256_sin_secreto_hace_fallback_remoto():
 async def test_jwks_caido_hace_fallback_remoto_no_500():
     class _BrokenJWKS:
         def get_signing_key_from_jwt(self, token: str):
-            raise jwt.PyJWKClientError("JWKS inaccesible")
+            raise jwt.PyJWKClientConnectionError("JWKS inaccesible")
 
     fallback_user = security.AuthenticatedUser(id="via-remoto", email=None)
     with (
@@ -176,3 +180,63 @@ async def test_token_con_iat_muy_en_el_futuro_se_rechaza():
     with pytest.raises(HTTPException) as exc:
         await _call(jwt.encode(claims, _PRIVATE_KEY, algorithm="ES256"))
     assert exc.value.status_code == 401
+
+
+def _jwks_client_con_clave(kid: str) -> security.PyJWKClient:
+    """PyJWKClient real cuyo JWKS (sin red) publica `_PUBLIC_KEY` con ese kid."""
+    jwk = jwt.algorithms.ECAlgorithm.to_jwk(_PUBLIC_KEY, as_dict=True)
+    jwk.update({"kid": kid, "use": "sig", "alg": "ES256"})
+    client = security.PyJWKClient("https://test.supabase.co/auth/v1/.well-known/jwks.json")
+    client.fetch_data = lambda: {"keys": [jwk]}
+    return client
+
+
+@pytest.mark.asyncio
+async def test_kid_publicado_en_el_jwks_se_acepta():
+    token = jwt.encode(
+        {"sub": "u-1", "aud": "authenticated", "exp": int(time.time()) + 3600},
+        _PRIVATE_KEY,
+        algorithm="ES256",
+        headers={"kid": "clave-actual"},
+    )
+    with patch.object(security, "_get_jwks_client", return_value=_jwks_client_con_clave("clave-actual")):
+        user = await _call(token)
+    assert user.id == "u-1"
+
+
+@pytest.mark.asyncio
+async def test_kid_desconocido_con_jwks_disponible_devuelve_401_sin_fallback_remoto():
+    token = jwt.encode(
+        {"sub": "u-1", "aud": "authenticated", "exp": int(time.time()) + 3600},
+        _ATTACKER_KEY,
+        algorithm="ES256",
+        headers={"kid": "kid-inventado"},
+    )
+    with (
+        patch.object(security, "_get_jwks_client", return_value=_jwks_client_con_clave("clave-actual")),
+        patch.object(security, "_get_user_via_supabase") as mock_remote,
+    ):
+        with pytest.raises(HTTPException) as exc:
+            await _call(token)
+    assert exc.value.status_code == 401
+    mock_remote.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_validacion_local_se_ejecuta_fuera_del_event_loop():
+    hilos: list[int] = []
+
+    class _JWKSQueAnotaElHilo(_FakeJWKSClient):
+        def get_signing_key_from_jwt(self, token: str):
+            hilos.append(threading.get_ident())
+            return super().get_signing_key_from_jwt(token)
+
+    with patch.object(security, "_get_jwks_client", return_value=_JWKSQueAnotaElHilo()):
+        await _call(_token())
+    assert hilos and hilos[0] != threading.get_ident()
+
+
+def test_cliente_jwks_con_timeout_corto():
+    with patch.object(security, "_jwks_client", None):
+        client = _REAL_GET_JWKS_CLIENT(_SETTINGS)
+    assert client.timeout == 3

@@ -2,9 +2,11 @@ import logging
 from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.audit import audit_log
 from app.core.database import get_db
 from app.core.rate_limit import limiter
-from app.core.security import get_current_user
+from app.core.security import get_current_user, require_admin
+from app.modules.comments.application.moderation import delete_comment_as_admin
 from app.modules.comments.domain.exceptions import (
     CommentNotFound,
     InvalidParentComment,
@@ -117,8 +119,26 @@ async def delete_comment(
     await repo.recalculate_comment_count(deal_id)
 
 
+@router.delete("/deals/admin/comments/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def admin_delete_comment(
+    comment_id: str,
+    db: AsyncSession = Depends(get_db),
+    repo: CommentRepository = Depends(get_comment_repository),
+    current_user=Depends(require_admin),
+):
+    """Moderación: un admin borra cualquier comentario."""
+    deleted = await delete_comment_as_admin(repo, comment_id)
+    await audit_log(
+        db, user_id=str(current_user.id), action="comment.delete",
+        target_type="deal_comment", target_id=comment_id,
+        payload=deleted,
+    )
+
+
 @router.post("/deals/comments/{comment_id}/vote")
+@limiter.limit("30/minute")  # anti-spam de votos
 async def vote_comment(
+    request: Request,
     comment_id: str,
     payload: CommentVoteRequest,
     repo: CommentRepository = Depends(get_comment_repository),

@@ -2,9 +2,7 @@
 
 ## Estado
 
-**Aceptado** · 2026-11-06 · Fase 1 implementada en `develop`
-([spec](../superpowers/specs/2026-11-05-catalogo-permanente-design.md),
-[plan](../superpowers/plans/2026-11-05-catalogo-permanente-fase1.md)). Sustituye la parte de
+**Aceptado** · 2026-11-06 · Fase 1 implementada y desplegada en producción. Sustituye la parte de
 ADR-012 que borraba chollos y el punto de ADR-016 «aprobar borra los expirados».
 
 ## Contexto

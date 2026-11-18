@@ -33,6 +33,10 @@ _CLOCK_SKEW_LEEWAY_SECONDS = 30
 # (1h), no en cada validación. Ver ADR-010 / AUDIT_REPORT H-02.
 _jwks_client: PyJWKClient | None = None
 
+# Tope de la descarga del JWKS: si Supabase no responde, mejor degradar pronto
+# a la validación remota que retener el hilo 30 s (valor por defecto de PyJWT).
+_JWKS_TIMEOUT_SECONDS = 3
+
 
 @dataclass(frozen=True)
 class AuthenticatedUser:
@@ -63,6 +67,7 @@ def _get_jwks_client(settings: Settings) -> PyJWKClient:
             f"{_clean_supabase_url(settings)}/auth/v1/.well-known/jwks.json",
             cache_keys=True,
             lifespan=3600,
+            timeout=_JWKS_TIMEOUT_SECONDS,
         )
     return _jwks_client
 
@@ -72,9 +77,12 @@ def _decode_local(token: str, settings: Settings) -> dict | None:
 
     Devuelve los claims si el token es verificable con el material de firma
     disponible, o `None` si no hay forma de verificarlo en local (p. ej.
-    HS256 sin `SUPABASE_JWT_SECRET` configurado, o JWKS inaccesible) — en
-    ese caso el caller hace fallback a la validación remota de Supabase.
-    Lanza `jwt.InvalidTokenError` (y subclases) si el token es INVÁLIDO.
+    HS256 sin `SUPABASE_JWT_SECRET` configurado, o JWKS inaccesible por red)
+    — en ese caso el caller hace fallback a la validación remota de Supabase.
+    Lanza `jwt.PyJWTError` (y subclases) si el token es INVÁLIDO, incluido un
+    `kid` que no está en el JWKS.
+
+    Hace E/S de red síncrona (descarga del JWKS): llamarla fuera del event loop.
     """
     header = jwt.get_unverified_header(token)  # InvalidTokenError si malformado
     alg = header.get("alg")
@@ -82,9 +90,10 @@ def _decode_local(token: str, settings: Settings) -> dict | None:
     if alg in _ASYMMETRIC_ALGS:
         try:
             key = _get_jwks_client(settings).get_signing_key_from_jwt(token).key
-        except jwt.PyJWKClientError as exc:
-            # JWKS no disponible o kid desconocido: no podemos verificar en
-            # local. Mejor degradar a validación remota que tumbar la API.
+        except jwt.PyJWKClientConnectionError as exc:
+            # JWKS inaccesible: no podemos verificar en local. Mejor degradar a
+            # validación remota que tumbar la API. Un kid desconocido con el
+            # JWKS disponible NO llega aquí: se propaga y acaba en 401.
             logger.warning("JWKS no disponible, fallback a validación remota: %s", exc)
             return None
         return jwt.decode(
@@ -128,7 +137,7 @@ async def get_current_user(
     """
     token = credentials.credentials
     try:
-        claims = _decode_local(token, settings)
+        claims = await asyncio.to_thread(_decode_local, token, settings)
         if claims is None:
             # Llamada HTTP síncrona: fuera del event loop para no bloquear la API.
             user = await asyncio.to_thread(_get_user_via_supabase, token, settings)
@@ -139,7 +148,7 @@ async def get_current_user(
             user = AuthenticatedUser(id=str(sub), email=claims.get("email"))
         # Loguear sólo user_id (UUID, no es PII directa). El email queda
         # fuera del log para no filtrar PII si alguien deja LOG_LEVEL=DEBUG
-        # en producción. Ver SECURITY_AUDIT.md SEC-09.
+        # en producción. Ver docs/project/07-security.md SEC-09.
         logger.debug("JWT validado OK — user_id=%s", user.id)
         return user
     except HTTPException:

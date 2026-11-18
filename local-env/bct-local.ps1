@@ -12,7 +12,8 @@
     reset-db   Borra la base local y la reconstruye con una copia fresca del catálogo.
     logs <svc> Últimas líneas del log (postgres | mail | authsync | api | web).
     users <create [n] | tokens | delete>
-               Usuarios de prueba pjzambudio+local-N (cuentas reales de Supabase Auth).
+               Usuarios de prueba <correo>+local-N (cuentas reales de Supabase Auth;
+               correos reales en config.local.json, ignorado por git).
     qa         Batería de pruebas en vivo contra el entorno levantado (local-env/qa).
     stress     Prueba de estrés contra el entorno levantado (local-env/qa/stress.py).
 

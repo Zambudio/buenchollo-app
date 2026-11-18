@@ -39,6 +39,9 @@ export const blogCommentsApi = {
     }),
 
   remove: (commentId: string): Promise<void> => apiClient.delete(`/blog/comments/${commentId}`),
+  /** Moderación (solo admin): borra cualquier comentario. */
+  adminRemove: (commentId: string): Promise<void> =>
+    apiClient.delete(`/blog/admin/comments/${commentId}`),
 
   /** Vota un comentario. Repetir el mismo voto lo retira. */
   vote: (commentId: string, value: 1 | -1): Promise<{ my_vote: number }> =>

@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
+from app.core.rate_limit import limiter
 from app.core.security import get_current_user
 from app.modules.alerts.api.schemas import AlertCreate, AlertUpdate, AlertOut
+from app.modules.alerts.application.service import create_alert_for_user
 from app.modules.alerts.domain.exceptions import AlertNotFound
 from app.modules.alerts.infrastructure.repository import AlertRepository
 
@@ -22,12 +24,14 @@ async def list_alerts(
 
 
 @router.post("", response_model=AlertOut, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")  # anti-spam de alertas
 async def create_alert(
+    request: Request,
     body: AlertCreate,
     current_user=Depends(get_current_user),
     repo: AlertRepository = Depends(_repo),
 ):
-    return await repo.create(str(current_user.id), body.model_dump())
+    return await create_alert_for_user(repo, str(current_user.id), body.model_dump())
 
 
 @router.put("/{alert_id}", response_model=AlertOut)

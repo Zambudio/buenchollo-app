@@ -240,4 +240,4 @@ merece ADR firmado.
 
 - [`docs/project/05-development-workflow.md`](../project/05-development-workflow.md) — Operativa diaria.
 - [`CLAUDE.md`](../../CLAUDE.md) — Configuración persistente de la IA.
-- [`PROJECT_STATUS.md`](../../PROJECT_STATUS.md) — Bitácora de sprints (cada sección 3.bis…3.sexies muestra el patrón en acción).
+- [`PROJECT_STATUS.md`](../../PROJECT_STATUS.md) — Bitácora cronológica de cambios del proyecto.

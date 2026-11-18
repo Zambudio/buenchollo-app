@@ -81,3 +81,6 @@ buenchollo-api/*.whl
 # ─── Entorno local (local-env/) ─────────────────────────────────────────────
 # Overrides personales de local-env/config.json (correos admin, puertos...).
 local-env/config.local.json
+
+# Copias de seguridad de la base de datos (servicio db-backup)
+buenchollo-api/backups/

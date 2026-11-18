@@ -1,8 +1,42 @@
-/** Convierte cualquier valor capturado en un catch a un mensaje legible.
- *  Centraliza el manejo: en TypeScript moderno los catch son `unknown`, y
- *  hacer `e.message` revienta si lo lanzado no es un Error. */
-export function errorMessage(e: unknown, fallback = "Error inesperado"): string {
-  if (e instanceof Error) return e.message;
+export const NETWORK_ERROR_MESSAGE =
+  "No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.";
+
+interface ApiErrorLike {
+  name: "ApiError";
+  status: number;
+  message: string;
+}
+
+function isApiError(e: unknown): e is ApiErrorLike {
+  return e instanceof Error && e.name === "ApiError" && "status" in e;
+}
+
+function isNetworkError(e: unknown): boolean {
+  // fetch lanza TypeError sin conexión; el timeout del cliente aborta la petición.
+  if (e instanceof TypeError) return true;
+  return e instanceof Error && (e.name === "AbortError" || e.name === "TimeoutError");
+}
+
+/** Convierte cualquier valor capturado en un catch en un mensaje para el usuario.
+ *
+ *  - Errores 4xx de la API: el `detail` del backend (los errores de dominio ya
+ *    llegan en español). Una validación (422) se muestra como «Datos no válidos».
+ *  - Errores 5xx: el `fallback` del llamante; nunca detalles internos.
+ *  - Sin conexión o tiempo agotado: un mensaje de conexión en español.
+ *  - Otros `Error` lanzados por la propia app: su mensaje. */
+export function errorMessage(
+  e: unknown,
+  fallback = "Ha ocurrido un error inesperado. Inténtalo de nuevo.",
+): string {
+  if (isApiError(e)) {
+    // El cliente pone en `message` el `detail` del backend o, si no hay,
+    // «API Error: <código> <texto>», que no se enseña al usuario.
+    if (e.status >= 500 || !e.message || e.message.startsWith("API Error:")) return fallback;
+    if (e.status === 422) return `Datos no válidos: ${e.message}`;
+    return e.message;
+  }
+  if (isNetworkError(e)) return NETWORK_ERROR_MESSAGE;
+  if (e instanceof Error) return e.message || fallback;
   if (typeof e === "string") return e;
   return fallback;
 }

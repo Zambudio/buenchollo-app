@@ -2,7 +2,7 @@
 
 > **TL;DR** · Errores comunes y soluciones. Si llegaste aquí, espero
 > que el problema esté en esta página. Si no, abre issue privado o
-> manda email a `pjzambudio@gmail.com`.
+> escribe a `contacto@buenchollotech.com`.
 
 ---
 
@@ -146,7 +146,7 @@ npm run dev
 ### 🚫 `Cannot GET /` en local aunque `vite.config.ts` esté bien
 
 > 💡 Comprueba si tu máquina tiene **dos letras de unidad mapeadas a la misma
-> ruta de red** (p. ej. `N:` y `Z:` ambas apuntando a `\\mi-nas\carpeta`).
+> ruta de red** (p. ej. dos letras apuntando a `\\mi-nas\carpeta`).
 > Lanzar `npm run dev` desde una de ellas puede hacer que Vite/TanStack Start
 > mezclen rutas de ambas letras para el mismo módulo internamente y el
 > middleware SSR deje de responder — sin ningún error visible en consola ni
@@ -160,8 +160,8 @@ Si dos letras comparten `DisplayRoot`, arranca siempre desde la que use
 `fileURLToPath(import.meta.url)` internamente (compruébalo con
 `DEBUG=vite:* npm run dev` y buscando rutas `default-entry` en el log — si
 salen con una letra distinta a la que usaste para lanzar el comando, ese es
-el problema). En este proyecto: **arrancar siempre desde `Z:`, no desde
-`N:`**.
+el problema). En este proyecto: **arrancar siempre desde la letra que usa el lanzador
+de `local-env`** ([`LOCAL-ENV.md`](../guides/LOCAL-ENV.md)), no desde la otra.
 
 ### 🚫 `@/*` no resuelve en el arranque (`Failed to run dependency scan`)
 
@@ -218,8 +218,7 @@ CORS_ORIGINS=https://buenchollotech.com,https://www.buenchollotech.com
    — no es un bug del código, es latencia real del proveedor gratuito.
 ```
 
-> 📚 Diagnóstico completo y decisión de diseño:
-> [`PROJECT_STATUS.md` § 3.terdecies](../../PROJECT_STATUS.md).
+> 📚 Decisión de diseño del motor de IA: [ADR-013](../adr/ADR-013-motor-ia-unificado-omniroute-modelos-gratuitos.md).
 
 ### ❓ ¿Las llamadas de IA van a OmniRoute o a OpenAI?
 
@@ -384,8 +383,8 @@ git log --oneline -10
 git checkout v1.0.0
 ```
 
-> 📧 Si el problema persiste, abrir issue privado o mandar email a
-> `pjzambudio@gmail.com` con los logs del contenedor.
+> 📧 Si el problema persiste, abrir un issue privado o escribir a
+> `contacto@buenchollotech.com` con los logs del contenedor.
 
 ---
 

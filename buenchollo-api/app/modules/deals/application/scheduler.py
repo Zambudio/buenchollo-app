@@ -17,6 +17,8 @@ from app.modules.analytics.application.cleanup import run_analytics_cleanup
 from app.modules.emails.application.digest_worker import run_due_alert_digest
 from app.modules.affiliates.application.feed_sync_job import run_awin_feed_sync
 
+from app.core.jobs import SCHEDULER_TIMEZONE
+
 
 def build_deals_scheduler(settings: Settings) -> tuple[BackgroundScheduler, DealCleanerService]:
     """Crea (sin arrancar) el scheduler con los jobs de mantenimiento.
@@ -29,7 +31,7 @@ def build_deals_scheduler(settings: Settings) -> tuple[BackgroundScheduler, Deal
     periódicos del monolito, así que se reutiliza en vez de crear un
     segundo contenedor/entrypoint solo para el blog.
     """
-    scheduler = BackgroundScheduler()
+    scheduler = BackgroundScheduler(timezone=SCHEDULER_TIMEZONE)
     cleaner = DealCleanerService(settings)
     scheduler.add_job(cleaner.mark_expired_deals, "interval", minutes=5)
     scheduler.add_job(

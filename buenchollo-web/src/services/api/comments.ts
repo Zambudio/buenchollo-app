@@ -36,6 +36,9 @@ export const commentsApi = {
     apiClient.post<CommentItem>(`/deals/${dealId}/comments`, { content, parent_id: parentId }),
 
   remove: (commentId: string): Promise<void> => apiClient.delete(`/deals/comments/${commentId}`),
+  /** Moderación (solo admin): borra cualquier comentario. */
+  adminRemove: (commentId: string): Promise<void> =>
+    apiClient.delete(`/deals/admin/comments/${commentId}`),
 
   /** Vota un comentario. Repetir el mismo voto lo retira. */
   vote: (commentId: string, value: 1 | -1): Promise<{ my_vote: number }> =>

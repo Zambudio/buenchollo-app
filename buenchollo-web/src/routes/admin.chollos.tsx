@@ -8,6 +8,7 @@
  *  guardar (con conflicto 409) → Telegram.
  */
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { readLocal, writeLocal } from "@/lib/storage";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   dealsService,
@@ -86,7 +87,7 @@ function AdminDeals() {
   const [calendarDealId, setCalendarDealId] = useState<string | null>(null);
   const [aiProvider, setAiProvider] = useState<AiProvider>(() => {
     if (typeof window === "undefined") return DEFAULT_AI_PROVIDER;
-    const stored = localStorage.getItem("buenchollo_ai_provider");
+    const stored = readLocal("buenchollo_ai_provider");
     return isAiProvider(stored) ? stored : DEFAULT_AI_PROVIDER;
   });
   const images = useDealImages(form, setForm, user?.id);
@@ -115,7 +116,7 @@ function AdminDeals() {
   const handleAiProviderChange = (newProvider: AiProvider) => {
     setAiProvider(newProvider);
     if (typeof window !== "undefined") {
-      localStorage.setItem("buenchollo_ai_provider", newProvider);
+      writeLocal("buenchollo_ai_provider", newProvider);
     }
   };
 

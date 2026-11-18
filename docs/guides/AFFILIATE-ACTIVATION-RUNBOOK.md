@@ -1,9 +1,8 @@
 # Runbook: activar una tienda de Awin o Tradedoubler
 
 > **Para el agente que ayude a Pedro cuando una tienda apruebe la solicitud.**
-> Léelo entero antes de empezar. Contexto técnico en
-> [`AFFILIATE-NETWORKS.md`](AFFILIATE-NETWORKS.md) y [ADR-019](../adr/ADR-019-redes-afiliacion-awin-tradedoubler.md);
-> historial de pruebas en [`AFFILIATE-VALIDATION-2026-11-08.md`](AFFILIATE-VALIDATION-2026-11-08.md).
+> Léelo entero antes de empezar. Contexto técnico y hallazgos de la validación inicial en
+> [`AFFILIATE-NETWORKS.md`](AFFILIATE-NETWORKS.md) y [ADR-019](../adr/ADR-019-redes-afiliacion-awin-tradedoubler.md).
 > Acceso al NAS: [`NAS-SSH.md`](NAS-SSH.md).
 
 ## 0. Punto de partida (2026-11-08)
@@ -51,7 +50,7 @@
 Desde la raíz del repo, en la máquina de trabajo:
 
 ```bash
-ssh -o BatchMode=yes nas-zambu \
+ssh -o BatchMode=yes <ALIAS_NAS> \
   'sudo -n /volume1/@appstore/ContainerManager/usr/bin/docker exec -i buenchollo-api python -' \
   < buenchollo-api/scripts/check_affiliate_status.py
 ```
@@ -201,5 +200,5 @@ Por cada tienda activada:
 - Desactivar una tienda: desmarcar **Habilitado** y GUARDAR. No se borra nada; los
   chollos ya publicados siguen con su enlace. Bloquea importar y publicar nuevos.
 - Desactivar una red entera: quitar sus variables del `.env` del NAS y reiniciar
-  `buenchollo-api` y `buenchollo-scheduler` (`NAS-SSH.md` §5.2). Los indicadores pasan a rojo.
+  `buenchollo-api` y `buenchollo-scheduler` (`NAS-SSH.md` §5). Los indicadores pasan a rojo.
 - Un fallo de sincronización nunca borra el catálogo anterior (escritura por generaciones).

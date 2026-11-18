@@ -3,6 +3,7 @@
 - **Estado**: ✅ Aceptado
 - **Fecha**: 2026-08-12
 - **Autor**: BuenChollo Tech Team
+- **Revisión 2026-11-18**: el asistente de recomendación (chatbot) que este ADR preveía no llegó a usarse y su código se eliminó en la auditoría técnica (COD-04). El motor de IA sigue vigente; un chatbot futuro partiría de `OpenAICompatibleLLMClient`.
 
 ---
 

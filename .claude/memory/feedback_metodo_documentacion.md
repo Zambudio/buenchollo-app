@@ -1,6 +1,6 @@
 ---
 name: feedback_metodo_documentacion
-description: Normas permanentes de documentación de BuenChollo — docs/project operativo + ADRs en docs/adr, código manda sobre docs viejas, README entrada, índices, ADRs solo relevantes, archive para histórico, IA como apoyo supervisado, revisar al cambiar arquitectura/seguridad/testing/despliegue.
+description: Normas permanentes de documentación de BuenChollo — docs/project operativo + ADRs en docs/adr, código manda sobre docs viejas, README entrada, índices, ADRs solo relevantes, sin carpeta de histórico, IA como apoyo supervisado, revisar al cambiar arquitectura/seguridad/testing/despliegue.
 metadata:
   type: feedback
 ---
@@ -11,10 +11,10 @@ Modo de trabajo cuando Pedro pida revisar/crear/reorganizar **documentación** d
 
 **How to apply:**
 
-1. **Analizar antes de tocar.** Inventario de `.md`, verificar estructura/enlaces/coherencia con el código, diagnóstico, y solo entonces corregir lo seguro. No borrar sin archivar; doc obsoleta pero útil → `docs/archive/`; duplicados → fusionar en el doc correcto (una única fuente de verdad por tema).
-2. **Documentación viva sin duplicar:** `docs/project/` = operativa (instalar, configurar, ejecutar, mantener, evolucionar), clara, directa, con comandos reales; `docs/adr/` = decisiones de arquitectura relevantes. Lo histórico va a `docs/archive/`.
+1. **Analizar antes de tocar.** Inventario de `.md`, verificar estructura/enlaces/coherencia con el código, diagnóstico, y solo entonces corregir lo seguro. Lo superado se elimina (git conserva el histórico) tras mover lo vigente al documento canónico; duplicados → fusionar en el doc correcto (una única fuente de verdad por tema).
+2. **Documentación viva sin duplicar:** `docs/project/` = operativa (instalar, configurar, ejecutar, mantener, evolucionar), clara, directa, con comandos reales; `docs/adr/` = decisiones de arquitectura relevantes. No se mantiene carpeta de histórico: la cronología vive en `PROJECT_STATUS.md`.
 
-3. **Estructura real (taxonomía a mantener):** raíz = `README.md` (entrada), `CLAUDE.md`, `SECURITY.md`, `PROJECT_STATUS.md` (bitácora viva). `docs/project/` (01–09 + 00-index), `docs/adr/` (ADR-001…009 + index), `docs/reference/` (PLAN_ARQUITECTURA, SECURITY_AUDIT, SMOKE_TEST), `docs/guides/` (Cloudflare.md = guía operativa viva de infra; MIGRATIONS.md), `docs/archive/` (histórico con índice). `.claude/memory/` = memoria de trabajo del asistente (versionada en el repo).
+3. **Estructura real (taxonomía a mantener):** raíz = `README.md` (entrada), `CLAUDE.md`, `SECURITY.md`, `PROJECT_STATUS.md` (bitácora viva). `docs/project/` (01–13 + 00-index), `docs/adr/` (ADR-001…019 + index), `docs/guides/` (runbooks: Cloudflare, NAS-SSH, LOCAL-ENV, MIGRATIONS, SMOKE-TEST, afiliación; con README). `.claude/memory/` = memoria de trabajo del asistente (versionada en el repo).
 
 4. **El código manda sobre la doc antigua.** Si un doc contradice el código/estado actual, prioriza la realidad y corrige el doc. **No inventar** funcionalidades, tecnologías ni decisiones. Lo no verificable → marcarlo. Las **mejoras futuras** se marcan como futuras, NUNCA como implementadas.
 
@@ -30,4 +30,4 @@ Modo de trabajo cuando Pedro pida revisar/crear/reorganizar **documentación** d
 
 10. **Entregable de una revisión real:** informe "Revisión de Documentación - BuenChollo" con resumen ejecutivo, inventario (tabla Archivo/Ruta/Tipo/Estado/Acción), estructura final, coherencia con código, duplicados/archivados, seguridad documental, enlaces, cambios aplicados, próximos pasos (imprescindible/recomendable/opcional/norma futura) y checklist de entrega.
 
-Ver [[project_estado_2026-06]] (estado de producción) y [[feedback_metodo_revision_auditoria]].
+Ver [[feedback_metodo_revision_auditoria]] y el estado vigente en docs/project/11-current-state.md.
