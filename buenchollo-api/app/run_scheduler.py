@@ -9,7 +9,8 @@ exactamente una vez aunque uvicorn use --workers N (AUDIT_REPORT M-07).
 """
 
 import logging
-import time
+import signal
+import threading
 
 from app.core.config import get_settings
 from app.core.logging import configure_logging
@@ -28,12 +29,15 @@ def main() -> None:
         "mark_expired + verify/publish scheduled (cada 5 min) | "
         "price_check (diario) | clean analytics (03:30)"
     )
+    # `docker stop` envía SIGTERM: se espera a que acaben los jobs en curso.
+    stop = threading.Event()
+    signal.signal(signal.SIGTERM, lambda _signum, _frame: stop.set())
     try:
-        while True:
-            time.sleep(3600)
+        stop.wait()
     except KeyboardInterrupt:
-        scheduler.shutdown(wait=False)
-        logger.info("Scheduler dedicado detenido.")
+        pass
+    scheduler.shutdown(wait=True)
+    logger.info("Scheduler dedicado detenido.")
 
 
 if __name__ == "__main__":

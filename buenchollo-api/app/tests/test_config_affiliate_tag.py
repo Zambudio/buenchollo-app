@@ -8,11 +8,13 @@ from app.core.config import Settings
 @pytest.mark.parametrize("tag", ["", "   "])
 def test_produccion_sin_tag_falla_al_arrancar(tag):
     with pytest.raises(ValidationError, match="AMAZON_AFFILIATE_TAG"):
-        Settings(app_env="production", amazon_affiliate_tag=tag)
+        Settings(app_env="production", amazon_affiliate_tag=tag, cors_origins="https://a.com")
 
 
 def test_produccion_con_tag_arranca():
-    assert Settings(app_env="production", amazon_affiliate_tag="x-21").amazon_affiliate_tag == "x-21"
+    assert Settings(
+        app_env="production", amazon_affiliate_tag="x-21", cors_origins="https://a.com"
+    ).amazon_affiliate_tag == "x-21"
 
 
 def test_local_sin_tag_se_permite():
