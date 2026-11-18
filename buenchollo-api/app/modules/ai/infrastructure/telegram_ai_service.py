@@ -18,6 +18,12 @@ TELEGRAM_COPY_RULES = """\
      "no te lo pierdas", "antes de que se agote", "cómpralo ya", "corre a por él", "consíguelo rápido",
      o cualquier variante). El precio, el enlace y la urgencia ya los añade la plantilla del post, no el texto."""
 
+# Tope de tokens del copy. Tiene que ser un entero positivo (OmniRoute rechaza
+# las peticiones de texto sin max_tokens) y holgado: algunos modelos gratuitos
+# razonan antes de responder y con 300 devolvían la frase cortada (comprobado
+# en producción, 2026-11-18). El texto final son 2-3 líneas.
+COPY_MAX_TOKENS = 2000
+
 
 def _normalize_tag(tag: str) -> str:
     """Normaliza un hashtag para comparación insensible a mayúsculas, acentos y almohadilla."""
@@ -207,10 +213,10 @@ class TelegramAIService:
             {"role": "system", "content": "Eres un copywriter experto en chollos tecnológicos. Respondes solo con el texto pedido."},
             {"role": "user", "content": prompt},
         ]
-        # Sin max_tokens, como el autocompletado: algunos modelos gratuitos razonan
-        # antes de responder y con un tope bajo devolvían la frase cortada.
         try:
-            result = await self.llm_client.agenerate_text(messages, temperature=0.7, provider=provider)
+            result = await self.llm_client.agenerate_text(
+                messages, temperature=0.7, max_tokens=COPY_MAX_TOKENS, provider=provider
+            )
         except Exception as exc:
             logger.warning("Error en TelegramAIService al generar el copy: %s", exc)
             return None

@@ -337,8 +337,8 @@ async def test_telegram_ai_service_generate_copy_usa_el_proveedor_y_limpia_comil
 
     assert copy == "Gimbal de bolsillo con sensor de 1 pulgada."
     assert mock_llm.agenerate_text.await_args.kwargs["provider"] == "openai"
-    # Sin tope de tokens: con 300, los modelos que razonan devolvían el texto cortado.
-    assert "max_tokens" not in mock_llm.agenerate_text.await_args.kwargs
+    # Tope positivo (OmniRoute lo exige) y holgado: con 300 el texto salía cortado.
+    assert mock_llm.agenerate_text.await_args.kwargs["max_tokens"] >= 1000
     prompt = mock_llm.agenerate_text.await_args.args[0][1]["content"]
     assert "DJI Osmo Pocket 3" in prompt and "Sensor CMOS de 1 pulgada" in prompt
 
