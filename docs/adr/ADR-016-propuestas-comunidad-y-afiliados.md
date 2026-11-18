@@ -3,7 +3,7 @@
 ## Estado
 
 **Aceptado** · 2026-11-04 · decisión tomada al implementar las propuestas de chollos de
-usuarios ([spec](../superpowers/specs/2026-11-03-chollos-de-usuarios-design.md)).
+usuarios.
 
 ## Contexto
 

@@ -1,7 +1,7 @@
 # 🛡️ Security Policy — BuenCholloTech
 
 > **TL;DR** · Si encuentras una vulnerabilidad, escribe a
-> `pjzambudio@gmail.com` con asunto `[SECURITY] ...` antes de
+> `contacto@buenchollotech.com` con asunto `[SECURITY] ...` antes de
 > divulgarla públicamente. Respuesta en < 7 días.
 >
 > 📚 Política operativa completa y controles aplicados:
@@ -26,7 +26,7 @@
 > el problema.
 
 ```
-1. 📧 Email a pjzambudio@gmail.com
+1. 📧 Email a contacto@buenchollotech.com
         │
         │  Asunto: [SECURITY] BuenChollo — <título corto>
         │

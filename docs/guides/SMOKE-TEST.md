@@ -1,12 +1,13 @@
-# Smoke Test — BuenCholloTech
+# 🧪 Smoke test pre-release — BuenCholloTech
 
 Guion exhaustivo de pruebas manuales para validar un release.
 
 **Cuándo ejecutarlo**: antes de cualquier tag `v*` y tras cambios en
 rutas críticas (auth, deals, admin).
 
-**Entorno**: producción NAS (`https://embyzambu.synology.me:8000`) o
-local (`http://localhost:8000`).
+**Entorno**: producción (web `https://buenchollotech.com`, API
+`https://api.buenchollotech.com`) o local (`http://localhost:8080` y
+`http://localhost:8000`, ver [`LOCAL-ENV.md`](LOCAL-ENV.md)).
 
 Cada sección lleva el resultado esperado entre paréntesis. Marca con
 ✅ / ❌ según resultado.

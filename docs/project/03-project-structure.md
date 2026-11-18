@@ -17,9 +17,8 @@ buenchollo-app/
 │
 ├── 📚 docs/                   Documentación
 │   ├── project/               ← Operativa del repo (este árbol)
-│   ├── adr/                   ← Decisiones arquitectónicas
-│   ├── reference/             ← Referencia técnica densa
-│   └── archive/               ← Histórico preservado
+│   ├── adr/                   ← Decisiones arquitectónicas (ADR-001 a 019)
+│   └── guides/                ← Runbooks operativos (NAS, Cloudflare, local, afiliación)
 │
 ├── ⚙️ .github/
 │   ├── workflows/ci.yml       ← CI (backend + frontend + e2e + security-audit)
@@ -29,8 +28,9 @@ buenchollo-app/
 │
 ├── 📄 package.json            Root: sólo Husky devDependency
 ├── 📄 README.md
-├── 📄 CLAUDE.md               Instrucciones para asistentes IA
-├── 📄 PROJECT_STATUS.md       Bitácora viva (CHANGELOG en prosa)
+├── 📄 CLAUDE.md · AGENTS.md   Instrucciones para asistentes IA
+├── 📄 CONTEXT.md · PRODUCT.md Glosario de dominio y contexto de producto
+├── 📄 PROJECT_STATUS.md       Bitácora de cambios (CHANGELOG en prosa)
 └── 📄 SECURITY.md             Política de divulgación responsable
 ```
 

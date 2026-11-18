@@ -194,4 +194,4 @@ deuda asumida.
 ## Documentación relacionada
 
 - [`docs/project/06-testing-and-quality.md`](../project/06-testing-and-quality.md) — Operativa (comandos, scripts, gates).
-- [`docs/reference/SMOKE_TEST.md`](../reference/SMOKE_TEST.md) — Checklist manual pre-release.
+- [`docs/guides/SMOKE-TEST.md`](../guides/SMOKE-TEST.md) — Checklist manual pre-release.

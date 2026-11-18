@@ -113,7 +113,7 @@ valores de Telegram; sin ellos la programación queda en `error` y no se activa.
 
 | Variable | Descripción |
 |---|---|
-| `ADMIN_NOTIFICATION_EMAIL` | Correo que recibe un aviso por cada nueva propuesta de chollo (vacío = sin aviso). Requiere SMTP configurado. En producción: `pjzambudio@gmail.com` |
+| `ADMIN_NOTIFICATION_EMAIL` | Correo que recibe un aviso por cada nueva propuesta de chollo (vacío = sin aviso). Requiere SMTP configurado. En producción: el buzón del propietario |
 
 > Dependencias nuevas de la API que exigen **rebuild** de la imagen: `Pillow` (imágenes) y `limits` (fijado porque `rate_limit.py` lo importa directamente).
 

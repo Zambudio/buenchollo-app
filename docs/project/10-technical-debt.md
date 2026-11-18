@@ -123,7 +123,7 @@
   solo registra el fallo; el usuario conserva la notificación in-app.
 
 - **TD-31 — El runtime del NAS depende de la copia de trabajo de desarrollo.** Los
-  contenedores montan `.:/app` y el NAS ve la misma carpeta que `Z:`: la rama activa al
+  contenedores montan `.:/app` y el NAS ve la misma carpeta que la unidad mapeada de desarrollo: la rama activa al
   reiniciar o reconstruir es lo que ejecuta producción. Trabajar en `develop` cambia en
   silencio lo que correría tras un reinicio (a 2026-11-04 la API se caería: sin `Pillow` en
   la imagen y, al volver a `main`, Alembic no encuentra la revisión). Proponer desplegar
@@ -191,11 +191,11 @@
   Auth no comprueba las contraseñas nuevas contra HaveIBeenPwned.org. Los otros
   3 sub-items de este TD (funciones `SECURITY DEFINER` expuestas por RPC,
   `pg_trgm` en `public`, política de `user_roles` sin optimizar) ya están
-  cerrados — ver `PROJECT_STATUS.md` § 3.quattuorvicies. Este último requiere
+  cerrados (ver el histórico de `PROJECT_STATUS.md`). Este último requiere
   un toggle manual en el dashboard (Authentication → Policies): no hay
   migración ni tool del conector MCP que lo aplique. Detalle completo (por si
-  se automatiza en el futuro vía Management API) en
-  [`docs/superpowers/plans/2026-09-05-supabase-advisor-hardening.md`](../superpowers/plans/2026-09-05-supabase-advisor-hardening.md) Task 4.
+  se automatiza en el futuro vía Management API): la configuración vive en el
+  panel de Supabase Auth, no en el repositorio.
   Impacto bajo (no expone datos; endurece cuentas de usuario contra
   credential stuffing).
 

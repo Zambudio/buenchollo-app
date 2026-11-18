@@ -306,4 +306,4 @@ npm run dev
 
 - 🌐 **Web en Producción**: [buenchollotech.com](https://buenchollotech.com)
 - 🐙 **GitHub**: [@Zambudio](https://github.com/Zambudio)
-- 📧 **Contacto / Email**: `pjzambudio@gmail.com`
+- 📧 **Contacto / Email**: `contacto@buenchollotech.com`

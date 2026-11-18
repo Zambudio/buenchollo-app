@@ -94,7 +94,7 @@ Estilo **Conventional Commits**:
 <tr><td><code>feat(sec):</code></td><td>🛡️ Funcionalidad de seguridad</td></tr>
 <tr><td><code>feat(web):</code></td><td>⚛️ Cambios visibles del frontend</td></tr>
 <tr><td><code>fix:</code></td><td>🐛 Bug fix</td></tr>
-<tr><td><code>fix(sec):</code></td><td>🛡️ Fix de seguridad (referenciado a SECURITY_AUDIT)</td></tr>
+<tr><td><code>fix(sec):</code></td><td>🛡️ Fix de seguridad (referencia el hallazgo SEC-xx o el aviso que lo motiva)</td></tr>
 <tr><td><code>fix(ci):</code></td><td>⚙️ Arreglo del pipeline</td></tr>
 <tr><td><code>chore:</code></td><td>🧹 Mantenimiento (deps, configs, archivado)</td></tr>
 <tr><td><code>chore(deps):</code></td><td>📦 Actualización de dependencias</td></tr>

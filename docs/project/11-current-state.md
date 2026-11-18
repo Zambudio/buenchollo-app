@@ -1,171 +1,99 @@
-# 11 · Estado actual verificado
+# ✅ 11 · Estado actual verificado
 
-> Fuente de verdad resumida del estado operativo y funcional de BuenCholloTech.
-> Última comprobación operativa: **2026-11-03** (chollos de usuarios: cierre en `develop` 2026-11-04, **pendiente de desplegar**). La auditoría integral del
-> **2026-09-26** corresponde al merge `eee0a97`; las verificaciones posteriores
-> y el historial detallado permanecen en `PROJECT_STATUS.md`.
+> Fotografía del estado funcional y operativo de BuenCholloTech.
+> Última revisión: **2026-11-18** (Alembic `20261118120000`, en producción).
+> La cronología completa está en [`PROJECT_STATUS.md`](../../PROJECT_STATUS.md);
+> los pendientes, en [`10-technical-debt.md`](10-technical-debt.md); la auditoría
+> más reciente, en [`12-auditoria-tecnica-2026-11.md`](12-auditoria-tecnica-2026-11.md).
 
-## Producción
+---
+
+## 🌐 Producción
 
 | Pieza | Estado actual |
 |---|---|
-| Web | `https://buenchollotech.com`, React 19 + TanStack Start SSR desplegado como Cloudflare Worker |
-| API | `https://api.buenchollotech.com`, FastAPI en Docker sobre NAS Synology y publicada mediante Cloudflare Tunnel |
-| Base de datos | PostgreSQL de Supabase mediante PgBouncer en puerto 6543 |
-| Autenticación | Supabase Auth (Email/Password y Google OAuth); la API valida JWT localmente mediante JWKS |
-| Correo transaccional | Zoho Mail (`smtp.zoho.eu:465` SSL), `info@buenchollotech.com` (from) y `contacto@` (reply-to) |
-| Procesos NAS | `buenchollo-api`, `buenchollo-scheduler` y `cloudflared` |
-| Despliegue web | Automático al hacer push a `main` mediante Cloudflare Workers Builds |
-| Despliegue API | Volumen del proyecto montado en Docker; migraciones Alembic al arrancar y reinicio controlado de API/scheduler |
+| Web | `https://buenchollotech.com`: React 19 + TanStack Start SSR en Cloudflare Workers. Se despliega sola al hacer merge a `main` (Workers Builds). |
+| API | `https://api.buenchollotech.com`: FastAPI en Docker sobre el NAS Synology, publicada con Cloudflare Tunnel (sin puertos abiertos ni DDNS). |
+| Base de datos | PostgreSQL de Supabase por PgBouncer (puerto 6543). |
+| Autenticación | Supabase Auth (email/contraseña y Google OAuth); la API valida el JWT en local con JWKS ([ADR-010](../adr/ADR-010-validacion-jwt-local.md)). |
+| Correo | Zoho Mail (`smtp.zoho.eu:465`): remitente `info@`, respuesta a `contacto@buenchollotech.com`. |
+| Contenedores NAS | `buenchollo-api`, `buenchollo-scheduler` y `cloudflared`. |
+| Despliegue de la API | El NAS ejecuta el código del share montado: se actualiza el share a `main` y se reinicia (`docker restart`) o se reconstruye si cambian dependencias. Las migraciones Alembic corren al arrancar. Procedimiento: [`08-deployment.md`](08-deployment.md). |
 
-No se abren puertos del router, no se usa DDNS para publicar la API y el NAS no
-sirve el frontend. Las instrucciones antiguas de reverse proxy, Let's Encrypt y
-DDNS se conservan solo como histórico dentro de la guía de despliegue.
+---
 
-## Superficie funcional
+## 🧩 Funcionalidad
 
 ### Web pública
 
-- Feed, detalle, búsqueda, categorías, favoritos y votación de chollos.
-- Comentarios y votos en comentarios.
-- Alertas personalizadas, notificaciones en la app y resumen diario por email (21:00).
-- Confirmación de cuenta en registro por email y recuperación de contraseña en login.
-- Correo oficial de bienvenida al registrarse / completar el perfil (idempotente).
-- Blog público con categorías, comentarios, votos, RSS y sitemap.
-- Contador público de lecturas de artículos validado por navegador y día.
-- Entrada `/telegram`, que atribuye el origen a Telegram y redirige a la portada.
-- Perfil de usuario, autenticación con Google y páginas legales.
-- **Chollos de usuarios** (en `develop`, sin desplegar a producción a 2026-11-04): botón "+ Publicar chollo", `/publicar` (comprobar enlace → formulario con prefill de Amazon e imágenes subidas/pegadas/por URL), `/mis-chollos` y ficha con "Compartido por" y cupón. Decisiones en ADR-015 y ADR-016.
+- **Chollos**: portada con banner de tops, feed de tarjetas horizontales, detalle, búsqueda, categorías y subcategorías, favoritos, votos y comentarios.
+- **Catálogo permanente** ([ADR-017](../adr/ADR-017-catalogo-permanente.md)): los chollos caducados no se borran. Conservan ficha, URL, votos y comentarios; salen de los listados activos y la ficha indica que la oferta terminó. Si el producto vuelve a cumplir las reglas, se reactiva el mismo chollo.
+- **Tops comunitarios** ([ADR-018](../adr/ADR-018-tops-comunitarios-productos.md)): cada categoría y subcategoría muestra podio (1 a 3) y lista hasta el puesto 10. Compiten automáticamente todos los productos con alguna oferta pública (`active` o `expired`); los vinculados solo a borradores quedan fuera. Un voto por usuario y producto, que se retira repitiéndolo; en empate, primero la oferta activa y luego fecha e ID. El voto se da en el top, en la tarjeta y en la ficha («Votar producto», distinto del pulgar de la oferta) y comparte un único estado en el cliente (`features/catalog/productVotes.ts`). `GET /v1/catalog/tops/{slug}`, `GET /v1/catalog/my-votes` y `POST /v1/catalog/products/{id}/vote` (30 por minuto).
+- **Banner de portada**: podio con fotos reales de las seis primeras categorías con ofertas. Rota cada 5 s con flechas, respeta el movimiento reducido, no avanza con la pestaña oculta y reutiliza 60 s el resultado en el navegador (el SSR consulta siempre). Si falla una imagen muestra un icono y, sin tops, conserva el CTA.
+- **Descubrimiento y SEO**: navegación Inicio, Chollos, Tops, categorías y Blog; categorías y tops se cargan en los loaders, así que el HTML inicial ya lleva enlaces y contenido. Detalle en [`13-seo.md`](13-seo.md).
+- **Comunidad**: alertas personalizadas, notificaciones in-app y resumen diario por correo (21:00), comentarios y votos, proponer chollos (`/publicar`, `/mis-chollos`) con comprobación de enlace, prefill de Amazon e imágenes subidas, pegadas o por URL ([ADR-015](../adr/ADR-015-ingesta-imagenes-backend.md), [ADR-016](../adr/ADR-016-propuestas-comunidad-y-afiliados.md)).
+- **Blog** con categorías, comentarios, votos, RSS, sitemap y contador público de lecturas.
+- **Cuenta**: confirmación por correo en el registro, recuperación de contraseña, correo de bienvenida idempotente, perfil, Google OAuth y páginas legales.
+- **Atribución**: la ruta `/telegram` fija `utm_source=telegram` y redirige a la portada; el enlace afiliado de compra no cambia.
 
 ### Administración
 
-- CRUD de chollos, categorías, tiendas, usuarios y contenido del blog.
-- Cola de moderación `/admin/propuestas` (en `develop`): editar, aprobar (publicado, programado o borrador) o rechazar con motivo; el autor recibe correo y notificación.
-- Autocompletado seguro desde enlaces oficiales de Amazon, incluidos
-  `https://link.amazon/...`, `amzn.*` y dominios Amazon admitidos.
-- Enriquecimiento con Amazon Creators API, Keepa y el motor de IA unificado.
-- Preparación, previsualización, envío inmediato y programación de Telegram.
-- Desde el merge `cc9c827` en `main`, la programación de Telegram puede
-  guardarse con la ficha web incompleta. El registro queda marcado como
-  `web_ready=false`, la ficha web permanece en borrador y Planificación avisa
-  para corregirla antes de la hora prevista. El título admite un carácter
-  no blanco. Pasan 282 pruebas backend, 202 frontend, TypeScript, ESLint,
-  build SSR y el E2E de completar la categoría pendiente. Los cinco trabajos
-  de CI del merge pasan, incluida integración con PostgreSQL y auditoría de
-  seguridad. Alembic `20261103120000` está aplicado en la API de producción;
-  API y scheduler se reiniciaron correctamente. La portada, `/admin/chollos` y
-  `/health` responden 200; el bundle público `admin.chollos-6oze5U6N.js`
-  contiene el aviso `WEB PENDIENTE`, confirmando el Worker actualizado. Queda
-  por validar una programación real de Telegram sin enviar pruebas al canal.
-- Calendario de publicaciones programadas con edición integral de los datos web:
-  ASIN, título, resumen, descripción, precios, tienda, categoría, subcategoría,
-  marca, envío, enlaces, imágenes, caducidad y gráfica Keepa. El texto/canal de
-  Telegram mantiene su edición independiente.
-- Motor genérico de tareas programadas y revisión periódica de precios.
-- Panel de analítica con visitas, visitantes únicos, sesiones, lecturas de blog,
-  evolución, procedencia, páginas y conversión Telegram → blog.
-- Exclusión del dispositivo del administrador para no contaminar las métricas.
+- CRUD de chollos, categorías, tiendas, usuarios y blog; moderación de propuestas en `/admin/propuestas` (editar, aprobar como publicado, programado o borrador, o rechazar con motivo; el autor recibe correo y notificación).
+- Autocompletado desde enlaces oficiales de Amazon (`amazon.*`, `amzn.*`, `link.amazon`) con Creators API, Keepa y el motor de IA unificado ([ADR-013](../adr/ADR-013-motor-ia-unificado-omniroute-modelos-gratuitos.md)).
+- **Editar chollo** carga cualquier chollo por id y guarda un borrador de Telegram (`deals.telegram_text`) que reutiliza el último envío o genera la línea de copy con IA; la ficha pública permite a los admins eliminar el chollo.
+- **Telegram**: previsualización, envío inmediato y programación; cada publicación queda registrada (`telegram_publications`). Se puede programar con la ficha web incompleta (queda en borrador y el calendario avisa).
+- **Revisión diaria de precios** (`price_check`, [ADR-012](../adr/ADR-012-motor-tareas-programadas.md) y ADR-017): actualiza precio y stock de los listings de Amazon, termina o reactiva ofertas y avisa de bajadas al canal Admin solo si el chollo se publicó hace 10 días o más (antispam de 7 días). La purga solo afecta a listings sin disponibilidad confirmada durante 30 días.
+- **Redes de afiliación** ([ADR-019](../adr/ADR-019-redes-afiliacion-awin-tradedoubler.md)): Awin y Tradedoubler están en producción pero sin tiendas aprobadas; todos los programas siguen deshabilitados. Cómo activarlos: [`AFFILIATE-ACTIVATION-RUNBOOK.md`](../guides/AFFILIATE-ACTIVATION-RUNBOOK.md).
+- Analítica first-party ([ADR-014](../adr/ADR-014-analitica-first-party-atribucion-sesiones.md)): visitas, visitantes únicos, sesiones, procedencia, lecturas del blog y conversión Telegram a blog; exclusión del dispositivo del administrador. Los identificadores se seudonimizan con HMAC (`ANALYTICS_HASH_SECRET`) y la retención máxima configurable es de 25 meses.
 
-### Atribución de tráfico
+### Módulos del backend
 
-- La analítica es first-party y conserva el primer origen de la sesión.
-- `/telegram` establece `utm_source=telegram`; el enlace general incluido en las
-  publicaciones de Telegram usa `https://buenchollotech.com/telegram`.
-- El enlace de compra de cada publicación sigue siendo el enlace afiliado.
-- Las búsquedas se clasifican por referer de buscadores conocidos; el tráfico sin
-  una señal fiable permanece como directo, no se inventa una procedencia.
-- Los identificadores se seudonimizan con HMAC y `ANALYTICS_HASH_SECRET`; la
-  retención máxima configurable es de 25 meses.
+`affiliates`, `ai`, `alerts`, `analytics`, `blog`, `blog_comments`, `catalog`, `categories`, `comments`, `deals`, `emails`, `notifications`, `products`, `scheduled_deals`, `scheduled_tasks`, `stores`, `submissions`, `telegram` y `users`.
 
-## Módulos de backend activos
+Los routers de negocio cuelgan de `/v1`; `/health` y `/health/ready` quedan fuera. El frontend solo accede a datos de negocio por la API; las excepciones deliberadas son Supabase Auth y Storage.
 
-`affiliates`, `ai`, `alerts`, `analytics`, `blog`, `blog_comments`, `categories`, `comments`,
-`deals`, `emails`, `notifications`, `products`, `scheduled_deals`, `scheduled_tasks`,
-`stores`, `submissions`, `telegram` y `users`.
+---
 
-Todos los routers de negocio se publican bajo `/v1`; `/health` y
-`/health/ready` quedan fuera de esa versión. El frontend accede a datos de negocio
-solo mediante la API; las excepciones deliberadas son Supabase Auth y Storage.
+## 🔌 Integraciones y configuración crítica
 
-### Correos transaccionales y autenticación (Zoho Mail SMTP)
-
-- **Proveedor SMTP**: Zoho Mail datacenter europeo (`smtp.zoho.eu:465` con SSL nativo).
-- **Remitente oficial**: `info@buenchollotech.com` (From) y `contacto@buenchollotech.com` (Reply-To).
-- **Flujo de Confirmación**: `Confirm email` activado en Supabase Auth (`Sign In / Providers > User Signups`).
-  El registro por email en `/registro` muestra la pantalla de espera de confirmación; al pulsar en el correo,
-  el usuario vuelve a `/login?confirmed=1` con confirmación explícita. Los registros vía Google OAuth
-  entran de forma directa sin requerir confirmación por correo.
-- **Flujo de Recuperación**: Enlace *"¿Olvidaste tu contraseña?"* en `/login` con redirección a la ruta
-  dedicada `/restablecer-password`. Se incluye un listener global para el evento `PASSWORD_RECOVERY` de Supabase
-  que garantiza que el usuario sea dirigido siempre a la pantalla de cambio de clave.
-- **Bienvenida e Idempotencia**: Correo de bienvenida enviado vía `POST /v1/auth/welcome` una única vez por cuenta
-  (guardando `welcome_email_sent_at` en metadatos de usuario).
-- **Resumen nocturno de alertas**: Job programado a las 21:00 con cabecera RFC 8058 `List-Unsubscribe` y enlaces con UTM.
-
-## Integraciones y configuración crítica
-
-| Integración | Configuración relevante |
+| Integración | Variables relevantes |
 |---|---|
 | Supabase | `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_JWT_SECRET` |
 | Analítica | `ANALYTICS_HASH_SECRET`, `ANALYTICS_RETENTION_MONTHS` |
-| Amazon | `AMAZON_CLIENT_ID`, `AMAZON_CLIENT_SECRET`, `AMAZON_AFFILIATE_TAG` y configuración Creators API |
-| IA | `AI_PROVIDER`, `AI_BASE_URL`, `AI_MODEL`, fallbacks y fallback opcional a OpenAI |
-| Telegram | token del bot y canales principal/admin |
-| Frontend | `VITE_API_URL`, credenciales públicas de Supabase y `VITE_SENTRY_DSN` opcional |
+| Amazon | `AMAZON_CLIENT_ID`, `AMAZON_CLIENT_SECRET`, `AMAZON_AFFILIATE_TAG` |
+| IA | `AI_PROVIDER`, `AI_BASE_URL`, `AI_MODEL`, fallbacks y OpenAI opcional |
+| Telegram | token del bot, canales principal y Admin, `TELEGRAM_ENABLED` |
+| Afiliación | credenciales de Awin y Tradedoubler ([`AFFILIATE-NETWORKS.md`](../guides/AFFILIATE-NETWORKS.md)) |
+| Frontend | `VITE_API_URL`, credenciales públicas de Supabase, `VITE_SENTRY_DSN` opcional |
 
-Los valores reales viven fuera de Git. `buenchollo-api/.env.example` y
-`buenchollo-web/.env.example` son las plantillas; la explicación completa está en
-`04-configuration.md`.
+Los valores reales viven fuera de Git; `.env.example` de cada paquete es la plantilla y [`04-configuration.md`](04-configuration.md) lo explica.
 
-## Calidad verificada
+---
 
-La última ejecución completa de `main` terminó en verde en GitHub Actions (`41331100253`):
+## 🧪 Calidad
 
-- 278 pruebas backend sin BD y 37 pruebas backend de integración con PostgreSQL (incluyendo 7 tareas en el scheduler y suite de correos con Zoho).
-- 187 pruebas Vitest de frontend con cobertura superior al 90% en lógica de negocio (`src/lib/**`).
-- 17 pruebas E2E Playwright en Chromium con tiempo determinista congelado en reloj para aislamiento ante cambios de mes o fin de semana.
-- Total verificado: **519 pruebas automatizadas** en verde.
-- TypeScript, ESLint, Prettier, coverage, `pip-audit`, `npm audit` y gitleaks superados al 100%.
+Cifras vigentes en [`06-testing-and-quality.md`](06-testing-and-quality.md): backend 812 unitarios + 59 de integración (cobertura 83 %), frontend 532 tests Vitest y 12 specs E2E (37 tests). El CI (`.github/workflows/ci.yml`) es la autoridad sobre qué se ejecuta y exige `pip-audit`, `npm run audit:prod`, gitleaks, TypeScript, ESLint y Prettier.
 
-Verificación de `develop` con chollos de usuarios (2026-11-04): la CI de la PR #64 pasó
-todos los trabajos. En local: 537 pruebas backend no integración, 433 de frontend y 16
-E2E de los dos specs nuevos; `pip-audit` sin vulnerabilidades.
+## 🗄️ Datos y migraciones
 
-Las cifras son una fotografía fechada, no un contrato. El workflow
-`.github/workflows/ci.yml` es la autoridad sobre qué se ejecuta actualmente.
+- Alembic tiene una única cabeza (`20261118120000`). Detalle: [`MIGRATIONS.md`](../guides/MIGRATIONS.md).
+- Cada tabla nueva de `public` activa RLS en su propia migración; `test_migrations_rls.py` lo comprueba.
+- La API usa la conexión de servicio y las credenciales privilegiadas nunca llegan al navegador.
+- Los buckets de Storage (avatares, imágenes de chollos y blog) tienen políticas propias.
 
-## Datos y migraciones
+## 🚧 Pendientes abiertos
 
-- Alembic contiene la cadena incremental actual hasta
-  `20261103140000` (`deal_submissions` + `deals.canonical_url`/`coupon_code`, aditiva,
-  ya aplicada en la BD compartida).
-- Las tablas nuevas activan RLS en su propia migración; existe una prueba de
-  regresión que detecta nuevas tablas públicas sin RLS.
-- La API usa la conexión de servicio y las credenciales privilegiadas nunca se
-  exponen al navegador.
-- Los buckets de Storage para avatares, imágenes de chollos y blog conservan sus
-  políticas específicas.
+El registro canónico es [`10-technical-debt.md`](10-technical-debt.md). Lo más relevante hoy:
 
-## Pendientes abiertos
+1. Rotar y verificar el token de Cloudflare Tunnel (TD-21).
+2. El NAS ejecuta la copia de trabajo del share: mantenerla siempre en `main` (TD-31).
+3. Operación débil según la auditoría de 2026-11: backups manuales, sin alertas de caída y `main` sin protección de rama (AUD-03, AUD-04, AUD-06).
+4. Validar en vivo Awin y Tradedoubler cuando alguna tienda apruebe (TD-46 a TD-49).
+5. Pendiente de producto: puntos y recompensas para usuarios (fuentes de puntos, límites contra abuso, historial auditable y niveles); requiere decisión y modelo propios.
 
-La lista canónica está en `10-technical-debt.md`. A 2026-09-26 quedan tres puntos
-operativos conocidos:
+---
 
-1. Rotar y verificar el token de Cloudflare Tunnel que la guía registra como
-   expuesto en una conversación (TD-21).
-2. Activar manualmente la protección de contraseñas filtradas en Supabase Auth.
-3. Hacer que los fallos de cableado del worker de tareas programadas propaguen a
-   la observabilidad en lugar de terminar como una ejecución aparentemente válida.
-
-Tras el cierre de chollos de usuarios se añaden TD-23 a TD-35 (preview sin auth,
-imágenes huérfanas, DNS rebinding, digest nocturno, `TelegramPanel` a 375 px, rate limit
-en memoria, cuota no atómica, runtime del NAS acoplado a la copia de trabajo y menores). **Aviso operativo:** la copia de trabajo (que montan los contenedores) está en `develop` y la BD en la revisión `20261103140000`; un reinicio de la API antes de desplegar la dejaría caída (sin `Pillow` en la imagen) y volver a `main` falla en Alembic. Desplegar pronto, ver TD-31. Pendiente operativo: seguir la checklist de
-[`08-deployment.md`](08-deployment.md#-checklist-de-despliegue--chollos-de-usuarios).
-
-No se consideran pendientes las funciones ya desplegadas de analítica,
-`link.amazon`, atribución `/telegram` ni edición integral de publicaciones.
-
-## Dónde mantener cada cambio
+## 🗺️ Dónde mantener cada cambio
 
 | Cambio | Documento que debe actualizarse |
 |---|---|
@@ -173,9 +101,9 @@ No se consideran pendientes las funciones ya desplegadas de analítica,
 | Nueva variable | `.env.example` y `04-configuration.md` |
 | Decisión difícil de revertir | Nuevo ADR y `docs/adr/00-index.md` |
 | Funcionalidad o flujo | `01-overview.md` y esta página |
-| Arquitectura/despliegue | `03-project-structure.md`, `08-deployment.md` y guía correspondiente |
+| Arquitectura o despliegue | `03-project-structure.md`, `08-deployment.md` y la guía correspondiente |
 | Deuda abierta | `10-technical-debt.md` |
-| Conocimiento reutilizable | Ficha relacionada en `OBSIDIAN VAULT` siguiendo su `SCHEMA.md` |
+| Conocimiento reutilizable | Ficha relacionada en la base de conocimiento privada del propietario (OBSIDIAN VAULT, `SCHEMA.md`) |
 
 ---
 

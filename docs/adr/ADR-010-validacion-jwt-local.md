@@ -3,7 +3,7 @@
 ## Estado
 
 **Aceptado** · 2026-07-16 · resuelve el hallazgo H-02 / TD-12 de la
-auditoría técnica (archivada en `docs/archive/AUDIT_REPORT-2026-07.md`).
+auditoría técnica de julio de 2026.
 
 ## Contexto
 
