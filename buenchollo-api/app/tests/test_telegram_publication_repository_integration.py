@@ -27,7 +27,7 @@ async def session():
         await engine.dispose()
 
 
-async def test_ultima_publicacion_publica_ignora_el_canal_admin(session):
+async def test_ultima_publicacion_cuenta_cualquier_canal(session):
     suffix = uuid.uuid4().hex[:8]
     deal = Deal(title="P", slug=f"pub-{suffix}", current_price=10, affiliate_url="https://a", images=[],
                 temperature=0, votes_up=0, votes_down=0, click_count=0, comment_count=0, favorite_count=0)
@@ -41,6 +41,6 @@ async def test_ultima_publicacion_publica_ignora_el_canal_admin(session):
             text=text, sent_at=now - timedelta(minutes=minutes),
         ))
 
-    latest = await repo.latest_public_for_deal(deal.id)
-    assert latest.text == "buena"
+    latest = await repo.latest_for_deal(deal.id)
+    assert latest.text == "aviso"
     assert [p.text for p in await repo.list_for_deal(deal.id)] == ["aviso", "buena", "vieja"]

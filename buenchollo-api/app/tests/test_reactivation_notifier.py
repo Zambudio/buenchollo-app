@@ -114,7 +114,7 @@ def _notifier(deal, *, publication=None, notice_ok=True, post_ok=True, chat_id="
     deal_repo = MagicMock()
     deal_repo.get_by_id = AsyncMock(return_value=deal)
     publications = MagicMock()
-    publications.latest_public_for_deal = AsyncMock(return_value=publication)
+    publications.latest_for_deal = AsyncMock(return_value=publication)
     notifier = ReactivationNotifier(
         bot, chat_id, matcher, deal_repo, SITE,
         publications=publications, generator=TelegramPostGenerator(ai_service=object()),
@@ -265,7 +265,7 @@ async def test_sin_telegram_cuenta_el_alta_en_la_web():
 @pytest.mark.asyncio
 async def test_fallo_leyendo_la_publicacion_usa_el_alta_en_la_web():
     notifier, bot, _ = _notifier(_deal())
-    notifier.publications.latest_public_for_deal = AsyncMock(side_effect=RuntimeError("BD"))
+    notifier.publications.latest_for_deal = AsyncMock(side_effect=RuntimeError("BD"))
 
     assert await notifier.notify([EVENT], NOW) == 1
     assert "nunca en Telegram" in bot.send_admin_notification.call_args.args[0]

@@ -8,7 +8,8 @@ si nunca se publicó), lista para reenviar.
 
 Antispam: un aviso por chollo cada 7 días, salvo que el precio sea menor que
 el del último aviso. Además, solo se avisa al canal Admin si el chollo se
-publicó hace al menos 10 días (última publicación pública en Telegram o, si
+publicó hace al menos 10 días (última publicación registrada en Telegram, en
+cualquier canal, o, si
 nunca se publicó allí, su alta en la web): reenviar algo de hace pocos días es
 repetir contenido. Las alertas de usuario no dependen de esa antigüedad. Un
 fallo de Telegram nunca deshace lo aplicado.
@@ -145,7 +146,7 @@ class ReactivationNotifier:
         """Si la consulta falla, se trata como nunca publicado en Telegram
         (cuenta el alta en la web) para no perder el aviso."""
         try:
-            return await self.publications.latest_public_for_deal(deal.id)
+            return await self.publications.latest_for_deal(deal.id)
         except Exception:
             logger.exception("No se pudo leer la última publicación de %s", deal.slug)
             return None
@@ -164,7 +165,7 @@ class ReactivationNotifier:
             logger.warning("No se pudo enviar al canal Admin la publicación corregida de %s", deal.slug)
 
     def _republishable(self, deal, publication, now: datetime) -> tuple[str, str | None]:
-        """Última publicación pública con el precio corregido; si no existe (o
+        """Última publicación registrada con el precio corregido; si no existe (o
         no tiene el formato estándar), una publicación nueva."""
         if publication is not None:
             text = reprice_publication_text(

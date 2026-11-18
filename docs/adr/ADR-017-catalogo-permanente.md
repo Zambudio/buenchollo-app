@@ -42,8 +42,10 @@ permanente y multitienda, con la sección de chollos y Telegram como capa rápid
    (`price_drop_percent`) y el aviso va seguido de la última publicación de Telegram del
    chollo (tabla `telegram_publications`) con el precio corregido, lista para reenviar.
    *Ampliado el 2026-11-18:* el canal Admin solo recibe el aviso si el chollo se publicó
-   hace al menos 10 días (`REPOST_MIN_AGE`): cuenta la última publicación pública en
-   Telegram o, si nunca se publicó allí, el alta en la web (`created_at`; no
+   hace al menos 10 días (`REPOST_MIN_AGE`): cuenta la última publicación registrada en
+   Telegram en cualquier canal (se publica en el canal Admin y desde allí se reenvía al
+   oficial; los avisos de esta revisión no se registran) o, si nunca se publicó allí,
+   el alta en la web (`created_at`; no
    `published_at`, que la reactivación pone a la fecha actual). El aviso indica esa fecha.
    Las alertas de usuario no dependen de esa antigüedad.
 5. **Única eliminación automática:** un listing con disponibilidad confirmada como

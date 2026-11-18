@@ -71,10 +71,14 @@ export const telegramApi = {
     );
   },
 
-  /** Último envío del chollo a un canal público (los avisos al canal Admin no cuentan). */
+  /**
+   * Último envío registrado del chollo, en cualquier canal: se publica en el
+   * canal Admin y desde allí se reenvía al oficial. La lista llega ordenada
+   * de más reciente a más antigua.
+   */
   async latestPublication(dealId: string): Promise<TelegramPublication | null> {
     const items = await this.listPublications(dealId);
-    return items.find((p) => p.channel_kind !== "admin") ?? null;
+    return items[0] ?? null;
   },
 
   getChannels(): Promise<TelegramChannel[]> {

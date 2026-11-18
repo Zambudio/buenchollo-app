@@ -22,11 +22,13 @@ class TelegramPublicationRepository:
         )
         return list(result.scalars())
 
-    async def latest_public_for_deal(self, deal_id: str) -> TelegramPublication | None:
-        """Última publicación del chollo en un canal que no sea el de Admin."""
+    async def latest_for_deal(self, deal_id: str) -> TelegramPublication | None:
+        """Última publicación registrada del chollo, en cualquier canal: Pedro
+        publica en el canal Admin y desde allí reenvía al oficial. Los avisos
+        de la revisión de precios no se registran, así que no cuentan."""
         result = await self.session.execute(
             select(TelegramPublication)
-            .where(TelegramPublication.deal_id == deal_id, TelegramPublication.channel_kind != "admin")
+            .where(TelegramPublication.deal_id == deal_id)
             .order_by(TelegramPublication.sent_at.desc())
             .limit(1)
         )
