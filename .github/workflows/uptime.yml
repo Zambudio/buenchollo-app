@@ -18,6 +18,11 @@ concurrency:
   group: uptime
   cancel-in-progress: false
 
+env:
+  # Cloudflare (Bot Fight Mode) responde 403 a `curl` desde los servidores de
+  # GitHub; con un User-Agent de navegador identificable pasa.
+  UA: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 BuenCholloUptime/1.0"
+
 jobs:
   check:
     name: Web y API en línea
@@ -25,13 +30,13 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: API lista (/health/ready comprueba la base de datos)
-        run: curl --fail --silent --show-error --retry 3 --retry-delay 20 --retry-all-errors --max-time 15 https://api.buenchollotech.com/health/ready
+        run: curl -A "$UA" --fail --silent --show-error --retry 3 --retry-delay 20 --retry-all-errors --max-time 15 https://api.buenchollotech.com/health/ready
 
       - name: Portada de la web
-        run: curl --fail --silent --show-error --retry 3 --retry-delay 20 --retry-all-errors --max-time 20 --output /dev/null https://buenchollotech.com/
+        run: curl -A "$UA" --fail --silent --show-error --retry 3 --retry-delay 20 --retry-all-errors --max-time 20 --output /dev/null https://buenchollotech.com/
 
       - name: Ficha de un chollo (SSR + API)
         # La portada puede servirse aunque la API falle; una ficha real no.
         run: |
-          slug=$(curl --fail --silent --max-time 15 --retry 3 --retry-all-errors https://api.buenchollotech.com/v1/deals/latest?limit=1 | python3 -c "import json,sys; print(json.load(sys.stdin)[0]['slug'])")
-          curl --fail --silent --show-error --retry 3 --retry-delay 20 --retry-all-errors --max-time 20 --output /dev/null "https://buenchollotech.com/chollo/${slug}"
+          slug=$(curl -A "$UA" --fail --silent --max-time 15 --retry 3 --retry-all-errors https://api.buenchollotech.com/v1/deals/latest?limit=1 | python3 -c "import json,sys; print(json.load(sys.stdin)[0]['slug'])")
+          curl -A "$UA" --fail --silent --show-error --retry 3 --retry-delay 20 --retry-all-errors --max-time 20 --output /dev/null "https://buenchollotech.com/chollo/${slug}"
