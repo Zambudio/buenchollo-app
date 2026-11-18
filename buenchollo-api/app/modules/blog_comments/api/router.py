@@ -2,9 +2,11 @@ import logging
 from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.audit import audit_log
 from app.core.database import get_db
 from app.core.rate_limit import limiter
-from app.core.security import get_current_user
+from app.core.security import get_current_user, require_admin
+from app.modules.blog_comments.application.moderation import delete_blog_comment_as_admin
 from app.modules.blog_comments.domain.exceptions import (
     BlogCommentNotFound,
     InvalidBlogCommentVote,
@@ -118,8 +120,26 @@ async def delete_comment(
     await repo.delete(comment)
 
 
+@router.delete("/blog/admin/comments/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def admin_delete_comment(
+    comment_id: str,
+    db: AsyncSession = Depends(get_db),
+    repo: BlogCommentRepository = Depends(get_blog_comment_repository),
+    current_user=Depends(require_admin),
+):
+    """Moderación: un admin borra cualquier comentario del blog."""
+    deleted = await delete_blog_comment_as_admin(repo, comment_id)
+    await audit_log(
+        db, user_id=str(current_user.id), action="blog.comment.delete",
+        target_type="blog_comment", target_id=comment_id,
+        payload=deleted,
+    )
+
+
 @router.post("/blog/comments/{comment_id}/vote")
+@limiter.limit("30/minute")  # anti-spam de votos
 async def vote_comment(
+    request: Request,
     comment_id: str,
     payload: BlogCommentVoteRequest,
     repo: BlogCommentRepository = Depends(get_blog_comment_repository),

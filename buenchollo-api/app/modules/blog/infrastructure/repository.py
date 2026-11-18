@@ -117,10 +117,6 @@ class BlogPostRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_featured(self) -> BlogPost | None:
-        posts = await self.list_public(featured_only=True, limit=1)
-        return posts[0] if posts else None
-
     async def get_related(self, post: BlogPost, limit: int = 3) -> list[BlogPost]:
         if not post.category_id:
             return []

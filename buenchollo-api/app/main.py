@@ -78,7 +78,15 @@ async def lifespan(app: FastAPI):
         logger.info("Background scheduler detenido.")
 
 
-app = FastAPI(title=settings.app_name, lifespan=lifespan)
+# Documentación interactiva (/docs, /redoc, /openapi.json) solo fuera de producción.
+_docs_enabled = settings.app_env != "production"
+app = FastAPI(
+    title=settings.app_name,
+    lifespan=lifespan,
+    docs_url="/docs" if _docs_enabled else None,
+    redoc_url="/redoc" if _docs_enabled else None,
+    openapi_url="/openapi.json" if _docs_enabled else None,
+)
 
 # Registro del limiter en el state de la app — slowapi lo resuelve por aquí.
 app.state.limiter = limiter
@@ -93,13 +101,12 @@ app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 cors_origins = settings.effective_cors_origins
 logger.info("CORS origins configurados: %s", cors_origins)
 _allow_all = "*" in cors_origins
-# Bandera roja si producción arranca con CORS_ORIGINS=* (descuido típico).
-# No bloquea el arranque (un mantenedor podría haberlo decidido a sabiendas
-# tras un incidente) pero deja constancia en logs y en Sentry.
-if _allow_all and settings.app_env == "production":
+# En producción `Settings` ya rechaza CORS_ORIGINS con '*' (arranque fallido).
+if settings.app_env == "production" and not settings.analytics_hash_secret:
     logger.warning(
-        "SECURITY: CORS_ORIGINS contiene '*' en producción. "
-        "Configura la lista exacta de dominios en .env (ver SECURITY_AUDIT.md SEC-04)."
+        "SECURITY: ANALYTICS_HASH_SECRET no está definido en producción; la analítica "
+        "usa SUPABASE_KEY como secreto HMAC de respaldo. Define ANALYTICS_HASH_SECRET "
+        "(secreto aleatorio propio) para desacoplarlo."
     )
 # Límite de cuerpo en la subida de imágenes: se registra ANTES que CORS (queda
 # dentro de él) para que el 413 lleve cabeceras CORS, pero sigue cortando antes

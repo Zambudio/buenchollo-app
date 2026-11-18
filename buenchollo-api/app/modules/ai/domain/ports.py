@@ -2,11 +2,7 @@
 
 from typing import Any, Protocol
 
-from app.modules.ai.domain.entities import (
-    AIChatMessage,
-    AIChatResponse,
-    LLMGenerationResult,
-)
+from app.modules.ai.domain.entities import LLMGenerationResult
 
 
 class LLMClientProtocol(Protocol):
@@ -57,18 +53,6 @@ class LLMClientProtocol(Protocol):
         """Asynchronously generate and parse structured JSON with automatic fallback and markdown stripping."""
 
 
-class ProductEnricherProtocol(Protocol):
-    """Port for generating copywriting and assigning categories to a product."""
-
-    def enrich_product(
-        self,
-        product: Any,
-        categories_prompt: str,
-        provider: str | None = None,
-    ) -> dict[str, Any]:
-        """Generate short_description, long_description, telegram_text, category_id, subcategory_id."""
-
-
 class TelegramAIServiceProtocol(Protocol):
     """Port for generating and selecting hashtags/categories for Telegram publications."""
 
@@ -88,13 +72,3 @@ class TelegramAIServiceProtocol(Protocol):
     ) -> str | None:
         """Write the short sales line of a Telegram post (None if the AI engine fails)."""
 
-
-class DealRecommenderProtocol(Protocol):
-    """Port for conversational product and deal recommendation (Chatbot)."""
-
-    async def chat(
-        self,
-        messages: list[AIChatMessage],
-        deals_context: list[dict[str, Any]] | None = None,
-    ) -> AIChatResponse:
-        """Generate conversational recommendation response with contextual deal matches."""

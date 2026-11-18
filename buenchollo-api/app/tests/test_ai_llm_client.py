@@ -4,8 +4,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from app.core.config import Settings
-from app.modules.ai.domain.entities import AIChatMessage
-from app.modules.ai.infrastructure.deal_recommender import DealRecommenderAssistant
 from app.modules.ai.infrastructure.llm_client import (
     OpenAICompatibleLLMClient,
     extract_json_payload,
@@ -352,28 +350,3 @@ async def test_telegram_ai_service_generate_copy_devuelve_none_si_falla():
 
     assert await service.generate_copy("Titulo", "Desc") is None
 
-
-# ── Tests de DealRecommenderAssistant (Chatbot Web) ─────────────────────────
-
-@pytest.mark.asyncio
-async def test_deal_recommender_assistant_chat():
-    mock_llm = MagicMock()
-    res = MagicMock()
-    res.content = "Te recomiendo este monitor LG UltraGear de 144Hz que está por 150€."
-    res.model = "deepseek-chat-free"
-    mock_llm.agenerate_text = AsyncMock(return_value=res)
-
-    assistant = DealRecommenderAssistant(mock_llm)
-    messages = [
-        AIChatMessage(role="user", content="Busco un buen monitor gaming barato"),
-    ]
-    deals_context = [
-        {"id": "deal-1", "title": "Monitor LG UltraGear", "current_price": 150.0, "discount_percentage": 30},
-    ]
-
-    response = await assistant.chat(messages, deals_context)
-
-    assert "LG UltraGear" in response.content
-    assert response.model_used == "deepseek-chat-free"
-    assert len(response.suggested_deals) == 1
-    assert response.suggested_deals[0]["id"] == "deal-1"

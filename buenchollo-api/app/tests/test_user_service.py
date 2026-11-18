@@ -61,7 +61,6 @@ async def test_get_me_overview_devuelve_admin_true_si_rol_admin():
 async def test_get_me_overview_sin_perfil_devuelve_has_profile_false():
     service, _ = _build_service(
         get_user_roles=AsyncMock(return_value=["user"]),
-        get_username=AsyncMock(return_value=None),
     )
 
     result = await service.get_me_overview(CurrentUser(id="u1", email=None))
