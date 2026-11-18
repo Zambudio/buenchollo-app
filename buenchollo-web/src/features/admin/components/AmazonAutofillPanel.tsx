@@ -1,14 +1,16 @@
 /** Panel "Autocompletar desde URL" del admin (TD-03): Amazon (flujo de siempre)
  *  y tiendas de Awin / Tradedoubler configuradas en el registro de afiliación. */
-import { Bot, Link2, Loader2, Wand2 } from "lucide-react";
+import { Link2, Loader2, Wand2 } from "lucide-react";
 import { adminInputCls as inputCls } from "../deal-form";
+import type { AiProvider } from "@/lib/ai-providers";
+import { AiProviderSelect } from "./AiProviderSelect";
 
 interface Props {
   readonly url: string;
   readonly busy: boolean;
-  readonly provider: string;
+  readonly provider: AiProvider;
   readonly onUrlChange: (value: string) => void;
-  readonly onProviderChange: (value: string) => void;
+  readonly onProviderChange: (value: AiProvider) => void;
   readonly onAutofill: () => void;
   /** Solo enlace afiliado (Awin / Tradedoubler), sin buscar la ficha. */
   readonly onLinkOnly?: () => void;
@@ -32,26 +34,12 @@ export function AmazonAutofillPanel({
             Autocompletar desde Amazon, Awin o Tradedoubler
           </h3>
         </div>
-        <div className="flex items-center gap-2">
-          <Bot className="size-3.5 text-cyan-glow" />
-          <label
-            htmlFor="ai-provider"
-            className="font-mono text-[10px] uppercase text-muted-foreground"
-          >
-            Motor IA:
-          </label>
-          <select
-            id="ai-provider"
-            value={provider}
-            onChange={(e) => onProviderChange(e.target.value)}
-            disabled={busy}
-            className="bg-surface-900 border border-surface-700 text-foreground font-mono text-xs px-2 py-1 outline-none focus:border-cyan-glow disabled:opacity-50"
-          >
-            <option value="omniroute">OmniRoute (Modelos Gratuitos)</option>
-            <option value="openai">OpenAI (GPT-4o Oficial)</option>
-            <option value="auto">Automático (OmniRoute + Fallback)</option>
-          </select>
-        </div>
+        <AiProviderSelect
+          id="ai-provider"
+          value={provider}
+          onChange={onProviderChange}
+          disabled={busy}
+        />
       </div>
       <p className="font-mono text-[10px] text-muted-foreground mb-3">
         Pega la URL del producto. Amazon: título, imagen, marca, copywriting y precios. Awin /

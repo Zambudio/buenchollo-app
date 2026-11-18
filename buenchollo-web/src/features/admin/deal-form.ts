@@ -32,7 +32,10 @@ export interface DealForm {
   scheduled_for: string; // datetime-local sin zona
   external_id: string;
   show_keepa_chart: boolean;
+  /** Línea de venta (✏️) que propone el autocompletado de Amazon. No se guarda. */
   telegram_text?: string;
+  /** Borrador completo del post de Telegram; se guarda en `deal.telegram_text`. */
+  telegram_post: string;
   /** Redes de afiliación (Awin / Tradedoubler). Vacíos en Amazon/manual. */
   affiliate_program_id: string;
   data_source: string;
@@ -47,6 +50,13 @@ export interface DealForm {
 /** Clase compartida de inputs del panel admin (estética terminal). */
 export const adminInputCls =
   "w-full bg-surface-900 border border-surface-700 px-3 py-2 font-mono text-sm outline-none focus:border-cyan-glow";
+
+/** Añade los hashtags sugeridos al final del post, sin repetir los que ya estén. */
+export function appendHashtags(text: string, tags: string[]): string {
+  const missing = tags.filter((tag) => !text.includes(tag));
+  if (missing.length === 0) return text;
+  return `${text.trimEnd()}\n\n${missing.join(" ")}`;
+}
 
 /** Filtro de UX; la allowlist de seguridad definitiva vive en el backend. */
 export function isAmazonProductReference(value: string): boolean {
@@ -85,6 +95,7 @@ export function emptyForm(): DealForm {
     scheduled_for: "",
     external_id: "",
     show_keepa_chart: false,
+    telegram_post: "",
     ...EMPTY_NETWORK_FIELDS,
   };
 }
@@ -110,6 +121,7 @@ export function dealToForm(d: DealDetailData): DealForm {
     scheduled_for: toDatetimeLocal(d.scheduled_for),
     external_id: d.external_id ?? "",
     show_keepa_chart: d.show_keepa_chart ?? false,
+    telegram_post: d.telegram_text ?? "",
     affiliate_program_id: d.affiliate_program_id ?? "",
     data_source: d.data_source ?? "",
     data_provider_updated_at: d.data_provider_updated_at ?? "",
@@ -207,6 +219,7 @@ export function buildDealPayload(
         : null,
     external_id: form.external_id || null,
     show_keepa_chart: form.show_keepa_chart,
+    telegram_text: form.telegram_post.trim() ? form.telegram_post.slice(0, 4096) : null,
   };
   if (isNetworkForm(form)) {
     payload.affiliate_program_id = form.affiliate_program_id || null;

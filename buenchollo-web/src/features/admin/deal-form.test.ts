@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  appendHashtags,
   buildDealPayload,
   dealToForm,
   emptyForm,
@@ -56,6 +57,33 @@ describe("coupon_code", () => {
       buildDealPayload(formWith({ coupon_code: "x".repeat(80) }), null).coupon_code,
     ).toHaveLength(64);
     expect(buildDealPayload(formWith({ coupon_code: "  " }), null).coupon_code).toBeNull();
+  });
+});
+
+describe("telegram_post (borrador del post de Telegram)", () => {
+  it("dealToForm lo carga desde deal.telegram_text", () => {
+    expect(dealToForm({ ...baseDeal, telegram_text: "🍄 Post" }).telegram_post).toBe("🍄 Post");
+    expect(dealToForm(baseDeal).telegram_post).toBe("");
+  });
+
+  it("buildDealPayload lo envía como telegram_text; vacío va como null", () => {
+    expect(buildDealPayload(formWith({ telegram_post: "🍄 Post" }), null).telegram_text).toBe(
+      "🍄 Post",
+    );
+    expect(buildDealPayload(formWith({ telegram_post: "  " }), null).telegram_text).toBeNull();
+  });
+
+  it("la línea de venta del autocompletado (telegram_text del form) no se guarda como post", () => {
+    expect(
+      buildDealPayload(formWith({ telegram_text: "Copy corto" }), null).telegram_text,
+    ).toBeNull();
+  });
+});
+
+describe("appendHashtags", () => {
+  it("añade solo los que faltan, al final", () => {
+    expect(appendHashtags("Post\n\n", ["#A", "#B"])).toBe("Post\n\n#A #B");
+    expect(appendHashtags("Post #A", ["#A"])).toBe("Post #A");
   });
 });
 

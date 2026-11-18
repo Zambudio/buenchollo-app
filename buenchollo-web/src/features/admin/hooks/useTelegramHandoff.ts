@@ -11,6 +11,8 @@ export type TelegramPanelData = TelegramGenerateRequest & {
   images?: string[];
   image_url?: string | null;
   deal_id?: string | null;
+  /** Borrador ya preparado en Editar chollo: el panel lo carga sin regenerar. */
+  initial_text?: string | null;
 };
 
 /** Datos del panel a partir de un deal ya guardado. */

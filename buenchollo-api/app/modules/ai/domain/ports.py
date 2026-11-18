@@ -80,6 +80,14 @@ class TelegramAIServiceProtocol(Protocol):
     ) -> list[str]:
         """Select 1-2 matching hashtags from the available list using the AI engine."""
 
+    async def generate_copy(
+        self,
+        title: str,
+        details: str,
+        provider: str | None = None,
+    ) -> str | None:
+        """Write the short sales line of a Telegram post (None if the AI engine fails)."""
+
 
 class DealRecommenderProtocol(Protocol):
     """Port for conversational product and deal recommendation (Chatbot)."""

@@ -1,3 +1,4 @@
+import type { AiProvider } from "@/lib/ai-providers";
 import { apiClient } from "./client";
 
 export interface TelegramChannel {
@@ -16,11 +17,17 @@ export interface TelegramGenerateRequest {
   /** Redes de afiliación: línea de envío y aviso adicional del programa. */
   shipping_info?: string | null;
   notice?: string | null;
+  /** Chollo ya guardado: la IA reescribe la línea ✏️ a partir de `copy_context`. */
+  ai_copy?: boolean;
+  provider?: AiProvider | null;
+  copy_context?: string | null;
 }
 
 export interface TelegramGenerateResponse {
   text: string;
   suggested_categories: string[];
+  /** Copy escrito por la IA; null si no se pidió o falló (se usó `description`). */
+  ai_copy?: string | null;
 }
 
 export interface TelegramNotifyRequest {
@@ -62,6 +69,12 @@ export const telegramApi = {
     return apiClient.get<TelegramPublication[]>(
       `/telegram/publications?deal_id=${encodeURIComponent(dealId)}`,
     );
+  },
+
+  /** Último envío del chollo a un canal público (los avisos al canal Admin no cuentan). */
+  async latestPublication(dealId: string): Promise<TelegramPublication | null> {
+    const items = await this.listPublications(dealId);
+    return items.find((p) => p.channel_kind !== "admin") ?? null;
   },
 
   getChannels(): Promise<TelegramChannel[]> {

@@ -60,6 +60,18 @@ def test_create_update_delete_deal_flow(integration_client):
     assert updated["title"] == "API Test Deal - Updated"
     assert updated["current_price"] == 39.99
 
-    # 3. Borrar
+    # 3. Borrador de Telegram: se guarda, lo devuelve el admin y no el endpoint público
+    tg_response = integration_client.put(
+        f"/v1/deals/admin/{deal_id}", json={"telegram_text": "🍄 Borrador de prueba"}
+    )
+    assert tg_response.status_code == 200, tg_response.text
+    admin_get = integration_client.get(f"/v1/deals/admin/{deal_id}")
+    assert admin_get.status_code == 200, admin_get.text
+    assert admin_get.json()["telegram_text"] == "🍄 Borrador de prueba"
+    public_get = integration_client.get(f"/v1/deals/{deal['slug']}")
+    assert "telegram_text" not in public_get.json()
+
+    # 4. Borrar
     delete_response = integration_client.delete(f"/v1/deals/admin/{deal_id}")
     assert delete_response.status_code == 204, delete_response.text
+    assert integration_client.get(f"/v1/deals/admin/{deal_id}").status_code == 404

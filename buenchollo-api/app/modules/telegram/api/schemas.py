@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field, ConfigDict
@@ -25,11 +26,18 @@ class TelegramGenerateRequest(BaseModel):
     # Vacíos en Amazon → el texto queda exactamente como antes.
     shipping_info: str | None = Field(default=None, max_length=200)
     notice: str | None = Field(default=None, max_length=300)
+    # Chollo ya guardado: la IA reescribe la línea de venta (✏️) a partir de
+    # `copy_context` (descripción larga) con el motor elegido en el admin.
+    ai_copy: bool = False
+    provider: Literal["omniroute", "openai", "auto"] | None = None
+    copy_context: str | None = Field(default=None, max_length=10_000)
 
 
 class TelegramGenerateResponse(BaseModel):
     text: str
     suggested_categories: list[str]
+    # Copy escrito por la IA (None si no se pidió o la IA falló y se usó `description`).
+    ai_copy: str | None = None
 
 
 # ── Categorías ────────────────────────────────────────────────────────────────

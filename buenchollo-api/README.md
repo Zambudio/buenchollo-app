@@ -151,7 +151,8 @@ Todos los routers de negocio cuelgan de **`/v1/`**. Sólo `/health` y
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| `GET` | `/v1/deals/admin/all` | Todos los chollos |
+| `GET` | `/v1/deals/admin/all` | Chollos más recientes (`limit`, por defecto 200; incluye el borrador `telegram_text`) |
+| `GET` | `/v1/deals/admin/{id}` | Un chollo por id, aunque no esté en el listado |
 | `POST` | `/v1/deals/admin` | Crear |
 | `PUT` | `/v1/deals/admin/{id}` | Actualizar (detecta duplicados ASIN) |
 | `DELETE` | `/v1/deals/admin/{id}` | Eliminar |
@@ -159,8 +160,10 @@ Todos los routers de negocio cuelgan de **`/v1/`**. Sólo `/health` y
 | `PUT` | `/v1/scheduled-deals/admin/{id}` | Editar contenido programado |
 | `PATCH` | `/v1/scheduled-deals/admin/{id}/schedule` | Reprogramar por drag & drop |
 | `DELETE` | `/v1/scheduled-deals/admin/{id}` | Borrar programación y conservar el borrador |
-| `POST` | `/v1/products/preview` | Preview desde URL Amazon |
-| `POST` | `/v1/telegram/publish` | Publicar al canal |
+| `POST` | `/v1/products/preview-from-url` | Autocompletado desde URL de Amazon (`provider`: motor de IA) |
+| `POST` | `/v1/telegram/generate` | Texto del post; con `ai_copy` + `provider` la IA reescribe la línea ✏️ |
+| `POST` | `/v1/telegram/notify` | Enviar al canal (queda registrado) |
+| `GET` | `/v1/telegram/publications?deal_id=` | Envíos registrados de un chollo |
 | `GET` | `/v1/admin/stats` | 6 KPIs en una query |
 | `GET` | `/v1/admin/audit` | Audit log paginado |
 
@@ -175,7 +178,7 @@ pytest -q -m "not integration"   # ✅ 87 unitarios + 9 security, ~1s, sin BD
 pytest -q                         # 🟡 incluye 9 integración con BD real
 ```
 
-📚 Estrategia: [`../docs/master/06-…`](../docs/master/06-calidad-testing-y-refactorizacion.md).
+📚 Estrategia: [`../docs/project/06-testing-and-quality.md`](../docs/project/06-testing-and-quality.md).
 
 ---
 

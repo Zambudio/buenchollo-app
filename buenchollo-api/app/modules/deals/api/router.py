@@ -11,6 +11,7 @@ from app.modules.deals.domain.exceptions import DealNotFound
 from app.modules.deals.api.schemas import (
     DealSitemapEntry,
     DealCardResponse,
+    DealAdminResponse,
     DealCreate,
     DealDetailResponse,
     DealPageResponse,
@@ -243,7 +244,7 @@ async def get_deal_by_slug(
 
 # ── Endpoints admin ───────────────────────────────────────────────────────────
 
-@router.get("/admin/all", response_model=list[DealDetailResponse])
+@router.get("/admin/all", response_model=list[DealAdminResponse])
 async def get_all_admin_deals(
     status: str | None = None,
     limit: int = Query(200, ge=1, le=500),
@@ -253,7 +254,21 @@ async def get_all_admin_deals(
     return await repo.get_all_admin(status=status, limit=limit)
 
 
-@router.post("/admin", response_model=DealDetailResponse)
+@router.get("/admin/{deal_id}", response_model=DealAdminResponse)
+async def get_admin_deal(
+    deal_id: str,
+    repo: DealRepository = Depends(get_deal_repository),
+    _auth=Depends(require_admin),
+):
+    """Un chollo concreto para editarlo aunque no esté en el listado (que solo
+    trae los más recientes)."""
+    deal = await repo.get_by_id(deal_id)
+    if not deal:
+        raise DealNotFound(deal_id)
+    return deal
+
+
+@router.post("/admin", response_model=DealAdminResponse)
 async def create_deal(
     deal_in: DealCreate,
     db: AsyncSession = Depends(get_db),
@@ -273,7 +288,7 @@ async def create_deal(
     return created
 
 
-@router.put("/admin/{deal_id}", response_model=DealDetailResponse)
+@router.put("/admin/{deal_id}", response_model=DealAdminResponse)
 async def update_deal(
     deal_id: str,
     deal_in: DealUpdate,
