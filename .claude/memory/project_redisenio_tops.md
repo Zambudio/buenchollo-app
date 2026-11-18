@@ -16,4 +16,4 @@ status: "active"
 - **Desplegado 2026-11-06**: PR #67 mergeada (`477166f`), API y scheduler reconstruidos en el NAS, Alembic `20261107120000`. Backup previo `bct-prod-pre-tops-20261106T173021Z.dump`.
 - Backup en NAS: el `.env` tiene `DATABASE_URL` entre comillas (quitarlas en el contenedor) y los scripts remotos deben ir por Bash heredoc, no por PowerShell (BOM/CRLF).
 - **Próximo desarrollo pedido por Pedro:** diseñar puntos por acciones y recompensas; no se ha implementado ni acordado su mecánica.
-- Detalle: `docs/adr/ADR-018-tops-comunitarios-productos.md`, `docs/project/redisenio-web-y-tops-2026-11.md` y `PRODUCT.md`.
+- Detalle: `docs/adr/ADR-018-tops-comunitarios-productos.md`, `docs/project/11-current-state.md` y `PRODUCT.md`.

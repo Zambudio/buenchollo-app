@@ -2,7 +2,7 @@
 
 ## Estado
 
-Aceptado para `develop` · 2026-11-06. Complementa [ADR-017](ADR-017-catalogo-permanente.md).
+Aceptado · 2026-11-06 · en producción. Complementa [ADR-017](ADR-017-catalogo-permanente.md).
 
 ## Contexto
 

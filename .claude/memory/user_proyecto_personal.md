@@ -7,7 +7,7 @@ metadata:
   originSessionId: 0e88ac1a-ad2a-46ab-8156-7723049be7b5
 ---
 
-Pedro Zambudio (`pjzambudio@gmail.com`) desarrolla BuenChollo como proyecto
+Pedro Zambudio desarrolla BuenChollo como proyecto
 personal a largo plazo. Ya está en producción (buenchollotech.com) y quiere
 hacerlo crecer (tiene "muchas ideas" para nuevas features).
 

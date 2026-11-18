@@ -1,6 +1,6 @@
 # 📋 Architecture Decision Records (ADRs)
 
-> **TL;DR** · Dieciséis decisiones arquitectónicas firmadas, datadas y
+> **TL;DR** · Diecinueve decisiones arquitectónicas firmadas, datadas y
 > justificadas con contexto + alternativas evaluadas + consecuencias.
 > Si quieres entender **por qué** se tomó una decisión técnica del
 > proyecto, está aquí.
@@ -17,14 +17,14 @@
 <tr>
   <td><a href="ADR-001-monolito-modular-fastapi.md">001</a></td>
   <td>📐 Monolito Modular con FastAPI y Clean Architecture pragmática</td>
-  <td>✅ Aceptado</td>
-  <td>2026-05-13</td>
+  <td>🔄 Superado parcialmente (por <a href="ADR-002-migracion-baas-a-api-gateway.md">002</a>, en la arquitectura de datos)</td>
+  <td>2026-03</td>
 </tr>
 <tr>
   <td><a href="ADR-002-migracion-baas-a-api-gateway.md">002</a></td>
   <td>🚪 Migración de BaaS directo a API Gateway</td>
   <td>✅ Aceptado · 100% cumplido</td>
-  <td>2026-05-21</td>
+  <td>2026-05-19</td>
 </tr>
 <tr>
   <td><a href="ADR-003-autenticacion-supabase-jwt.md">003</a></td>
@@ -110,6 +110,24 @@
   <td>✅ Aceptado</td>
   <td>2026-11-04</td>
 </tr>
+<tr>
+  <td><a href="ADR-017-catalogo-permanente.md">017</a></td>
+  <td>🗃️ Catálogo permanente: los chollos ya no se borran (productos, listings y ofertas)</td>
+  <td>✅ Aceptado</td>
+  <td>2026-11-06</td>
+</tr>
+<tr>
+  <td><a href="ADR-018-tops-comunitarios-productos.md">018</a></td>
+  <td>🏆 Tops comunitarios de productos permanentes con votos de usuarios</td>
+  <td>✅ Aceptado</td>
+  <td>2026-11-06</td>
+</tr>
+<tr>
+  <td><a href="ADR-019-redes-afiliacion-awin-tradedoubler.md">019</a></td>
+  <td>🔗 Redes de afiliación (Awin y Tradedoubler) en el editor de chollos</td>
+  <td>✅ Aceptado · pendiente de validación en vivo</td>
+  <td>2026-11-08</td>
+</tr>
 </tbody>
 </table>
 
@@ -122,7 +140,7 @@
 
 | Bloque | ADRs |
 |---|---|
-| 📐 **Arquitectura de Software** | [001](ADR-001-monolito-modular-fastapi.md) · [002](ADR-002-migracion-baas-a-api-gateway.md) · [004](ADR-004-persistencia-sqlalchemy-pgbouncer.md) · [007](ADR-007-di-fastapi-depends.md) · [011](ADR-011-blog-tiptap-editor.md) · [012](ADR-012-motor-tareas-programadas.md) · [013](ADR-013-motor-ia-unificado-omniroute-modelos-gratuitos.md) · [014](ADR-014-analitica-first-party-atribucion-sesiones.md) · [016](ADR-016-propuestas-comunidad-y-afiliados.md) |
+| 📐 **Arquitectura de Software** | [001](ADR-001-monolito-modular-fastapi.md) · [002](ADR-002-migracion-baas-a-api-gateway.md) · [004](ADR-004-persistencia-sqlalchemy-pgbouncer.md) · [007](ADR-007-di-fastapi-depends.md) · [011](ADR-011-blog-tiptap-editor.md) · [012](ADR-012-motor-tareas-programadas.md) · [013](ADR-013-motor-ia-unificado-omniroute-modelos-gratuitos.md) · [014](ADR-014-analitica-first-party-atribucion-sesiones.md) · [016](ADR-016-propuestas-comunidad-y-afiliados.md) · [017](ADR-017-catalogo-permanente.md) · [018](ADR-018-tops-comunitarios-productos.md) · [019](ADR-019-redes-afiliacion-awin-tradedoubler.md) |
 | 🧪 **Calidad del Software** | [008](ADR-008-estrategia-calidad-testing.md) |
 | 🛡️ **Seguridad** | [003](ADR-003-autenticacion-supabase-jwt.md) · [005](ADR-005-validacion-doble-frontera.md) · [006](ADR-006-rls-service-role.md) · [010](ADR-010-validacion-jwt-local.md) · [015](ADR-015-ingesta-imagenes-backend.md) · [016](ADR-016-propuestas-comunidad-y-afiliados.md) |
 | 🤖 **Desarrollo con IA** | [009](ADR-009-uso-de-ia-en-desarrollo.md) · [013](ADR-013-motor-ia-unificado-omniroute-modelos-gratuitos.md) |
@@ -137,7 +155,7 @@ Cada ADR sigue esta estructura:
 # ADR-XXX — Título de la decisión
 
 ## Estado
-Aceptado | Propuesto | Reemplazado por ADR-YYY
+Aceptado | Propuesto | Superado parcialmente o Reemplazado por ADR-YYY
 
 ## Contexto
 Qué problema o decisión había que resolver.
@@ -169,6 +187,6 @@ Ventajas, inconvenientes y efectos futuros.
 
 <p align="center">
   <a href="../project/00-index.md">📘 Operativa</a> ·
-  <a href="../reference/">📚 Referencias</a> ·
-  <a href="../archive/">🗄️ Histórico</a>
+  <a href="../guides/README.md">🔐 Guías</a> ·
+  <a href="../../PROJECT_STATUS.md">🗒️ Bitácora</a>
 </p>

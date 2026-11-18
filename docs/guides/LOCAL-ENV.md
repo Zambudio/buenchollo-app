@@ -1,5 +1,7 @@
 # Entorno local de pruebas (`local-env/`)
 
+> Los valores reales (IP, puerto, usuario, clave y rutas) no se publican en el repositorio: están en la base de conocimiento privada del propietario (OBSIDIAN VAULT, ficha `Entities/Infraestructura-NAS-Synology-DS224.md`).
+
 > **TL;DR** · `.\local-env\bct-local.cmd setup` (una vez por PC) ·
 > `.\local-env\bct-local.cmd start` · abre <http://localhost:8080> ·
 > correos en <http://localhost:8025> · `.\local-env\bct-local.cmd stop`.
@@ -34,8 +36,8 @@ todos los correos capturados en local.
 - Las imágenes que subas (propuestas, panel admin, avatar) quedan en el
   Storage real. Las de propuestas de usuarios de prueba se borran con
   `users delete` (§5); las del panel admin y avatares, a mano.
-- Registrarte en la web local crea una cuenta **real**. Usa alias
-  `pjzambudio+algo@gmail.com`.
+- Registrarte en la web local crea una cuenta **real**. Usa un alias
+  de tu correo (`<TU_CORREO>+algo@dominio`).
 
 ## 2. Requisitos
 
@@ -52,11 +54,11 @@ No hace falta Docker, ni instalar PostgreSQL, ni permisos de administrador.
 ## 3. Primer uso en este PC
 
 El repo de este PC está en el share del NAS
-(`\\Zambu-nas\nas-drive-pedro\IA\02_Proyectos\WEB-Buenchollo\BuenCholloTech`,
-también como unidad `Z:`) y los `.env` ya están ahí.
+(`<RUTA_SHARE>\BuenCholloTech`,
+también como unidad mapeada) y los `.env` ya están ahí.
 
 ```powershell
-cd Z:\IA\02_Proyectos\WEB-Buenchollo\BuenCholloTech
+cd <UNIDAD_SHARE>\BuenCholloTech
 .\local-env\bct-local.cmd setup     # instala todo y monta la base local (5-10 min la 1ª vez)
 .\local-env\bct-local.cmd start     # levanta todo (la 1ª carga de la web tarda ~30 s)
 ```
@@ -75,7 +77,7 @@ que funciona aunque la política de PowerShell del PC bloquee scripts.
    ```
 3. Copia los secretos desde el NAS (mismas rutas relativas):
    ```powershell
-   $nas = '\\Zambu-nas\nas-drive-pedro\IA\02_Proyectos\WEB-Buenchollo\BuenCholloTech'
+   $nas = '<RUTA_SHARE>\BuenCholloTech'
    Copy-Item "$nas\buenchollo-api\.env" .\buenchollo-api\.env
    Copy-Item "$nas\buenchollo-web\.env" .\buenchollo-web\.env
    ```
@@ -84,7 +86,7 @@ que funciona aunque la política de PowerShell del PC bloquee scripts.
 
 Si otra persona va a usarlo con su propia cuenta admin, crea
 `local-env/config.local.json` (ignorado por Git) con
-`{"admin_emails": ["su-correo@gmail.com"], "sync_email_patterns": ["su-correo+*@gmail.com"], "test_email_template": "su-correo+local-{n}@gmail.com"}`
+`{"admin_emails": ["su-correo@dominio"], "sync_email_patterns": ["su-correo+*@dominio"], "test_email_template": "su-correo+local-{n}@dominio"}`
 y ejecuta `reset-db`.
 
 ## 5. Uso diario
@@ -97,7 +99,7 @@ y ejecuta `reset-db`.
 | `status` | Qué está levantado y sus URLs. |
 | `logs api` | Últimas líneas del log (`postgres`, `mail`, `authsync`, `api`, `web`). |
 | `reset-db` | Borra la base local y la reconstruye con el esquema y el catálogo **actuales** de producción. |
-| `users create 6` | Crea usuarios de prueba reales `pjzambudio+local-N@gmail.com` (confirmados, contraseña aleatoria). |
+| `users create 6` | Crea usuarios de prueba reales `<TU_CORREO>+local-N@dominio` (confirmados, contraseña aleatoria). |
 | `users tokens` | Imprime sus access tokens (JSON). |
 | `users delete` | Borra los usuarios de prueba de Supabase Auth y sus imágenes de propuestas en Storage. |
 | `qa` | Lanza la batería de pruebas en vivo (§7). |
@@ -220,7 +222,7 @@ no se modifica.
 ## 8. Avisos importantes
 
 - **El NAS ejecuta la copia de trabajo del share.** Los contenedores de
-  producción montan `\\Zambu-nas\...\BuenCholloTech` (TD-31): la rama activa
+  producción montan `<RUTA_SHARE>\BuenCholloTech` (TD-31): la rama activa
   ahí es lo que producción carga al reiniciarse. **No cambies de rama en el
   share para probar otra cosa**: clona el repo en un disco local (§4) y prueba
   allí. El entorno local en sí no afecta a los contenedores.
@@ -239,7 +241,7 @@ no se modifica.
 | Síntoma | Causa | Solución |
 |---|---|---|
 | "Una directiva de Control de aplicaciones bloqueó este archivo" | Windows App Control bloquea binarios sin firmar | Por eso no se usa Mailpit ni `uuid-ossp`. Si bloquea otra DLL de Postgres, apúntalo aquí. |
-| La web no arranca: *Failed to resolve entry for package "vite"* | Vite no admite rutas UNC | El lanzador usa la letra de unidad mapeada (`Z:`) o mapea una libre. Comprueba `logs web`. |
+| La web no arranca: *Failed to resolve entry for package "vite"* | Vite no admite rutas UNC | El lanzador usa la letra de unidad mapeada o mapea una libre. Comprueba `logs web`. |
 | `pg_dump: password authentication failed` | Contraseña de la BD con caracteres no ASCII | Ya resuelto (pgpass temporal UTF-8). Si vuelve a pasar, revisa `DATABASE_URL` del `.env`. |
 | 403 "completa tu perfil" justo tras registrarte | El sincronizador aún no ha reflejado la cuenta | Espera ~3 s y recarga. `logs authsync`. |
 | Puerto ocupado | Otro proceso en `8000`/`8080`/`54329`/`1025`/`8025` | Cambia puertos en `config.local.json` (`api_port`, `web_port`, …). |

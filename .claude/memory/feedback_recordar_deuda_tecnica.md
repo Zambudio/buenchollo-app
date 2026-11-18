@@ -14,5 +14,5 @@ presente al retomar el proyecto de nuevo, sin que se olvide entre tareas.
 **How to apply:** no interrumpir a mitad de una tarea; el recordatorio va en la transición
 entre una tarea terminada y la siguiente. Mantener el registro vivo: al cerrar un item,
 borrarlo de `docs/project/10-technical-debt.md` y anotar el cierre (fecha + commit) en
-`PROJECT_STATUS.md`. Ver [[buenchollo-final-review-2026-06]] para el detalle de la deuda
+`PROJECT_STATUS.md`. Ver docs/project/10-technical-debt.md para el detalle de la deuda
 detectada en la auditoría final.

@@ -2,8 +2,9 @@
 
 > **TL;DR** · Controles aplicados (auth, rate limit, headers, RLS,
 > SSRF allowlist), comandos de auditoría, política `--no-verify` y
-> plan de respuesta a incidentes. La auditoría OWASP completa vive en
-> [`docs/reference/SECURITY_AUDIT.md`](../reference/SECURITY_AUDIT.md).
+> plan de respuesta a incidentes. Los hallazgos de la auditoría OWASP de 2026-05
+> (SEC-01 a SEC-10) están resumidos más abajo y la auditoría técnica más reciente es
+> [`12-auditoria-tecnica-2026-11.md`](12-auditoria-tecnica-2026-11.md).
 
 ---
 
@@ -105,8 +106,7 @@ Amazon y el fetcher de imágenes; ver la sección "Contenido de usuarios" más a
 ### 🙋 Contenido de usuarios (propuestas de chollos)
 
 Decisiones en [ADR-015](../adr/ADR-015-ingesta-imagenes-backend.md) y
-[ADR-016](../adr/ADR-016-propuestas-comunidad-y-afiliados.md); spec en
-[`docs/superpowers/specs/2026-11-03-chollos-de-usuarios-design.md`](../superpowers/specs/2026-11-03-chollos-de-usuarios-design.md).
+[ADR-016](../adr/ADR-016-propuestas-comunidad-y-afiliados.md).
 
 | Riesgo | Control |
 |---|---|
@@ -138,8 +138,8 @@ en la descarga de imágenes para Telegram), TD-29 (cuota no atómica).
 - 🔒 **RLS Supabase** activado en todas las tablas de `public` (22). Backend
   bypassa con `service_role` por diseño ([ADR-006](../adr/ADR-006-rls-service-role.md)).
   El test `test_migrations_rls.py` verifica que ninguna migración cree una tabla
-  de `public` sin RLS (regresión de `scheduled_deals`, ver `PROJECT_STATUS.md`
-  § 3.tervicies)
+  de `public` sin RLS (regresión de `scheduled_deals`, ver el histórico de
+  [`PROJECT_STATUS.md`](../../PROJECT_STATUS.md))
 
 ### 📝 Logging y monitoring
 
@@ -274,16 +274,34 @@ curl -sI http://localhost:8000/health | \
 - [x] RLS obligatorio para tablas públicas y prueba de regresión de migraciones.
 - [x] CI con auditoría de dependencias y escaneo del historial con gitleaks.
 - [ ] Activar manualmente la protección de contraseñas filtradas en Supabase Auth (TD-20).
-- [ ] Mantener el smoke test de [`docs/reference/SMOKE_TEST.md`](../reference/SMOKE_TEST.md) como comprobación previa a cambios sensibles.
+- [ ] Mantener el smoke test de [`SMOKE-TEST.md`](../guides/SMOKE-TEST.md) como comprobación previa a cambios sensibles.
 
 ---
+
+## 🧾 Hallazgos de la auditoría OWASP (2026-05)
+
+Los comentarios del código citan estos identificadores (`SEC-xx`). Ninguno era crítico.
+
+| ID | Hallazgo | Resolución |
+|---|---|---|
+| SEC-01 | CVE en `python-multipart` (DoS en el parseo multipart) | Dependencia fijada a una versión corregida; `pip-audit` en CI |
+| SEC-02 | CORS reflejaba el `Origin` en el handler de excepciones | Lista explícita de orígenes, sin reflection |
+| SEC-03 | Sin cabeceras de seguridad globales | Middleware con CSP, `X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy` y HSTS en producción |
+| SEC-04 | `CORS_ORIGINS=*` por defecto en `.env.example` | Aviso al arrancar si producción usa `*`; el valor por defecto de `.env.example` es un origen local |
+| SEC-05 | Esquemas Pydantic de chollos sin `max_length` | Límites en todos los campos de texto |
+| SEC-06 | SSRF parcial en la vista previa de productos | Allowlist de hosts Amazon y bloqueo de IP internas en cada salto (`core/ssrf.py`) |
+| SEC-07 | Avisos npm moderados, solo de herramientas de desarrollo y build | `npm run audit:prod` en CI sobre dependencias de producción |
+| SEC-08 | JWT en `localStorage` (decisión del SDK de Supabase) | Aceptado; mitigado con cabeceras y sin `dangerouslySetInnerHTML` con entrada de usuario |
+| SEC-09 | `logger.debug` podía registrar el email (PII) | Solo `user_id` en los logs |
+| SEC-10 | Cabeceras del proxy del NAS no verificables | Sustituido por Cloudflare Tunnel, que aplica TLS y WAF en el borde |
 
 ## 📚 Documentación relacionada
 
 | Documento | Contenido |
 |---|---|
-| [`docs/reference/SECURITY_AUDIT.md`](../reference/SECURITY_AUDIT.md) | Auditoría OWASP completa con hallazgos SEC-01 a SEC-09 |
 | [`SECURITY.md`](../../SECURITY.md) | Política de divulgación responsable (raíz) |
+| [`12-auditoria-tecnica-2026-11.md`](12-auditoria-tecnica-2026-11.md) | Auditoría técnica completa de 2026-11 con plan de acción |
+| [`Cloudflare.md`](../guides/Cloudflare.md) | TLS, WAF, túnel y hardening del borde |
 
 ---
 

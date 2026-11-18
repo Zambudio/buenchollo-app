@@ -19,13 +19,13 @@ status: "active"
   Creators API. El scheduler va **apagado** a propósito: su limpieza usa Supabase REST =
   producción (TD-37). Telegram apagado, correo capturado en local.
 - **Usuarios de prueba**: `bct-local.cmd users create 6` (alias
-  `pjzambudio+local-N@gmail.com`, credenciales en `%LOCALAPPDATA%\BuenCholloLocal\test-users.json`);
+  `<TU_CORREO>+local-N@dominio`, credenciales en `%LOCALAPPDATA%\BuenCholloLocal\test-users.json`);
   `users delete` al acabar. **No** escribir esas credenciales en el login de la web
   (va al Supabase real): las pruebas con sesión van por API (`local-env/qa/`).
 - **Pruebas en vivo**: `bct-local.cmd qa` (pytest, ~165 casos, ~8 min por rate limits) y
   `bct-local.cmd stress`. El usuario de prueba nº 1 es admin solo en la base local.
 - **Trampas resueltas**: Windows App Control bloquea Mailpit y `uuid-ossp.dll` (se usa un
-  capturador SMTP en Python); Vite no admite rutas UNC (el lanzador usa `Z:`, nunca `N:`,
+  capturador SMTP en Python); Vite no admite rutas UNC (el lanzador usa la letra de unidad mapeada, nunca una ruta UNC,
   ver [[project_entorno_local_nas_drive]]); `Start-Process` con salida canalizada cuelga
   (se lanza con `py/spawn.py`); contraseña con `€` corrompida por variables de entorno
   (pgpass UTF-8 temporal).

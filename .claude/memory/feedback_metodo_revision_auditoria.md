@@ -29,7 +29,7 @@ Modo de trabajo permanente cuando Pedro pida **revisar, auditar, documentar o pr
 
 8. **Documentación, dos tipos:** (a) **interna** (qué es, organización, instalación, configuración, ejecución, env vars, servicios externos, decisiones técnicas, partes críticas, cómo mantener/ampliar); (b) **guía de proyecto y arquitectura** (problema, objetivos, tecnologías, arquitectura, decisiones, buenas prácticas, seguridad, testing, limitaciones, mejoras futuras). Tono profesional sin vender humo.
 
-9. **Markdown existentes:** localizar todos los `.md`; detectar duplicados/obsoletos; **no borrar sin justificar**; proponer mantener/fusionar/mover/eliminar; reutilizar docs de desarrollo como base de la doc final; estructura clara en `/docs` (taxonomía ya existente: `adr/ archive/ project/ reference/ guides/` — ver [[project_estado_2026-06]]).
+9. **Markdown existentes:** localizar todos los `.md`; detectar duplicados/obsoletos; **no borrar sin justificar**; proponer mantener/fusionar/mover/eliminar; reutilizar docs de desarrollo como base de la doc final; estructura clara en `/docs` (taxonomía ya existente: `adr/ project/ guides/`).
 
 10. **Seguridad transversal (Security by Design/Default):** env vars, secretos expuestos, validación de entradas, auth, permisos, deps vulnerables, reglas backend/BD, manejo de errores, info sensible en logs, config segura por defecto, riesgos de código generado por IA.
 

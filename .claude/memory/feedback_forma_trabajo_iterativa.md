@@ -39,7 +39,7 @@ marca la tarea y a por la siguiente".
   directamente** salvo que el usuario haya dicho explícitamente "para".
 - **La documentación va DENTRO del commit del cambio, no como follow-up.**
   Si un fix/feature tiene relevancia operativa, actualizar `PROJECT_STATUS.md`
-  (bitácora, sección `§ 3.<ordinal latino>` nueva al principio) y
+  (bitácora, entrada fechada nueva al principio) y
   `docs/project/10-technical-debt.md` (alta/cierre de TD-NN) **antes** de
   hacer `git commit`, en el mismo commit. Quote (2026-09-02): "si es documentar
   si hazlo, deberias haberlo hecho ya antes del commit".

@@ -22,11 +22,10 @@ status: "active"
 
 ## Validación local (2026-08-15)
 
-Ver [`PROJECT_STATUS.md § 3.terdecies`](../../PROJECT_STATUS.md) para el relato
-completo (incidente "Antigravity" + bug de entorno). Resumen accionable:
+Resumen accionable (relato en el histórico de `PROJECT_STATUS.md`):
 
 - **Verificado con logs reales del backend** (no solo config): las llamadas van a
-  `http://192.168.1.3:20128/v1/chat/completions` (OmniRoute real en el NAS), cero a
+  `http://<IP_NAS>:20128/v1/chat/completions` (OmniRoute real en el NAS), cero a
   `api.openai.com`.
 - **El fallback a OpenAI NO es failover en caliente**: `effective_ai_base_url`
   (`config.py`) solo elige `api.openai.com` si `AI_BASE_URL` está vacío al arrancar.
@@ -41,4 +40,4 @@ completo (incidente "Antigravity" + bug de entorno). Resumen accionable:
   (`productsApi.previewFromUrl`). Patrón a repetir si se añaden más llamadas de IA
   encadenadas: paralelizar primero lo independiente, timeout por ruta después.
 - **Requisito de entorno para probar en local**: ver [`project_entorno_local_nas_drive.md`](project_entorno_local_nas_drive.md)
-  — arrancar `buenchollo-web` siempre desde `Z:`, no `N:`.
+  — arrancar `buenchollo-web` siempre desde la letra de unidad del lanzador, no desde la otra.

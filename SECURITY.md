@@ -1,13 +1,12 @@
 # 🛡️ Security Policy — BuenCholloTech
 
 > **TL;DR** · Si encuentras una vulnerabilidad, escribe a
-> `pjzambudio@gmail.com` con asunto `[SECURITY] ...` antes de
+> `contacto@buenchollotech.com` con asunto `[SECURITY] ...` antes de
 > divulgarla públicamente. Respuesta en < 7 días.
 >
 > 📚 Política operativa completa y controles aplicados:
 > [`docs/project/07 · Seguridad`](docs/project/07-security.md).
-> Auditoría OWASP con hallazgos detallados:
-> [`docs/reference/SECURITY_AUDIT.md`](docs/reference/SECURITY_AUDIT.md).
+> Hallazgos de la auditoría OWASP resumidos en el mismo capítulo.
 
 ---
 
@@ -26,7 +25,7 @@
 > el problema.
 
 ```
-1. 📧 Email a pjzambudio@gmail.com
+1. 📧 Email a contacto@buenchollotech.com
         │
         │  Asunto: [SECURITY] BuenChollo — <título corto>
         │
@@ -84,4 +83,4 @@ frontend, CI/CD, despliegue):
 
 ---
 
-> 🕒 *Última actualización: 2026-06-03 · tras sprint S1–S7 de seguridad.*
+> 🕒 *Última actualización: 2026-11-18.*

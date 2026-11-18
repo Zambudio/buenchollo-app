@@ -3,7 +3,7 @@
 ## Estado
 
 **Aceptado** · 2026-08-10 · decisión tomada al implementar la revisión periódica de
-precios de Amazon (`docs/superpowers/specs/2026-08-09-tareas-programadas-revision-precios-design.md`).
+precios de Amazon.
 
 ## Contexto
 
