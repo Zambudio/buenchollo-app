@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { getLocalStorage } from "@/lib/storage";
 import { useEffect, useState } from "react";
 import { ShieldCheck, ShieldOff } from "lucide-react";
 import { toast } from "sonner";
@@ -26,7 +27,8 @@ function AdminAnalyticsPage() {
   const { data, error, isLoading } = useAnalyticsOverview(days);
 
   useEffect(() => {
-    setExcluded(isAnalyticsExcluded(window.localStorage));
+    const storage = getLocalStorage();
+    setExcluded(storage ? isAnalyticsExcluded(storage) : false);
   }, []);
 
   useEffect(() => {
@@ -35,7 +37,8 @@ function AdminAnalyticsPage() {
 
   const toggleExclusion = () => {
     const next = !excluded;
-    setAnalyticsExcluded(window.localStorage, next);
+    const storage = getLocalStorage();
+    if (storage) setAnalyticsExcluded(storage, next);
     setExcluded(next);
     toast.success(next ? "Este dispositivo queda excluido" : "Este dispositivo vuelve a medirse");
   };

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { getLocalStorage } from "@/lib/storage";
 
 import { Button } from "@/components/ui/button";
 import { isAnalyticsExcluded, setAnalyticsExcluded } from "@/features/analytics/lib/tracking";
@@ -7,12 +8,14 @@ export function AnalyticsPreferenceButton() {
   const [excluded, setExcluded] = useState(false);
 
   useEffect(() => {
-    setExcluded(isAnalyticsExcluded(window.localStorage));
+    const storage = getLocalStorage();
+    setExcluded(storage ? isAnalyticsExcluded(storage) : false);
   }, []);
 
   const toggle = () => {
     const next = !excluded;
-    setAnalyticsExcluded(window.localStorage, next);
+    const storage = getLocalStorage();
+    if (storage) setAnalyticsExcluded(storage, next);
     setExcluded(next);
   };
 
