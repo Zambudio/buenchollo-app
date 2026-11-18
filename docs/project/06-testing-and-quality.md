@@ -264,7 +264,7 @@ git push --no-verify
 | 🐍 `backend` | `pytest -m "not integration"` (78 unit) |
 | ⚛️ `frontend` | typecheck + ESLint + Vitest con coverage threshold |
 | 🎭 `e2e` | Playwright chromium con webServer |
-| 🛡️ `security-audit` | `pip-audit`, `npm audit --omit=dev`, `gitleaks` |
+| 🛡️ `security-audit` | `pip-audit`, `npm run audit:prod` (npm audit de producción con excepciones fechadas), `gitleaks` |
 
 > 🚨 Si **cualquier job** falla, el commit aparece rojo y no se debe mergear.
 

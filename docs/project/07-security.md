@@ -154,8 +154,10 @@ en la descarga de imágenes para Telegram), TD-29 (cuota no atómica).
 - 🔒 **Lockfiles** versionados
 - ✅ **`pip-audit`** sobre `requirements.txt` → **0 CVEs** (tras pin
   `python-multipart==0.0.27`, SEC-01)
-- ✅ **`npm audit`** (incluidas dev) → **0** desde 2026-10-27; el CI falla en
-  `high` o superior (`npm audit --omit=dev --audit-level=high`)
+- ✅ **`npm audit`**: el CI falla en `high` o superior de las dependencias de producción
+  (`npm run audit:prod`). Única excepción aceptada, con fecha de revisión, en
+  `buenchollo-web/audit-allowlist.json`: `picomatch` sin versión corregida (TD-50,
+  solo herramientas de build)
 - 🩹 **Overrides temporales** en `buenchollo-web/package.json`
   (`miniflare.undici`, `@tailwindcss/typography.postcss-selector-parser`):
   parchean deps transitivas fijadas por upstream; retirada en TD-22
@@ -226,7 +228,7 @@ pip install -U <paquete>  # o npm update <paquete>
 
 # 2. Verificar
 pip-audit -r requirements.txt --strict
-npm audit --omit=dev --audit-level=high
+npm run audit:prod   # npm audit --omit=dev con las excepciones de audit-allowlist.json
 
 # 3. CI verde + redeploy NAS
 ```
@@ -240,9 +242,9 @@ npm audit --omit=dev --audit-level=high
 cd buenchollo-api
 python -m pip_audit -r requirements.txt
 
-# ⚛️ Frontend npm: CVEs sólo en producción
+# ⚛️ Frontend npm: CVEs sólo en producción (con las excepciones aceptadas)
 cd buenchollo-web
-npm audit --omit=dev --audit-level=high
+npm run audit:prod
 
 # 🔍 Búsqueda de patrones peligrosos
 grep -rn "dangerouslySetInnerHTML\|eval(\|innerHTML" buenchollo-web/src

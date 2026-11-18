@@ -20,6 +20,16 @@
   fecha/evidencia en `docs/guides/Cloudflare.md`. No copiar el valor nuevo a Git,
   documentación, logs ni chat.
 
+## 🟡 Baja — dependencias (2026-11-18)
+
+- **TD-50 — `picomatch` con aviso high sin versión corregida (GHSA-fc5q-39xc-vjpf).**
+  ReDoS en extglobs repetidos; afecta a `<=4.0.7`, la última publicada. Llega vía
+  `vite`, `@tanstack/react-start` (start-plugin-core, router-generator) y `unplugin`:
+  solo herramientas de build con patrones de rutas del propio repo; no entra en el
+  bundle del Worker ni procesa entrada de usuarios. Aceptado hasta 2027-01-31 en
+  `buenchollo-web/audit-allowlist.json` (lo aplica `npm run audit:prod`, que usa el CI).
+  Cerrar: actualizar cuando salga la versión corregida y quitar la excepción.
+
 ## 🟠 Media — redes de afiliación (Awin / Tradedoubler, 2026-11-08)
 
 - **TD-46 — Integración Awin/Tradedoubler sin validar en vivo.** En producción desde

@@ -1,0 +1,11 @@
+{
+  "$comment": "Avisos de npm audit aceptados de forma explícita y temporal (los lee scripts/audit-prod.mjs). Cada entrada necesita motivo y fecha de revisión: al vencer, el CI vuelve a fallar y obliga a revisarla. Quitar la entrada en cuanto exista versión corregida.",
+  "advisories": [
+    {
+      "id": "GHSA-fc5q-39xc-vjpf",
+      "package": "picomatch",
+      "reason": "ReDoS en extglobs repetidos. No hay versión corregida (afecta a <=4.0.7, la última). Solo lo usan herramientas de build (vite, @tanstack/start-plugin-core, router-generator, unplugin) con patrones de rutas del propio repo; no entra en el bundle del Worker ni procesa entrada de usuarios. TD-50.",
+      "review_by": "2027-01-31"
+    }
+  ]
+}
