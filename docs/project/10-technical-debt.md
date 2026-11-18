@@ -29,6 +29,12 @@
   bundle del Worker ni procesa entrada de usuarios. Aceptado hasta 2027-01-31 en
   `buenchollo-web/audit-allowlist.json` (lo aplica `npm run audit:prod`, que usa el CI).
   Cerrar: actualizar cuando salga la versión corregida y quitar la excepción.
+- **TD-51 — Motor «OmniRoute» (solo gratuitos) poco fiable para el copy de Telegram.**
+  `OpenAICompatibleLLMClient` da 3,5 s a cada modelo gratuito antes de pasar al siguiente
+  (ADR-013, pensado para fallar rápido). Escribir 2-3 líneas suele tardar más y, sin
+  fallback a OpenAI en ese modo, `POST /v1/telegram/generate` acaba usando la descripción
+  corta (el panel lo avisa). «Automático» y «OpenAI» funcionan. Opciones: un timeout por
+  tipo de tarea en el cliente o recomendar «Automático» por defecto en ese botón.
 
 ## 🟠 Media — redes de afiliación (Awin / Tradedoubler, 2026-11-08)
 

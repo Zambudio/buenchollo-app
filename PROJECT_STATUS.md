@@ -1,7 +1,11 @@
 # PROJECT_STATUS — BuenCholloTech
-*Actualización de producción: 2026-11-08 — Awin y Tradedoubler en el editor de chollos desplegados en web, API y scheduler (merge `c47269c`, PR #78). Alembic `20261108120000`.*
+*Actualización de producción: 2026-11-18 — Borrador de Telegram en «Editar chollo», apertura por id y borrado desde la ficha desplegados en web, API y scheduler (PR #79–#81, merge `325573f`). Alembic `20261118120000`.*
 
 ## 2026-11-18 · Borrador de Telegram en «Editar chollo», chollos antiguos y borrado desde la ficha
+
+- **Desplegado** (PR #79, #80 y #81; merge final `325573f`): backup previo `pg_dump -Fc` validado con `pg_restore -l` (`~/backups/buenchollo/bct-prod-pre-telegram-draft-20261118T094553Z.dump`, 1,7 MB, 72 tablas con datos; SHA-256 `1d7ecc39…a7fd71fa7d0b8`), share en `main` por fast-forward y `docker restart buenchollo-api buenchollo-scheduler` (sin rebuild: sin dependencias nuevas). Alembic aplicó `20261118120000`. CI de las tres PR en verde (6/6).
+- **Pruebas en producción**: `/health`, `/health/ready`, sitemap, portada y ficha 200; los endpoints admin nuevos sin sesión 401; el detalle público no expone `telegram_text`; los bundles publicados contienen la sección nueva y el botón ELIMINAR. Dentro del contenedor de producción (solo lectura): la DJI Osmo Pocket 3, fuera de los 200 más recientes de 271 chollos, se carga por id con `DealAdminResponse`; el copy con IA sale completo con Automático y OpenAI (~1–12 s, 227–350 caracteres).
+- **Hallazgos de las pruebas, corregidos en #80/#81**: con `max_tokens=300` los modelos gratuitos que razonan devolvían la frase cortada, y sin `max_tokens` OmniRoute rechaza las peticiones de texto (400). Queda `COPY_MAX_TOKENS = 2000`. El motor «OmniRoute» solo con modelos gratuitos suele agotar su límite de 3,5 s por modelo al escribir el copy; el botón avisa y usa la descripción corta (TD-51). Para este botón, usar «Automático».
 
 - **Contexto**: la revisión diaria de precios avisaba de bajadas de chollos que luego no se podían abrir en Admin → Chollos. Causas: el formulario se pinta encima de la tabla sin hacer scroll (desde una fila de abajo parecía que EDITAR no hacía nada) y `?edit=<id>` buscaba el chollo en el listado, que solo trae los 200 más recientes.
 - **Editar**: `GET /v1/deals/admin/{id}` carga cualquier chollo por id, y el formulario se lleva a la vista al abrirlo. El conflicto de importación de Awin/Tradedoubler también abre el chollo existente por id.
