@@ -1,15 +1,11 @@
-from datetime import datetime
-
 from sqlalchemy import delete, exists, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.modules.catalog.domain.models import (
     AVAILABLE,
-    NOT_FOUND,
     SOURCE_AMAZON,
     SOURCE_MANUAL,
-    UNAVAILABLE,
     Product,
     ProductListing,
 )
@@ -104,15 +100,6 @@ class CatalogRepository:
         deal.listing_id = listing.id
         deal.offer_price = deal.current_price
         await self.session.flush()
-
-    async def get_purgeable(self, older_than: datetime) -> list[ProductListing]:
-        result = await self.session.execute(
-            select(ProductListing).where(
-                ProductListing.availability.in_((UNAVAILABLE, NOT_FOUND)),
-                ProductListing.unavailable_since <= older_than,
-            )
-        )
-        return list(result.scalars())
 
     async def purge_listing(self, listing: ProductListing) -> list[str]:
         """Quita la tienda del producto. Si el producto se queda sin tiendas se

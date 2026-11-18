@@ -59,14 +59,6 @@ class ProfileRepository:
         row = result.mappings().first()
         return SimpleNamespace(**row) if row else None
 
-    async def get_username(self, user_id: str) -> str | None:
-        result = await self.session.execute(
-            text("SELECT username FROM public.profiles WHERE user_id::text = :uid LIMIT 1"),
-            {"uid": user_id},
-        )
-        row = result.fetchone()
-        return row[0] if row else None
-
     # ── Roles ────────────────────────────────────────────────────────────────
 
     async def get_user_roles(self, user_id: str) -> list[str]:
