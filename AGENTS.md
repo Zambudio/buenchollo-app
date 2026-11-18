@@ -31,7 +31,7 @@ Proyecto personal en producción — las decisiones técnicas deben ser defendib
 - **Auth**: Supabase Auth (Google OAuth) — el backend valida JWT con `service_role key`
 - **Storage**: Supabase Storage — subida directa desde el frontend (excepción deliberada al patrón API Gateway)
 - **Despliegue**: NAS Synology — Docker container con volumen montado en `buenchollo-api/`
-- **CORS**: configurado via `CORS_ORIGINS` en `.env` — actualmente `["*"]` en desarrollo
+- **CORS**: configurado via `CORS_ORIGINS` en `.env` — lista cerrada al dominio en producción
 
 ### Decisiones de arquitectura vigentes
 
@@ -54,8 +54,11 @@ app/
     │   ├── infrastructure/# repositorios, adapters externos
     │   └── api/           # router FastAPI, schemas Pydantic
     ├── products/          # preview Amazon (DIP con Protocols e integración ProductAIEnricher)
-    ├── catalog/           # catálogo permanente: products + product_listings, reglas de oferta, aviso de reactivación (ADR-017)
+    ├── catalog/           # catálogo permanente: products + product_listings, reglas de oferta, tops y votos (ADR-017, ADR-018)
+    ├── submissions/ · affiliates/  # propuestas de usuarios; redes Awin/Tradedoubler (ADR-016, ADR-019)
     ├── telegram/          # publicación al canal, formato emoji premium, hashtags IA
+    ├── alerts/ · notifications/ · emails/ · comments/ · blog/ · analytics/
+    ├── scheduled_deals/ · scheduled_tasks/
     ├── categories/
     ├── stores/
     └── users/

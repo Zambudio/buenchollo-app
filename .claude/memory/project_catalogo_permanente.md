@@ -24,7 +24,7 @@ status: "active"
   id no-ASIN tumba el lote entero con 400; el descuento que informa Amazon es frente a su
   referencia y no prueba una bajada (reactivar por él convertía subidas en «vuelve a estar
   en oferta»).
-- Trabajar `develop` en un clon/worktree local (`C:\Users\fadwe\dev\bct-develop`), nunca
+- Trabajar `develop` en un clon/worktree local (p. ej. `C:/dev/bct-develop`), nunca
   cambiando de rama en el share del NAS (TD-31). Relacionado: [[project_entorno_local_pruebas]].
 - **2026-11-06, petición de Pedro:** cada publicación de Telegram queda registrada
   (`telegram_publications`, panel y programados). Al reactivarse o bajar de precio

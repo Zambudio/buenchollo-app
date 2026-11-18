@@ -16,7 +16,7 @@
   <a href="https://github.com/Zambudio/buenchollo-app/actions/workflows/ci.yml">
     <img alt="CI Status" src="https://img.shields.io/badge/CI%2FCD-Passing-22c55e?style=for-the-badge&logo=githubactions&logoColor=white">
   </a>
-  <img alt="Tests" src="https://img.shields.io/badge/Tests-511%20Passing-22c55e?style=for-the-badge&logo=vitest&logoColor=white">
+  <img alt="Tests" src="https://img.shields.io/badge/Tests-1440%20Passing-22c55e?style=for-the-badge&logo=vitest&logoColor=white">
   <img alt="Security" src="https://img.shields.io/badge/Security-OWASP%20Audited-059669?style=for-the-badge&logo=shieldsdotio&logoColor=white">
 </p>
 
@@ -196,11 +196,11 @@ buenchollo-api/app/modules/<dominio>/
 
 ## 📋 ADRs (Architecture Decision Records)
 
-El proyecto cuenta con **14 ADRs formalizados** que documentan el contexto y la justificación de cada hito técnico:
+El proyecto cuenta con **19 ADRs formalizados** que documentan el contexto y la justificación de cada hito técnico:
 
 | # | Título | Decisión | Estado |
 |---|---|---|---|
-| [ADR-001](docs/adr/ADR-001-monolito-modular-fastapi.md) | Monolito Modular con FastAPI | Clean Architecture pragmática por dominios | ✅ Aceptado |
+| [ADR-001](docs/adr/ADR-001-monolito-modular-fastapi.md) | Monolito Modular con FastAPI | Clean Architecture pragmática por dominios | 🔄 Superado parcialmente (ADR-002) |
 | [ADR-002](docs/adr/ADR-002-migracion-baas-a-api-gateway.md) | Eliminación de llamadas BaaS directas | Frontend habla únicamente con FastAPI Gateway | ✅ Cumplido |
 | [ADR-003](docs/adr/ADR-003-autenticacion-supabase-jwt.md) | Autenticación basada en Supabase Auth | Validación de tokens JWT en backend server-side | ✅ Aceptado |
 | [ADR-004](docs/adr/ADR-004-persistencia-sqlalchemy-pgbouncer.md) | Persistencia Asíncrona | SQLAlchemy 2 async + asyncpg + PgBouncer pooler | ✅ Aceptado |
@@ -214,6 +214,11 @@ El proyecto cuenta con **14 ADRs formalizados** que documentan el contexto y la 
 | [ADR-012](docs/adr/ADR-012-motor-tareas-programadas.md) | Motor Asíncrono de Crons | Scheduled tasks engine en background sin dependencias pesadas | ✅ Aceptado |
 | [ADR-013](docs/adr/ADR-013-motor-ia-unificado-omniroute-modelos-gratuitos.md) | OmniRoute AI Engine | Router unificado de modelos LLM con fallback resiliente | ✅ Aceptado |
 | [ADR-014](docs/adr/ADR-014-analitica-first-party-atribucion-sesiones.md) | Analítica first-party | Atribución por sesión, privacidad y contador público del blog | ✅ Aceptado |
+| [ADR-015](docs/adr/ADR-015-ingesta-imagenes-backend.md) | Ingesta de imágenes de usuarios | Pillow → WebP → Storage, fetcher anti-SSRF | ✅ Aceptado |
+| [ADR-016](docs/adr/ADR-016-propuestas-comunidad-y-afiliados.md) | Propuestas de comunidad | Tabla separada, reescritores de afiliado, acortadores bloqueados | ✅ Aceptado |
+| [ADR-017](docs/adr/ADR-017-catalogo-permanente.md) | Catálogo permanente | Los chollos ya no se borran; productos, listings y ofertas | ✅ Aceptado |
+| [ADR-018](docs/adr/ADR-018-tops-comunitarios-productos.md) | Tops comunitarios | Votos de producto y clasificación por categoría | ✅ Aceptado |
+| [ADR-019](docs/adr/ADR-019-redes-afiliacion-awin-tradedoubler.md) | Redes de afiliación | Awin y Tradedoubler en el editor de chollos | ✅ Aceptado |
 
 ---
 
@@ -232,8 +237,8 @@ El proyecto cuenta con **14 ADRs formalizados** que documentan el contexto y la 
 
 ## 🧪 Estrategia de Testing & Calidad
 
-> 📊 **511 tests automatizados verdes**, verificados el 2026-09-26: 309 Pytest
-> (272 sin BD + 37 de integración), 186 Vitest y 16 E2E Playwright.
+> 📊 **1 440 tests automatizados**, verificados el 2026-11-18: 871 Pytest
+> (812 unitarios + 59 de integración), 532 Vitest y 37 E2E Playwright.
 
 ```bash
 # 🐍 Ejecución de Suite Backend (Unitarios + Seguridad)
@@ -291,12 +296,19 @@ npm run dev
 
 ---
 
-## 🗺️ Índice de Documentación (`docs/`)
+## 🗺️ Documentación
 
-- [`docs/project/`](docs/project/00-index.md): **Guía Operativa del Proyecto** (Setup, Estructura, Configuración, Deployment).
-- [`docs/project/11-current-state.md`](docs/project/11-current-state.md): **Estado actual verificado** (producción, funciones, módulos, CI y pendientes).
-- [`docs/adr/`](docs/adr/00-index.md): **Architecture Decision Records** (ADR-001 al ADR-014).
-- [`docs/guides/`](docs/guides/): **Guías Operativas en Vivo** (Cloudflare Setup, NAS-SSH Deployment, Migraciones Alembic).
+| Documento | Contenido |
+|---|---|
+| [`docs/project/00-index.md`](docs/project/00-index.md) | Operativa numerada: instalación, estructura, configuración, flujo, testing, seguridad, despliegue, troubleshooting |
+| [`docs/project/11-current-state.md`](docs/project/11-current-state.md) | Estado actual verificado |
+| [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md) | Deuda técnica abierta |
+| [`docs/adr/00-index.md`](docs/adr/00-index.md) | Architecture Decision Records (ADR-001 a ADR-019) |
+| [`docs/guides/README.md`](docs/guides/README.md) | Runbooks: entorno local, NAS-SSH, Cloudflare, migraciones, smoke test, redes de afiliación |
+| [`PROJECT_STATUS.md`](PROJECT_STATUS.md) | Bitácora de cambios |
+| [`CONTEXT.md`](CONTEXT.md) · [`PRODUCT.md`](PRODUCT.md) | Glosario de dominio y contexto de producto |
+| [`SECURITY.md`](SECURITY.md) | Política de seguridad |
+| [`CLAUDE.md`](CLAUDE.md) · [`AGENTS.md`](AGENTS.md) | Instrucciones para agentes de IA |
 
 ---
 

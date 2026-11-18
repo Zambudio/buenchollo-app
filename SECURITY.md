@@ -6,8 +6,7 @@
 >
 > 📚 Política operativa completa y controles aplicados:
 > [`docs/project/07 · Seguridad`](docs/project/07-security.md).
-> Auditoría OWASP con hallazgos detallados:
-> [`docs/reference/SECURITY_AUDIT.md`](docs/reference/SECURITY_AUDIT.md).
+> Hallazgos de la auditoría OWASP resumidos en el mismo capítulo.
 
 ---
 
@@ -84,4 +83,4 @@ frontend, CI/CD, despliegue):
 
 ---
 
-> 🕒 *Última actualización: 2026-06-03 · tras sprint S1–S7 de seguridad.*
+> 🕒 *Última actualización: 2026-11-18.*

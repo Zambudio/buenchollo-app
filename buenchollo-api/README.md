@@ -202,15 +202,10 @@ siguen visibles en rojo y se notifican a `TELEGRAM_ADMIN_CHANNEL_ID`.
 
 ## 🚀 Despliegue en NAS Synology
 
-```bash
-# En el NAS
-cd /volume1/docker/buenchollo-api
-git pull
-docker-compose build --no-cache
-docker-compose up -d
+El NAS ejecuta el código del share montado: se deja el share en `main` y se reinicia `buenchollo-api` y `buenchollo-scheduler` (o se reconstruye si cambian dependencias). Verificación:
 
-# Verificar
-curl -s https://embyzambu.synology.me:8000/health
+```bash
+curl -s https://api.buenchollotech.com/health
 # → {"status":"ok"}
 ```
 
