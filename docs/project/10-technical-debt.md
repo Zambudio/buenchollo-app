@@ -6,6 +6,10 @@
 
 Última revisión: **2026-11-07** (revisión general: cerrados TD-19, TD-23, TD-26, TD-32 y TD-38 b; ver `PROJECT_STATUS.md`). Anteriores: catálogo permanente, Fase 1: TD-39 a TD-45; chollos de usuarios: TD-24 a TD-35; entorno local: TD-36 a TD-38.
 
+> **Auditoría técnica 2026-11-18**: los hallazgos AUD-01 a AUD-26 y los de prioridad baja
+> están en [`12-auditoria-tecnica-2026-11.md`](12-auditoria-tecnica-2026-11.md), con su plan
+> de acción. Se pasarán a este registro como TD-xx a medida que se acepten o se planifiquen.
+
 ---
 
 ## 🔴 Alta — secretos de infraestructura

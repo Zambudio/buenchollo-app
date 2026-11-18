@@ -1,6 +1,12 @@
 # PROJECT_STATUS — BuenCholloTech
 *Actualización de producción: 2026-11-18 — Borrador de Telegram en «Editar chollo», apertura por id y borrado desde la ficha desplegados en web, API y scheduler (PR #79–#81, merge `325573f`). Alembic `20261118120000`.*
 
+## 2026-11-18 · Auditoría técnica completa (enfoque comprador)
+
+- Revisión de arquitectura backend y frontend, seguridad, calidad de código, testing, CI y operación, con verificación de todos los hallazgos altos contra el código y, en solo lectura, contra producción. Informe: [`docs/project/12-auditoria-tecnica-2026-11.md`](docs/project/12-auditoria-tecnica-2026-11.md).
+- Métricas: backend 83 % de cobertura (812 unitarios + 59 de integración), frontend 38 % (492 tests), `pip-audit` y `npm audit` limpios (salvo TD-50), una sola cabeza de Alembic, bundle inicial de 776 kB.
+- Veredicto: código sólido (arquitectura y seguridad altas); operación débil. Ocho hallazgos de prioridad alta: registro de modelos de Alembic sin seis tablas (AUD-01), despliegue sobre la copia de trabajo (AUD-02, TD-31), backups manuales (AUD-03), sin alertas de caída (AUD-04), token del túnel (AUD-05, TD-21), `main` sin protección de rama (AUD-06), *soft 404* en producción (AUD-07) y logo de 588 KB (AUD-08).
+
 ## 2026-11-18 · Aviso de bajadas al canal Admin solo para chollos de hace 10 días o más
 
 - La revisión diaria seguía avisando de bajadas de chollos publicados hace 4 días, lo que llevaba a repetir contenido reciente en Telegram. Ahora `ReactivationNotifier` solo avisa al canal Admin si el chollo se publicó hace al menos 10 días (`REPOST_MIN_AGE`): cuenta la última publicación registrada en Telegram o, si no la hay, el alta en la web (`created_at`). El aviso incluye la línea «🗓️ Última publicación en Telegram: dd/mm/aaaa (hace N días)». Se mantiene el antispam de 7 días; las alertas de usuario y la actualización del precio en la web no cambian. Un chollo caducado que vuelve a estar en oferta ya pasaba a `active` (sin cambios). Ver ADR-017 § 4.
