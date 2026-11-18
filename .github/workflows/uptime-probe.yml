@@ -1,7 +1,9 @@
 name: Sonda temporal del monitor
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [develop]
+    paths: [.github/workflows/uptime-probe.yml]
 
 permissions:
   contents: read
