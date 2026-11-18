@@ -7,7 +7,11 @@ Se envían dos mensajes: el aviso (qué ha pasado y el precio de antes) y la
 si nunca se publicó), lista para reenviar.
 
 Antispam: un aviso por chollo cada 7 días, salvo que el precio sea menor que
-el del último aviso. Un fallo de Telegram nunca deshace lo aplicado.
+el del último aviso. Además, solo se avisa al canal Admin si el chollo se
+publicó hace al menos 10 días (última publicación pública en Telegram o, si
+nunca se publicó allí, su alta en la web): reenviar algo de hace pocos días es
+repetir contenido. Las alertas de usuario no dependen de esa antigüedad. Un
+fallo de Telegram nunca deshace lo aplicado.
 """
 
 import logging
@@ -23,6 +27,7 @@ from app.modules.telegram.application.reprice import reprice_publication_text
 logger = logging.getLogger(__name__)
 
 ADMIN_COOLDOWN = timedelta(days=7)
+REPOST_MIN_AGE = timedelta(days=10)
 _NOTIFIABLE = ("reactivated", "price_dropped")
 
 
@@ -31,6 +36,16 @@ class OfferEvent:
     deal_id: str
     kind: str  # reactivated | price_dropped
     old_price: Decimal | None  # precio de la oferta anterior
+
+
+@dataclass(frozen=True)
+class LastPublication:
+    at: datetime
+    on_telegram: bool  # False: nunca se publicó en Telegram; `at` es el alta en la web
+
+
+def is_old_enough(last: LastPublication, now: datetime) -> bool:
+    return now - last.at >= REPOST_MIN_AGE
 
 
 def should_notify(
@@ -55,7 +70,13 @@ def _eur(value) -> str:
     return f"{_format_price_es(float(value))} €"
 
 
-def build_admin_message(deal, event: OfferEvent, site_url: str) -> str:
+def _published_line(last: LastPublication, now: datetime) -> str:
+    days = (now - last.at).days
+    where = "Última publicación en Telegram" if last.on_telegram else "Publicado en la web (nunca en Telegram)"
+    return f"🗓️ {where}: {last.at:%d/%m/%Y} (hace {days} días)"
+
+
+def build_admin_message(deal, event: OfferEvent, site_url: str, last: LastPublication, now: datetime) -> str:
     if event.kind == "price_dropped":
         lines = ["📉 Ha bajado de precio", deal.title]
         price = f"💶 Ahora {_eur(deal.current_price)}"
@@ -67,6 +88,7 @@ def build_admin_message(deal, event: OfferEvent, site_url: str) -> str:
         if event.old_price is not None:
             price += f" · la última vez que fue chollo: {_eur(event.old_price)}"
     lines.append(price)
+    lines.append(_published_line(last, now))
     if deal.previous_price is not None:
         reference = f"🏷️ Referencia de la tienda: {_eur(deal.previous_price)}"
         if deal.discount_percentage:
@@ -103,20 +125,36 @@ class ReactivationNotifier:
             if not self.admin_chat_id:
                 logger.info("Cambio de oferta de %s sin canal Admin configurado: no se avisa", deal.slug)
                 continue
-            if not await self._call(self.bot.send_admin_notification, build_admin_message(deal, event, self.site_url),
-                                    chat_id=self.admin_chat_id):
+            publication = await self._latest_publication(deal)
+            last = (LastPublication(publication.sent_at, on_telegram=True) if publication is not None
+                    else LastPublication(deal.created_at, on_telegram=False))
+            if not is_old_enough(last, now):
+                logger.info("Cambio de oferta de %s publicado hace menos de %d días: no se avisa",
+                            deal.slug, REPOST_MIN_AGE.days)
+                continue
+            message = build_admin_message(deal, event, self.site_url, last, now)
+            if not await self._call(self.bot.send_admin_notification, message, chat_id=self.admin_chat_id):
                 continue
             deal.admin_notified_at = now
             deal.admin_notified_price = deal.current_price
             sent += 1
-            await self._send_republishable(deal, now)
+            await self._send_republishable(deal, publication, now)
         return sent
 
-    async def _send_republishable(self, deal, now: datetime) -> None:
+    async def _latest_publication(self, deal):
+        """Si la consulta falla, se trata como nunca publicado en Telegram
+        (cuenta el alta en la web) para no perder el aviso."""
+        try:
+            return await self.publications.latest_public_for_deal(deal.id)
+        except Exception:
+            logger.exception("No se pudo leer la última publicación de %s", deal.slug)
+            return None
+
+    async def _send_republishable(self, deal, publication, now: datetime) -> None:
         """Segundo mensaje; aislado para que un fallo en un chollo no deje sin
         aviso a los siguientes ni deshaga el antispam de los ya avisados."""
         try:
-            text, image_url = await self._republishable(deal, now)
+            text, image_url = self._republishable(deal, publication, now)
             entities = self.generator.build_entities(text)
         except Exception:
             logger.exception("No se pudo preparar la publicación corregida de %s", deal.slug)
@@ -125,10 +163,9 @@ class ReactivationNotifier:
                                 image_url=image_url, chat_id=self.admin_chat_id):
             logger.warning("No se pudo enviar al canal Admin la publicación corregida de %s", deal.slug)
 
-    async def _republishable(self, deal, now: datetime) -> tuple[str, str | None]:
+    def _republishable(self, deal, publication, now: datetime) -> tuple[str, str | None]:
         """Última publicación pública con el precio corregido; si no existe (o
         no tiene el formato estándar), una publicación nueva."""
-        publication = await self.publications.latest_public_for_deal(deal.id)
         if publication is not None:
             text = reprice_publication_text(
                 publication.text,

@@ -1,6 +1,10 @@
 # PROJECT_STATUS — BuenCholloTech
 *Actualización de producción: 2026-11-18 — Borrador de Telegram en «Editar chollo», apertura por id y borrado desde la ficha desplegados en web, API y scheduler (PR #79–#81, merge `325573f`). Alembic `20261118120000`.*
 
+## 2026-11-18 · Aviso de bajadas al canal Admin solo para chollos de hace 10 días o más
+
+- La revisión diaria seguía avisando de bajadas de chollos publicados hace 4 días, lo que llevaba a repetir contenido reciente en Telegram. Ahora `ReactivationNotifier` solo avisa al canal Admin si el chollo se publicó hace al menos 10 días (`REPOST_MIN_AGE`): cuenta la última publicación pública en Telegram o, si no la hay, el alta en la web (`created_at`). El aviso incluye la línea «🗓️ Última publicación en Telegram: dd/mm/aaaa (hace N días)». Se mantiene el antispam de 7 días; las alertas de usuario y la actualización del precio en la web no cambian. Un chollo caducado que vuelve a estar en oferta ya pasaba a `active` (sin cambios). Ver ADR-017 § 4.
+
 ## 2026-11-18 · Borrador de Telegram en «Editar chollo», chollos antiguos y borrado desde la ficha
 
 - **Desplegado** (PR #79, #80 y #81; merge final `325573f`): backup previo `pg_dump -Fc` validado con `pg_restore -l` (`~/backups/buenchollo/bct-prod-pre-telegram-draft-20261118T094553Z.dump`, 1,7 MB, 72 tablas con datos; SHA-256 `1d7ecc39…a7fd71fa7d0b8`), share en `main` por fast-forward y `docker restart buenchollo-api buenchollo-scheduler` (sin rebuild: sin dependencias nuevas). Alembic aplicó `20261118120000`. CI de las tres PR en verde (6/6).
