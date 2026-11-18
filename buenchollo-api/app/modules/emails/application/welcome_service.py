@@ -3,6 +3,7 @@
 Garantiza la idempotencia mediante metadatos de usuario en Supabase Auth
 para evitar envíos repetidos al mismo usuario.
 """
+import asyncio
 from datetime import datetime, timezone
 import logging
 
@@ -49,7 +50,7 @@ class WelcomeEmailService:
                 # Comprobar si el admin client está disponible
                 admin_auth = getattr(self.supabase.auth, "admin", None)
                 if admin_auth and hasattr(admin_auth, "get_user_by_id"):
-                    res = admin_auth.get_user_by_id(user_id)
+                    res = await asyncio.to_thread(admin_auth.get_user_by_id, user_id)
                     user_data = getattr(res, "user", None) or res
                     if user_data:
                         user_meta = getattr(user_data, "user_metadata", {}) or {}
@@ -74,7 +75,7 @@ class WelcomeEmailService:
                 if admin_auth and hasattr(admin_auth, "update_user_by_id"):
                     now_str = datetime.now(timezone.utc).isoformat()
                     updated_meta = {**user_meta, "welcome_email_sent_at": now_str}
-                    admin_auth.update_user_by_id(user_id, {"user_metadata": updated_meta})
+                    await asyncio.to_thread(admin_auth.update_user_by_id, user_id, {"user_metadata": updated_meta})
             except Exception as exc:
                 logger.warning("No se pudo actualizar welcome_email_sent_at en Supabase Auth: %s", exc)
 

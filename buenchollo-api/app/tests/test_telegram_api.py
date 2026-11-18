@@ -5,6 +5,7 @@ directa, sino excepciones de dominio (`app/modules/telegram/domain/exceptions.py
 traducidas por el handler global. Verifica que los status codes se preservan
 tal cual estaban antes del refactor (503/503/422/503).
 """
+import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -12,6 +13,7 @@ from fastapi.testclient import TestClient
 
 from app.core.config import Settings, get_settings
 from app.core.database import get_db
+from app.core.rate_limit import limiter
 from app.core.security import require_admin
 from app.main import app
 
@@ -86,6 +88,31 @@ def test_notify_fallo_envio_devuelve_503(client, monkeypatch):
 
     assert r.status_code == 503
     assert "Error al enviar a Telegram" in r.json()["detail"]
+
+
+def test_notify_envia_a_telegram_fuera_del_event_loop(client, monkeypatch):
+    limiter.reset()  # /notify limita a 5/min por IP en todo el proceso de tests
+    _override_settings(telegram_bot_token="tok", telegram_main_channel_id="chan")
+
+    def _send_deal(**kwargs):
+        # En el hilo del event loop habría un loop en marcha: el envío
+        # (requests, bloqueante) debe ejecutarse en el threadpool.
+        with pytest.raises(RuntimeError):
+            asyncio.get_running_loop()
+        return False
+
+    fake_bot = MagicMock()
+    fake_bot.send_deal.side_effect = _send_deal
+    monkeypatch.setattr(
+        "app.modules.telegram.api.router.TelegramBot", lambda token: fake_bot
+    )
+
+    r = client.post(
+        "/v1/telegram/notify", json={"title": "Deal", "current_price": 9.99}
+    )
+
+    fake_bot.send_deal.assert_called_once()
+    assert r.status_code == 503
 
 
 # ── POST /telegram/generate con copy de IA (chollo ya guardado) ──────────────
