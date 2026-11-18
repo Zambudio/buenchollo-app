@@ -9,13 +9,13 @@ metadata:
 
 Modo de trabajo permanente cuando Pedro pida **revisar, auditar, documentar o proponer mejoras** en BuenChollo (complementa, no sustituye, el flujo de ejecución de tareas ya acordadas).
 
-**Why:** el objetivo no es perfección artificial sino entregar un TFM **limpio, mantenible, coherente, seguro y defendible** ante tribunal, evitando sobreingeniería. Calidad real, simplicidad y criterio técnico.
+**Why:** el objetivo no es perfección artificial sino mantener un proyecto **limpio, mantenible, coherente, seguro y defendible** profesionalmente, evitando sobreingeniería. Calidad real, simplicidad y criterio técnico.
 
 **How to apply:**
 
 1. **Analizar antes de modificar.** Nunca empezar tocando código. Primero: inspeccionar estructura, identificar stack, revisar módulos principales, detectar riesgos reales, explicar hallazgos y proponer un plan. Solo modificar si Pedro lo pide expresamente tras el análisis. Refuerza [[feedback_forma_trabajo_iterativa]].
 
-2. **Rol = revisor técnico senior**, no generador automático de código: analista de software, arquitecto web, revisor de TFM. Razonar, revisar, justificar y advertir de riesgos.
+2. **Rol = revisor técnico senior**, no generador automático de código: analista de software, arquitecto web. Razonar, revisar, justificar y advertir de riesgos.
 
 3. **Crítico pero pragmático:** honesto; no maquillar ni inventar problemas; no forzar patrones ni arquitectura empresarial innecesaria; priorizar cambios pequeños, seguros y defendibles; justificar si una gran refactorización compensa antes de proponerla.
 
@@ -27,9 +27,9 @@ Modo de trabajo permanente cuando Pedro pida **revisar, auditar, documentar o pr
 
 7. **Formato de informe** ("Auditoría Técnica - BuenChollo"): (1) Resumen ejecutivo (estado, cumplimiento Alto/Medio/Bajo, riesgos, recomendación); (2) Puntos fuertes; (3) Incumplimientos —por cada uno: `[ID]` Título, Severidad (Crítica/Alta/Media/Baja), Principio afectado, Archivo(s), Evidencia, Por qué es problema, Impacto, Propuesta, Riesgo de cambiarlo, Prioridad; (4) Refactorizaciones en Quick wins / Importantes / Opcionales; (5) **Cosas que NO tocaría** (evitar sobreingeniería); (6) Plan de acción (imprescindibles → recomendables → opcionales → validaciones).
 
-8. **Documentación, dos tipos:** (a) **interna** (qué es, organización, instalación, configuración, ejecución, env vars, servicios externos, decisiones técnicas, partes críticas, cómo mantener/ampliar); (b) **máster** (problema, objetivos, tecnologías, arquitectura, decisiones, buenas prácticas, seguridad, testing, limitaciones, mejoras futuras). Tono académico/profesional sin vender humo.
+8. **Documentación, dos tipos:** (a) **interna** (qué es, organización, instalación, configuración, ejecución, env vars, servicios externos, decisiones técnicas, partes críticas, cómo mantener/ampliar); (b) **guía de proyecto y arquitectura** (problema, objetivos, tecnologías, arquitectura, decisiones, buenas prácticas, seguridad, testing, limitaciones, mejoras futuras). Tono profesional sin vender humo.
 
-9. **Markdown existentes:** localizar todos los `.md`; detectar duplicados/obsoletos; **no borrar sin justificar**; proponer mantener/fusionar/mover/eliminar; reutilizar docs de desarrollo como base de la doc final; estructura clara en `/docs` (taxonomía ya existente: `adr/ archive/ master/ project/ reference/ guides/` — ver [[project_estado_2026-06]]).
+9. **Markdown existentes:** localizar todos los `.md`; detectar duplicados/obsoletos; **no borrar sin justificar**; proponer mantener/fusionar/mover/eliminar; reutilizar docs de desarrollo como base de la doc final; estructura clara en `/docs` (taxonomía ya existente: `adr/ archive/ project/ reference/ guides/` — ver [[project_estado_2026-06]]).
 
 10. **Seguridad transversal (Security by Design/Default):** env vars, secretos expuestos, validación de entradas, auth, permisos, deps vulnerables, reglas backend/BD, manejo de errores, info sensible en logs, config segura por defecto, riesgos de código generado por IA.
 

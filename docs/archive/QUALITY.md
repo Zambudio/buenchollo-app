@@ -1,8 +1,8 @@
 # Quality Strategy — BuenCholloTech
 
 > Documento de calidad del software del proyecto. Cubre estrategia de
-> testing, coverage estratégico, quality gates, métricas accionables,
-> deuda asumida y la defensa frente a tribunal.
+> testing, coverage estratégico, quality gates, métricas accionables y
+> deuda asumida.
 >
 > *Última actualización: 2026-05-30 (cierre del sprint de Calidad QA).*
 
@@ -65,13 +65,13 @@ el principio **100 / 80 / 0**.
 
 | Archivo | Tier | Coverage real |
 |---|---|---|
-| [`src/lib/format.ts`](../buenchollo-web/src/lib/format.ts) | CORE | 96.07% |
-| [`src/lib/errors.ts`](../buenchollo-web/src/lib/errors.ts) | CORE | 100% |
-| [`src/lib/validation/deals.ts`](../buenchollo-web/src/lib/validation/deals.ts) | CORE | 100% |
-| [`src/lib/validation/alerts.ts`](../buenchollo-web/src/lib/validation/alerts.ts) | CORE | 100% |
-| [`src/lib/utils.ts`](../buenchollo-web/src/lib/utils.ts) | CORE | 100% |
-| [`src/lib/constants.ts`](../buenchollo-web/src/lib/constants.ts) | CORE | 100% |
-| [`src/services/api/deals.ts`](../buenchollo-web/src/services/api/deals.ts) → `isDuplicateDealError` | CORE | ✅ tipado guard |
+| [`src/lib/format.ts`](../../buenchollo-web/src/lib/format.ts) | CORE | 96.07% |
+| [`src/lib/errors.ts`](../../buenchollo-web/src/lib/errors.ts) | CORE | 100% |
+| [`src/lib/validation/deals.ts`](../../buenchollo-web/src/lib/validation/deals.ts) | CORE | 100% |
+| [`src/lib/validation/alerts.ts`](../../buenchollo-web/src/lib/validation/alerts.ts) | CORE | 100% |
+| [`src/lib/utils.ts`](../../buenchollo-web/src/lib/utils.ts) | CORE | 100% |
+| [`src/lib/constants.ts`](../../buenchollo-web/src/lib/constants.ts) | CORE | 100% |
+| [`src/services/api/deals.ts`](../../buenchollo-web/src/services/api/deals.ts) → `isDuplicateDealError` | CORE | ✅ tipado guard |
 
 Threshold automático en `vitest.config.ts`:
 
@@ -104,7 +104,7 @@ Cubiertos con integration tests:
 
 ### Pre-commit (Husky)
 
-Configurado en [`.husky/pre-commit`](../.husky/pre-commit). Tarda ~10 s.
+Configurado en [`.husky/pre-commit`](../../.husky/pre-commit). Tarda ~10 s.
 
 ```sh
 cd buenchollo-web
@@ -116,7 +116,7 @@ Si falla, el commit se aborta.
 
 ### Pre-push (Husky)
 
-Configurado en [`.husky/pre-push`](../.husky/pre-push). Tarda ~3 s.
+Configurado en [`.husky/pre-push`](../../.husky/pre-push). Tarda ~3 s.
 
 ```sh
 cd buenchollo-web
@@ -142,7 +142,7 @@ Reglas:
 
 ### CI (GitHub Actions)
 
-Workflow [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). 4 jobs
+Workflow [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml). 4 jobs
 en cada `push` a `main` y cada `pull_request`:
 
 | Job | Qué corre | Artifact |
@@ -217,94 +217,12 @@ Decisiones explícitas de NO hacer ahora. Justificadas.
 | MSW para mocks API | Playwright route + Vitest mocks bastan. Añadir MSW duplicaría capas. | Bajo. |
 | Test E2E del flujo admin completo | Requiere mockear OAuth de Google: complejidad alta para escaso retorno. El admin se cubre con integration tests + smoke manual. | Medio — añadir cuando tengamos staging real. |
 | Lighthouse-CI automatizado | Performance budget documentado arriba; ejecutamos manualmente en hitos. | Bajo. |
-| Refactor de `admin.chollos.tsx` (940 líneas) | God Component conocido. Partir conlleva alto riesgo de regresión en una zona crítica. Documentado en `PROJECT_STATUS.md §3.bis F-03`. | Medio — mejora futura, no bloquea TFM. |
+| Refactor de `admin.chollos.tsx` (940 líneas) | God Component conocido. Partir conlleva alto riesgo de regresión en una zona crítica. Documentado en `PROJECT_STATUS.md §3.bis F-03`. | Medio — mejora futura. |
 | Tests E2E para `admin.chollos.tsx` (dialog duplicado, autocompletar Amazon) | Dependen de respuestas del backend (Amazon Creators API) que no se mockean limpiamente desde Playwright SSR. Cubierto manualmente en `docs/SMOKE_TEST.md`. | Bajo. |
 
 ---
 
-## 7. Defensa ante tribunal
-
-Respuestas concisas a las preguntas más probables.
-
-### 7.1 — ¿Qué estrategia de testing tiene el proyecto?
-
-Pirámide clásica con tres niveles claramente delimitados:
-
-- **Base — Unit (137 tests)**: 78 pytest del backend + 59 Vitest del
-  frontend. Cubren toda la lógica pura: validaciones, cálculos,
-  matchers, type guards. Corren en < 5 segundos.
-- **Centro — Integration (13 tests)**: Testing Library + userEvent.
-  Renderizan componentes reales con sus mocks de frontera y verifican
-  qué ve el usuario, no estado interno.
-- **Cima — E2E (8 tests)**: Playwright chromium. Sólo flujos críticos
-  (home carga, búsqueda funciona, guards de admin) — no reemplazan los
-  unit ni los integration, los complementan.
-
-### 7.2 — ¿Por qué no se busca 100% global de coverage?
-
-Porque sería una métrica de vanidad. Aplicamos coverage estratégico
-**100/80/0**: 90-100% en CORE (lógica de negocio), ~80% en componentes
-visibles, 0% en infraestructura (tipos, configs, código generado).
-
-El threshold automático del CI (`vitest.config.ts`) sólo gatea `src/lib/**`.
-Subir el porcentaje global escribiendo tests inútiles sobre `routeTree.gen.ts`
-o sobre los primitivos de shadcn UI no mejoraría la calidad real.
-
-### 7.3 — ¿Qué quality gates hay?
-
-Tres niveles, cada uno más exhaustivo:
-
-1. **Pre-commit local (Husky)**: lint + typecheck. ~10 s.
-2. **Pre-push local (Husky)**: vitest run. ~3 s.
-3. **CI (GitHub Actions)**: pytest backend + frontend completo + E2E
-   Playwright. ~3 min. Bloquea el merge si falla.
-
-Bypass legítimo (`--no-verify`) documentado y restringido a emergencias.
-
-### 7.4 — ¿Cómo se controla la deuda técnica?
-
-- **Documentada explícitamente** en `PROJECT_STATUS.md §4` y en este
-  documento §6. Cada item de deuda tiene su justificación y coste futuro
-  estimado.
-- **Métricas Tier 3** monitorizadas: TODO/FIXME en `src/`, smells
-  críticos del ESLint, dependencias desactualizadas (Dependabot weekly).
-- **Política de Boy Scout Rule**: cada PR deja el código tocado algo
-  más limpio que como estaba.
-- **Refactor seguro**: tenemos red de tests (158) antes de tocar
-  cualquier lógica crítica. Permite aplicar Red-Green-Refactor en cualquier
-  zona cubierta.
-
-### 7.5 — ¿Cómo se asegura que los flujos críticos funcionan?
-
-Tres redes complementarias:
-
-1. **Tests automáticos en CI**: el merge a main exige verde en
-   backend + frontend + E2E. Cualquier ruptura de `/admin` guard, render
-   del header, validación de deals o cálculo de descuentos es detectado
-   antes de llegar a producción.
-2. **Husky pre-push**: imposible pushear código que no pasa el suite
-   Vitest sin `--no-verify` explícito.
-3. **Smoke test manual antes de cada release**: 10 secciones,
-   ~50 checks, documentado en [`docs/SMOKE_TEST.md`](SMOKE_TEST.md).
-   Se ejecuta antes de cada tag.
-
-### 7.6 — ¿Cómo se usan métricas accionables y no de vanidad?
-
-Tres tiers (§4):
-
-- **T1** se revisa **cada PR** y dispara acción inmediata (bloqueo, hotfix).
-- **T2** se revisa **por hito**, identifica regresiones de tiempo y
-  estabilidad.
-- **T3** se revisa **mensualmente** o pre-release, vigila la salud a
-  medio plazo (coverage, deuda, dependencias).
-
-Cada métrica tiene umbrales verde/amarillo/rojo concretos y una acción
-prescrita si entra en rojo. No medimos "líneas de código" ni "número de
-commits" ni coverage global sin contexto.
-
----
-
-## 8. Comandos útiles
+## 7. Comandos útiles
 
 ```bash
 # Ciclo rápido (en buenchollo-web/)

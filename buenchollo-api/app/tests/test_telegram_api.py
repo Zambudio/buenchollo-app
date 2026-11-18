@@ -86,3 +86,81 @@ def test_notify_fallo_envio_devuelve_503(client, monkeypatch):
 
     assert r.status_code == 503
     assert "Error al enviar a Telegram" in r.json()["detail"]
+
+
+# ── POST /telegram/generate con copy de IA (chollo ya guardado) ──────────────
+
+_GENERATE_BASE = {
+    "title": "DJI Osmo Pocket 3",
+    "current_price": 269.0,
+    "previous_price": 429.0,
+    "discount_percentage": 37,
+    "description": "Captura cada momento",
+    "affiliate_url": "https://amzn.to/x",
+}
+
+
+def _patch_generator(monkeypatch, copy):
+    calls = {}
+
+    async def fake_copy(self, title, details, provider=None):
+        calls.update(title=title, details=details, provider=provider)
+        return copy
+
+    async def fake_suggest(self, title, description, available):
+        return []
+
+    gen = "app.modules.telegram.application.post_generator.TelegramPostGenerator"
+    monkeypatch.setattr(f"{gen}.generate_copy", fake_copy)
+    monkeypatch.setattr(f"{gen}.suggest_categories", fake_suggest)
+    return calls
+
+
+def test_generate_con_ai_copy_usa_el_texto_de_la_ia(client, monkeypatch):
+    _override_settings()
+    calls = _patch_generator(monkeypatch, "Gimbal de bolsillo con sensor de 1 pulgada.")
+
+    r = client.post(
+        "/v1/telegram/generate",
+        json={**_GENERATE_BASE, "ai_copy": True, "provider": "openai", "copy_context": "Sensor 1''"},
+    )
+
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["ai_copy"] == "Gimbal de bolsillo con sensor de 1 pulgada."
+    assert "✏️Gimbal de bolsillo con sensor de 1 pulgada." in body["text"]
+    assert "Captura cada momento" not in body["text"]
+    assert "269,00 €" in body["text"]
+    assert calls == {"title": "DJI Osmo Pocket 3", "details": "Sensor 1''", "provider": "openai"}
+
+
+def test_generate_si_la_ia_falla_usa_la_descripcion(client, monkeypatch):
+    _override_settings()
+    _patch_generator(monkeypatch, None)
+
+    r = client.post("/v1/telegram/generate", json={**_GENERATE_BASE, "ai_copy": True})
+
+    assert r.status_code == 200, r.text
+    assert r.json()["ai_copy"] is None
+    assert "✏️Captura cada momento" in r.json()["text"]
+
+
+def test_generate_sin_ai_copy_no_llama_a_la_ia(client, monkeypatch):
+    _override_settings()
+    calls = _patch_generator(monkeypatch, "no debería usarse")
+
+    r = client.post("/v1/telegram/generate", json=_GENERATE_BASE)
+
+    assert r.status_code == 200, r.text
+    assert calls == {}
+    assert r.json()["ai_copy"] is None
+
+
+def test_generate_rechaza_proveedor_desconocido(client):
+    _override_settings()
+
+    r = client.post(
+        "/v1/telegram/generate", json={**_GENERATE_BASE, "ai_copy": True, "provider": "otro"}
+    )
+
+    assert r.status_code == 422

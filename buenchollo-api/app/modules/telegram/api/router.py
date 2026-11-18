@@ -103,12 +103,22 @@ async def generate_post(
     """
     generator = TelegramPostGenerator(settings=settings)
 
+    ai_copy = (
+        await generator.generate_copy(
+            title=payload.title,
+            details=payload.copy_context or payload.description or "",
+            provider=payload.provider,
+        )
+        if payload.ai_copy
+        else None
+    )
+
     text = generator.generate_text(
         title=payload.title,
         current_price=payload.current_price,
         previous_price=payload.previous_price,
         discount_pct=payload.discount_percentage,
-        description=payload.description,
+        description=ai_copy or payload.description,
         affiliate_url=payload.affiliate_url,
         expires_at=payload.expires_at,
         shipping_info=payload.shipping_info,
@@ -134,7 +144,7 @@ async def generate_post(
             available=categories,
         )
 
-    return TelegramGenerateResponse(text=text, suggested_categories=suggested)
+    return TelegramGenerateResponse(text=text, suggested_categories=suggested, ai_copy=ai_copy)
 
 
 # ── Publicación ────────────────────────────────────────────────────────────────

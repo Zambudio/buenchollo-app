@@ -5,8 +5,8 @@
 > threshold automático en `src/lib/**`. Gates en 3 niveles
 > (pre-commit, pre-push, CI).
 >
-> 🎓 La estrategia académica y justificación viven en
-> [`docs/master/06-…`](../master/06-calidad-testing-y-refactorizacion.md).
+> 📐 La justificación de la estrategia vive en
+> [ADR-008](../adr/ADR-008-estrategia-calidad-testing.md).
 
 ---
 
@@ -264,7 +264,7 @@ git push --no-verify
 | 🐍 `backend` | `pytest -m "not integration"` (78 unit) |
 | ⚛️ `frontend` | typecheck + ESLint + Vitest con coverage threshold |
 | 🎭 `e2e` | Playwright chromium con webServer |
-| 🛡️ `security-audit` | `pip-audit`, `npm audit --omit=dev`, `gitleaks` |
+| 🛡️ `security-audit` | `pip-audit`, `npm run audit:prod` (npm audit de producción con excepciones fechadas), `gitleaks` |
 
 > 🚨 Si **cualquier job** falla, el commit aparece rojo y no se debe mergear.
 
@@ -280,8 +280,8 @@ Tres tiers documentados con umbrales verde/amarillo/rojo:
 | 🟡 **T2** | Por hito / release | Duración suite, duración CI, MTTR fallo CI |
 | 🔵 **T3** | Mensual / pre-release | CORE coverage, TODO/FIXME en `src/`, smells críticos, deps desactualizadas |
 
-> 📚 Detalle completo con umbrales numéricos en
-> [`docs/master/06-…`](../master/06-calidad-testing-y-refactorizacion.md).
+> 📚 Umbrales y justificación en
+> [ADR-008](../adr/ADR-008-estrategia-calidad-testing.md).
 
 ---
 

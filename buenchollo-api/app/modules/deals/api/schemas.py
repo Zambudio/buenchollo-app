@@ -98,6 +98,14 @@ class DealDetailResponse(DealCardResponse):
 
     model_config = ConfigDict(from_attributes=True)
 
+
+class DealAdminResponse(DealDetailResponse):
+    """Detalle para el admin: incluye el borrador del post de Telegram, que no
+    se expone en el endpoint público."""
+
+    telegram_text: str | None = None
+
+
 class DealSitemapEntry(BaseModel):
     slug: str
     status: str
@@ -130,6 +138,10 @@ ReferenceType = Literal[
 ]
 
 
+# Límite de un mensaje de Telegram.
+_TELEGRAM_TEXT_MAX = 4096
+
+
 class DealCreate(BaseModel):
     title: str = Field(min_length=1, max_length=_TITLE_MAX)
     slug: str | None = Field(default=None, max_length=_SLUG_MAX)
@@ -154,6 +166,7 @@ class DealCreate(BaseModel):
     external_id: str | None = Field(default=None, max_length=_EXTERNAL_ID_MAX)
     show_keepa_chart: bool = False
     coupon_code: str | None = Field(default=None, max_length=_COUPON_MAX)
+    telegram_text: str | None = Field(default=None, max_length=_TELEGRAM_TEXT_MAX)
     affiliate_program_id: str | None = None
     data_source: DataSource | None = None
     data_provider_updated_at: datetime | None = None
@@ -193,6 +206,7 @@ class DealUpdate(BaseModel):
     external_id: str | None = Field(default=None, max_length=_EXTERNAL_ID_MAX)
     show_keepa_chart: bool | None = None
     coupon_code: str | None = Field(default=None, max_length=_COUPON_MAX)
+    telegram_text: str | None = Field(default=None, max_length=_TELEGRAM_TEXT_MAX)
     affiliate_program_id: str | None = None
     data_source: DataSource | None = None
     data_provider_updated_at: datetime | None = None

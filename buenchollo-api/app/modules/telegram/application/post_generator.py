@@ -1,5 +1,6 @@
 """Genera el texto formateado para publicaciones de Telegram y sugiere categorías vía IA."""
 
+import asyncio
 import logging
 import re
 from datetime import datetime
@@ -17,6 +18,9 @@ CUSTOM_EMOJI_MAP: dict[str, str] = {
     "⚠️": "5420323339723881652",   # Fin de oferta
     "🔗": "5282843764451195532",   # Enlace web
 }
+
+# Los modelos gratuitos de OmniRoute pueden tardar; pasado este tiempo se usa la descripción.
+COPY_TIMEOUT_SECONDS = 60.0
 
 LINK_TEXT = "Todos los chollos en nuestra web"
 LINK_URL = "https://buenchollotech.com/telegram"
@@ -172,6 +176,28 @@ class TelegramPostGenerator:
         total = len(text.encode("utf-16-le")) // 2
         entities.append({"type": "bold", "offset": 0, "length": total})
         return entities
+
+    # ── Copy con IA ───────────────────────────────────────────────────────────
+
+    async def generate_copy(
+        self,
+        title: str,
+        details: str,
+        provider: str | None = None,
+        timeout: float = COPY_TIMEOUT_SECONDS,
+    ) -> str | None:
+        """Línea de venta (✏️) del post escrita por la IA. None si no hay motor,
+        falla o tarda más de `timeout`: el post se arma entonces con la descripción."""
+        if self._ai_service is None:
+            return None
+        try:
+            return await asyncio.wait_for(
+                self._ai_service.generate_copy(title=title, details=details, provider=provider),
+                timeout=timeout,
+            )
+        except TimeoutError:
+            logger.warning("La IA no generó el copy de Telegram en %.0f s (motor %s)", timeout, provider)
+            return None
 
     # ── Sugerencia de categorías con IA ──────────────────────────────────────
 

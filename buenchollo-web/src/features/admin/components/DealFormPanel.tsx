@@ -31,6 +31,8 @@ interface Props {
   readonly networkSection?: ReactNode;
   /** Si viene, el botón de Telegram se desactiva y muestra el motivo. */
   readonly telegramDisabledReason?: string | null;
+  /** Borrador de la publicación de Telegram (solo al editar un chollo guardado). */
+  readonly telegramSection?: ReactNode;
 }
 
 export function DealFormPanel({
@@ -53,6 +55,7 @@ export function DealFormPanel({
   preventImplicitSubmit = false,
   networkSection,
   telegramDisabledReason,
+  telegramSection,
 }: Props) {
   const { uploading, fileRef, addImageUrl, handleFiles, removeImage, moveImage } = images;
   const filteredSubcats = subcats.filter((s) => s.parent_id === form.category_id);
@@ -350,6 +353,7 @@ export function DealFormPanel({
           ⛔ CADUCADO · Aparecerá en gris con aviso de oferta finalizada.
         </p>
       )}
+      {telegramSection}
       {showTelegramButton && form.status !== "scheduled" && (
         <div className="space-y-1">
           <button

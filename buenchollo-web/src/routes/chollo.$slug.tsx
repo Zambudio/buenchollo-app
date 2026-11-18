@@ -1,5 +1,5 @@
 import { logError } from "@/lib/logger";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { dealsService, favoritesApi, type DealDetailData } from "@/services/api/deals";
 import { Layout } from "@/components/layout/Layout";
@@ -35,7 +35,19 @@ import {
   Maximize2,
   X,
   Pencil,
+  Trash2,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import { serializeJsonLd } from "@/lib/json-ld";
@@ -177,6 +189,21 @@ function DealDetail() {
   const [loading, setLoading] = useState(!loaderData?.meta);
   const [activeImg, setActiveImg] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const navigate = useNavigate();
+
+  const deleteDeal = async () => {
+    if (!deal) return;
+    setDeleting(true);
+    try {
+      await dealsService.delete(deal.id);
+      toast.success("Chollo eliminado");
+      navigate({ to: "/admin/chollos", search: { edit: undefined } });
+    } catch (e: unknown) {
+      toast.error(errorMessage(e));
+      setDeleting(false);
+    }
+  };
   const [relatedApi, setRelatedApi] = useState<CarouselApi>();
   const [relatedCanPrev, setRelatedCanPrev] = useState(false);
   const [relatedCanNext, setRelatedCanNext] = useState(false);
@@ -822,6 +849,30 @@ function DealDetail() {
                 >
                   <Pencil className="size-4" /> EDITAR
                 </Link>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <button
+                      type="button"
+                      disabled={deleting}
+                      className="flex items-center gap-2 border border-alert-red/50 text-alert-red px-3 py-2 font-mono text-xs hover:border-alert-red hover:bg-alert-red/10 transition-colors disabled:opacity-50"
+                    >
+                      <Trash2 className="size-4" /> {deleting ? "ELIMINANDO…" : "ELIMINAR"}
+                    </button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Eliminar chollo</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        ¿Eliminar «{deal.title}»? Se borrarán también sus votos, comentarios,
+                        favoritos y publicaciones programadas. No se puede deshacer.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={deleteDeal}>Eliminar</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             )}
 

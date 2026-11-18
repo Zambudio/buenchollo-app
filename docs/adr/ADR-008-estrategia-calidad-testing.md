@@ -11,8 +11,8 @@ El backend disponía de pytest (87 tests verdes en una pirámide
 adecuada), pero el frontend no tenía ningún test automatizado: ni
 Vitest, ni Playwright, ni Husky, ni coverage. La calidad del frontend
 descansaba exclusivamente en ESLint estricto + TypeScript strict.
-
-Faltaba además una respuesta defendible a tres preguntas clásicas del
+Faltaba además una respuesta explícita a tres preguntas clásicas de
+calidad:
 módulo de Calidad:
 
 1. ¿Qué coverage perseguimos y por qué?
@@ -76,8 +76,7 @@ Si baja, CI rompe.
 
 Con umbrales verde/amarillo/rojo y acción prescrita si entran en rojo
 (detalle en
-[`docs/master/06-calidad-testing-y-refactorizacion.md`](../master/06-calidad-testing-y-refactorizacion.md)
-y [`docs/project/06-testing-and-quality.md`](../project/06-testing-and-quality.md)).
+[`docs/project/06-testing-and-quality.md`](../project/06-testing-and-quality.md)).
 
 ## Motivo
 
@@ -148,8 +147,7 @@ herramientas sin valor incremental para un proyecto del tamaño actual.
 ### A6: Mutation testing con `mutmut` / `cosmic-ray`
 
 **Aplazada** como mejora futura. Tiene valor real pero coste alto de
-configuración inicial. Documentado en
-`docs/master/09-limitaciones-y-mejoras-futuras.md`.
+configuración inicial.
 
 ### A7: Visual regression con `toHaveScreenshot`
 
@@ -196,5 +194,4 @@ deuda asumida.
 ## Documentación relacionada
 
 - [`docs/project/06-testing-and-quality.md`](../project/06-testing-and-quality.md) — Operativa (comandos, scripts, gates).
-- [`docs/master/06-calidad-testing-y-refactorizacion.md`](../master/06-calidad-testing-y-refactorizacion.md) — Defensa académica.
 - [`docs/reference/SMOKE_TEST.md`](../reference/SMOKE_TEST.md) — Checklist manual pre-release.

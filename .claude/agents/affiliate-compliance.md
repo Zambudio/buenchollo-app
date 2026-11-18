@@ -26,7 +26,7 @@ BuenCholloTech es una plataforma real de chollos tecnológicos con:
 * OpenAI usado para enriquecer textos.
 * Telegram Bot API para publicación.
 * Panel admin para gestión y publicación.
-* Documentación dual: `docs/project/` y `docs/master/`.
+* Documentación: `docs/project/` y `docs/adr/`.
 
 El proyecto debe priorizar:
 

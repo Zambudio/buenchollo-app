@@ -8,8 +8,7 @@
 
 > 📖 **¿Qué encontrarás aquí?**
 > Once capítulos numerados con **comandos**, **ejemplos** y
-> **tablas de errores comunes**. Si lo que buscas es **por qué se ha
-> construido así**, eso vive en [`docs/master/`](../master/00-index.md).
+> **tablas de errores comunes**. Las decisiones de arquitectura (el **por qué**) viven en [`docs/adr/`](../adr/00-index.md).
 
 ---
 
@@ -53,7 +52,6 @@
 
 | Carpeta | Para qué |
 |---|---|
-| [`../master/`](../master/00-index.md) | 🏗️ **Bloque de arquitectura y diseño** — explicación formal de decisiones técnicas |
 | [`../adr/`](../adr/00-index.md) | 📋 **14 ADRs** firmados y datados (decisiones arquitectónicas) |
 | [`../reference/`](../reference/) | 📚 Referencias densas (plan hardening, auditoría OWASP, smoke test) |
 | [`../guides/Cloudflare.md`](../guides/Cloudflare.md) | ☁️ **Guía operativa viva** de Cloudflare (Workers, túnel, TLS, WAF) — estado real de producción |

@@ -4,7 +4,7 @@
 > asumida y respuesta ante incidentes.
 >
 > *Última actualización: 2026-06-02 (post-sprint de seguridad).*
-> *Auditoría detallada en [`docs/SECURITY_AUDIT.md`](SECURITY_AUDIT.md).*
+> *Auditoría detallada en [`docs/SECURITY_AUDIT.md`](../reference/SECURITY_AUDIT.md).*
 
 ---
 
@@ -202,33 +202,6 @@ grep -rEn "(SECRET|TOKEN|PASSWORD|API_KEY|PRIVATE_KEY).*=.*['\"][a-zA-Z0-9]{16,}
 # Comprobación de headers de seguridad (con backend corriendo)
 curl -sI http://localhost:8000/health | grep -iE "content-security|x-frame|x-content-type|referrer|permissions"
 ```
-
----
-
-## 7. Defensa ante el tribunal (resumen)
-
-> *Versión completa en [`SECURITY_AUDIT.md §14`](SECURITY_AUDIT.md#14-defensa-ante-el-tribunal-borrador).*
-
-- **Security by Design**: arquitectura de API Gateway (ADR-002) que limita
-  la superficie. RLS activado en las 12 tablas Supabase (ADR-006). Service
-  role bypass controlado.
-- **Security by Default**: rate limiting, audit log, Security Headers,
-  CORS restringido, errores genéricos al cliente.
-- **OWASP Top 10 como marco**: auditoría completa documentada en
-  `SECURITY_AUDIT.md`. 6 hallazgos medios resueltos en commits separados.
-  2 puntos como deuda asumida con justificación.
-- **Amenazas consideradas**: usuarios maliciosos autenticados, bots/
-  scrapers, atacantes externos, admin comprometido, SSRF, XSS,
-  clickjacking, exposición de PII.
-- **Controles implementados**: auth JWT validada server-side,
-  autorización por rol con SQL directo (no se confía en cliente),
-  rate limiting por IP, audit log con request_id, CSP + Security
-  Headers, validación Pydantic+Zod, SQL parametrizado, secrets en
-  `.env` no trackeados, Dependabot semanal, CI con audit (S7),
-  RLS Supabase.
-- **Mejoras futuras**: 2FA TOTP para admin, migración JWT a cookies
-  HttpOnly cuando Supabase JS SDK lo soporte idiomáticamente, DAST
-  con OWASP ZAP, SBOM con CycloneDX.
 
 ---
 

@@ -1,3 +1,4 @@
+import type { AiProvider } from "@/lib/ai-providers";
 import { apiClient } from "./client";
 
 /** Respuesta normalizada de POST /products/preview-from-url. Coincide con
@@ -32,7 +33,7 @@ const PREVIEW_FROM_URL_TIMEOUT_MS = 45_000;
 
 export const productsApi = {
   /** Genera una preview de producto a partir de una URL de Amazon o ASIN con opción de elegir motor de IA. */
-  previewFromUrl: (url: string, provider?: string): Promise<AmazonPreviewResponse> =>
+  previewFromUrl: (url: string, provider?: AiProvider): Promise<AmazonPreviewResponse> =>
     apiClient.post<AmazonPreviewResponse>(
       "/products/preview-from-url",
       { url, ...(provider ? { provider } : {}) },

@@ -65,7 +65,7 @@ frontend, CI/CD, despliegue):
   (`wrangler`, `miniflare`, etc.) que no se usan para deploy
 - 🤔 Avisos **teóricos** sin prueba de explotación
 - 📋 Limitaciones documentadas como **deuda asumida** en
-  [`docs/master/09 · Limitaciones`](docs/master/09-limitaciones-y-mejoras-futuras.md)
+  [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md)
 - ⏱️ Rate limit alcanzado tras intentos legítimos
 
 ---

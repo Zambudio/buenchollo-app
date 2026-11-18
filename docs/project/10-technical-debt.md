@@ -2,7 +2,7 @@
 
 > **TL;DR** · Registro vivo de lo que falta o conviene mejorar **ahora mismo**.
 > Solo items **abiertos**: cuando uno se cierra, se elimina de aquí (el histórico
-> resuelto vive en [`PROJECT_STATUS.md`](../../PROJECT_STATUS.md)). Para consultar el diseño de arquitectura, ver [`docs/master/`](../master/00-index.md).
+> resuelto vive en [`PROJECT_STATUS.md`](../../PROJECT_STATUS.md)). Para consultar las decisiones de arquitectura, ver [`docs/adr/`](../adr/00-index.md).
 
 Última revisión: **2026-11-07** (revisión general: cerrados TD-19, TD-23, TD-26, TD-32 y TD-38 b; ver `PROJECT_STATUS.md`). Anteriores: catálogo permanente, Fase 1: TD-39 a TD-45; chollos de usuarios: TD-24 a TD-35; entorno local: TD-36 a TD-38.
 
@@ -20,14 +20,24 @@
   fecha/evidencia en `docs/guides/Cloudflare.md`. No copiar el valor nuevo a Git,
   documentación, logs ni chat.
 
+## 🟡 Baja — dependencias (2026-11-18)
+
+- **TD-50 — `picomatch` con aviso high sin versión corregida (GHSA-fc5q-39xc-vjpf).**
+  ReDoS en extglobs repetidos; afecta a `<=4.0.7`, la última publicada. Llega vía
+  `vite`, `@tanstack/react-start` (start-plugin-core, router-generator) y `unplugin`:
+  solo herramientas de build con patrones de rutas del propio repo; no entra en el
+  bundle del Worker ni procesa entrada de usuarios. Aceptado hasta 2027-01-31 en
+  `buenchollo-web/audit-allowlist.json` (lo aplica `npm run audit:prod`, que usa el CI).
+  Cerrar: actualizar cuando salga la versión corregida y quitar la excepción.
+
 ## 🟠 Media — redes de afiliación (Awin / Tradedoubler, 2026-11-08)
 
-- **TD-46 — Integración Awin/Tradedoubler sin validar en vivo.** Probada solo con fixtures
-  y la API local. Falta: credenciales (`AWIN_ACCESS_TOKEN`, `AWIN_FEED_API_KEY`,
-  `TRADEDOUBLER_PRODUCTS_TOKEN`, `TRADEDOUBLER_SITE_ID`), programas aprobados y contrastar
-  con datos reales las columnas del feed Awin, la respuesta de la Products API (`offers`,
-  `priceHistory`, `productImage`) y la zona horaria de `last_updated`. Guía:
-  `docs/guides/AFFILIATE-NETWORKS.md` §7.
+- **TD-46 — Integración Awin/Tradedoubler sin validar en vivo.** En producción desde
+  2026-11-08 (PR #78) con credenciales configuradas, pero sin ningún programa aprobado
+  (Awin `pending`, Tradedoubler sin feeds). Parser probado solo con fixtures. Falta:
+  aprobación de las tiendas y contrastar con datos reales las columnas del feed Awin, la
+  respuesta de la Products API (`offers`, `priceHistory`, `productImage`) y la zona horaria
+  de `last_updated`. Procedimiento: `docs/guides/AFFILIATE-ACTIVATION-RUNBOOK.md`.
 - **TD-47 — Deeplink de Tradedoubler sin ficha no documentado públicamente.** Solo se usa
   si el propietario lo confirma por programa («Deeplink verificado»).
 - **TD-48 — Programar publicaciones exige ASIN.** Los chollos de redes no se pueden

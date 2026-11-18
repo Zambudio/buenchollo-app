@@ -8,7 +8,7 @@
  *  guardar (con conflicto 409) → Telegram.
  */
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   dealsService,
   isDuplicateDealError,
@@ -32,6 +32,8 @@ import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import type { TelegramScheduleRequest } from "@/features/telegram/components/TelegramPanel";
+import type { TelegramGenerateRequest } from "@/services/api/telegram";
+import { DEFAULT_AI_PROVIDER, isAiProvider, type AiProvider } from "@/lib/ai-providers";
 import {
   applyImport,
   buildDealPayload,
@@ -52,6 +54,7 @@ import { useTelegramHandoff } from "@/features/admin/hooks/useTelegramHandoff";
 import { TelegramHandoffPanel } from "@/features/admin/components/TelegramHandoffPanel";
 import { AmazonAutofillPanel } from "@/features/admin/components/AmazonAutofillPanel";
 import { DealFormPanel } from "@/features/admin/components/DealFormPanel";
+import { DealTelegramDraftSection } from "@/features/admin/components/DealTelegramDraftSection";
 import { AdminDealsTable } from "@/features/admin/components/AdminDealsTable";
 import { DuplicateDealDialog } from "@/features/admin/components/DuplicateDealDialog";
 import { ScheduledDealsCalendar } from "@/features/admin/components/ScheduledDealsCalendar";
@@ -81,11 +84,10 @@ function AdminDeals() {
   const { openWith: openTelegramPanelWith, openFromDeal: openTelegramPanelFromDeal } = telegram;
   const [calendarRefresh, setCalendarRefresh] = useState(0);
   const [calendarDealId, setCalendarDealId] = useState<string | null>(null);
-  const [aiProvider, setAiProvider] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("buenchollo_ai_provider") || "omniroute";
-    }
-    return "omniroute";
+  const [aiProvider, setAiProvider] = useState<AiProvider>(() => {
+    if (typeof window === "undefined") return DEFAULT_AI_PROVIDER;
+    const stored = localStorage.getItem("buenchollo_ai_provider");
+    return isAiProvider(stored) ? stored : DEFAULT_AI_PROVIDER;
   });
   const images = useDealImages(form, setForm, user?.id);
   // Redes de afiliación (Awin / Tradedoubler): resultado de la última
@@ -110,7 +112,7 @@ function AdminDeals() {
     setCalendarRefresh((value) => value + 1);
   }, [load]);
 
-  const handleAiProviderChange = (newProvider: string) => {
+  const handleAiProviderChange = (newProvider: AiProvider) => {
     setAiProvider(newProvider);
     if (typeof window !== "undefined") {
       localStorage.setItem("buenchollo_ai_provider", newProvider);
@@ -125,13 +127,23 @@ function AdminDeals() {
     pendingPayload?: DealCreatePayload;
   } | null>(null);
 
+  // ?edit=<id> (botón EDITAR de la página del chollo): se pide por id porque el
+  // listado solo trae los más recientes y un chollo antiguo no estaría en él.
   const { edit: editId } = Route.useSearch();
   useEffect(() => {
-    if (!editId || deals.length === 0 || showForm) return;
-    const target = deals.find((d) => d.id === editId);
-    if (target) startEdit(target);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [deals, editId]);
+    if (!editId) return;
+    dealsService
+      .getAdminById(editId)
+      .then(startEdit)
+      .catch((e: unknown) => toast.error(errorMessage(e)));
+  }, [editId]);
+
+  // El formulario se pinta encima de la tabla: al abrirlo desde una fila de
+  // abajo hay que llevarlo a la vista o parece que EDITAR no hace nada.
+  const formRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (showForm) formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [showForm, editing]);
 
   const startNew = () => {
     setEditing(null);
@@ -224,12 +236,10 @@ function AdminDeals() {
   };
 
   const openExistingDeal = (dealId: string) => {
-    const target = deals.find((d) => d.id === dealId);
-    if (!target) {
-      toast.info("El chollo existente no está en el listado actual: cambia el filtro de estado");
-      return;
-    }
-    startEdit(target);
+    dealsService
+      .getAdminById(dealId)
+      .then(startEdit)
+      .catch((e: unknown) => toast.error(errorMessage(e)));
   };
 
   const autofillFromAmazon = async (url: string) => {
@@ -305,30 +315,40 @@ function AdminDeals() {
     }
   };
 
-  /** Abre el panel a partir del formulario actual. */
+  /** Datos del post de Telegram a partir del formulario actual. */
+  const telegramRequestFromForm = (): TelegramGenerateRequest => {
+    const current = parseFloat(form.current_price) || 0;
+    const previous = form.previous_price ? parseFloat(form.previous_price) : null;
+    return {
+      title: form.title,
+      current_price: current,
+      previous_price: previous,
+      discount_percentage: calculateDiscount(current, previous),
+      description: form.telegram_text || form.short_description || null,
+      affiliate_url: form.affiliate_url,
+      expires_at: form.expires_at ? new Date(form.expires_at).toISOString() : null,
+      // Contexto para que la IA reescriba la línea ✏️ (Editar chollo).
+      copy_context: (form.description || form.short_description || "").slice(0, 10_000) || null,
+      ...(networkForm
+        ? {
+            shipping_info: form.shipping_info || null,
+            notice: formProgram?.disclosure_text ?? null,
+          }
+        : {}),
+    };
+  };
+
+  /** Abre el panel a partir del formulario actual. Al editar, con el borrador guardado. */
   const openTelegramPanelFromForm = async () => {
     const allImages = form.images.filter(Boolean);
     if (form.image_url && !allImages.includes(form.image_url)) allImages.unshift(form.image_url);
-    const current = parseFloat(form.current_price) || 0;
-    const previous = form.previous_price ? parseFloat(form.previous_price) : null;
     await openTelegramPanelWith(
       {
+        ...telegramRequestFromForm(),
         deal_id: editing?.id ?? null,
-        title: form.title,
-        current_price: current,
-        previous_price: previous,
-        discount_percentage: calculateDiscount(current, previous),
-        description: form.telegram_text || form.short_description || null,
-        affiliate_url: form.affiliate_url,
-        expires_at: form.expires_at ? new Date(form.expires_at).toISOString() : null,
+        initial_text: editing ? form.telegram_post : null,
         images: allImages,
         image_url: allImages[0] ?? null,
-        ...(networkForm
-          ? {
-              shipping_info: form.shipping_info || null,
-              notice: formProgram?.disclosure_text ?? null,
-            }
-          : {}),
       },
       !editing && !networkForm,
     );
@@ -631,11 +651,24 @@ function AdminDeals() {
         onChanged={handleCalendarChanged}
       />
 
+      <div ref={formRef} className="scroll-mt-4" />
       {showForm && (
         <DealFormPanel
           form={form}
           setForm={setForm}
           isEditing={!!editing}
+          telegramSection={
+            editing ? (
+              <DealTelegramDraftSection
+                dealId={editing.id}
+                value={form.telegram_post}
+                onChange={(telegram_post) => setForm((f) => ({ ...f, telegram_post }))}
+                buildRequest={telegramRequestFromForm}
+                provider={aiProvider}
+                onProviderChange={handleAiProviderChange}
+              />
+            ) : undefined
+          }
           stores={stores}
           cats={cats}
           subcats={subcats}

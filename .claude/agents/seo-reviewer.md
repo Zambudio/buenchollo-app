@@ -24,8 +24,8 @@ BuenCholloTech es una plataforma web de chollos tecnológicos con afiliación.
 
 El proyecto tiene dos objetivos:
 
-1. Producto real a largo plazo.
-2. Trabajo Final de Máster documentado y defendible.
+1. Producto real a largo plazo, en producción.
+2. Documentación honesta y mantenible.
 
 Para SEO, el objetivo no es generar cientos de páginas sin valor. El objetivo es construir autoridad poco a poco con:
 

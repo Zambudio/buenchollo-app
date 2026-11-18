@@ -7,6 +7,17 @@ from app.modules.ai.domain.ports import LLMClientProtocol
 
 logger = logging.getLogger(__name__)
 
+# Reglas de la línea de venta (✏️) del post de Telegram. Las comparten el
+# autocompletado de Amazon (ProductAIEnricher) y la regeneración de un chollo
+# ya guardado (TelegramAIService.generate_copy): un único sitio para ajustarlas.
+TELEGRAM_COPY_RULES = """\
+   - Máximo 2-3 líneas.
+   - Sin markdown, sin viñetas, sin listas.
+   - Resume en tono de venta el producto y su beneficio principal (para qué sirve, qué lo hace bueno).
+   - NO añadas frases de cierre tipo llamada a la acción ni de urgencia (prohibido: "hazte con el tuyo",
+     "no te lo pierdas", "antes de que se agote", "cómpralo ya", "corre a por él", "consíguelo rápido",
+     o cualquier variante). El precio, el enlace y la urgencia ya los añade la plantilla del post, no el texto."""
+
 
 def _normalize_tag(tag: str) -> str:
     """Normaliza un hashtag para comparación insensible a mayúsculas, acentos y almohadilla."""
@@ -175,3 +186,31 @@ class TelegramAIService:
             selected = self.extract_heuristic_tags(title, description, available)
 
         return selected
+
+    async def generate_copy(
+        self,
+        title: str,
+        details: str,
+        provider: str | None = None,
+    ) -> str | None:
+        """Escribe la línea de venta (✏️) del post para un chollo ya guardado,
+        con las mismas reglas que el autocompletado de Amazon. None si la IA falla."""
+        prompt = (
+            "Escribe en español el texto de venta de un post para un canal de Telegram de ofertas tecnológicas.\n"
+            f"{TELEGRAM_COPY_RULES}\n"
+            "   - Sin emojis ni hashtags, y sin mencionar precio, descuento, enlace ni fechas.\n"
+            "Responde solo con el texto.\n\n"
+            f"PRODUCTO: {title}\n"
+            f"INFORMACIÓN / CARACTERÍSTICAS: {details}"
+        )
+        messages = [
+            {"role": "system", "content": "Eres un copywriter experto en chollos tecnológicos. Respondes solo con el texto pedido."},
+            {"role": "user", "content": prompt},
+        ]
+        try:
+            result = await self.llm_client.agenerate_text(messages, temperature=0.7, max_tokens=300, provider=provider)
+        except Exception as exc:
+            logger.warning("Error en TelegramAIService al generar el copy: %s", exc)
+            return None
+        text = result.content.strip().strip('"').strip()
+        return text or None

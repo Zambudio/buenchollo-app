@@ -325,6 +325,32 @@ async def test_telegram_ai_service_empty_available():
     assert suggested == []
 
 
+@pytest.mark.asyncio
+async def test_telegram_ai_service_generate_copy_usa_el_proveedor_y_limpia_comillas():
+    mock_llm = MagicMock()
+    res = MagicMock()
+    res.content = '  "Gimbal de bolsillo con sensor de 1 pulgada."  \n'
+    mock_llm.agenerate_text = AsyncMock(return_value=res)
+
+    service = TelegramAIService(mock_llm)
+    copy = await service.generate_copy("DJI Osmo Pocket 3", "Sensor CMOS de 1 pulgada", provider="openai")
+
+    assert copy == "Gimbal de bolsillo con sensor de 1 pulgada."
+    assert mock_llm.agenerate_text.await_args.kwargs["provider"] == "openai"
+    prompt = mock_llm.agenerate_text.await_args.args[0][1]["content"]
+    assert "DJI Osmo Pocket 3" in prompt and "Sensor CMOS de 1 pulgada" in prompt
+
+
+@pytest.mark.asyncio
+async def test_telegram_ai_service_generate_copy_devuelve_none_si_falla():
+    mock_llm = MagicMock()
+    mock_llm.agenerate_text = AsyncMock(side_effect=Exception("LLM Timeout"))
+
+    service = TelegramAIService(mock_llm)
+
+    assert await service.generate_copy("Titulo", "Desc") is None
+
+
 # ── Tests de DealRecommenderAssistant (Chatbot Web) ─────────────────────────
 
 @pytest.mark.asyncio

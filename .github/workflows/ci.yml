@@ -217,8 +217,11 @@ jobs:
         # parches transitivos que el upstream aún no trae van en `overrides`
         # de package.json (undici vía miniflare, postcss-selector-parser vía
         # @tailwindcss/typography): quitarlos cuando el paquete padre los incluya.
+        # Si un aviso no tiene versión corregida, se acepta de forma explícita y
+        # con fecha de revisión en buenchollo-web/audit-allowlist.json (el script
+        # falla con cualquier otro high/critical y con excepciones vencidas).
         working-directory: buenchollo-web
-        run: npm audit --omit=dev --audit-level=high
+        run: npm run audit:prod
 
       # ── gitleaks: detectar secretos hardcoded en el código y el historial ─
       - name: Escaneo de secretos con gitleaks

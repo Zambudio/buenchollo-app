@@ -16,9 +16,11 @@ const mocks = vi.hoisted(() => ({
   rotateAndUploadTelegramImage: vi.fn(),
 }));
 
-vi.mock("@/services/api/telegram", () => ({
-  telegramApi: mocks,
-}));
+// Solo se simulan las llamadas HTTP; los métodos derivados (latestPublication) usan los mocks.
+vi.mock("@/services/api/telegram", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/services/api/telegram")>();
+  return { ...actual, telegramApi: { ...actual.telegramApi, ...mocks } };
+});
 
 vi.mock("../image-crop", () => ({
   cropAndUploadTelegramImage: mocks.cropAndUploadTelegramImage,
@@ -42,6 +44,24 @@ beforeEach(() => {
 });
 
 describe("TelegramPanel", () => {
+  it("con un borrador ya preparado lo carga tal cual y no regenera", async () => {
+    renderWithProviders(
+      <TelegramPanel
+        dealData={{
+          deal_id: "d1",
+          title: "Chollo de prueba",
+          current_price: 99,
+          affiliate_url: "https://amazon.es/dp/B0D9WH9WLD",
+          initial_text: "🍄 Borrador guardado",
+        }}
+        onClose={vi.fn()}
+      />,
+    );
+
+    await screen.findByDisplayValue("🍄 Borrador guardado");
+    expect(mocks.generate).not.toHaveBeenCalled();
+  });
+
   it("usa la siguiente franja calculada como valor inicial", async () => {
     const nextSlot = new Date(Date.now() + 24 * 60 * 60_000);
     nextSlot.setMinutes(0, 0, 0);

@@ -2,7 +2,7 @@
 
 ## Estado
 
-Aceptado para `develop` · 2026-11-08. Pendiente de validación en vivo con credenciales.
+Aceptado · 2026-11-08. En producción desde PR #78; pendiente de validación en vivo hasta que alguna tienda apruebe la solicitud (ver `docs/guides/AFFILIATE-ACTIVATION-RUNBOOK.md`).
 
 ## Contexto
 

@@ -157,6 +157,8 @@ export interface DealDetailData extends DealCardData {
   price_reference_type?: string | null;
   price_reference_evidence?: string | null;
   import_snapshot?: Record<string, unknown> | null;
+  /** Solo en endpoints admin: borrador del post de Telegram. */
+  telegram_text?: string | null;
 }
 
 /** Payload aceptado por POST /deals/admin. Coincide con el schema DealCreate del backend. */
@@ -193,6 +195,8 @@ export interface DealCreatePayload {
   price_reference_type?: string | null;
   price_reference_evidence?: string | null;
   import_snapshot?: Record<string, unknown> | null;
+  /** Borrador del post de Telegram (máx. 4096). */
+  telegram_text?: string | null;
 }
 
 /** Payload aceptado por PUT /deals/admin/{id}. Todos los campos opcionales (parcial). */
@@ -243,6 +247,10 @@ export const dealsService = {
     qs.append("limit", limit.toString());
     return apiClient.get<DealDetailData[]>(`/deals/admin/all?${qs.toString()}`);
   },
+
+  /** Un chollo por id, aunque no esté en el listado admin (que solo trae los más recientes). */
+  getAdminById: (id: string): Promise<DealDetailData> =>
+    apiClient.get<DealDetailData>(`/deals/admin/${id}`),
 
   /** Crea un nuevo chollo */
   create: (data: DealCreatePayload): Promise<DealDetailData> =>

@@ -10,7 +10,7 @@
 ## Qué son los agentes del proyecto
 
 BuenChollo Tech es una web y ecosistema de publicación de chollos tecnológicos con afiliación
-(uso personal + Trabajo Final de Máster). Los **agentes** son perfiles especializados y reutilizables
+(proyecto personal en producción). Los **agentes** son perfiles especializados y reutilizables
 de Claude Code, cada uno con un rol acotado (desarrollo, automatización, contenido, SEO, afiliación,
 redes), pensados para **trabajar de forma controlada, no improvisada**.
 
@@ -23,8 +23,7 @@ incremental conforme se necesiten.
 - **Reglas del proyecto**: [`CLAUDE.md`](../../CLAUDE.md) manda sobre cualquier agente.
 - **Memoria y normas de trabajo**: [`.claude/memory/`](../memory/) (versionada). Ningún agente la
   modifica ni la ignora; debe respetarla y, cuando aplique, apoyarse en ella.
-- **Documentación**: `docs/project/` (operativo) y `docs/master/` (académico). Los agentes no mezclan
-  ambos bloques.
+- **Documentación**: `docs/project/` (guía operativa) y `docs/adr/` (decisiones de arquitectura).
 
 > **Fuente de verdad del formato de publicaciones de Telegram**: el código
 > (`buenchollo-api/app/modules/telegram/application/post_generator.py`) — 🍄/💶/💰/🛒/✏️/⚠️.
@@ -66,7 +65,7 @@ Estado: `⬜ pendiente` · `🟡 en definición` · `✅ configurado`.
 | [`frontend-designer`](frontend-designer.md) | Revisión y diseño UI/UX: pantallas, componentes, responsive, jerarquía visual, accesibilidad, usabilidad y conversión limpia (web y admin), sin implementar código salvo instrucción. | ✅ |
 | [`security-reviewer`](security-reviewer.md) | Revisor de seguridad técnica: auth/roles, Supabase/RLS, CORS, secretos, variables de entorno, endpoints, logs, dependencias, integraciones, Cloudflare, CI/CD y OWASP. | ✅ |
 | [`qa-test-engineer`](qa-test-engineer.md) | Ingeniero QA: tests (Vitest/Testing Library/Playwright/pytest), regresiones, criterios de aceptación, CI y validación antes de mergear. Único agente con `Bash` para ejecutar pruebas de solo lectura. | ✅ |
-| [`docs-reviewer`](docs-reviewer.md) | Revisor de documentación: coherencia código↔docs, separación `docs/project` (operativo) vs `docs/master` (TFM), ADRs, guías vivas y deuda técnica; sin inventar ni mezclar bloques. | ✅ |
+| [`docs-reviewer`](docs-reviewer.md) | Revisor de documentación: coherencia código↔docs, ADRs, guías vivas y deuda técnica en `docs/project` y `docs/adr`; sin inventar. | ✅ |
 | [`devops-deploy-reviewer`](devops-deploy-reviewer.md) | Revisor de despliegue/infra: CI (GitHub Actions), Cloudflare Worker/Tunnel, NAS/Docker, variables de prod, flujo `develop→main` y checklists de deploy/rollback. No ejecuta despliegues. | ✅ |
 
 ### Agentes de chollos y afiliación

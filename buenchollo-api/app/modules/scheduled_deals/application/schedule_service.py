@@ -101,6 +101,7 @@ class ScheduleService:
             "source": data.get("source", "manual"),
             "external_id": data.get("asin"),
             "show_keepa_chart": data.get("show_keepa_chart", False),
+            "telegram_text": data.get("telegram_text") or None,
         }
         deal = await self.deal_service.create_deal(deal_data, user_id)
         scheduled = ScheduledDeal(

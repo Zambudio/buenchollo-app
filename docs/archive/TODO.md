@@ -2,7 +2,7 @@
 
 Roadmap de funcionalidades y tareas técnicas pendientes del proyecto.
 
-> Para el estado de la migración arquitectónica BaaS → API Gateway, ver [`REFACTOR_PLAN.md`](REFACTOR_PLAN.md).
+> Para el estado de la migración arquitectónica BaaS → API Gateway, ver [`ADR-002`](../adr/ADR-002-migracion-baas-a-api-gateway.md).
 
 ---
 

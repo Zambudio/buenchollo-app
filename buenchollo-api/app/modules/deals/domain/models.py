@@ -53,6 +53,8 @@ class Deal(Base):
     show_keepa_chart: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     coupon_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
     canonical_url: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    # Borrador del post de Telegram (se edita en el admin; lo enviado queda en telegram_publications).
+    telegram_text: Mapped[str | None] = mapped_column(String, nullable=True)
 
     # Catálogo permanente: la oferta ya no se borra, cambia de estado. Guarda por
     # qué terminó, el precio con el que se publicó/reactivó por última vez

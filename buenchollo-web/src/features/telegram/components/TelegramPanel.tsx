@@ -52,6 +52,8 @@ interface TelegramPanelProps {
     image_url?: string | null;
     /** Chollo ya guardado: se registra la publicación y se ofrece la última enviada. */
     deal_id?: string | null;
+    /** Borrador ya preparado (Editar chollo): se carga tal cual, sin regenerar. */
+    initial_text?: string | null;
   };
   onClose: () => void;
   onSchedule?: (request: TelegramScheduleRequest) => Promise<boolean>;
@@ -124,8 +126,8 @@ export function TelegramPanel({
   useEffect(() => {
     if (!dealData.deal_id) return;
     telegramApi
-      .listPublications(dealData.deal_id)
-      .then((items) => setLastPublication(items.find((p) => p.channel_kind !== "admin") ?? null))
+      .latestPublication(dealData.deal_id)
+      .then(setLastPublication)
       .catch(() => setLastPublication(null));
   }, [dealData.deal_id]);
 
@@ -143,6 +145,10 @@ export function TelegramPanel({
       })
       .catch(() => toast.error("No se pudieron cargar canales/categorías"));
 
+    if (dealData.initial_text?.trim()) {
+      setText(dealData.initial_text);
+      return;
+    }
     handleGenerate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
