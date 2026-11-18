@@ -14,6 +14,10 @@ from sqlalchemy.pool import NullPool
 from app.core.config import Settings
 from app.core.database import PGBOUNCER_CONNECT_ARGS
 
+# El contenedor corre en UTC; las horas de los jobs (resumen de las 21:00, hora
+# de la revisión de precios, limpiezas) se interpretan en hora de Madrid.
+SCHEDULER_TIMEZONE = "Europe/Madrid"
+
 
 @asynccontextmanager
 async def job_engine(settings: Settings) -> AsyncIterator[AsyncEngine]:

@@ -7,7 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.core.database import get_db
-from app.core.security import get_current_user, require_admin
+from app.core.security import get_current_user
 from app.main import app
 from app.modules.blog_comments.api.router import get_blog_comment_repository
 from app.modules.comments.api.router import get_comment_repository

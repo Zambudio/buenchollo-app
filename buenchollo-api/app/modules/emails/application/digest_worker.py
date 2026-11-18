@@ -136,7 +136,7 @@ async def _process_nightly_alert_digest(settings: Settings) -> None:
                         headers={"List-Unsubscribe": f"<{unsubscribe_url}>"},
                     )
                 )
-                # Solo user_id en logs: el email es PII (SECURITY_AUDIT.md SEC-09).
+                # Solo user_id en logs: el email es PII (docs/project/07-security.md SEC-09).
                 if sent:
                     logger.info(
                         "Resumen nocturno enviado a user_id=%s (%d chollos)", user_id, len(matched_deals)

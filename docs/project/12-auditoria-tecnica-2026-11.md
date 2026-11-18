@@ -133,7 +133,7 @@ esfuerzo pequeño.
   - El contenedor monta el share de red; cualquier reinicio del NAS carga lo que haya
     en esa carpeta en ese momento.
   - El "Rollback rápido" de `08-deployment.md` usa `git checkout` en el NAS, mientras
-    `NAS-SSH.md` §5 dice que el NAS no tiene git. Hay tres procedimientos distintos.
+    `NAS-SSH.md` dice que el NAS no tiene git. Hay tres procedimientos distintos.
   - Ningún job de CI construye la imagen Docker: una dependencia nueva solo se descubre
     al reiniciar en producción.
 - **Propuesta**: imagen con el código dentro y versión etiquetada (sin volumen de código),
@@ -300,6 +300,8 @@ frontend, y en producción `/health/ready`, una ficha existente (200) y una inex
 
 ---
 
+---
+
 ## 8. Veredicto
 
 Para un comprador técnico, BuenCholloTech es **un activo bien construido**: la base de
@@ -308,3 +310,39 @@ seguridad cuidada, tests reales, decisiones documentadas) y no necesita rehacers
 precio debería descontar el trabajo de **profesionalizar la operación**: hoy el servicio
 depende de un NAS doméstico, de despliegues manuales y del conocimiento del autor. Con la
 Fase 1 cerrada, el riesgo de compra pasa a ser bajo.
+
+---
+
+## 9. Estado de las correcciones (2026-11-18)
+
+| Hallazgo | Estado |
+|---|---|
+| AUD-01 Registro de modelos de Alembic | ✅ Seis modelos registrados y test que falla si vuelve a faltar alguno |
+| AUD-02 Despliegue sobre la copia de trabajo | 🟡 Runbook único y coherente, build de la imagen en CI; imagen versionada pendiente (TD-61, TD-31) |
+| AUD-03 Backups | 🟡 Servicio `db-backup` diario y validado, guía de restauración; copia fuera del NAS pendiente (TD-52) |
+| AUD-04 Alertas de caída | 🟡 Monitor de GitHub Actions cada 15 min (web, API y una ficha real); latido del scheduler pendiente (TD-60) |
+| AUD-05 Token del túnel | ⏳ Requiere al propietario (TD-21) |
+| AUD-06 Protección de `main` | ✅ Checks obligatorios en `main`; la CI corre también en `develop` |
+| AUD-07 *Soft 404* | ✅ 404 y 5xx reales con `noindex` (ver [`13-seo.md`](13-seo.md)) |
+| AUD-08 Logo de 588 KB | ✅ 7 KB (WebP) y favicons optimizados |
+| AUD-09 E/S síncrona en rutas `async` | ✅ Telegram, Supabase y JWKS fuera del bucle; JWKS con timeout y sin respaldo remoto ante `kid` desconocido |
+| AUD-10 Doble publicación en Telegram | 🟡 Commit por programación con bloqueo por fila; queda el caso límite TD-56 |
+| AUD-11 Transacciones | ⏳ TD-54 |
+| AUD-12 Borradores por slug | ⏳ TD-55 |
+| AUD-13 Moderación de comentarios | ✅ Borrado admin (API y web), rate limit en votos |
+| AUD-14 Alertas | ✅ Tope de 50 por usuario, rate limit y longitudes en la edición |
+| AUD-15 Metadatos y fechas | ✅ Ver `13-seo.md` |
+| AUD-16 Errores al usuario | ✅ Mensajes en español sin detalles internos; `localStorage` protegido |
+| AUD-17 Bundle y fuentes | 🟡 Fuentes alojadas en la web; bundle inicial pendiente (TD-57) |
+| AUD-18 Componentes grandes | 🟡 Un único hilo de comentarios para chollos y blog; resto pendiente (TD-57) |
+| AUD-19 Accesibilidad | ⏳ TD-58 (el pie ya está en el HTML del servidor) |
+| AUD-20 Cliente LLM | ✅ De 668 a 320 líneas, un único núcleo; corregido el fallo con `provider="openai"` |
+| AUD-21 CI | ✅ Permisos mínimos, acciones por SHA, límites de tiempo, `ruff`, build de la imagen |
+| AUD-22 Tests | 🟡 Tests nuevos en todos los cambios (backend 851, frontend 544); contrato y E2E real pendientes (TD-59) |
+| AUD-23 Versión en `/health` | ⏳ TD-60 |
+| AUD-24 `.env.example` | ✅ Completo y con test que compara con `Settings` |
+| AUD-25 Documentación | ✅ Reordenada, sin histórico ni datos sensibles, índices y enlaces verificados |
+| AUD-26 Resumen nocturno y jobs | ✅ Helper único `core/jobs.py` con NullPool para los seis jobs |
+| Bajos de seguridad | ✅ `/docs` cerrado en producción, CORS `*` bloquea el arranque, aviso si falta `ANALYTICS_HASH_SECRET`, `psycopg2-binary` fijado; resto en TD-62 |
+| Código muerto | ✅ Chatbot sin uso, protocolos y métodos huérfanos eliminados |
+| Scheduler | ✅ Hora de Madrid (antes UTC) y apagado limpio con SIGTERM |

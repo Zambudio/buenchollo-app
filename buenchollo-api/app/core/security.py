@@ -148,7 +148,7 @@ async def get_current_user(
             user = AuthenticatedUser(id=str(sub), email=claims.get("email"))
         # Loguear sólo user_id (UUID, no es PII directa). El email queda
         # fuera del log para no filtrar PII si alguien deja LOG_LEVEL=DEBUG
-        # en producción. Ver SECURITY_AUDIT.md SEC-09.
+        # en producción. Ver docs/project/07-security.md SEC-09.
         logger.debug("JWT validado OK — user_id=%s", user.id)
         return user
     except HTTPException:

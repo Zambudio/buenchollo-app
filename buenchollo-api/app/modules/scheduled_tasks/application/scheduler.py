@@ -11,9 +11,10 @@ el que `ScheduledPublicationWorker.process_due` es una clase aparte).
 import asyncio
 import logging
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 from app.core.config import Settings
-from app.core.jobs import job_session
+from app.core.jobs import SCHEDULER_TIMEZONE, job_session
 from app.modules.catalog.application.reactivation_notifier import notifiable_events
 from app.modules.scheduled_tasks.application.factory import build_reactivation_notifier, build_task_handlers
 from app.modules.scheduled_tasks.application.scheduled_task_service import (
@@ -105,7 +106,9 @@ async def _run(settings: Settings) -> int:
         repo, service = _build_service(session, settings)
         notifier = build_reactivation_notifier(session, settings)
         try:
-            now_local = datetime.now(timezone.utc).astimezone()
+            # Hora de Madrid explícita: el contenedor corre en UTC y `run_hour`
+            # se configura en el panel en hora española.
+            now_local = datetime.now(ZoneInfo(SCHEDULER_TIMEZONE))
             return await _execute_due_tasks(repo, service, session, now_local, notifier)
         except Exception:
             await session.rollback()

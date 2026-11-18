@@ -3,6 +3,13 @@
 
 > Bitácora cronológica inversa. Estado operativo vigente: [`docs/project/11-current-state.md`](docs/project/11-current-state.md); pendientes abiertos: [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md).
 
+## 2026-11-18 · SEO, documentación y correcciones de la auditoría
+
+- **SEO y búsqueda con IA** (PR #85, desplegado y verificado en producción): 404 reales, módulo `src/lib/seo` con cabeceras y datos estructurados en todas las páginas, categorías con texto propio y fuera del índice si están vacías, paginación rastreable, sitemap con imágenes, `/llms.txt` dinámico, feed RSS de chollos, `robots.txt` con bots de IA, página «Sobre nosotros», logo de 588 KB a 7 KB y fuentes propias. Informe: [`docs/project/13-seo.md`](docs/project/13-seo.md).
+- **Documentación**: eliminados `docs/archive`, `docs/superpowers`, `docs/reference` y notas de cambios (≈ 10 800 líneas), `PROJECT_STATUS.md` condensado, índices y enlaces verificados, y datos operativos y personales retirados del repositorio público (IP, usuario y clave del NAS, rutas, correos).
+- **Auditoría**: corregidos AUD-01, 06, 07, 08, 09, 13, 14, 15, 16, 20, 21, 24, 25 y 26, más los bajos de seguridad, el código muerto y el scheduler (hora de Madrid; antes UTC, así que el resumen de alertas pasa a salir a las 21:00 españolas y la revisión de precios a la hora configurada en hora española); parciales AUD-02, 03, 04, 10, 17, 18 y 22. Estado por hallazgo en el § 9 del informe; pendientes en TD-52 a TD-62.
+- **Operación nueva**: servicio `db-backup` (copia diaria validada), monitor de disponibilidad en GitHub Actions y protección de rama en `main`.
+
 ## 2026-11-18 · Auditoría técnica completa (enfoque comprador)
 
 - Revisión de arquitectura backend y frontend, seguridad, calidad de código, testing, CI y operación, con verificación de todos los hallazgos altos contra el código y, en solo lectura, contra producción. Informe: [`docs/project/12-auditoria-tecnica-2026-11.md`](docs/project/12-auditoria-tecnica-2026-11.md).

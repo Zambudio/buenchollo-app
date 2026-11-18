@@ -17,10 +17,7 @@ from app.modules.analytics.application.cleanup import run_analytics_cleanup
 from app.modules.emails.application.digest_worker import run_due_alert_digest
 from app.modules.affiliates.application.feed_sync_job import run_awin_feed_sync
 
-
-# El contenedor corre en UTC; las horas de los jobs cron (resumen de las 21:00,
-# limpieza, sincronización de feeds) se interpretan en hora de Madrid.
-SCHEDULER_TIMEZONE = "Europe/Madrid"
+from app.core.jobs import SCHEDULER_TIMEZONE
 
 
 def build_deals_scheduler(settings: Settings) -> tuple[BackgroundScheduler, DealCleanerService]:
