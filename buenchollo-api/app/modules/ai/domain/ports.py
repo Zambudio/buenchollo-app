@@ -8,17 +8,6 @@ from app.modules.ai.domain.entities import LLMGenerationResult
 class LLMClientProtocol(Protocol):
     """Low-level protocol for communicating with an LLM provider or gateway."""
 
-    def generate_text(
-        self,
-        messages: list[dict[str, str]],
-        *,
-        model: str | None = None,
-        temperature: float | None = None,
-        max_tokens: int | None = None,
-        provider: str | None = None,
-    ) -> LLMGenerationResult:
-        """Synchronously generate text using the primary model with automatic fallback."""
-
     def generate_json(
         self,
         messages: list[dict[str, str]],
@@ -40,17 +29,6 @@ class LLMClientProtocol(Protocol):
         provider: str | None = None,
     ) -> LLMGenerationResult:
         """Asynchronously generate text using the primary model with automatic fallback."""
-
-    async def agenerate_json(
-        self,
-        messages: list[dict[str, str]],
-        *,
-        model: str | None = None,
-        temperature: float | None = None,
-        max_tokens: int | None = None,
-        provider: str | None = None,
-    ) -> dict[str, Any]:
-        """Asynchronously generate and parse structured JSON with automatic fallback and markdown stripping."""
 
 
 class TelegramAIServiceProtocol(Protocol):

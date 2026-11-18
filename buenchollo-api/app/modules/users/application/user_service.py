@@ -7,6 +7,7 @@ hablar HTTP y delegar; el service no conoce FastAPI ni `HTTPException`.
 Las excepciones de dominio (`ProfileNotFound`) se lanzan desde aquí y el
 handler global en `main.py` las traduce al status HTTP.
 """
+import asyncio
 from dataclasses import dataclass
 
 from supabase import Client
@@ -120,7 +121,7 @@ class UserService:
         limpian vía los ON DELETE CASCADE/SET NULL ya definidos en la BD
         (perfil, comentarios, votos y favoritos se eliminan en cascada; los
         chollos publicados sobreviven sin autor)."""
-        self.supabase.auth.admin.delete_user(user_id)
+        await asyncio.to_thread(self.supabase.auth.admin.delete_user, user_id)
 
     # ── Admin ────────────────────────────────────────────────────────────────
 

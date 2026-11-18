@@ -15,10 +15,10 @@ import asyncio
 import logging
 
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
-from sqlalchemy.pool import NullPool
+from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from app.core.config import Settings
+from app.core.jobs import job_engine
 from app.modules.affiliates.application.feed_sync import AwinFeedSync
 from app.modules.affiliates.infrastructure.awin_client import AwinClient
 from app.modules.affiliates.infrastructure.repository import AffiliateRepository
@@ -36,13 +36,8 @@ async def run_awin_feed_sync_async(
     client = AwinClient(settings)
     if not client.feeds_configured:
         return [{"status": "not_configured", "message": "Faltan AWIN_PUBLISHER_ID / AWIN_FEED_API_KEY."}]
-    engine = create_async_engine(
-        settings.database_url,
-        poolclass=NullPool,
-        connect_args={"server_settings": {"jit": "off"}, "statement_cache_size": 0},
-    )
     try:
-        async with engine.connect() as lock_conn:
+        async with job_engine(settings) as engine, engine.connect() as lock_conn:
             got = (await lock_conn.execute(text("SELECT pg_try_advisory_xact_lock(:k)"), {"k": _LOCK_KEY})).scalar()
             if not got:
                 return [{"status": "already_running", "message": "Ya hay una sincronización en curso."}]
@@ -59,7 +54,6 @@ async def run_awin_feed_sync_async(
         return [{"status": "error", "message": "Fallo global de la sincronización (ver logs)."}]
     finally:
         client.http.close()
-        await engine.dispose()
 
 
 def run_awin_feed_sync(settings: Settings) -> list[dict]:

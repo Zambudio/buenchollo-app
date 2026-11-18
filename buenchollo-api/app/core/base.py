@@ -31,6 +31,13 @@ from app.modules.comments.domain.models import DealComment, CommentVote  # noqa:
 from app.modules.scheduled_deals.domain.models import ScheduledDeal  # noqa: F401
 from app.modules.blog.domain.models import BlogCategory, BlogPost, BlogPostVote  # noqa: F401
 from app.modules.analytics.domain.models import AnalyticsEvent, AnalyticsBlogDailyView  # noqa: F401
+from app.modules.blog_comments.domain.models import BlogComment, BlogCommentVote  # noqa: F401
+from app.modules.submissions.domain.models import DealSubmission  # noqa: F401
+from app.modules.scheduled_tasks.domain.models import (  # noqa: F401
+    ScheduledTask,
+    ScheduledTaskRun,
+    ScheduledTaskRunItem,
+)
 
 # Audit log (vive en core/ porque cualquier módulo puede escribir en él)
 from app.core.audit.models import AuditLog  # noqa: F401

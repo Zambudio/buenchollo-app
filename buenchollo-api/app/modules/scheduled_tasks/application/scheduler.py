@@ -12,10 +12,8 @@ import asyncio
 import logging
 from datetime import datetime, timezone
 
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
-from sqlalchemy.pool import NullPool
-
 from app.core.config import Settings
+from app.core.jobs import job_session
 from app.modules.catalog.application.reactivation_notifier import notifiable_events
 from app.modules.scheduled_tasks.application.factory import build_reactivation_notifier, build_task_handlers
 from app.modules.scheduled_tasks.application.scheduled_task_service import (
@@ -98,30 +96,21 @@ async def _run(settings: Settings) -> int:
         logger.error("DATABASE_URL no configurada para el worker de tareas programadas")
         return 0
 
-    engine = create_async_engine(
-        settings.database_url,
-        poolclass=NullPool,
-        connect_args={"server_settings": {"jit": "off"}, "statement_cache_size": 0},
-    )
-    session_factory = async_sessionmaker(engine, expire_on_commit=False)
-    try:
-        async with session_factory() as session:
-            # El cableado queda FUERA del try (TD-19): un import roto o una
-            # dependencia mal construida es un fallo de despliegue, no de una
-            # tarea concreta, y debe propagarse para que APScheduler lo marque
-            # como error del job y llegue a Sentry en lugar de quedar como una
-            # línea más en los logs en cada tick.
-            repo, service = _build_service(session, settings)
-            notifier = build_reactivation_notifier(session, settings)
-            try:
-                now_local = datetime.now(timezone.utc).astimezone()
-                return await _execute_due_tasks(repo, service, session, now_local, notifier)
-            except Exception:
-                await session.rollback()
-                logger.exception("Fallo global del worker de tareas programadas")
-                return 0
-    finally:
-        await engine.dispose()
+    async with job_session(settings) as session:
+        # El cableado queda FUERA del try (TD-19): un import roto o una
+        # dependencia mal construida es un fallo de despliegue, no de una
+        # tarea concreta, y debe propagarse para que APScheduler lo marque
+        # como error del job y llegue a Sentry en lugar de quedar como una
+        # línea más en los logs en cada tick.
+        repo, service = _build_service(session, settings)
+        notifier = build_reactivation_notifier(session, settings)
+        try:
+            now_local = datetime.now(timezone.utc).astimezone()
+            return await _execute_due_tasks(repo, service, session, now_local, notifier)
+        except Exception:
+            await session.rollback()
+            logger.exception("Fallo global del worker de tareas programadas")
+            return 0
 
 
 def run_due_scheduled_tasks(settings: Settings) -> int:

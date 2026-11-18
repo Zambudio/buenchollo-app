@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from uuid import UUID
 import asyncio
 from fastapi import APIRouter, Depends, Request
+from starlette.concurrency import run_in_threadpool
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.audit import audit_log
@@ -193,7 +194,8 @@ async def notify_deal(
     if payload.text:
         generator = TelegramPostGenerator()
         entities = payload.entities or generator.build_entities(payload.text)
-        ok = bot.send_preformatted(
+        ok = await run_in_threadpool(
+            bot.send_preformatted,
             text=payload.text,
             entities=entities,
             image_url=payload.image_url,
@@ -204,7 +206,8 @@ async def notify_deal(
     else:
         if not payload.title or payload.current_price is None:
             raise TelegramNotifyPayloadInvalid()
-        ok = bot.send_deal(
+        ok = await run_in_threadpool(
+            bot.send_deal,
             title=payload.title,
             current_price=payload.current_price,
             affiliate_url=payload.affiliate_url or "",

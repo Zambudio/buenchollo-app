@@ -11,7 +11,7 @@ from sqlalchemy import select, text
 from sqlalchemy.orm import selectinload
 
 from app.core.config import Settings
-from app.core.database import AsyncSessionLocal
+from app.core.jobs import job_session
 from app.modules.alerts.application.matching import matches_alert
 from app.modules.alerts.domain.models import Alert
 from app.modules.deals.domain.models import Deal
@@ -80,7 +80,7 @@ async def _process_nightly_alert_digest(settings: Settings) -> None:
     today = date.today()
     since = datetime.now(timezone.utc) - DIGEST_WINDOW
 
-    async with AsyncSessionLocal() as session:
+    async with job_session(settings) as session:
         alerts = (
             await session.execute(
                 select(Alert).where(Alert.is_active.is_(True), Alert.notify_email.is_(True))

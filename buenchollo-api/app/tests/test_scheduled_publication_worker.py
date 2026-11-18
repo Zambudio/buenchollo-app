@@ -13,11 +13,22 @@ class FakeRepository:
     def __init__(self, scheduled):
         self.scheduled = scheduled
 
-    async def get_pending_until_for_update(self, horizon):
-        return [self.scheduled]
+    async def get_pending_ids_until(self, horizon):
+        return [self.scheduled.id]
+
+    async def lock_pending(self, scheduled_id):
+        return self.scheduled
 
     async def update(self, scheduled):
         return scheduled
+
+
+class FakeSession:
+    async def commit(self):
+        pass
+
+    async def rollback(self):
+        pass
 
 
 class FakeVerifier:
@@ -77,6 +88,7 @@ def scheduled_deal():
 def worker_for(scheduled, product, bot=None):
     bot = bot or FakeBot()
     worker = ScheduledPublicationWorker(
+        FakeSession(),
         FakeRepository(scheduled),
         FakeVerifier(product),
         bot,
@@ -281,3 +293,89 @@ async def test_registra_el_precio_ya_actualizado_del_chollo():
     await worker.process_due(datetime(2026, 1, 1, 10, 1, tzinfo=timezone.utc))
 
     assert seen["deal_price"] == Decimal("95.00")
+
+
+class TransactionalStore:
+    """Repo y sesión falsos con semántica de transacción: el estado de las
+    programaciones solo persiste con commit y rollback vuelve a lo confirmado."""
+
+    def __init__(self, items, fail_update_for=None):
+        self.items = {s.id: s for s in items}
+        self.committed = {s.id: s.status for s in items}
+        self.fail_update_for = fail_update_for
+        self.locked_elsewhere = set()
+
+    async def get_pending_ids_until(self, horizon):
+        return [i for i, status in self.committed.items() if status == ScheduledDealStatus.SCHEDULED]
+
+    async def lock_pending(self, scheduled_id):
+        scheduled = self.items[scheduled_id]
+        if scheduled_id in self.locked_elsewhere or scheduled.status != ScheduledDealStatus.SCHEDULED:
+            return None
+        return scheduled
+
+    async def update(self, scheduled):
+        if scheduled.id == self.fail_update_for:
+            raise RuntimeError("BD caída")
+        return scheduled
+
+    async def commit(self):
+        self.committed = {i: s.status for i, s in self.items.items()}
+
+    async def rollback(self):
+        for i, status in self.committed.items():
+            self.items[i].status = status
+
+
+def _store_worker(store, bot):
+    return ScheduledPublicationWorker(
+        store,
+        store,
+        FakeVerifier(ProductPreview(current_price=100.0, in_stock=True)),
+        bot,
+        main_channel_id="-100-main",
+        admin_chat_id="123-admin",
+    )
+
+
+@pytest.mark.asyncio
+async def test_fallo_de_bd_en_la_segunda_no_deshace_ni_reenvia_la_primera():
+    first, second = scheduled_deal(), scheduled_deal()
+    first.id, second.id = "first", "second"
+    store = TransactionalStore([first, second], fail_update_for="second")
+    bot = FakeBot()
+    worker = _store_worker(store, bot)
+    now = datetime(2026, 1, 1, 10, 1, tzinfo=timezone.utc)
+
+    processed = await worker.process_due(now)
+
+    assert processed == 2
+    assert store.committed == {
+        "first": ScheduledDealStatus.PUBLISHED,
+        "second": ScheduledDealStatus.SCHEDULED,
+    }
+    assert len(bot.posts) == 2
+
+    # Siguiente tick con la BD recuperada: solo se reintenta la segunda.
+    store.fail_update_for = None
+    assert await worker.process_due(now) == 1
+    assert len(bot.posts) == 3
+    assert store.committed["second"] == ScheduledDealStatus.PUBLISHED
+
+
+@pytest.mark.asyncio
+async def test_omite_la_programacion_bloqueada_por_otro_proceso():
+    first, second = scheduled_deal(), scheduled_deal()
+    first.id, second.id = "first", "second"
+    store = TransactionalStore([first, second])
+    store.locked_elsewhere.add("first")
+    bot = FakeBot()
+
+    processed = await _store_worker(store, bot).process_due(datetime(2026, 1, 1, 10, 1, tzinfo=timezone.utc))
+
+    assert processed == 1
+    assert store.committed == {
+        "first": ScheduledDealStatus.SCHEDULED,
+        "second": ScheduledDealStatus.PUBLISHED,
+    }
+    assert len(bot.posts) == 1

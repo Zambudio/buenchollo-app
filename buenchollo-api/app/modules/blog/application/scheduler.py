@@ -13,10 +13,8 @@ import asyncio
 import logging
 from datetime import datetime, timezone
 
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
-from sqlalchemy.pool import NullPool
-
 from app.core.config import Settings
+from app.core.jobs import job_session
 from app.modules.blog.infrastructure.repository import BlogPostRepository
 
 logger = logging.getLogger(__name__)
@@ -56,27 +54,18 @@ async def _run(settings: Settings) -> int:
     if not settings.database_url:
         logger.error("DATABASE_URL no configurada para el worker de publicación de blog")
         return 0
-    engine = create_async_engine(
-        settings.database_url,
-        poolclass=NullPool,
-        connect_args={"server_settings": {"jit": "off"}, "statement_cache_size": 0},
-    )
-    session_factory = async_sessionmaker(engine, expire_on_commit=False)
-    try:
-        async with session_factory() as session:
-            try:
-                repo = BlogPostRepository(session)
-                count = await _publish_due_posts(repo)
-                await session.commit()
-                if count:
-                    logger.info("Worker de blog publicó %d artículo(s) programado(s)", count)
-                return count
-            except Exception:
-                await session.rollback()
-                logger.exception("Fallo global del worker de publicación programada de blog")
-                return 0
-    finally:
-        await engine.dispose()
+    async with job_session(settings) as session:
+        try:
+            repo = BlogPostRepository(session)
+            count = await _publish_due_posts(repo)
+            await session.commit()
+            if count:
+                logger.info("Worker de blog publicó %d artículo(s) programado(s)", count)
+            return count
+        except Exception:
+            await session.rollback()
+            logger.exception("Fallo global del worker de publicación programada de blog")
+            return 0
 
 
 def run_due_scheduled_posts(settings: Settings) -> int:
