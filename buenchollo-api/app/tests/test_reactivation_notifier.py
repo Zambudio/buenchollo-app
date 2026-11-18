@@ -3,6 +3,10 @@
 Petición de Pedro (2026-11-06): dos mensajes. Primero el aviso (qué ha pasado,
 precio de antes y de ahora) y después la publicación de Telegram que se envió
 la última vez, con el precio corregido, lista para volver a publicarla.
+
+Petición de Pedro (2026-11-18): solo avisar de chollos publicados hace al menos
+10 días (última publicación en Telegram o, si no la hay, alta en la web) e
+indicar en el aviso cuándo se publicó.
 """
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
@@ -12,6 +16,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from app.modules.catalog.application.reactivation_notifier import (
+    LastPublication,
     OfferEvent,
     ReactivationNotifier,
     build_admin_message,
@@ -31,6 +36,7 @@ def _deal(**overrides):
         store=SimpleNamespace(name="Amazon"), affiliate_url="https://www.amazon.es/dp/B0X?tag=bct-21",
         image_url="https://img/deal.jpg", short_description="Monitor gaming", expires_at=None,
         admin_notified_at=None, admin_notified_price=None, status="active",
+        created_at=NOW - timedelta(days=30),
     )
     base.update(overrides)
     return SimpleNamespace(**base)
@@ -57,13 +63,16 @@ def test_should_notify_7_dias_si():
 
 # --- mensaje de aviso ---
 
+ON_TELEGRAM = LastPublication(datetime(2026, 10, 20, 9, 30, tzinfo=timezone.utc), on_telegram=True)
+
 
 def test_aviso_de_reactivacion():
     event = OfferEvent("deal-1", "reactivated", Decimal("299.90"))
-    assert build_admin_message(_deal(), event, SITE) == (
+    assert build_admin_message(_deal(), event, SITE, ON_TELEGRAM, NOW) == (
         "🔁 Vuelve a estar en oferta\n"
         "Monitor LG 27GP850\n"
         "💶 Ahora 289,90 € · la última vez que fue chollo: 299,90 €\n"
+        "🗓️ Última publicación en Telegram: 20/10/2026 (hace 16 días)\n"
         "🏷️ Referencia de la tienda: 449,00 € (-35 %)\n"
         "🏪 Amazon\n"
         "🌐 https://buenchollotech.com/chollo/monitor-lg-27gp850\n"
@@ -73,8 +82,12 @@ def test_aviso_de_reactivacion():
 
 def test_aviso_de_bajada_sin_referencia_de_tienda():
     event = OfferEvent("deal-1", "price_dropped", Decimal("320"))
-    text = build_admin_message(_deal(previous_price=None, store=None), event, SITE + "/")
-    assert text.startswith("📉 Ha bajado de precio\nMonitor LG 27GP850\n💶 Ahora 289,90 € · antes 320,00 €\n🏪 Tienda\n")
+    only_web = LastPublication(NOW - timedelta(days=12), on_telegram=False)
+    text = build_admin_message(_deal(previous_price=None, store=None), event, SITE + "/", only_web, NOW)
+    assert text.startswith(
+        "📉 Ha bajado de precio\nMonitor LG 27GP850\n💶 Ahora 289,90 € · antes 320,00 €\n"
+        "🗓️ Publicado en la web (nunca en Telegram): 25/10/2026 (hace 12 días)\n🏪 Tienda\n"
+    )
     assert "Referencia" not in text
 
 
@@ -118,7 +131,7 @@ async def test_envia_aviso_y_despues_la_publicacion_anterior_corregida():
         title="Monitor LG", current_price=299.90, previous_price=449, discount_pct=33,
         description="Mi texto del panel", affiliate_url="https://amzn.to/abc",
     )
-    publication = SimpleNamespace(text=original, image_url="https://img/publicada.jpg")
+    publication = SimpleNamespace(text=original, image_url="https://img/publicada.jpg", sent_at=NOW - timedelta(days=11))
     deal = _deal()
     notifier, bot, matcher = _notifier(deal, publication=publication)
 
@@ -205,7 +218,7 @@ async def test_fallo_preparando_la_publicacion_no_corta_los_demas_avisos():
     first, second = _deal(id="d1", slug="uno"), _deal(id="d2", slug="dos")
     notifier, bot, _ = _notifier(first)
     notifier.deal_repo.get_by_id = AsyncMock(side_effect=lambda deal_id: {"d1": first, "d2": second}[deal_id])
-    notifier.publications.latest_public_for_deal = AsyncMock(side_effect=[RuntimeError("BD"), None])
+    notifier.generator.generate_text = MagicMock(side_effect=[RuntimeError("plantilla"), "🍄 Dos"])
 
     sent = await notifier.notify(
         [OfferEvent("d1", "reactivated", Decimal("300")), OfferEvent("d2", "reactivated", Decimal("300"))], NOW
@@ -214,3 +227,45 @@ async def test_fallo_preparando_la_publicacion_no_corta_los_demas_avisos():
     assert sent == 2
     assert first.admin_notified_at == NOW and second.admin_notified_at == NOW
     assert bot.send_preformatted.call_count == 1  # solo la del segundo
+
+
+# --- antigüedad mínima (10 días) ---
+
+
+@pytest.mark.asyncio
+async def test_publicado_en_telegram_hace_4_dias_no_avisa_al_admin_pero_si_alertas():
+    deal = _deal()
+    publication = SimpleNamespace(text="x", image_url=None, sent_at=NOW - timedelta(days=4))
+    notifier, bot, matcher = _notifier(deal, publication=publication)
+
+    assert await notifier.notify([OfferEvent("deal-1", "price_dropped", Decimal("320"))], NOW) == 0
+
+    bot.send_admin_notification.assert_not_called()
+    bot.send_preformatted.assert_not_called()
+    matcher.notify_matching_alerts.assert_awaited_once_with(deal)
+    assert deal.admin_notified_at is None
+
+
+@pytest.mark.asyncio
+async def test_publicado_en_telegram_hace_10_dias_si_avisa():
+    publication = SimpleNamespace(text="no estándar", image_url=None, sent_at=NOW - timedelta(days=10))
+    notifier, bot, _ = _notifier(_deal(), publication=publication)
+
+    assert await notifier.notify([EVENT], NOW) == 1
+    assert "hace 10 días" in bot.send_admin_notification.call_args.args[0]
+
+
+@pytest.mark.asyncio
+async def test_sin_telegram_cuenta_el_alta_en_la_web():
+    notifier, bot, _ = _notifier(_deal(created_at=NOW - timedelta(days=3)), publication=None)
+    assert await notifier.notify([EVENT], NOW) == 0
+    bot.send_admin_notification.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_fallo_leyendo_la_publicacion_usa_el_alta_en_la_web():
+    notifier, bot, _ = _notifier(_deal())
+    notifier.publications.latest_public_for_deal = AsyncMock(side_effect=RuntimeError("BD"))
+
+    assert await notifier.notify([EVENT], NOW) == 1
+    assert "nunca en Telegram" in bot.send_admin_notification.call_args.args[0]

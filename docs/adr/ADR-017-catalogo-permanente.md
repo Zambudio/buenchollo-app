@@ -41,6 +41,11 @@ permanente y multitienda, con la sección de chollos y Telegram como capa rápid
    2026-11-06:* también avisa de las bajadas de precio de ofertas activas
    (`price_drop_percent`) y el aviso va seguido de la última publicación de Telegram del
    chollo (tabla `telegram_publications`) con el precio corregido, lista para reenviar.
+   *Ampliado el 2026-11-18:* el canal Admin solo recibe el aviso si el chollo se publicó
+   hace al menos 10 días (`REPOST_MIN_AGE`): cuenta la última publicación pública en
+   Telegram o, si nunca se publicó allí, el alta en la web (`created_at`; no
+   `published_at`, que la reactivación pone a la fecha actual). El aviso indica esa fecha.
+   Las alertas de usuario no dependen de esa antigüedad.
 5. **Única eliminación automática:** un listing con disponibilidad confirmada como
    `unavailable`/`not_found` durante `purge_after_days` (30). Si al producto le quedan otras
    tiendas solo se quita esa; si no, se eliminan producto y deals. Un fallo de Amazon nunca
