@@ -1,7 +1,11 @@
 {
-  "admin_emails": ["pjzambudio@gmail.com"],
-  "sync_email_patterns": ["pjzambudio+*@gmail.com"],
-  "test_email_template": "pjzambudio+local-{n}@gmail.com",
+  "admin_emails": [
+    "admin@example.com"
+  ],
+  "sync_email_patterns": [
+    "admin+*@example.com"
+  ],
+  "test_email_template": "admin+local-{n}@example.com",
   "snapshot_tables": [
     "stores",
     "categories",
