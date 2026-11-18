@@ -3,7 +3,7 @@ from typing import Any, Literal
 from datetime import datetime
 
 # Límites razonables para los campos de texto de un chollo. Defensa en
-# profundidad (admin-only) ante payloads abusivos. Ver SECURITY_AUDIT.md
+# profundidad (admin-only) ante payloads abusivos. Ver docs/project/07-security.md
 # SEC-05.
 _TITLE_MAX = 200
 _SHORT_DESC_MAX = 300

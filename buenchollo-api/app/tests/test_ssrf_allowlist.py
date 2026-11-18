@@ -2,7 +2,7 @@
 
 Verifican que sólo se aceptan URLs de la allowlist Amazon y que cualquier
 URL apuntando a IP privada/loopback es rechazada antes del fetch HTTP.
-Ver SECURITY_AUDIT.md SEC-06.
+Ver docs/project/07-security.md SEC-06.
 """
 import pytest
 from unittest.mock import patch

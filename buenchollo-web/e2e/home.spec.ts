@@ -8,7 +8,7 @@
  *  En su lugar verificamos que la página responde, que el chrome de la
  *  app está presente, y que los CTA principales son accesibles. La
  *  corrección del contenido dinámico se cubre con los integration tests
- *  de Vitest (DealCard.test.tsx) y manualmente vía docs/SMOKE_TEST.md.
+ *  de Vitest (DealCard.test.tsx) y manualmente vía docs/guides/SMOKE-TEST.md.
  */
 import { expect, test } from "@playwright/test";
 

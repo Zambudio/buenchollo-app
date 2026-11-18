@@ -21,7 +21,7 @@ ASIN_RE = re.compile(r"/(?:dp|gp/product|product)/([A-Z0-9]{10})")
 DIRECT_ASIN_RE = re.compile(r"^[A-Z0-9]{10}$")
 
 # Allowlist de hosts contra los que aceptamos hacer follow del redirect
-# al resolver una URL acortada. Defensa anti-SSRF (SECURITY_AUDIT.md SEC-06):
+# al resolver una URL acortada. Defensa anti-SSRF (docs/project/07-security.md SEC-06):
 # un admin malicioso o un token comprometido NO podrá usar este endpoint
 # para escanear la LAN del NAS ni atacar servicios internos.
 _ALLOWED_HOSTS = {
@@ -151,7 +151,7 @@ def _resolve_final_url(url: str) -> str:
 def extract_asin_from_url(url_or_asin: str) -> str | None:
     """Extrae un ASIN de Amazon a partir de una URL o lo acepta directamente.
 
-    Endurecido contra SSRF (SECURITY_AUDIT.md SEC-06):
+    Endurecido contra SSRF (docs/project/07-security.md SEC-06):
     1) Sólo aceptamos URLs cuyo host esté en `_ALLOWED_HOSTS` (Amazon
        multi-marketplace + acortadores oficiales).
     2) Antes del fetch, validamos que el host NO resuelve a una IP privada
