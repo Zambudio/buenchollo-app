@@ -2,7 +2,9 @@
  * mockeable con page.route) y detalle (cargado en un loader SSR — igual que
  * `chollo.$slug.tsx`, se ejecuta en el proceso del servidor de Vite y por
  * tanto no es interceptable por `page.route`; aquí solo comprobamos que la
- * página no rompe y degrada correctamente cuando el artículo no existe).
+ * página no rompe y degrada correctamente cuando la API no responde: muestra un
+ * error temporal con `noindex` en vez de un «no encontrado» que un buscador
+ * indexaría como página vacía. El 404 real se comprueba en `lib/seo`).
  *
  * El renderizado del bloque de producto y sus atributos `rel` ya están
  * cubiertos a nivel de componente en
@@ -43,13 +45,14 @@ test.describe("Blog público", () => {
     });
   });
 
-  test("un artículo inexistente muestra un estado no-encontrado sin romper la página", async ({
+  test("sin API, un artículo muestra un error temporal sin indexar ni romper la página", async ({
     page,
   }) => {
     await page.goto("/blog/articulo-que-no-existe");
-    await expect(page.getByRole("heading", { name: /no encontrado/i })).toBeVisible({
+    await expect(page.getByRole("heading", { name: /algo ha fallado/i })).toBeVisible({
       timeout: 10_000,
     });
-    await expect(page.getByRole("link", { name: /volver al blog/i })).toBeVisible();
+    await expect(page.locator('meta[name="robots"][content="noindex"]').first()).toBeAttached();
+    await expect(page.getByRole("link", { name: /ir al inicio/i })).toBeVisible();
   });
 });

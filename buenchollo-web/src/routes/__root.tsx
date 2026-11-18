@@ -16,19 +16,28 @@ import appCss from "../styles.css?url";
 function NotFoundComponent() {
   return (
     <div className="flex min-h-dvh items-center justify-center bg-background px-4">
+      {/* React 19 lleva estas etiquetas al <head>; el servidor responde 404. */}
+      <title>Página no encontrada | BuenChollo Tech</title>
+      <meta name="robots" content="noindex" />
       <div className="max-w-md text-center">
         <div className="font-mono text-cyan-glow text-sm mb-4">&gt; ERROR_404</div>
         <h1 className="text-7xl font-bold text-foreground tracking-tighter">404</h1>
         <h2 className="mt-4 text-xl font-semibold">Página no encontrada</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          La ruta que buscas no existe o ha sido movida.
+          El chollo o la página que buscas no existe o ha sido retirada.
         </p>
-        <div className="mt-6">
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <Link
             to="/"
             className="inline-flex items-center justify-center bg-cyan-glow text-surface-900 px-6 py-3 font-mono text-xs font-bold hover:bg-foreground transition-colors"
           >
-            VOLVER AL INICIO
+            VER CHOLLOS DE HOY
+          </Link>
+          <Link
+            to="/categorias"
+            className="inline-flex items-center justify-center border border-surface-700 px-6 py-3 font-mono text-xs font-bold hover:border-cyan-glow transition-colors"
+          >
+            CATEGORÍAS
           </Link>
         </div>
       </div>
@@ -77,14 +86,20 @@ export const Route = createRootRoute({
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.ico", sizes: "any" },
-      { rel: "icon", type: "image/png", href: "/favicon.png?v=2" },
-      { rel: "shortcut icon", type: "image/png", href: "/favicon.png?v=2" },
-      { rel: "apple-touch-icon", href: "/favicon.png?v=2" },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "" },
+      { rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon-32.png?v=3" },
+      { rel: "icon", type: "image/png", sizes: "192x192", href: "/favicon.png?v=3" },
+      { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png?v=3" },
       {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap",
+        rel: "alternate",
+        type: "application/rss+xml",
+        title: "Chollos de BuenChollo Tech",
+        href: `${SITE_URL}/rss.xml`,
+      },
+      {
+        rel: "alternate",
+        type: "application/rss+xml",
+        title: "Blog de BuenChollo Tech",
+        href: `${SITE_URL}/blog/rss.xml`,
       },
     ],
   }),

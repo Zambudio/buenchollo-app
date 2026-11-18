@@ -1,5 +1,5 @@
 import { logError } from "@/lib/logger";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { dealsService, favoritesApi, type DealDetailData } from "@/services/api/deals";
 import { Layout } from "@/components/layout/Layout";
@@ -20,9 +20,8 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel";
 import { useAuth } from "@/hooks/useAuth";
-import { formatPrice, formatRelativeTime, calculateDiscount } from "@/lib/format";
+import { formatPrice, formatRelativeTime, calculateDiscount, TIME_ZONE } from "@/lib/format";
 import { OfferStatusNotice } from "@/features/deals/components/OfferStatusNotice";
-import { isInStock } from "@/lib/offer-status";
 import { errorMessage } from "@/lib/errors";
 import {
   Heart,
@@ -50,128 +49,23 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
-import { serializeJsonLd } from "@/lib/json-ld";
-
-const SITE = "https://buenchollotech.com";
+import { ApiError } from "@/services/api/client";
+import { pageHead } from "@/lib/seo/head";
+import { dealPageSeo } from "@/lib/seo/deal";
 
 export const Route = createFileRoute("/chollo/$slug")({
   component: DealDetail,
   loader: async ({ params }) => {
     try {
-      const data = await dealsService.getBySlug(params.slug);
-      return { meta: data };
-    } catch {
-      return { meta: null };
+      return { meta: await dealsService.getBySlug(params.slug) };
+    } catch (error) {
+      // 404 real para buscadores; cualquier otro fallo (API caída) se propaga
+      // como error 5xx para que el buscador reintente en vez de indexar vacío.
+      if (error instanceof ApiError && error.status === 404) throw notFound();
+      throw error;
     }
   },
-  head: ({ params, loaderData }) => {
-    const m = loaderData?.meta as DealDetailData | null | undefined;
-    const url = `${SITE}/chollo/${params.slug}`;
-    if (!m) {
-      return {
-        meta: [{ title: `${params.slug} · BuenChollo Tech` }, { property: "og:url", content: url }],
-        links: [{ rel: "canonical", href: url }],
-      };
-    }
-    const desc =
-      (m.short_description || (m.description ? String(m.description).slice(0, 200) : "")) +
-      (m.current_price ? ` · ${m.current_price}€` : "");
-    const img = (m.images && m.images[0]) || m.image_url || undefined;
-    const discount = m.discount_percentage ?? calculateDiscount(m.current_price, m.previous_price);
-    const title = `${m.title} — ${m.current_price} €${discount ? ` (-${discount}%)` : ""} | Opiniones y Precio`;
-    const breadcrumbItems = [
-      { "@type": "ListItem", position: 1, name: "Inicio", item: `${SITE}/` },
-      { "@type": "ListItem", position: 2, name: "Explorar", item: `${SITE}/explorar` },
-      ...(m.category
-        ? [
-            {
-              "@type": "ListItem",
-              position: 3,
-              name: m.category.name,
-              item: `${SITE}/categoria/${m.category.slug}`,
-            },
-          ]
-        : []),
-      ...(m.subcategory
-        ? [
-            {
-              "@type": "ListItem",
-              position: m.category ? 4 : 3,
-              name: m.subcategory.name,
-              item: `${SITE}/explorar?cat=${encodeURIComponent(m.category?.slug ?? "")}&sub=${encodeURIComponent(m.subcategory.slug)}`,
-            },
-          ]
-        : []),
-    ];
-    const productSchema = {
-      "@type": "Product",
-      "@id": `${url}#product`,
-      name: m.title,
-      description: m.description || m.short_description || m.title,
-      image: img ? [img] : undefined,
-      brand: m.brand ? { "@type": "Brand", name: m.brand } : undefined,
-      sku: m.external_id || m.id,
-      offers: {
-        "@type": "Offer",
-        price: m.current_price,
-        priceCurrency: "EUR",
-        priceValidUntil: m.expires_at?.slice(0, 10),
-        availability: isInStock(m) ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-        itemCondition: "https://schema.org/NewCondition",
-        url,
-        seller: m.store?.name ? { "@type": "Organization", name: m.store.name } : undefined,
-      },
-      ...(m.aggregate_rating != null && m.review_count != null && m.review_count > 0
-        ? {
-            aggregateRating: {
-              "@type": "AggregateRating",
-              ratingValue: m.aggregate_rating,
-              reviewCount: m.review_count,
-              bestRating: 5,
-              worstRating: 1,
-            },
-          }
-        : {}),
-    };
-    return {
-      meta: [
-        { title },
-        { name: "description", content: desc.slice(0, 200) },
-        { property: "og:title", content: m.title },
-        { property: "og:description", content: desc.slice(0, 200) },
-        { property: "og:url", content: url },
-        { property: "og:type", content: "product" },
-        { property: "product:price:amount", content: String(m.current_price) },
-        { property: "product:price:currency", content: "EUR" },
-        {
-          property: "product:availability",
-          content: isInStock(m) ? "in stock" : "out of stock",
-        },
-        ...(img
-          ? [
-              { property: "og:image", content: img },
-              { name: "twitter:image", content: img },
-            ]
-          : []),
-      ],
-      links: [{ rel: "canonical", href: url }],
-      scripts: [
-        {
-          type: "application/ld+json",
-          children: serializeJsonLd({
-            "@context": "https://schema.org",
-            "@graph": [
-              productSchema,
-              {
-                "@type": "BreadcrumbList",
-                itemListElement: breadcrumbItems,
-              },
-            ],
-          }),
-        },
-      ],
-    };
-  },
+  head: ({ loaderData }) => (loaderData?.meta ? pageHead(dealPageSeo(loaderData.meta)) : {}),
 });
 
 function DealDetail() {
@@ -396,6 +290,7 @@ function DealDetail() {
 
   const fmtDateTime = (s: string) =>
     new Date(s).toLocaleString("es-ES", {
+      timeZone: TIME_ZONE,
       day: "2-digit",
       month: "short",
       year: "numeric",

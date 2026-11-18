@@ -27,6 +27,8 @@
 | 🔍 **Algo no funciona** | [09](09-troubleshooting.md) |
 | 🧾 **Ver qué deuda técnica queda pendiente** | [10](10-technical-debt.md) |
 | ✅ **Comprobar el estado real actual** | [11](11-current-state.md) |
+| 🔍 **Ver la auditoría técnica completa (2026-11)** | [12](12-auditoria-tecnica-2026-11.md) |
+| 🔎 **Entender y mantener el SEO y la visibilidad en buscadores con IA** | [13](13-seo.md) |
 
 ---
 
@@ -45,6 +47,8 @@
 | [09](09-troubleshooting.md) | 🔍 **Troubleshooting** | Errores comunes y soluciones |
 | [10](10-technical-debt.md) | 🧾 **Deuda técnica** | Registro vivo de tareas pendientes |
 | [11](11-current-state.md) | ✅ **Estado actual verificado** | Producción, funciones, módulos, calidad y pendientes a 2026-09-26 |
+| [12](12-auditoria-tecnica-2026-11.md) | 🔍 **Auditoría técnica 2026-11** | Revisión completa de arquitectura, seguridad, calidad, testing y operación, con plan de acción |
+| [13](13-seo.md) | 🔎 **SEO y búsqueda con IA** | Auditoría SEO, datos estructurados, `llms.txt`, sitemap, rendimiento y cómo mantenerlo |
 
 ---
 

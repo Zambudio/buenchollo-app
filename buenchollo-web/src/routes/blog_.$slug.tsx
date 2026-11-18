@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { TIME_ZONE } from "@/lib/format";
+import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Share2, Clock, User } from "lucide-react";
@@ -15,13 +16,14 @@ import { BlogViewCount } from "@/features/blog/components/public/BlogViewCount";
 import { ShareDialog } from "@/features/deals/components/ShareBox";
 import { useAuth } from "@/hooks/useAuth";
 import { errorMessage } from "@/lib/errors";
-import { serializeJsonLd } from "@/lib/json-ld";
-
-const SITE = "https://buenchollotech.com";
+import { ApiError } from "@/services/api/client";
+import { pageHead } from "@/lib/seo/head";
+import { blogPostSeo } from "@/lib/seo/blog";
 
 function formatDate(iso: string | null): string {
   if (!iso) return "";
   return new Date(iso).toLocaleDateString("es-ES", {
+    timeZone: TIME_ZONE,
     day: "2-digit",
     month: "long",
     year: "numeric",
@@ -32,88 +34,14 @@ export const Route = createFileRoute("/blog_/$slug")({
   component: BlogPostPage,
   loader: async ({ params }) => {
     try {
-      const post = await blogService.getPostBySlug(params.slug);
-      return { post };
-    } catch {
-      return { post: null };
+      return { post: await blogService.getPostBySlug(params.slug) };
+    } catch (error) {
+      // 404 real para buscadores; otros fallos se propagan como 5xx.
+      if (error instanceof ApiError && error.status === 404) throw notFound();
+      throw error;
     }
   },
-  head: ({ params, loaderData }) => {
-    const post = loaderData?.post as BlogPostDetail | null | undefined;
-    const url = `${SITE}/blog/${params.slug}`;
-    if (!post) {
-      return {
-        meta: [{ title: `${params.slug} · Blog · BuenChollo Tech` }],
-        links: [{ rel: "canonical", href: url }],
-      };
-    }
-    const title = post.seo_title || post.title;
-    const description = post.seo_description || post.excerpt || post.title;
-    const canonical = post.canonical_url || url;
-    const image = post.og_image_url || post.cover_image_url || undefined;
-
-    const jsonLd = {
-      "@context": "https://schema.org",
-      "@graph": [
-        {
-          "@type": "BlogPosting",
-          "@id": `${url}#article`,
-          headline: post.title,
-          description: post.excerpt || undefined,
-          image: image ? [image] : undefined,
-          datePublished: post.published_at ?? undefined,
-          dateModified: post.updated_at,
-          author: post.author?.display_name
-            ? { "@type": "Person", name: post.author.display_name }
-            : undefined,
-          publisher: { "@type": "Organization", name: "BuenChollo Tech" },
-          mainEntityOfPage: { "@type": "WebPage", "@id": url },
-          articleSection: post.category?.name ?? undefined,
-          keywords: post.tags.length > 0 ? post.tags.join(", ") : undefined,
-        },
-        {
-          "@type": "BreadcrumbList",
-          itemListElement: [
-            { "@type": "ListItem", position: 1, name: "Inicio", item: `${SITE}/` },
-            { "@type": "ListItem", position: 2, name: "Blog", item: `${SITE}/blog` },
-            ...(post.category
-              ? [
-                  {
-                    "@type": "ListItem",
-                    position: 3,
-                    name: post.category.name,
-                    item: `${SITE}/blog?category=${post.category.slug}`,
-                  },
-                ]
-              : []),
-            { "@type": "ListItem", position: post.category ? 4 : 3, name: post.title, item: url },
-          ],
-        },
-      ],
-    };
-
-    return {
-      meta: [
-        { title: `${title} · BuenChollo Tech` },
-        { name: "description", content: description.slice(0, 300) },
-        { property: "og:type", content: "article" },
-        { property: "og:title", content: title },
-        { property: "og:description", content: description.slice(0, 300) },
-        { property: "og:url", content: canonical },
-        ...(image ? [{ property: "og:image", content: image }] : []),
-        { name: "twitter:card", content: "summary_large_image" },
-        { name: "twitter:title", content: title },
-        { name: "twitter:description", content: description.slice(0, 200) },
-        ...(image ? [{ name: "twitter:image", content: image }] : []),
-        { property: "article:published_time", content: post.published_at ?? "" },
-        { property: "article:modified_time", content: post.updated_at },
-        ...(post.category ? [{ property: "article:section", content: post.category.name }] : []),
-        ...post.tags.map((tag) => ({ property: "article:tag", content: tag })),
-      ],
-      links: [{ rel: "canonical", href: canonical }],
-      scripts: [{ type: "application/ld+json", children: serializeJsonLd(jsonLd) }],
-    };
-  },
+  head: ({ loaderData }) => (loaderData?.post ? pageHead(blogPostSeo(loaderData.post)) : {}),
 });
 
 function BlogPostPage() {

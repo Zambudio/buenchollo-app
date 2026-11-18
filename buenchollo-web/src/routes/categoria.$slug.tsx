@@ -1,66 +1,48 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { Layout } from "@/components/layout/Layout";
 import { DealCard } from "@/features/deals/components/DealCard";
 import { useMyVotes } from "@/features/deals/hooks/useMyVotes";
 import { categoriesService, type Category } from "@/services/api/categories";
 import { dealsService } from "@/services/api/deals";
-import { serializeJsonLd } from "@/lib/json-ld";
+import { ApiError } from "@/services/api/client";
+import { pageHead } from "@/lib/seo/head";
+import { categoryIntro, categoryPageSeo } from "@/lib/seo/category";
 import { withFallback } from "@/lib/fallback";
 import { catalogService } from "@/services/api/catalog";
 import { TopProducts } from "@/features/catalog/TopProducts";
 
-const SITE = "https://buenchollotech.com";
-
 export const Route = createFileRoute("/categoria/$slug")({
   component: CategoryPage,
   loader: async ({ params }) => {
+    let cat: Category;
     try {
-      const cat = await categoriesService.getBySlug(params.slug);
-      const [tops, categories, deals] = await Promise.all([
-        withFallback(catalogService.top(params.slug), [], "Error cargando el top de la categoría"),
-        withFallback(categoriesService.getAll(), [], "Error cargando subcategorías"),
-        withFallback(
-          dealsService.search({
-            ...(cat.parent_id ? { subcategory_id: cat.id } : { category_id: cat.id }),
-            limit: 48,
-          }),
-          [],
-          "Error cargando los chollos de la categoría",
-        ),
-      ]);
-      return { cat, tops, categories, deals };
-    } catch {
-      return { cat: null, tops: [], categories: [], deals: [] };
+      cat = await categoriesService.getBySlug(params.slug);
+    } catch (error) {
+      // 404 real para buscadores; otros fallos se propagan como 5xx.
+      if (error instanceof ApiError && error.status === 404) throw notFound();
+      throw error;
     }
+    const [tops, categories, deals] = await Promise.all([
+      withFallback(catalogService.top(params.slug), [], "Error cargando el top de la categoría"),
+      withFallback(categoriesService.getAll(), [], "Error cargando subcategorías"),
+      withFallback(
+        dealsService.search({
+          ...(cat.parent_id ? { subcategory_id: cat.id } : { category_id: cat.id }),
+          limit: 48,
+        }),
+        [],
+        "Error cargando los chollos de la categoría",
+      ),
+    ]);
+    return { cat, tops, categories, deals };
   },
-  head: ({ params, loaderData }) => {
-    const c = loaderData?.cat as (Category & { description?: string }) | null | undefined;
-    const name = c?.name ?? params.slug;
-    const url = `${SITE}/categoria/${params.slug}`;
-    const desc =
-      c?.description ?? `Chollos y ofertas de ${name} curados a diario en BuenChollo Tech.`;
-    return {
-      meta: [
-        { title: `Chollos de ${name} · BuenChollo Tech` },
-        { name: "description", content: String(desc).slice(0, 200) },
-        { property: "og:title", content: `Chollos de ${name}` },
-        { property: "og:description", content: String(desc).slice(0, 200) },
-        { property: "og:url", content: url },
-        { property: "og:type", content: "website" },
-      ],
-      links: [{ rel: "canonical", href: url }],
-      scripts: [
-        {
-          type: "application/ld+json",
-          children: serializeJsonLd({
-            "@context": "https://schema.org",
-            "@type": "CollectionPage",
-            name: `Chollos de ${name}`,
-            url,
-          }),
-        },
-      ],
-    };
+  head: ({ loaderData }) => {
+    if (!loaderData) return {};
+    const { cat, categories, deals, tops } = loaderData;
+    const parent = categories.find((category) => category.id === cat.parent_id) ?? null;
+    return pageHead(
+      categoryPageSeo({ slug: cat.slug, name: cat.name, parent, deals, topCount: tops.length }),
+    );
   },
 });
 
@@ -69,7 +51,8 @@ function CategoryPage() {
   const { cat, tops, categories, deals } = Route.useLoaderData();
   const myVotes = useMyVotes(deals.map((d) => d.id));
 
-  const subcategories = categories.filter((category) => category.parent_id === cat?.id);
+  const subcategories = categories.filter((category) => category.parent_id === cat.id);
+  const parentSlug = categories.find((category) => category.id === cat.parent_id)?.slug ?? null;
 
   return (
     <Layout>
@@ -78,13 +61,16 @@ function CategoryPage() {
           ← TODAS LAS CATEGORÍAS
         </Link>
         <h1 className="text-3xl sm:text-4xl font-bold tracking-tighter mt-3 mb-2">
-          {cat?.name ?? "Categoría"}
+          Chollos de {cat.name}
         </h1>
-        <p className="text-muted-foreground font-mono text-sm mb-8">
+        <p className="text-muted-foreground font-mono text-sm mb-3">
           {deals.length} chollos activos
         </p>
+        <p className="text-muted-foreground text-sm max-w-3xl mb-8">
+          {categoryIntro(cat.slug, cat.name, parentSlug)}
+        </p>
         {subcategories.length > 0 && (
-          <nav aria-label={`Subcategorías de ${cat?.name}`} className="category-subnav">
+          <nav aria-label={`Subcategorías de ${cat.name}`} className="category-subnav">
             {subcategories.map((subcategory) => (
               <Link key={subcategory.id} to="/categoria/$slug" params={{ slug: subcategory.slug }}>
                 {subcategory.name}
@@ -93,7 +79,7 @@ function CategoryPage() {
           </nav>
         )}
         <TopProducts slug={slug} initialProducts={tops} />
-        <h2 className="feed-section-title">Chollos activos de {cat?.name ?? "esta categoría"}</h2>
+        <h2 className="feed-section-title">Chollos activos de {cat.name ?? "esta categoría"}</h2>
         {deals.length === 0 ? (
           <p className="text-muted-foreground font-mono">
             No hay chollos por ahora en esta categoría.

@@ -1,9 +1,27 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Layout } from "@/components/layout/Layout";
 import { Mail } from "lucide-react";
+import { absoluteUrl, pageHead, withBrand } from "@/lib/seo/head";
+import { ORGANIZATION_ID } from "@/lib/seo/schema";
+import { CONTACT_EMAIL } from "@/lib/site";
 
 export const Route = createFileRoute("/contacto")({
   component: Contacto,
+  head: () =>
+    pageHead({
+      title: withBrand("Contacto"),
+      description:
+        "Contacta con BuenChollo Tech para dudas, sugerencias, colaboraciones o para avisar de un chollo que ya no está disponible.",
+      path: "/contacto",
+      jsonLd: [
+        {
+          "@type": "ContactPage",
+          name: "Contacto",
+          url: absoluteUrl("/contacto"),
+          about: { "@id": ORGANIZATION_ID },
+        },
+      ],
+    }),
 });
 
 function Contacto() {
@@ -26,11 +44,11 @@ function Contacto() {
             en contacto con nosotros.
           </p>
           <a
-            href="mailto:contacto@buenchollotech.com"
+            href={`mailto:${CONTACT_EMAIL}`}
             className="inline-flex items-center gap-3 border border-cyan-glow/50 text-cyan-glow font-mono text-sm px-5 py-3 hover:bg-cyan-glow/10 transition-colors"
           >
             <Mail className="size-4" />
-            contacto@buenchollotech.com
+            {CONTACT_EMAIL}
           </a>
         </div>
       </div>

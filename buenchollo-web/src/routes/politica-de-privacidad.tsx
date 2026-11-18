@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Layout } from "@/components/layout/Layout";
-import { SITE_URL, SITE_NAME, CONTACT_EMAIL } from "@/lib/site";
+import { pageHead } from "@/lib/seo/head";
+import { SITE_NAME, CONTACT_EMAIL } from "@/lib/site";
 
 const TITLE = `Política de privacidad | ${SITE_NAME}`;
 const DESCRIPTION =
@@ -8,18 +9,7 @@ const DESCRIPTION =
 
 export const Route = createFileRoute("/politica-de-privacidad")({
   component: PoliticaDePrivacidad,
-  head: () => ({
-    meta: [
-      { title: TITLE },
-      { name: "description", content: DESCRIPTION },
-      { name: "robots", content: "index, follow" },
-      { property: "og:title", content: TITLE },
-      { property: "og:description", content: DESCRIPTION },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: `${SITE_URL}/politica-de-privacidad` },
-    ],
-    links: [{ rel: "canonical", href: `${SITE_URL}/politica-de-privacidad` }],
-  }),
+  head: () => pageHead({ title: TITLE, description: DESCRIPTION, path: "/politica-de-privacidad" }),
 });
 
 function PoliticaDePrivacidad() {

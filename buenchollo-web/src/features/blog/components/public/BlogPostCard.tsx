@@ -1,3 +1,4 @@
+import { TIME_ZONE } from "@/lib/format";
 import { Link } from "@tanstack/react-router";
 import { Clock } from "lucide-react";
 import type { BlogPostCard as BlogPostCardData } from "@/services/api/blog";
@@ -5,6 +6,7 @@ import type { BlogPostCard as BlogPostCardData } from "@/services/api/blog";
 function formatDate(iso: string | null): string {
   if (!iso) return "";
   return new Date(iso).toLocaleDateString("es-ES", {
+    timeZone: TIME_ZONE,
     day: "2-digit",
     month: "short",
     year: "numeric",

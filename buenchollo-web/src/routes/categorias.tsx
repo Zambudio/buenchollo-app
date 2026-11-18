@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { pageHead, withBrand } from "@/lib/seo/head";
+import { breadcrumbSchema, collectionPageSchema } from "@/lib/seo/schema";
 import {
   ArrowRight,
   BatteryCharging,
@@ -21,8 +23,6 @@ import { categoriesService } from "@/services/api/categories";
 import { dealsService } from "@/services/api/deals";
 import { Layout } from "@/components/layout/Layout";
 import { withFallback } from "@/lib/fallback";
-
-const SITE = "https://buenchollotech.com";
 
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
   informatica: Laptop,
@@ -56,23 +56,24 @@ export const Route = createFileRoute("/categorias")({
     }
     return { cats, covers };
   },
-  head: () => ({
-    meta: [
-      { title: "Todas las categorías de chollos · BuenChollo Tech" },
-      {
-        name: "description",
-        content:
-          "Explora todas las categorías y subcategorías de chollos: móviles, portátiles, audio, TV, gaming, smart home y más.",
-      },
-      { property: "og:title", content: "Todas las categorías de chollos" },
-      {
-        property: "og:description",
-        content: "Categorías y subcategorías para encontrar tu chollo de tecnología.",
-      },
-      { property: "og:url", content: `${SITE}/categorias` },
-    ],
-    links: [{ rel: "canonical", href: `${SITE}/categorias` }],
-  }),
+  head: () =>
+    pageHead({
+      title: withBrand("Categorías de chollos de tecnología"),
+      description:
+        "Todas las categorías de chollos de tecnología: informática, audio, smartphones, televisores, gaming, redes, domótica y más, con sus subcategorías.",
+      path: "/categorias",
+      jsonLd: [
+        collectionPageSchema(
+          "Categorías de chollos de tecnología",
+          "/categorias",
+          "Índice de categorías y subcategorías de chollos de tecnología.",
+        ),
+        breadcrumbSchema([
+          { name: "Inicio", path: "/" },
+          { name: "Categorías", path: "/categorias" },
+        ]),
+      ],
+    }),
 });
 
 function CategoriesPage() {

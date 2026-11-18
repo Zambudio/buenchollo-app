@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Layout } from "@/components/layout/Layout";
+import { pageHead } from "@/lib/seo/head";
 import { AnalyticsPreferenceButton } from "@/features/analytics/components/AnalyticsPreferenceButton";
-import { SITE_URL, SITE_NAME, CONTACT_EMAIL } from "@/lib/site";
+import { SITE_NAME, CONTACT_EMAIL } from "@/lib/site";
 
 const TITLE = `Política de cookies | ${SITE_NAME}`;
 const DESCRIPTION =
@@ -9,18 +10,7 @@ const DESCRIPTION =
 
 export const Route = createFileRoute("/politica-de-cookies")({
   component: PoliticaDeCookies,
-  head: () => ({
-    meta: [
-      { title: TITLE },
-      { name: "description", content: DESCRIPTION },
-      { name: "robots", content: "index, follow" },
-      { property: "og:title", content: TITLE },
-      { property: "og:description", content: DESCRIPTION },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: `${SITE_URL}/politica-de-cookies` },
-    ],
-    links: [{ rel: "canonical", href: `${SITE_URL}/politica-de-cookies` }],
-  }),
+  head: () => pageHead({ title: TITLE, description: DESCRIPTION, path: "/politica-de-cookies" }),
 });
 
 function PoliticaDeCookies() {

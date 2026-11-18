@@ -1,3 +1,7 @@
+/** Zona horaria de la web: el Worker renderiza en UTC y el navegador en la hora
+ *  local; fijarla evita horas distintas entre el HTML del servidor y la hidratación. */
+export const TIME_ZONE = "Europe/Madrid";
+
 export function formatPrice(price: number | null | undefined): string {
   if (price == null) return "—";
   return new Intl.NumberFormat("es-ES", {
@@ -22,7 +26,7 @@ export function formatRelativeTime(date: string | Date | null | undefined): stri
   if (days < 30) return `hace ${days} d`;
   const months = Math.floor(days / 30);
   if (months < 12) return `hace ${months} mes${months > 1 ? "es" : ""}`;
-  return d.toLocaleDateString("es-ES");
+  return d.toLocaleDateString("es-ES", { timeZone: TIME_ZONE });
 }
 
 export function slugify(text: string): string {

@@ -69,7 +69,14 @@ export function Layout({ children }: { children: ReactNode }) {
           <Footer />
         </div>
       ) : (
-        <ScrollNav footerVisible={false} onToggleFooter={() => setFooterMode("manual")} />
+        <>
+          <ScrollNav footerVisible={false} onToggleFooter={() => setFooterMode("manual")} />
+          {/* Plegado pero presente en el HTML: los enlaces legales y de navegación
+              siguen accesibles para buscadores y para `aria-controls`. */}
+          <div hidden>
+            <Footer />
+          </div>
+        </>
       )}
       <CookieBanner />
     </div>

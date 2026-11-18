@@ -1,6 +1,5 @@
+import { TELEGRAM_URL } from "@/lib/site";
 import { Send } from "lucide-react";
-
-const TELEGRAM_URL = "https://t.me/buenchollotech";
 
 export function TelegramCta({ compact = false }: { compact?: boolean }) {
   if (compact) {

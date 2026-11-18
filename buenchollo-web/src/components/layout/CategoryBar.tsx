@@ -1,3 +1,4 @@
+import { TELEGRAM_URL } from "@/lib/site";
 import { Link } from "@tanstack/react-router";
 import { ArrowUpRight, Compass, House, Newspaper, Send, Trophy } from "lucide-react";
 
@@ -7,8 +8,6 @@ const LINKS = [
   { label: "Tops y categorías", to: "/categorias" as const, icon: Trophy },
   { label: "Blog", to: "/blog" as const, icon: Newspaper },
 ];
-
-const TELEGRAM_URL = "https://t.me/buenchollotech";
 
 export function CategoryBar() {
   return (
