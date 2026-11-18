@@ -4,10 +4,8 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Protocol
 
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
-from sqlalchemy.pool import NullPool
-
 from app.core.config import Settings
+from app.core.jobs import job_session
 from app.modules.deals.infrastructure.repository import DealRepository
 from app.modules.telegram.application.publications import PublicationRecorder
 from app.modules.telegram.infrastructure.publication_repository import TelegramPublicationRepository
@@ -235,37 +233,28 @@ async def _run(settings: Settings) -> int:
     if not settings.database_url:
         logger.error("DATABASE_URL no configurada para el worker de programaciones")
         return 0
-    engine = create_async_engine(
-        settings.database_url,
-        poolclass=NullPool,
-        connect_args={"server_settings": {"jit": "off"}, "statement_cache_size": 0},
-    )
-    session_factory = async_sessionmaker(engine, expire_on_commit=False)
-    try:
-        async with session_factory() as session:
-            try:
-                worker = ScheduledPublicationWorker(
-                    session,
-                    ScheduledDealRepository(session),
-                    AmazonProductClient(settings),
-                    TelegramBot(settings.telegram_bot_token),
-                    settings.telegram_main_channel_id,
-                    settings.telegram_admin_channel_id,
-                    publications=PublicationRecorder(
-                        TelegramPublicationRepository(session), DealRepository(session), settings, "scheduled"
-                    ),
-                )
-                count = await worker.process_due()
-                await session.commit()
-                if count:
-                    logger.info("Worker de programaciones proceso %d chollo(s)", count)
-                return count
-            except Exception:
-                await session.rollback()
-                logger.exception("Fallo global del worker de programaciones")
-                return 0
-    finally:
-        await engine.dispose()
+    async with job_session(settings) as session:
+        try:
+            worker = ScheduledPublicationWorker(
+                session,
+                ScheduledDealRepository(session),
+                AmazonProductClient(settings),
+                TelegramBot(settings.telegram_bot_token),
+                settings.telegram_main_channel_id,
+                settings.telegram_admin_channel_id,
+                publications=PublicationRecorder(
+                    TelegramPublicationRepository(session), DealRepository(session), settings, "scheduled"
+                ),
+            )
+            count = await worker.process_due()
+            await session.commit()
+            if count:
+                logger.info("Worker de programaciones proceso %d chollo(s)", count)
+            return count
+        except Exception:
+            await session.rollback()
+            logger.exception("Fallo global del worker de programaciones")
+            return 0
 
 
 def run_due_scheduled_publications(settings: Settings) -> int:
