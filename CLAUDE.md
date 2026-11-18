@@ -38,7 +38,7 @@ Proyecto personal en producción — las decisiones técnicas deben ser defendib
 
 - **ADR-001**: Monolito Modular con FastAPI y Clean Architecture pragmática
 - **ADR-002**: Migración de BaaS directo a API Gateway — el frontend nunca llama a Supabase DB directamente
-- **ADR-013**: Motor de IA unificado con OmniRoute / OpenCode, fallback de modelos gratuitos y base para Chatbot
+- **ADR-013**: Motor de IA unificado con OmniRoute / OpenCode, fallback de modelos gratuitos
 - **ADR-017 a ADR-019**: catálogo permanente, tops comunitarios y redes de afiliación. Índice completo en [`docs/adr/00-index.md`](docs/adr/00-index.md)
 
 ---
@@ -49,7 +49,7 @@ Proyecto personal en producción — las decisiones técnicas deben ser defendib
 app/
 ├── core/          # config, database, security, logging (compartido)
 └── modules/
-    ├── ai/            # motor unificado LLM, fallback multi-modelo, copywriting, categorización, chatbot
+    ├── ai/            # motor unificado LLM, fallback multi-modelo, copywriting, categorización
     ├── deals/
     │   ├── domain/        # modelos SQLAlchemy (Deal)
     │   ├── application/   # casos de uso, cleaner_service (caducidad por fecha; ya no borra)

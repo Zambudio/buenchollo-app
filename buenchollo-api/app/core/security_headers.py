@@ -1,7 +1,7 @@
 """Middleware que añade Security Headers a TODAS las respuestas.
 
 Defensa en profundidad ante XSS, clickjacking, MIME sniffing y fuga
-de URLs por Referer. Documentado en SECURITY_AUDIT.md SEC-03.
+de URLs por Referer. Documentado en docs/project/07-security.md SEC-03.
 
 Cabeceras emitidas:
 

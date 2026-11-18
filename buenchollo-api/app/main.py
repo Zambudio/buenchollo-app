@@ -186,7 +186,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     # explícitamente en la allowlist. NUNCA reflejar arbitrario + Allow-
     # Credentials:true (origin reflection, OWASP A05). Si la app está en
     # modo abierto (CORS_ORIGINS=*), repetimos "*" sin credenciales.
-    # Ver SECURITY_AUDIT.md SEC-02.
+    # Ver docs/project/07-security.md SEC-02.
     origin = request.headers.get("origin", "")
     cors_headers: dict[str, str] = {}
     if _allow_all:
