@@ -1,6 +1,6 @@
 ---
 name: feedback_metodo_documentacion
-description: Normas permanentes de documentación de BuenChollo — docs/project operativo + ADRs en docs/adr, código manda sobre docs viejas, README entrada, índices, ADRs solo relevantes, archive para histórico, IA como apoyo supervisado, revisar al cambiar arquitectura/seguridad/testing/despliegue.
+description: Normas permanentes de documentación de BuenChollo — docs/project operativo + ADRs en docs/adr, código manda sobre docs viejas, README entrada, índices, ADRs solo relevantes, sin carpeta de histórico, IA como apoyo supervisado, revisar al cambiar arquitectura/seguridad/testing/despliegue.
 metadata:
   type: feedback
 ---
