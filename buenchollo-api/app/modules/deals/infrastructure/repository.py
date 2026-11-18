@@ -270,7 +270,16 @@ class DealRepository:
         """URLs públicas permanentes (catálogo permanente): ofertas activas y
         chollos sin oferta. Solo las columnas que necesita el sitemap."""
         result = await self.session.execute(
-            select(Deal.slug, Deal.status, Deal.updated_at, Deal.published_at)
+            select(
+                Deal.slug,
+                Deal.status,
+                Deal.updated_at,
+                Deal.published_at,
+                Deal.title,
+                Deal.image_url,
+                Deal.category_id,
+                Deal.subcategory_id,
+            )
             .where(Deal.status.in_(("active", "expired")))
             .order_by(Deal.published_at.desc())
             .limit(limit)

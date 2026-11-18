@@ -7,14 +7,15 @@ import { HomeFilterTabs, type HomeFilterKey } from "@/features/deals/components/
 import { useMyVotes } from "@/features/deals/hooks/useMyVotes";
 import { useAuth } from "@/hooks/useAuth";
 import { dealsService, favoritesApi } from "@/services/api/deals";
-import { serializeJsonLd } from "@/lib/json-ld";
+import { pageHead } from "@/lib/seo/head";
+import { HOME_H1, homeSeo } from "@/lib/seo/home";
+import { SiteFaq } from "@/features/home/SiteFaq";
 import { withFallback } from "@/lib/fallback";
 import { HomeSidebar } from "@/features/home/HomeSidebar";
 import { blogService } from "@/services/api/blog";
 import { TopBanner } from "@/features/home/TopBanner";
 import { loadBannerTops } from "@/features/home/bannerTops";
 
-const SITE = "https://buenchollotech.com";
 const PAGE_SIZE = 30;
 
 interface HomeSearch {
@@ -38,6 +39,16 @@ function toHomeSearch(filter: HomeFilterKey, page: number): HomeSearch {
   };
 }
 
+/** URL rastreable de una página del feed (misma forma que `toHomeSearch`). */
+function homeHref(filter: HomeFilterKey, page: number): string {
+  const { sort, page: pageParam } = toHomeSearch(filter, page);
+  const params = new URLSearchParams();
+  if (sort) params.set("sort", sort);
+  if (pageParam) params.set("page", String(pageParam));
+  const query = params.toString();
+  return query ? `/?${query}` : "/";
+}
+
 export const Route = createFileRoute("/")({
   component: HomePage,
   validateSearch: parseHomeSearch,
@@ -59,66 +70,8 @@ export const Route = createFileRoute("/")({
     ]);
     return { ...page, popular, posts, tops };
   },
-  head: () => ({
-    meta: [
-      { title: "BuenChollo Tech — Chollos y ofertas de tecnología en España" },
-      {
-        name: "description",
-        content:
-          "Chollos curados de tecnología: móviles, portátiles, audio, TV, gaming y más. Alertas personalizadas y comunidad. Las mejores ofertas en un solo lugar.",
-      },
-      {
-        property: "og:title",
-        content: "BuenChollo Tech — Chollos y ofertas de tecnología en España",
-      },
-      {
-        property: "og:description",
-        content:
-          "Chollos curados de tecnología: móviles, portátiles, audio, TV, gaming y más. Alertas personalizadas y comunidad.",
-      },
-      { property: "og:url", content: `${SITE}/` },
-      { property: "og:type", content: "website" },
-      { name: "robots", content: "index, follow, max-image-preview:large" },
-      { name: "theme-color", content: "#0b1120" },
-    ],
-    links: [{ rel: "canonical", href: `${SITE}/` }],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: serializeJsonLd({
-          "@context": "https://schema.org",
-          "@graph": [
-            {
-              "@type": "Organization",
-              "@id": `${SITE}/#organization`,
-              name: "BuenChollo Tech",
-              url: `${SITE}/`,
-              logo: {
-                "@type": "ImageObject",
-                url: `${SITE}/logo-512.png`,
-                width: 512,
-                height: 512,
-              },
-              sameAs: ["https://t.me/buenchollotech"],
-            },
-            {
-              "@type": "WebSite",
-              "@id": `${SITE}/#website`,
-              url: `${SITE}/`,
-              name: "BuenChollo Tech",
-              publisher: { "@id": `${SITE}/#organization` },
-              inLanguage: "es-ES",
-              potentialAction: {
-                "@type": "SearchAction",
-                target: `${SITE}/explorar?q={search_term_string}`,
-                "query-input": "required name=search_term_string",
-              },
-            },
-          ],
-        }),
-      },
-    ],
-  }),
+  head: ({ loaderData }) =>
+    pageHead(homeSeo({ page: loaderData?.page ?? 1, deals: loaderData?.items ?? [] })),
 });
 
 function HomePage() {
@@ -170,7 +123,7 @@ function HomePage() {
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {/* Sin texto visible de cabecera (decisión de diseño); el H1 se mantiene para SEO y lectores de pantalla. */}
-        <h1 className="sr-only">Chollos y ofertas de tecnología verificadas</h1>
+        <h1 className="sr-only">{HOME_H1}</h1>
         <TopBanner tops={data.tops} />
         {/* Filtros fuera de la rejilla: el primer chollo y la columna lateral arrancan a la misma altura. */}
         <HomeFilterTabs value={filter} onChange={handleFilterChange} />
@@ -210,12 +163,14 @@ function HomePage() {
                   totalPages={totalPages}
                   loading={false}
                   onPageChange={changePage}
+                  hrefForPage={(target) => homeHref(filter, target)}
                 />
               </div>
             )}
           </div>
           <HomeSidebar popular={data.popular} posts={data.posts} />
         </div>
+        {currentPage === 1 && <SiteFaq />}
       </div>
     </Layout>
   );

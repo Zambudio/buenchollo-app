@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { TELEGRAM_URL } from "@/lib/site";
 
 export function Footer() {
   return (
@@ -8,6 +9,9 @@ export function Footer() {
           <div className="font-bold text-lg tracking-tighter">
             BuenChollo<span className="text-cyan-glow"> Tech</span>
           </div>
+          <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
+            Chollos y ofertas de tecnología en España, verificados a diario.
+          </p>
         </div>
         <div>
           <h4 className="font-mono text-xs uppercase text-cyan-glow mb-3">Navegar</h4>
@@ -26,6 +30,16 @@ export function Footer() {
               <Link to="/categorias" className="hover:text-foreground">
                 Categorías
               </Link>
+            </li>
+            <li>
+              <Link to="/blog" className="hover:text-foreground">
+                Blog y guías de compra
+              </Link>
+            </li>
+            <li>
+              <a href={TELEGRAM_URL} className="hover:text-foreground" rel="noopener">
+                Canal de Telegram
+              </a>
             </li>
           </ul>
         </div>
@@ -52,6 +66,11 @@ export function Footer() {
         <div>
           <h4 className="font-mono text-xs uppercase text-cyan-glow mb-3">Info</h4>
           <ul className="space-y-2 text-muted-foreground">
+            <li>
+              <Link to="/sobre-nosotros" className="hover:text-foreground">
+                Sobre nosotros
+              </Link>
+            </li>
             <li>
               <Link to="/contacto" className="hover:text-foreground">
                 Contacto

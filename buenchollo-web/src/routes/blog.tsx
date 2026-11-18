@@ -8,8 +8,11 @@ import { DealPagination } from "@/features/deals/components/DealPagination";
 import { useBlogPosts, useBlogCategories } from "@/features/blog/hooks/useBlogPublic";
 import { BlogPostCard } from "@/features/blog/components/public/BlogPostCard";
 import { TelegramCta } from "@/features/blog/components/public/TelegramCta";
+import { blogService } from "@/services/api/blog";
+import { withFallback } from "@/lib/fallback";
+import { pageHead } from "@/lib/seo/head";
+import { blogListSeo } from "@/lib/seo/blog";
 
-const SITE = "https://buenchollotech.com";
 const PAGE_SIZE = 12;
 
 const searchSchema = z.object({
@@ -18,27 +21,46 @@ const searchSchema = z.object({
   page: z.number().int().min(1).optional(),
 });
 
+/** URL rastreable de una página del listado, conservando los filtros. */
+function blogPageHref(search: z.infer<typeof searchSchema>, page: number): string {
+  const params = new URLSearchParams();
+  if (search.category) params.set("category", search.category);
+  if (search.q) params.set("q", search.q);
+  if (page > 1) params.set("page", String(page));
+  const query = params.toString();
+  return query ? `/blog?${query}` : "/blog";
+}
+
 export const Route = createFileRoute("/blog")({
   component: BlogPage,
   validateSearch: (s) => searchSchema.parse(s),
-  head: () => ({
-    meta: [
-      { title: "Blog · BuenChollo Tech" },
-      {
-        name: "description",
-        content:
-          "Guías de compra, comparativas y recomendaciones tecnológicas para encontrar el mejor chollo con conocimiento.",
-      },
-      { property: "og:title", content: "Blog · BuenChollo Tech" },
-      {
-        property: "og:description",
-        content: "Guías de compra, comparativas y recomendaciones tecnológicas.",
-      },
-      { property: "og:url", content: `${SITE}/blog` },
-      { property: "og:type", content: "website" },
-    ],
-    links: [{ rel: "canonical", href: `${SITE}/blog` }],
+  loaderDeps: ({ search }) => ({
+    category: search.category,
+    q: search.q,
+    page: search.page ?? 1,
   }),
+  loader: async ({ deps }) => ({
+    page: deps.page,
+    hasFilters: Boolean(deps.category || deps.q),
+    posts: await withFallback(
+      blogService.getPosts({
+        category: deps.category,
+        search: deps.q,
+        page: deps.page,
+        page_size: PAGE_SIZE,
+      }),
+      null,
+      "Error cargando artículos del blog",
+    ),
+  }),
+  head: ({ loaderData }) =>
+    pageHead(
+      blogListSeo({
+        page: loaderData?.page ?? 1,
+        hasFilters: loaderData?.hasFilters ?? false,
+        posts: loaderData?.posts?.items ?? [],
+      }),
+    ),
 });
 
 function BlogPage() {
@@ -48,12 +70,11 @@ function BlogPage() {
   const page = search.page ?? 1;
 
   const { data: categories } = useBlogCategories();
-  const { data, isLoading } = useBlogPosts({
-    category: search.category,
-    search: search.q,
-    page,
-    page_size: PAGE_SIZE,
-  });
+  const { posts: initialPosts } = Route.useLoaderData();
+  const { data, isLoading } = useBlogPosts(
+    { category: search.category, search: search.q, page, page_size: PAGE_SIZE },
+    initialPosts ?? undefined,
+  );
   const { data: featuredPage } = useBlogPosts({ featured: true, page: 1, page_size: 1 });
   const featured = !search.category && !search.q && page === 1 ? featuredPage?.items[0] : undefined;
 
@@ -155,6 +176,7 @@ function BlogPage() {
                 currentPage={data.page}
                 totalPages={data.total_pages}
                 onPageChange={(p) => navigate({ search: { ...search, page: p } })}
+                hrefForPage={(p) => blogPageHref(search, p)}
               />
             </div>
           </>

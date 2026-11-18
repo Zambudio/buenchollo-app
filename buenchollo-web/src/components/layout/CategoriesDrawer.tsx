@@ -1,3 +1,4 @@
+import { TELEGRAM_URL } from "@/lib/site";
 import { logError } from "@/lib/logger";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -46,8 +47,6 @@ const ICONS: Record<string, LucideIcon> = {
   router: Router,
   energy: Zap,
 };
-
-const TELEGRAM_URL = "https://t.me/buenchollotech";
 
 interface Props {
   readonly open: boolean;

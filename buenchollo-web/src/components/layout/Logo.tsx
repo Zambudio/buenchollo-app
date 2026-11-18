@@ -1,4 +1,4 @@
-import logoBcTech from "@/assets/logo-bctech.png";
+import logoBcTech from "@/assets/logo-bctech.webp";
 
 export function Logo({
   className = "",
@@ -12,6 +12,8 @@ export function Logo({
       <img
         src={logoBcTech}
         alt="BuenChollo Tech logo"
+        width={40}
+        height={40}
         className="size-9 sm:size-10 object-contain drop-shadow-[0_0_8px_rgba(34,211,238,0.55)]"
         loading="eager"
         decoding="async"

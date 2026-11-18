@@ -8,11 +8,17 @@ export const BLOG_PUBLIC_KEYS = {
   categories: ["blog", "categories"] as const,
 };
 
-export function useBlogPosts(params: PublicPostsParams) {
+/** `initialData`: página ya cargada en el servidor (loader SSR), para que el
+ *  HTML inicial incluya los artículos sin esperar a la petición del navegador. */
+export function useBlogPosts(
+  params: PublicPostsParams,
+  initialData?: Awaited<ReturnType<typeof blogService.getPosts>>,
+) {
   return useQuery({
     queryKey: BLOG_PUBLIC_KEYS.posts(params),
     queryFn: () => blogService.getPosts(params),
     staleTime: 60 * 1000,
+    initialData,
   });
 }
 

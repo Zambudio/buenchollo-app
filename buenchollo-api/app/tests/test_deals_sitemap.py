@@ -20,8 +20,14 @@ WHEN = datetime(2026, 11, 5, 4, 0, tzinfo=timezone.utc)
 class FakeRepo:
     async def get_sitemap_entries(self, limit: int = 5000):
         return [
-            SimpleNamespace(slug="monitor", status="active", updated_at=WHEN, published_at=WHEN),
-            SimpleNamespace(slug="ssd", status="expired", updated_at=None, published_at=WHEN),
+            SimpleNamespace(
+                slug="monitor", status="active", updated_at=WHEN, published_at=WHEN,
+                title="Monitor 27", image_url="https://img/m.webp", category_id="c1", subcategory_id="s1",
+            ),
+            SimpleNamespace(
+                slug="ssd", status="expired", updated_at=None, published_at=WHEN,
+                title="SSD", image_url=None, category_id="c2", subcategory_id=None,
+            ),
         ]
 
 
@@ -35,6 +41,9 @@ def test_endpoint_sitemap_no_lo_captura_la_ruta_por_slug(integration_client):
     body = resp.json()
     assert [(e["slug"], e["status"]) for e in body] == [("monitor", "active"), ("ssd", "expired")]
     assert body[1]["updated_at"] is None
+    assert (body[0]["title"], body[0]["image_url"], body[0]["category_id"], body[0]["subcategory_id"]) == (
+        "Monitor 27", "https://img/m.webp", "c1", "s1",
+    )
 
 
 @pytest.mark.asyncio
@@ -52,3 +61,4 @@ async def test_repositorio_solo_activos_y_sin_oferta_y_solo_columnas_necesarias(
     assert "deals.status IN ('active', 'expired')" in sql
     assert "LIMIT 10" in sql
     assert "deals.description" not in sql
+    assert "deals.image_url" in sql and "deals.subcategory_id" in sql

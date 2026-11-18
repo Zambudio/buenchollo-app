@@ -33,6 +33,7 @@ export const Route = createFileRoute("/registro")({
           "Crea una cuenta gratuita en BuenChollo Tech para crear alertas y guardar tus chollos favoritos.",
       },
       { property: "og:url", content: `${SITE_URL}/registro` },
+      { name: "robots", content: "noindex, follow" },
     ],
     links: [{ rel: "canonical", href: `${SITE_URL}/registro` }],
   }),

@@ -107,10 +107,16 @@ class DealAdminResponse(DealDetailResponse):
 
 
 class DealSitemapEntry(BaseModel):
+    """URL pública del sitemap. Título, imagen y categorías permiten publicar el
+    sitemap de imágenes y omitir las categorías sin chollos (contenido escaso)."""
     slug: str
     status: str
     updated_at: datetime | None = None
     published_at: datetime | None = None
+    title: str | None = None
+    image_url: str | None = None
+    category_id: str | None = None
+    subcategory_id: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

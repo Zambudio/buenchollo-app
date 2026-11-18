@@ -1,13 +1,36 @@
+# BuenChollo Tech — https://buenchollotech.com
+# Chollos y ofertas de tecnología en España. Resumen para asistentes de IA: /llms.txt
+
+# Buscadores y asistentes de IA (búsqueda y respuestas con cita): bienvenidos.
+# Se nombran explícitamente para que una regla futura más restrictiva no los bloquee.
+User-agent: Googlebot
+User-agent: Bingbot
+User-agent: Applebot
+User-agent: DuckDuckBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: GPTBot
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: ClaudeBot
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: meta-externalagent
+User-agent: MistralAI-User
 User-agent: *
 Allow: /
 Disallow: /admin
-Disallow: /admin/
 Disallow: /perfil
 Disallow: /favoritos
 Disallow: /alertas
-Disallow: /alertas/
 Disallow: /notificaciones
+Disallow: /mis-chollos
+Disallow: /publicar
 Disallow: /login
 Disallow: /registro
+Disallow: /restablecer-password
+Disallow: /telegram
 
 Sitemap: https://buenchollotech.com/sitemap.xml

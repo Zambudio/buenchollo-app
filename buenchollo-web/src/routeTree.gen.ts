@@ -17,6 +17,7 @@ import { Route as CategoriasRouteImport } from './routes/categorias'
 import { Route as ContactoRouteImport } from './routes/contacto'
 import { Route as ExplorarRouteImport } from './routes/explorar'
 import { Route as FavoritosRouteImport } from './routes/favoritos'
+import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MisChollosRouteImport } from './routes/mis-chollos'
 import { Route as NotificacionesRouteImport } from './routes/notificaciones'
@@ -26,7 +27,9 @@ import { Route as PoliticaDePrivacidadRouteImport } from './routes/politica-de-p
 import { Route as PublicarRouteImport } from './routes/publicar'
 import { Route as RegistroRouteImport } from './routes/registro'
 import { Route as RestablecerPasswordRouteImport } from './routes/restablecer-password'
+import { Route as RssDotxmlRouteImport } from './routes/rss[.]xml'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as SobreNosotrosRouteImport } from './routes/sobre-nosotros'
 import { Route as TelegramRouteImport } from './routes/telegram'
 import { Route as TerminosYCondicionesRouteImport } from './routes/terminos-y-condiciones'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
@@ -89,6 +92,11 @@ const FavoritosRoute = FavoritosRouteImport.update({
   path: '/favoritos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
+  id: '/llms.txt',
+  path: '/llms.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -134,9 +142,19 @@ const RestablecerPasswordRoute = RestablecerPasswordRouteImport.update({
   path: '/restablecer-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RssDotxmlRoute = RssDotxmlRouteImport.update({
+  id: '/rss.xml',
+  path: '/rss.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SobreNosotrosRoute = SobreNosotrosRouteImport.update({
+  id: '/sobre-nosotros',
+  path: '/sobre-nosotros',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TelegramRoute = TelegramRouteImport.update({
@@ -254,6 +272,7 @@ export interface FileRoutesByFullPath {
   '/contacto': typeof ContactoRoute
   '/explorar': typeof ExplorarRoute
   '/favoritos': typeof FavoritosRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/login': typeof LoginRoute
   '/mis-chollos': typeof MisChollosRoute
   '/notificaciones': typeof NotificacionesRoute
@@ -263,7 +282,9 @@ export interface FileRoutesByFullPath {
   '/publicar': typeof PublicarRoute
   '/registro': typeof RegistroRoute
   '/restablecer-password': typeof RestablecerPasswordRoute
+  '/rss.xml': typeof RssDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/sobre-nosotros': typeof SobreNosotrosRoute
   '/telegram': typeof TelegramRoute
   '/terminos-y-condiciones': typeof TerminosYCondicionesRoute
   '/admin/afiliacion': typeof AdminAfiliacionRoute
@@ -294,6 +315,7 @@ export interface FileRoutesByTo {
   '/contacto': typeof ContactoRoute
   '/explorar': typeof ExplorarRoute
   '/favoritos': typeof FavoritosRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/login': typeof LoginRoute
   '/mis-chollos': typeof MisChollosRoute
   '/notificaciones': typeof NotificacionesRoute
@@ -303,7 +325,9 @@ export interface FileRoutesByTo {
   '/publicar': typeof PublicarRoute
   '/registro': typeof RegistroRoute
   '/restablecer-password': typeof RestablecerPasswordRoute
+  '/rss.xml': typeof RssDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/sobre-nosotros': typeof SobreNosotrosRoute
   '/telegram': typeof TelegramRoute
   '/terminos-y-condiciones': typeof TerminosYCondicionesRoute
   '/admin/afiliacion': typeof AdminAfiliacionRoute
@@ -336,6 +360,7 @@ export interface FileRoutesById {
   '/contacto': typeof ContactoRoute
   '/explorar': typeof ExplorarRoute
   '/favoritos': typeof FavoritosRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/login': typeof LoginRoute
   '/mis-chollos': typeof MisChollosRoute
   '/notificaciones': typeof NotificacionesRoute
@@ -345,7 +370,9 @@ export interface FileRoutesById {
   '/publicar': typeof PublicarRoute
   '/registro': typeof RegistroRoute
   '/restablecer-password': typeof RestablecerPasswordRoute
+  '/rss.xml': typeof RssDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/sobre-nosotros': typeof SobreNosotrosRoute
   '/telegram': typeof TelegramRoute
   '/terminos-y-condiciones': typeof TerminosYCondicionesRoute
   '/admin/afiliacion': typeof AdminAfiliacionRoute
@@ -379,6 +406,7 @@ export interface FileRouteTypes {
     | '/contacto'
     | '/explorar'
     | '/favoritos'
+    | '/llms.txt'
     | '/login'
     | '/mis-chollos'
     | '/notificaciones'
@@ -388,7 +416,9 @@ export interface FileRouteTypes {
     | '/publicar'
     | '/registro'
     | '/restablecer-password'
+    | '/rss.xml'
     | '/sitemap.xml'
+    | '/sobre-nosotros'
     | '/telegram'
     | '/terminos-y-condiciones'
     | '/admin/afiliacion'
@@ -419,6 +449,7 @@ export interface FileRouteTypes {
     | '/contacto'
     | '/explorar'
     | '/favoritos'
+    | '/llms.txt'
     | '/login'
     | '/mis-chollos'
     | '/notificaciones'
@@ -428,7 +459,9 @@ export interface FileRouteTypes {
     | '/publicar'
     | '/registro'
     | '/restablecer-password'
+    | '/rss.xml'
     | '/sitemap.xml'
+    | '/sobre-nosotros'
     | '/telegram'
     | '/terminos-y-condiciones'
     | '/admin/afiliacion'
@@ -460,6 +493,7 @@ export interface FileRouteTypes {
     | '/contacto'
     | '/explorar'
     | '/favoritos'
+    | '/llms.txt'
     | '/login'
     | '/mis-chollos'
     | '/notificaciones'
@@ -469,7 +503,9 @@ export interface FileRouteTypes {
     | '/publicar'
     | '/registro'
     | '/restablecer-password'
+    | '/rss.xml'
     | '/sitemap.xml'
+    | '/sobre-nosotros'
     | '/telegram'
     | '/terminos-y-condiciones'
     | '/admin/afiliacion'
@@ -502,6 +538,7 @@ export interface RootRouteChildren {
   ContactoRoute: typeof ContactoRoute
   ExplorarRoute: typeof ExplorarRoute
   FavoritosRoute: typeof FavoritosRoute
+  LlmsDottxtRoute: typeof LlmsDottxtRoute
   LoginRoute: typeof LoginRoute
   MisChollosRoute: typeof MisChollosRoute
   NotificacionesRoute: typeof NotificacionesRoute
@@ -511,7 +548,9 @@ export interface RootRouteChildren {
   PublicarRoute: typeof PublicarRoute
   RegistroRoute: typeof RegistroRoute
   RestablecerPasswordRoute: typeof RestablecerPasswordRoute
+  RssDotxmlRoute: typeof RssDotxmlRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  SobreNosotrosRoute: typeof SobreNosotrosRoute
   TelegramRoute: typeof TelegramRoute
   TerminosYCondicionesRoute: typeof TerminosYCondicionesRoute
   AlertasNuevaRoute: typeof AlertasNuevaRoute
@@ -578,6 +617,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FavoritosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/llms.txt': {
+      id: '/llms.txt'
+      path: '/llms.txt'
+      fullPath: '/llms.txt'
+      preLoaderRoute: typeof LlmsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -641,11 +687,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RestablecerPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/rss.xml': {
+      id: '/rss.xml'
+      path: '/rss.xml'
+      fullPath: '/rss.xml'
+      preLoaderRoute: typeof RssDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sobre-nosotros': {
+      id: '/sobre-nosotros'
+      path: '/sobre-nosotros'
+      fullPath: '/sobre-nosotros'
+      preLoaderRoute: typeof SobreNosotrosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/telegram': {
@@ -853,6 +913,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactoRoute: ContactoRoute,
   ExplorarRoute: ExplorarRoute,
   FavoritosRoute: FavoritosRoute,
+  LlmsDottxtRoute: LlmsDottxtRoute,
   LoginRoute: LoginRoute,
   MisChollosRoute: MisChollosRoute,
   NotificacionesRoute: NotificacionesRoute,
@@ -862,7 +923,9 @@ const rootRouteChildren: RootRouteChildren = {
   PublicarRoute: PublicarRoute,
   RegistroRoute: RegistroRoute,
   RestablecerPasswordRoute: RestablecerPasswordRoute,
+  RssDotxmlRoute: RssDotxmlRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  SobreNosotrosRoute: SobreNosotrosRoute,
   TelegramRoute: TelegramRoute,
   TerminosYCondicionesRoute: TerminosYCondicionesRoute,
   AlertasNuevaRoute: AlertasNuevaRoute,

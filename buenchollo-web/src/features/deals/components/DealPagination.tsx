@@ -1,3 +1,4 @@
+import type { MouseEvent, ReactNode } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +13,9 @@ interface DealPaginationProps {
   totalPages: number;
   loading?: boolean;
   onPageChange: (page: number) => void;
+  /** URL de cada página. Si se indica, los controles son enlaces reales que los
+   *  buscadores pueden seguir; el clic sigue navegando sin recargar. */
+  hrefForPage?: (page: number) => string;
 }
 
 function visiblePages(current: number, total: number): Array<number | "ellipsis"> {
@@ -22,30 +26,93 @@ function visiblePages(current: number, total: number): Array<number | "ellipsis"
   return [1, "ellipsis", current - 1, current, current + 1, "ellipsis", total];
 }
 
+interface PageControlProps {
+  page: number;
+  disabled: boolean;
+  label: string;
+  size: "default" | "icon";
+  className?: string;
+  current?: boolean;
+  rel?: "prev" | "next";
+  hrefForPage?: (page: number) => string;
+  onPageChange: (page: number) => void;
+  children: ReactNode;
+}
+
+function PageControl({
+  page,
+  disabled,
+  label,
+  size,
+  className,
+  current,
+  rel,
+  hrefForPage,
+  onPageChange,
+  children,
+}: PageControlProps) {
+  if (hrefForPage && !disabled) {
+    const onClick = (event: MouseEvent<HTMLAnchorElement>) => {
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+      event.preventDefault();
+      onPageChange(page);
+    };
+    return (
+      <Button asChild variant="ghost" size={size} className={className}>
+        <a
+          href={hrefForPage(page)}
+          rel={rel}
+          onClick={onClick}
+          aria-label={label}
+          aria-current={current ? "page" : undefined}
+        >
+          {children}
+        </a>
+      </Button>
+    );
+  }
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size={size}
+      onClick={() => onPageChange(page)}
+      disabled={disabled}
+      aria-label={label}
+      aria-current={current ? "page" : undefined}
+      className={className}
+    >
+      {children}
+    </Button>
+  );
+}
+
 export function DealPagination({
   currentPage,
   totalPages,
   loading = false,
   onPageChange,
+  hrefForPage,
 }: DealPaginationProps) {
   if (totalPages <= 1) return null;
+  const shared = { hrefForPage, onPageChange };
 
   return (
     <Pagination aria-label="Páginas de chollos">
       <PaginationContent>
         <PaginationItem>
-          <Button
-            type="button"
-            variant="ghost"
-            size="default"
-            onClick={() => onPageChange(currentPage - 1)}
+          <PageControl
+            {...shared}
+            page={currentPage - 1}
             disabled={loading || currentPage === 1}
-            aria-label="Ir a la página anterior"
+            label="Ir a la página anterior"
+            size="default"
+            rel="prev"
             className="gap-1 px-2.5"
           >
             <ChevronLeft className="size-4" />
             <span className="hidden sm:inline">Anterior</span>
-          </Button>
+          </PageControl>
         </PaginationItem>
 
         {visiblePages(currentPage, totalPages).map((item, index) =>
@@ -55,35 +122,34 @@ export function DealPagination({
             </PaginationItem>
           ) : (
             <PaginationItem key={item}>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => onPageChange(item)}
+              <PageControl
+                {...shared}
+                page={item}
                 disabled={loading}
-                aria-label={`Ir a la página ${item}`}
-                aria-current={item === currentPage ? "page" : undefined}
+                label={`Ir a la página ${item}`}
+                size="icon"
+                current={item === currentPage}
                 className={item === currentPage ? "bg-accent text-accent-foreground" : undefined}
               >
                 {item}
-              </Button>
+              </PageControl>
             </PaginationItem>
           ),
         )}
 
         <PaginationItem>
-          <Button
-            type="button"
-            variant="ghost"
-            size="default"
-            onClick={() => onPageChange(currentPage + 1)}
+          <PageControl
+            {...shared}
+            page={currentPage + 1}
             disabled={loading || currentPage === totalPages}
-            aria-label="Ir a la página siguiente"
+            label="Ir a la página siguiente"
+            size="default"
+            rel="next"
             className="gap-1 px-2.5"
           >
             <span className="hidden sm:inline">Siguiente</span>
             <ChevronRight className="size-4" />
-          </Button>
+          </PageControl>
         </PaginationItem>
       </PaginationContent>
     </Pagination>
