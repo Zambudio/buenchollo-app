@@ -1,6 +1,14 @@
 # PROJECT_STATUS — BuenCholloTech
 *Actualización de producción: 2026-11-08 — Awin y Tradedoubler en el editor de chollos desplegados en web, API y scheduler (merge `c47269c`, PR #78). Alembic `20261108120000`.*
 
+## 2026-11-18 · Borrador de Telegram en «Editar chollo», chollos antiguos y borrado desde la ficha
+
+- **Contexto**: la revisión diaria de precios avisaba de bajadas de chollos que luego no se podían abrir en Admin → Chollos. Causas: el formulario se pinta encima de la tabla sin hacer scroll (desde una fila de abajo parecía que EDITAR no hacía nada) y `?edit=<id>` buscaba el chollo en el listado, que solo trae los 200 más recientes.
+- **Editar**: `GET /v1/deals/admin/{id}` carga cualquier chollo por id, y el formulario se lleva a la vista al abrirlo. El conflicto de importación de Awin/Tradedoubler también abre el chollo existente por id.
+- **Publicación Telegram en Editar chollo** (`DealTelegramDraftSection`): muestra el último envío registrado (con opción de reutilizarlo con el precio actual) y genera un borrador con el motor de IA elegido (`AiProviderSelect`, compartido con el autocompletado). El borrador se guarda en `deals.telegram_text` (migración aditiva `20261118120000`), que solo devuelven los endpoints admin (`DealAdminResponse`). «Publicar en Telegram» abre el panel con ese texto sin regenerarlo. `POST /v1/telegram/generate` acepta `ai_copy`, `provider` y `copy_context`: la IA reescribe solo la línea ✏️ (`TelegramPostGenerator.generate_copy`, 60 s máximo, con la descripción si falla) y la plantilla pone precio, ahorro, enlace y fecha de fin. Reglas del copy en un único sitio (`TELEGRAM_COPY_RULES`). Las programaciones copian su texto al chollo.
+- **Ficha pública del chollo**: botón ELIMINAR para admins, con confirmación (mismo `DELETE /v1/deals/admin/{id}`; las FK borran en cascada votos, comentarios, favoritos, notificaciones, programaciones y publicaciones, y la propuesta de usuario queda desvinculada).
+- **Documentación**: el proyecto deja de presentarse como Trabajo Fin de Máster. Eliminados `docs/master/` y `presentacion/`, y limpiadas las referencias en README, ADRs, `docs/project`, agentes y memoria. El workflow `documentar-decision-tecnica-pfmaster.md` pasa a `documentar-decision-tecnica.md`. Corregidos los enlaces relativos rotos de `docs/archive/`.
+
 ## 2026-11-08 · Awin y Tradedoubler en el editor de chollos (en producción, sin tiendas aprobadas)
 
 - **Desplegado** (PR #78, merge `c47269c`): API y scheduler recreados, Alembic `20261108120000`, job `run_awin_feed_sync` activo. Credenciales de las dos redes en el `.env` del NAS. Todas las tiendas siguen `pending` (Awin) o sin feeds (Tradedoubler) y deshabilitadas. Para activarlas cuando aprueben: `docs/guides/AFFILIATE-ACTIVATION-RUNBOOK.md` (incluye `scripts/check_affiliate_status.py`, comprobación de solo lectura que se ejecuta en el contenedor de producción).
@@ -865,8 +873,8 @@ el mismo día:
 
 - **TD-01 cerrado** — cifras de tests fijadas por fin bajo Python 3.11:
   **208 totales** = 109 pytest (100 unit + 9 integración) + 91 vitest + 8 E2E.
-  Propagado a README raíz (badge + § tests), `buenchollo-api/README.md`,
-  `docs/project/06` y `docs/master/06`.
+  Propagado a README raíz (badge + § tests), `buenchollo-api/README.md` y
+  `docs/project/06`.
 - **TD-02 cerrado** — ya estaba resuelto en código: `config.py` usa
   `Annotated[list[str], NoDecode]` + validator, que acepta CSV. Solo quedaba
   cerrar el registro.
@@ -912,7 +920,7 @@ línea de test. Tras este sprint:
 - Husky con pre-commit (lint + typecheck) y pre-push (test:run).
 - CI GitHub Actions ampliado: 4 jobs (backend, frontend con coverage,
   e2e Playwright). Artifacts subidos en cada run / en fallo.
-- Documento [`docs/master/06-calidad-testing-y-refactorizacion.md`](docs/master/06-calidad-testing-y-refactorizacion.md) con pirámide, coverage
+- Documento [`docs/project/06-testing-and-quality.md`](docs/project/06-testing-and-quality.md) con pirámide, coverage
   100/80/0, métricas accionables y deuda asumida documentada.
 
 Suite total automatizada: **158 tests verde**.

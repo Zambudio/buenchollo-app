@@ -157,10 +157,7 @@ Convención: **SemVer** + sufijo descriptivo cuando aplique.
 ## 🤖 Uso de IA en el desarrollo
 
 > Esta sección documenta **cómo** se usa la IA en el día a día.
-> El **por qué** y la justificación académica viven en:
->
-> - [`docs/master/08-uso-de-ia-en-el-desarrollo.md`](../master/08-uso-de-ia-en-el-desarrollo.md)
-> - [ADR-009](../adr/ADR-009-uso-de-ia-en-desarrollo.md)
+> El **por qué** vive en [ADR-009](../adr/ADR-009-uso-de-ia-en-desarrollo.md).
 
 ### 🥇 Herramienta principal
 

@@ -208,7 +208,7 @@ merece ADR firmado.
   semanas se cierran en sesiones de horas o días.
 - **Documentación consistente**: la IA mantiene tono, formato y
   referencias cruzadas a lo largo de todo el proyecto.
-- **Defensa académica explícita**: cada decisión sobre uso de IA está
+- **Transparencia explícita**: cada decisión sobre uso de IA está
   documentada.
 - **Replicabilidad**: el método puede aplicarse en proyectos futuros.
 
@@ -238,7 +238,6 @@ merece ADR firmado.
 
 ## Documentación relacionada
 
-- [`docs/master/08-uso-de-ia-en-el-desarrollo.md`](../master/08-uso-de-ia-en-el-desarrollo.md) — Capítulo de defensa académica.
 - [`docs/project/05-development-workflow.md`](../project/05-development-workflow.md) — Operativa diaria.
 - [`CLAUDE.md`](../../CLAUDE.md) — Configuración persistente de la IA.
 - [`PROJECT_STATUS.md`](../../PROJECT_STATUS.md) — Bitácora de sprints (cada sección 3.bis…3.sexies muestra el patrón en acción).

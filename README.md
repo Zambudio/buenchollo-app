@@ -295,7 +295,6 @@ npm run dev
 
 - [`docs/project/`](docs/project/00-index.md): **Guía Operativa del Proyecto** (Setup, Estructura, Configuración, Deployment).
 - [`docs/project/11-current-state.md`](docs/project/11-current-state.md): **Estado actual verificado** (producción, funciones, módulos, CI y pendientes).
-- [`docs/master/`](docs/master/00-index.md): **Especificación de Arquitectura y Diseño Técnico** (10 Capítulos exhaustivos).
 - [`docs/adr/`](docs/adr/00-index.md): **Architecture Decision Records** (ADR-001 al ADR-014).
 - [`docs/guides/`](docs/guides/): **Guías Operativas en Vivo** (Cloudflare Setup, NAS-SSH Deployment, Migraciones Alembic).
 

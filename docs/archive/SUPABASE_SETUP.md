@@ -14,7 +14,7 @@ Supabase provee tres servicios que el proyecto usa de forma diferenciada:
 | **Auth** | Backend (valida JWT) / Frontend (sesión) | Google OAuth, emisión de tokens JWT |
 | **Storage** | Frontend (directo) | Subida de imágenes de chollos |
 
-> A partir de la Fase 3 de la refactorización (mayo 2026), el frontend ya no hace consultas directas a la BD. Toda la lógica de negocio pasa por FastAPI. Ver [ADR-002](adr/ADR-002-migracion-baas-a-api-gateway.md).
+> A partir de la Fase 3 de la refactorización (mayo 2026), el frontend ya no hace consultas directas a la BD. Toda la lógica de negocio pasa por FastAPI. Ver [ADR-002](../adr/ADR-002-migracion-baas-a-api-gateway.md).
 
 ---
 

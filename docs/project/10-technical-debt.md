@@ -2,7 +2,7 @@
 
 > **TL;DR** · Registro vivo de lo que falta o conviene mejorar **ahora mismo**.
 > Solo items **abiertos**: cuando uno se cierra, se elimina de aquí (el histórico
-> resuelto vive en [`PROJECT_STATUS.md`](../../PROJECT_STATUS.md)). Para consultar el diseño de arquitectura, ver [`docs/master/`](../master/00-index.md).
+> resuelto vive en [`PROJECT_STATUS.md`](../../PROJECT_STATUS.md)). Para consultar las decisiones de arquitectura, ver [`docs/adr/`](../adr/00-index.md).
 
 Última revisión: **2026-11-07** (revisión general: cerrados TD-19, TD-23, TD-26, TD-32 y TD-38 b; ver `PROJECT_STATUS.md`). Anteriores: catálogo permanente, Fase 1: TD-39 a TD-45; chollos de usuarios: TD-24 a TD-35; entorno local: TD-36 a TD-38.
 

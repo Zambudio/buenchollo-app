@@ -282,7 +282,6 @@ curl -sI http://localhost:8000/health | \
 |---|---|
 | [`docs/reference/SECURITY_AUDIT.md`](../reference/SECURITY_AUDIT.md) | Auditoría OWASP completa con hallazgos SEC-01 a SEC-09 |
 | [`SECURITY.md`](../../SECURITY.md) | Política de divulgación responsable (raíz) |
-| [`docs/master/07-seguridad.md`](../master/07-seguridad.md) | Documento detallado de arquitectura de seguridad |
 
 ---
 

@@ -1,8 +1,8 @@
 ---
-description: documentar-decision-tecnica-pfmaster
+description: documentar-decision-tecnica
 ---
 
-Documenta la decisión técnica actual para incluirla en el proyecto final del máster.
+Documenta la decisión técnica actual como ADR en `docs/adr/` (siguiendo la numeración y el índice existentes).
 
 Formato:
 
@@ -32,5 +32,5 @@ Explica cómo reducimos esos riesgos.
 ## Impacto en el proyecto
 Explica cómo afecta a backend, frontend, testing, seguridad o despliegue.
 
-Redacción técnica, clara y defendible.
+Redacción técnica, clara y defendible profesionalmente.
 No exageres ni inventes.

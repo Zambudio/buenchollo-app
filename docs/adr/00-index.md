@@ -169,7 +169,6 @@ Ventajas, inconvenientes y efectos futuros.
 
 <p align="center">
   <a href="../project/00-index.md">📘 Operativa</a> ·
-  <a href="../master/00-index.md">🎓 Bloque académico</a> ·
   <a href="../reference/">📚 Referencias</a> ·
   <a href="../archive/">🗄️ Histórico</a>
 </p>

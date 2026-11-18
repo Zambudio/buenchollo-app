@@ -17,7 +17,6 @@ buenchollo-app/
 │
 ├── 📚 docs/                   Documentación
 │   ├── project/               ← Operativa del repo (este árbol)
-│   ├── master/                ← Bloque académico
 │   ├── adr/                   ← Decisiones arquitectónicas
 │   ├── reference/             ← Referencia técnica densa
 │   └── archive/               ← Histórico preservado

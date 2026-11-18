@@ -188,7 +188,7 @@ Toda propuesta debe ser:
 * compatible con ADR-001 y ADR-002;
 * coherente con el flujo `develop → main`;
 * documentable para `docs/project/`;
-* defendible si afecta al TFM;
+* defendible profesionalmente si afecta a la arquitectura;
 * respetuosa con Amazon Afiliados y Telegram.
 
 # Reglas específicas para automatización de chollos

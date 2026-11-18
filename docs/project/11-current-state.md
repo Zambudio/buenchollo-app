@@ -172,8 +172,8 @@ No se consideran pendientes las funciones ya desplegadas de analítica,
 | Estado operativo o release | `PROJECT_STATUS.md` y esta página |
 | Nueva variable | `.env.example` y `04-configuration.md` |
 | Decisión difícil de revertir | Nuevo ADR y `docs/adr/00-index.md` |
-| Funcionalidad o flujo | `docs/master/03-analisis-funcional.md` |
-| Arquitectura/despliegue | `docs/master/04-arquitectura-y-decisiones-tecnicas.md` y guía correspondiente |
+| Funcionalidad o flujo | `01-overview.md` y esta página |
+| Arquitectura/despliegue | `03-project-structure.md`, `08-deployment.md` y guía correspondiente |
 | Deuda abierta | `10-technical-debt.md` |
 | Conocimiento reutilizable | Ficha relacionada en `OBSIDIAN VAULT` siguiendo su `SCHEMA.md` |
 
