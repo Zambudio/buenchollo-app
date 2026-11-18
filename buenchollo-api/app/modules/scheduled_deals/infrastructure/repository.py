@@ -46,17 +46,29 @@ class ScheduledDealRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_pending_until_for_update(self, horizon: datetime) -> list[ScheduledDeal]:
+    async def get_pending_ids_until(self, horizon: datetime) -> list[str]:
         result = await self.session.execute(
-            self._base_query()
+            select(ScheduledDeal.id)
             .where(
                 ScheduledDeal.status == ScheduledDealStatus.SCHEDULED,
                 ScheduledDeal.scheduled_at <= horizon,
             )
             .order_by(ScheduledDeal.scheduled_at.asc())
-            .with_for_update(skip_locked=True)
         )
         return list(result.scalars().all())
+
+    async def lock_pending(self, scheduled_id: str) -> ScheduledDeal | None:
+        """Bloquea la programación si sigue pendiente; None si otro proceso ya
+        la tiene bloqueada (SKIP LOCKED) o ha dejado de estar pendiente."""
+        result = await self.session.execute(
+            self._base_query()
+            .where(
+                ScheduledDeal.id == scheduled_id,
+                ScheduledDeal.status == ScheduledDealStatus.SCHEDULED,
+            )
+            .with_for_update(skip_locked=True)
+        )
+        return result.scalars().first()
 
     async def create(self, scheduled: ScheduledDeal) -> ScheduledDeal:
         self.session.add(scheduled)

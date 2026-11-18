@@ -37,6 +37,7 @@ class PublicationBot(Protocol):
 class ScheduledPublicationWorker:
     def __init__(
         self,
+        session,
         repo: ScheduledDealRepository,
         product_verifier: ProductVerifier,
         bot: PublicationBot,
@@ -44,6 +45,7 @@ class ScheduledPublicationWorker:
         admin_chat_id: str,
         publications=None,
     ):
+        self.session = session
         self.repo = repo
         self.product_verifier = product_verifier
         self.bot = bot
@@ -54,22 +56,39 @@ class ScheduledPublicationWorker:
         self.publications = publications
 
     async def process_due(self, now: datetime | None = None) -> int:
+        """Una transacción por programación (como en scheduled_tasks, finding 8):
+        lo ya publicado en Telegram queda confirmado aunque la BD falle en una
+        programación posterior. Con un único commit final, ese rollback la
+        devolvía a «pendiente» y se reenviaba en el siguiente tick.
+
+        Cada una se bloquea con FOR UPDATE SKIP LOCKED en su propia transacción,
+        de modo que el commit de una no libera el bloqueo de las demás."""
         current_time = now or datetime.now(timezone.utc)
-        pending = await self.repo.get_pending_until_for_update(
-            current_time + timedelta(minutes=5)
-        )
-        for scheduled in pending:
+        pending_ids = await self.repo.get_pending_ids_until(current_time + timedelta(minutes=5))
+        processed = 0
+        for scheduled_id in pending_ids:
             try:
-                await self._process_one(scheduled, current_time)
-            except Exception as exc:
-                logger.exception("Error publicando programacion %s", scheduled.id)
-                scheduled.status = ScheduledDealStatus.ERROR
-                scheduled.cancellation_reason = str(exc)[:500]
-                await self.repo.update(scheduled)
-                self._notify_admin(
-                    f"⚠️ Error al publicar automáticamente: {scheduled.title}. {str(exc)[:250]}"
-                )
-        return len(pending)
+                scheduled = await self.repo.lock_pending(scheduled_id)
+                if scheduled is not None:
+                    processed += 1
+                    await self._process_or_mark_error(scheduled, current_time)
+                await self.session.commit()
+            except Exception:
+                logger.exception("Error de BD procesando la programacion %s", scheduled_id)
+                await self.session.rollback()
+        return processed
+
+    async def _process_or_mark_error(self, scheduled: ScheduledDeal, now: datetime) -> None:
+        try:
+            await self._process_one(scheduled, now)
+        except Exception as exc:
+            logger.exception("Error publicando programacion %s", scheduled.id)
+            scheduled.status = ScheduledDealStatus.ERROR
+            scheduled.cancellation_reason = str(exc)[:500]
+            await self.repo.update(scheduled)
+            self._notify_admin(
+                f"⚠️ Error al publicar automáticamente: {scheduled.title}. {str(exc)[:250]}"
+            )
 
     async def _process_one(self, scheduled: ScheduledDeal, now: datetime) -> None:
         # Una ficha web incompleta sigue siendo una programación válida de Telegram.
@@ -226,6 +245,7 @@ async def _run(settings: Settings) -> int:
         async with session_factory() as session:
             try:
                 worker = ScheduledPublicationWorker(
+                    session,
                     ScheduledDealRepository(session),
                     AmazonProductClient(settings),
                     TelegramBot(settings.telegram_bot_token),
