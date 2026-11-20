@@ -10,11 +10,13 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  Copy,
   Crop,
   RotateCw,
   Loader2,
   Plus,
   Send,
+  Share2,
   Trash2,
   X,
 } from "lucide-react";
@@ -31,6 +33,7 @@ import {
   rotateAndUploadTelegramImage,
   type CropArea,
 } from "../image-crop";
+import { copyWhatsAppText, shareToWhatsApp } from "../whatsapp-share";
 import { TelegramImageCropper } from "./TelegramImageCropper";
 
 /** Límite de imágenes que acepta la API al guardar un chollo programado. */
@@ -121,6 +124,55 @@ export function TelegramPanel({
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Versión WhatsApp: se deriva del texto de Telegram salvo que se edite a mano
+  const [whatsappText, setWhatsappText] = useState("");
+  const [whatsappEdited, setWhatsappEdited] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const whatsappSyncedFor = useRef<string | null>(null);
+  const whatsappRequest = useRef(0);
+
+  useEffect(() => {
+    if (whatsappEdited || generating || text === whatsappSyncedFor.current) return;
+    const request = ++whatsappRequest.current;
+    if (!text.trim()) {
+      whatsappSyncedFor.current = text;
+      setWhatsappText("");
+      return;
+    }
+    const timer = setTimeout(() => {
+      telegramApi
+        .whatsappText(text)
+        .then((converted) => {
+          if (request !== whatsappRequest.current) return;
+          whatsappSyncedFor.current = text;
+          setWhatsappText(converted);
+        })
+        .catch(() => {
+          // Se conserva la última versión; el admin puede editarla a mano
+        });
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [text, whatsappEdited, generating]);
+
+  const handleCopyWhatsAppText = async (value: string) => {
+    if (await copyWhatsAppText(value)) toast.success("Texto de WhatsApp copiado");
+    else toast.error("No se pudo copiar: selecciona el texto y cópialo a mano");
+  };
+
+  const handleShareWhatsApp = async () => {
+    setSharing(true);
+    try {
+      await shareToWhatsApp(whatsappText, images[imageIdx] ?? null);
+    } finally {
+      setSharing(false);
+    }
+  };
+
+  const handleResyncWhatsApp = () => {
+    whatsappSyncedFor.current = null;
+    setWhatsappEdited(false);
+  };
+
   // Última publicación enviada de este chollo (registro de Telegram)
   const [lastPublication, setLastPublication] = useState<TelegramPublication | null>(null);
   useEffect(() => {
@@ -169,6 +221,11 @@ export function TelegramPanel({
         notice: dealData.notice ?? null,
       });
       setText(result.text);
+      if (result.whatsapp_text !== undefined) {
+        whatsappSyncedFor.current = result.text;
+        setWhatsappText(result.whatsapp_text);
+        setWhatsappEdited(false);
+      }
       const suggestedCats =
         result.suggested_categories && result.suggested_categories.length > 0
           ? result.suggested_categories
@@ -295,7 +352,14 @@ export function TelegramPanel({
         deal_id: dealData.deal_id ?? null,
         affiliate_url: dealData.affiliate_url,
       });
-      toast.success("✅ Publicado en Telegram");
+      const whatsapp = whatsappText;
+      toast.success("✅ Publicado en Telegram", {
+        description: whatsapp ? "Falta compartirlo en el Canal de WhatsApp" : undefined,
+        duration: whatsapp ? 15_000 : undefined,
+        action: whatsapp
+          ? { label: "Copiar WhatsApp", onClick: () => void handleCopyWhatsAppText(whatsapp) }
+          : undefined,
+      });
       onClose();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Error desconocido";
@@ -425,6 +489,66 @@ export function TelegramPanel({
                 placeholder="El texto del post aparecerá aquí..."
               />
             )}
+          </div>
+
+          {/* ── Versión WhatsApp ────────────────────────────────────────── */}
+          <div className="border border-surface-700 p-3 space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <label
+                htmlFor="whatsapp-text"
+                className="font-mono text-[10px] uppercase text-cyan-glow"
+              >
+                Versión WhatsApp
+              </label>
+              {whatsappEdited && (
+                <button
+                  type="button"
+                  onClick={handleResyncWhatsApp}
+                  className="font-mono text-[10px] text-cyan-glow hover:underline"
+                >
+                  ↺ Sincronizar con Telegram
+                </button>
+              )}
+            </div>
+            <textarea
+              id="whatsapp-text"
+              value={whatsappText}
+              onChange={(e) => {
+                setWhatsappText(e.target.value);
+                setWhatsappEdited(true);
+              }}
+              rows={8}
+              className={inputCls + " resize-y text-xs leading-relaxed"}
+              placeholder="La versión para WhatsApp aparecerá aquí..."
+            />
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => void handleCopyWhatsAppText(whatsappText)}
+                disabled={!whatsappText.trim()}
+                className={imageActionCls}
+              >
+                <Copy className="size-3.5" />
+                Copiar
+              </button>
+              <button
+                type="button"
+                onClick={handleShareWhatsApp}
+                disabled={!whatsappText.trim() || sharing}
+                className={imageActionCls}
+              >
+                {sharing ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Share2 className="size-3.5" />
+                )}
+                Compartir en WhatsApp
+              </button>
+            </div>
+            <p className="font-mono text-[10px] text-muted-foreground">
+              Sin emojis animados y con la web visible. Desde el móvil, «Compartir» envía imagen y
+              texto; elige tu Canal en WhatsApp.
+            </p>
           </div>
 
           {/* ── Selector de imagen ──────────────────────────────────────── */}

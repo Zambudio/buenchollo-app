@@ -16,6 +16,7 @@ from app.modules.affiliates.application.programs import PublicationBlocked, Publ
 from app.modules.affiliates.domain.offers import NETWORK_TRACKING_HOSTS
 from app.modules.affiliates.infrastructure.repository import AffiliateRepository
 from app.modules.telegram.application.post_generator import TelegramPostGenerator
+from app.modules.telegram.application.whatsapp_formatter import to_whatsapp_text
 from app.modules.telegram.application.publications import channel_kind, record_safely, with_current_price
 from app.modules.telegram.infrastructure.publication_repository import TelegramPublicationRepository
 from app.modules.telegram.domain.exceptions import (
@@ -34,6 +35,8 @@ from app.modules.telegram.api.schemas import (
     TelegramGenerateResponse,
     TelegramNotifyRequest,
     TelegramPublicationResponse,
+    WhatsAppTextRequest,
+    WhatsAppTextResponse,
 )
 
 router = APIRouter(prefix="/telegram", tags=["telegram"])
@@ -145,7 +148,21 @@ async def generate_post(
             available=categories,
         )
 
-    return TelegramGenerateResponse(text=text, suggested_categories=suggested, ai_copy=ai_copy)
+    return TelegramGenerateResponse(
+        text=text,
+        suggested_categories=suggested,
+        ai_copy=ai_copy,
+        whatsapp_text=to_whatsapp_text(text),
+    )
+
+
+@router.post("/whatsapp-text", response_model=WhatsAppTextResponse)
+async def whatsapp_text(
+    payload: WhatsAppTextRequest,
+    _auth=Depends(require_admin),
+) -> WhatsAppTextResponse:
+    """Convierte el post de Telegram (ya editado en el panel) a su versión de WhatsApp."""
+    return WhatsAppTextResponse(text=to_whatsapp_text(payload.text))
 
 
 # ── Publicación ────────────────────────────────────────────────────────────────

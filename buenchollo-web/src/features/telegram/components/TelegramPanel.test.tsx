@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   generate: vi.fn(),
   addCategory: vi.fn(),
   notify: vi.fn(),
+  whatsappText: vi.fn(),
   listPublications: vi.fn(),
   cropAndUploadTelegramImage: vi.fn(),
   rotateAndUploadTelegramImage: vi.fn(),
@@ -37,6 +38,7 @@ beforeEach(() => {
   });
   mocks.addCategory.mockResolvedValue(["#Tecnología"]);
   mocks.notify.mockResolvedValue({ ok: true });
+  mocks.whatsappText.mockResolvedValue("🔥 *Versión WA*");
   mocks.listPublications.mockResolvedValue([]);
   mocks.cropAndUploadTelegramImage.mockResolvedValue(
     "https://storage.test/deal-images/telegram/cropped.jpg",
@@ -408,5 +410,66 @@ describe("TelegramPanel · registro de publicaciones", () => {
     );
     await screen.findByDisplayValue(/Chollo de prueba/);
     expect(mocks.listPublications).not.toHaveBeenCalled();
+  });
+
+  describe("versión WhatsApp", () => {
+    const dealData = {
+      title: "Chollo de prueba",
+      current_price: 99,
+      affiliate_url: "https://amazon.es/dp/B0D9WH9WLD",
+    };
+
+    it("muestra la versión de WhatsApp que devuelve la generación", async () => {
+      mocks.generate.mockResolvedValue({
+        text: "🍄 Chollo de prueba",
+        suggested_categories: [],
+        whatsapp_text: "🔥 *Chollo WA*",
+      });
+
+      renderWithProviders(<TelegramPanel dealData={dealData} onClose={vi.fn()} />);
+
+      expect(await screen.findByLabelText(/versión whatsapp/i)).toHaveValue("🔥 *Chollo WA*");
+    });
+
+    it("se actualiza al editar el texto de Telegram", async () => {
+      renderWithProviders(<TelegramPanel dealData={dealData} onClose={vi.fn()} />);
+      const telegram = await screen.findByDisplayValue(/Chollo de prueba/);
+
+      fireEvent.change(telegram, { target: { value: "🍄 Editado a mano" } });
+
+      await waitFor(() => expect(mocks.whatsappText).toHaveBeenCalledWith("🍄 Editado a mano"));
+      expect(await screen.findByLabelText(/versión whatsapp/i)).toHaveValue("🔥 *Versión WA*");
+    });
+
+    it("si se edita a mano deja de sincronizarse hasta pedirlo", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<TelegramPanel dealData={dealData} onClose={vi.fn()} />);
+      const telegram = await screen.findByDisplayValue(/Chollo de prueba/);
+      const whatsapp = await screen.findByLabelText(/versión whatsapp/i);
+      await waitFor(() => expect(whatsapp).toHaveValue("🔥 *Versión WA*"));
+
+      fireEvent.change(whatsapp, { target: { value: "Mi texto WA" } });
+      mocks.whatsappText.mockClear();
+      fireEvent.change(telegram, { target: { value: "🍄 Otro" } });
+      await new Promise((resolve) => setTimeout(resolve, 700));
+      expect(mocks.whatsappText).not.toHaveBeenCalled();
+      expect(whatsapp).toHaveValue("Mi texto WA");
+
+      await user.click(screen.getByRole("button", { name: /sincronizar con telegram/i }));
+      await waitFor(() => expect(mocks.whatsappText).toHaveBeenCalledWith("🍄 Otro"));
+      await waitFor(() => expect(whatsapp).toHaveValue("🔥 *Versión WA*"));
+    });
+
+    it("copia el texto de WhatsApp al portapapeles", async () => {
+      const user = userEvent.setup();
+      const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
+      renderWithProviders(<TelegramPanel dealData={dealData} onClose={vi.fn()} />);
+      const whatsapp = await screen.findByLabelText(/versión whatsapp/i);
+      await waitFor(() => expect(whatsapp).toHaveValue("🔥 *Versión WA*"));
+
+      await user.click(screen.getByRole("button", { name: /^copiar$/i }));
+
+      expect(writeText).toHaveBeenCalledWith("🔥 *Versión WA*");
+    });
   });
 });

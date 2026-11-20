@@ -28,6 +28,8 @@ export interface TelegramGenerateResponse {
   suggested_categories: string[];
   /** Copy escrito por la IA; null si no se pidió o falló (se usó `description`). */
   ai_copy?: string | null;
+  /** El mismo post adaptado a WhatsApp (emojis estándar), para compartirlo a mano. */
+  whatsapp_text?: string;
 }
 
 export interface TelegramNotifyRequest {
@@ -99,6 +101,13 @@ export const telegramApi = {
 
   generate(data: TelegramGenerateRequest): Promise<TelegramGenerateResponse> {
     return apiClient.post<TelegramGenerateResponse>("/telegram/generate", data);
+  },
+
+  /** Convierte el post de Telegram (ya editado) a su versión de WhatsApp. */
+  whatsappText(text: string): Promise<string> {
+    return apiClient
+      .post<{ text: string }>("/telegram/whatsapp-text", { text })
+      .then((r) => r.text);
   },
 
   notify(data: TelegramNotifyRequest): Promise<{ ok: boolean }> {

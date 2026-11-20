@@ -38,6 +38,16 @@ class TelegramGenerateResponse(BaseModel):
     suggested_categories: list[str]
     # Copy escrito por la IA (None si no se pidió o la IA falló y se usó `description`).
     ai_copy: str | None = None
+    # El mismo post adaptado a WhatsApp (emojis estándar), para compartirlo a mano.
+    whatsapp_text: str = ""
+
+
+class WhatsAppTextRequest(BaseModel):
+    text: str = Field(max_length=10_000)
+
+
+class WhatsAppTextResponse(BaseModel):
+    text: str
 
 
 # ── Categorías ────────────────────────────────────────────────────────────────

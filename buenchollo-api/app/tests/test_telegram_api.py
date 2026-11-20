@@ -191,3 +191,34 @@ def test_generate_rechaza_proveedor_desconocido(client):
     )
 
     assert r.status_code == 422
+
+
+# ── Versión WhatsApp del post ────────────────────────────────────────────────
+
+def test_generate_devuelve_tambien_la_version_whatsapp(client, monkeypatch):
+    _override_settings()
+    _patch_generator(monkeypatch, None)
+
+    r = client.post("/v1/telegram/generate", json=_GENERATE_BASE)
+
+    assert r.status_code == 200, r.text
+    whatsapp = r.json()["whatsapp_text"]
+    assert whatsapp.startswith("🔥 *DJI Osmo Pocket 3*")
+    assert "🍄" not in whatsapp
+
+
+def test_whatsapp_text_convierte_el_texto_editado(client):
+    _override_settings()
+
+    r = client.post("/v1/telegram/whatsapp-text", json={"text": "🍄 Editado\n\n🛒 https://amzn.to/y"})
+
+    assert r.status_code == 200, r.text
+    assert r.json() == {"text": "🔥 *Editado*\n\n👉 https://amzn.to/y"}
+
+
+def test_whatsapp_text_requiere_admin():
+    app.dependency_overrides.clear()
+
+    r = TestClient(app).post("/v1/telegram/whatsapp-text", json={"text": "x"})
+
+    assert r.status_code in (401, 403)

@@ -3,6 +3,12 @@
 
 > Bitácora cronológica inversa. Estado operativo vigente: [`docs/project/11-current-state.md`](docs/project/11-current-state.md); pendientes abiertos: [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md).
 
+## 2026-11-20 · Versión WhatsApp de las publicaciones de Telegram
+
+- WhatsApp no tiene API oficial para publicar en Canales, así que se comparte a mano (opción semiautomática, sin riesgo de baneo). El panel de Telegram (chollos y propuestas de usuarios) genera a la vez el post de Telegram y el de WhatsApp: emojis estándar en lugar de los premium animados (🍄→🔥, 💶→🏷️, 💰→💸, 🛒→👉, ✏️→📝, ⚠️→⏰, 🔗→🌐), negritas `*...*`, URL de la web visible y sin hashtags de categoría.
+- Backend: formateador puro `telegram/application/whatsapp_formatter.py`; `POST /v1/telegram/generate` devuelve `whatsapp_text` y `POST /v1/telegram/whatsapp-text` convierte el texto editado. Frontend: bloque «Versión WhatsApp» que se sincroniza al editar el texto de Telegram (deja de hacerlo si se edita a mano), botones Copiar y Compartir (hoja de compartir del móvil con imagen y texto; si no, `wa.me`) y aviso tras publicar con «Copiar WhatsApp».
+- Pendiente: las publicaciones programadas no generan aún la versión WhatsApp.
+
 ## 2026-11-18 · SEO, documentación y correcciones de la auditoría
 
 - **SEO y búsqueda con IA** (PR #85, desplegado y verificado en producción): 404 reales, módulo `src/lib/seo` con cabeceras y datos estructurados en todas las páginas, categorías con texto propio y fuera del índice si están vacías, paginación rastreable, sitemap con imágenes, `/llms.txt` dinámico, feed RSS de chollos, `robots.txt` con bots de IA, página «Sobre nosotros», logo de 588 KB a 7 KB y fuentes propias. Informe: [`docs/project/13-seo.md`](docs/project/13-seo.md).
