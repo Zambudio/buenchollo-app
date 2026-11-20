@@ -2,11 +2,12 @@
 cada tienda (listing). Las ofertas siguen siendo `deals` y apuntan aquí."""
 
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from sqlalchemy import (
     JSON,
     Boolean,
+    Date,
     DateTime,
     ForeignKey,
     Index,
@@ -113,3 +114,36 @@ class ProductTopVote(Base):
         ForeignKey("profiles.user_id", ondelete="CASCADE"), type_=Uuid(as_uuid=False), nullable=False, index=True
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class PriceHistory(Base):
+    """Precio observado de un listing (producto en una tienda), un punto por día.
+
+    Se alimenta de la revisión diaria de precios y de las altas/ediciones de
+    chollos, para cualquier tienda. `price` es la última observación del día y
+    `low_price` la más baja de ese día (para el mínimo histórico).
+    """
+
+    __tablename__ = "price_history"
+    __table_args__ = (
+        UniqueConstraint("listing_id", "observed_on", name="uq_price_history_listing_day"),
+        Index("ix_price_history_product_day", "product_id", "observed_on"),
+    )
+
+    id: Mapped[str] = mapped_column(Uuid(as_uuid=False), primary_key=True, default=lambda: str(uuid.uuid4()))
+    listing_id: Mapped[str] = mapped_column(
+        ForeignKey("product_listings.id", ondelete="CASCADE"), type_=Uuid(as_uuid=False), nullable=False
+    )
+    product_id: Mapped[str] = mapped_column(
+        ForeignKey("products.id", ondelete="CASCADE"), type_=Uuid(as_uuid=False), nullable=False
+    )
+    store_id: Mapped[str | None] = mapped_column(
+        ForeignKey("stores.id", ondelete="SET NULL"), type_=Uuid(as_uuid=False), nullable=True
+    )
+    observed_on: Mapped[date] = mapped_column(Date, nullable=False)
+    price: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    low_price: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    reference_price: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
+    in_stock: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    source: Mapped[str] = mapped_column(String(16), nullable=False)
+    observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=_now)

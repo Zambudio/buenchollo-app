@@ -1,4 +1,4 @@
-export type AnalyticsSource = "telegram" | "organic" | "referral" | "direct";
+export type AnalyticsSource = "telegram" | "whatsapp" | "organic" | "referral" | "direct";
 
 export interface Attribution {
   source: AnalyticsSource;
@@ -50,10 +50,10 @@ export function resolveAttribution(url: URL, referrer: string, siteHost: string)
   const utmMedium = url.searchParams.get("utm_medium")?.trim().toLowerCase() ?? "";
   const campaign = url.searchParams.get("utm_campaign")?.trim() || null;
 
-  if (utmSource === "telegram") {
+  if (utmSource === "telegram" || utmSource === "whatsapp") {
     return {
-      source: "telegram",
-      sourceDetail: "telegram",
+      source: utmSource,
+      sourceDetail: utmSource,
       medium: utmMedium || "social",
       campaign,
       referrerHost: host,
@@ -75,6 +75,16 @@ export function resolveAttribution(url: URL, referrer: string, siteHost: string)
       return {
         source: "telegram",
         sourceDetail: "telegram",
+        medium: "social",
+        campaign: null,
+        referrerHost: host,
+      };
+    }
+
+    if (host === "wa.me" || host === "whatsapp.com" || host.endsWith(".whatsapp.com")) {
+      return {
+        source: "whatsapp",
+        sourceDetail: "whatsapp",
         medium: "social",
         campaign: null,
         referrerHost: host,

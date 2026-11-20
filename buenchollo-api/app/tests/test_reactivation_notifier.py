@@ -138,9 +138,14 @@ async def test_envia_aviso_y_despues_la_publicacion_anterior_corregida():
     assert await notifier.notify([EVENT], NOW) == 1
 
     bot.send_admin_notification.assert_called_once()
-    post = bot.send_preformatted.call_args.kwargs
+    post, whatsapp = (call.kwargs for call in bot.send_preformatted.call_args_list)
     assert post["chat_id"] == "-100admin"
     assert post["image_url"] == "https://img/publicada.jpg"
+    # Segundo envío: la versión WhatsApp, en texto plano y con la misma imagen
+    assert whatsapp["chat_id"] == "-100admin" and whatsapp["entities"] == []
+    assert whatsapp["image_url"] == "https://img/publicada.jpg"
+    assert "🏷️ *Precio: 289,90 € (antes 449,00 €)*" in whatsapp["text"]
+    assert whatsapp["text"].endswith("https://buenchollotech.com/whatsapp")
     assert "💶 Precio: 289,90 € (antes 449,00 €)" in post["text"]
     assert "Mi texto del panel" in post["text"] and "299,90" not in post["text"]
     assert any(e["type"] == "bold" for e in post["entities"])
@@ -154,7 +159,7 @@ async def test_sin_publicacion_anterior_genera_una_nueva():
 
     await notifier.notify([EVENT], NOW)
 
-    post = bot.send_preformatted.call_args.kwargs
+    post = bot.send_preformatted.call_args_list[0].kwargs
     assert post["text"].startswith("🍄 Monitor LG 27GP850\n\n💶 Precio: 289,90 € (antes 449,00 €)")
     assert "https://www.amazon.es/dp/B0X?tag=bct-21" in post["text"]
     assert post["image_url"] == "https://img/deal.jpg"
@@ -226,7 +231,8 @@ async def test_fallo_preparando_la_publicacion_no_corta_los_demas_avisos():
 
     assert sent == 2
     assert first.admin_notified_at == NOW and second.admin_notified_at == NOW
-    assert bot.send_preformatted.call_count == 1  # solo la del segundo
+    # solo la del segundo (publicación + versión WhatsApp)
+    assert [call.kwargs["text"] for call in bot.send_preformatted.call_args_list] == ["🍄 Dos", "🔥 *Dos*"]
 
 
 # --- antigüedad mínima (10 días) ---

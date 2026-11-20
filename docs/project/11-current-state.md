@@ -34,7 +34,8 @@
 - **Comunidad**: alertas personalizadas, notificaciones in-app y resumen diario por correo (21:00), comentarios y votos, proponer chollos (`/publicar`, `/mis-chollos`) con comprobación de enlace, prefill de Amazon e imágenes subidas, pegadas o por URL ([ADR-015](../adr/ADR-015-ingesta-imagenes-backend.md), [ADR-016](../adr/ADR-016-propuestas-comunidad-y-afiliados.md)).
 - **Blog** con categorías, comentarios, votos, RSS, sitemap y contador público de lecturas.
 - **Cuenta**: confirmación por correo en el registro, recuperación de contraseña, correo de bienvenida idempotente, perfil, Google OAuth y páginas legales.
-- **Atribución**: la ruta `/telegram` fija `utm_source=telegram` y redirige a la portada; el enlace afiliado de compra no cambia.
+- **Atribución**: las rutas `/telegram` y `/whatsapp` fijan `utm_source=telegram` / `utm_source=whatsapp` y redirigen a la portada; cada canal sale como fuente propia en la analítica. El enlace afiliado de compra no cambia.
+- **Versión WhatsApp**: cada publicación de Telegram (panel, programadas y avisos de bajada) envía un segundo mensaje al canal Admin con la versión para el Canal de WhatsApp (emojis estándar, enlace `/whatsapp`), lista para copiarla a mano: WhatsApp no tiene API oficial para Canales.
 
 ### Administración
 
@@ -43,6 +44,9 @@
 - **Editar chollo** carga cualquier chollo por id y guarda un borrador de Telegram (`deals.telegram_text`) que reutiliza el último envío o genera la línea de copy con IA; la ficha pública permite a los admins eliminar el chollo.
 - **Telegram**: previsualización, envío inmediato y programación; cada publicación queda registrada (`telegram_publications`). Se puede programar con la ficha web incompleta (queda en borrador y el calendario avisa).
 - **Revisión diaria de precios** (`price_check`, [ADR-012](../adr/ADR-012-motor-tareas-programadas.md) y ADR-017): actualiza precio y stock de los listings de Amazon, termina o reactiva ofertas y avisa de bajadas al canal Admin solo si el chollo se publicó hace 10 días o más (antispam de 7 días). La purga solo afecta a listings sin disponibilidad confirmada durante 30 días.
+- **Portada y tarjetas** (2026-11-20): las tarjetas ya no muestran temperatura, voto de producto ni contador de comentarios (siguen en la ficha), y el botón a la tienda dice «Ir a la oferta» en todas partes. La portada no tiene pestañas de orden: lista siempre los chollos más nuevos.
+- **Campañas estacionales** (2026-11-20): landing `/black-friday` y hero de campaña en portada desde `promoteFrom` hasta el final del evento (Cyber Monday). Fuera de campaña vuelve el banner de tops. Configuración en `buenchollo-web/src/lib/campaigns.ts`.
+- **Histórico de precios** ([ADR-020](../adr/ADR-020-historico-de-precios.md)): `price_history` guarda un punto por listing y día, alimentado por la revisión diaria y por las altas y ediciones de chollos de cualquier tienda. API: `GET /v1/catalog/products/{id}/price-history`. Todavía sin interfaz.
 - **Redes de afiliación** ([ADR-019](../adr/ADR-019-redes-afiliacion-awin-tradedoubler.md)): Awin y Tradedoubler están en producción pero sin tiendas aprobadas; todos los programas siguen deshabilitados. Cómo activarlos: [`AFFILIATE-ACTIVATION-RUNBOOK.md`](../guides/AFFILIATE-ACTIVATION-RUNBOOK.md).
 - Analítica first-party ([ADR-014](../adr/ADR-014-analitica-first-party-atribucion-sesiones.md)): visitas, visitantes únicos, sesiones, procedencia, lecturas del blog y conversión Telegram a blog; exclusión del dispositivo del administrador. Los identificadores se seudonimizan con HMAC (`ANALYTICS_HASH_SECRET`) y la retención máxima configurable es de 25 meses.
 

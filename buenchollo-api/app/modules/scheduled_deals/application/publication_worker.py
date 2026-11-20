@@ -14,6 +14,7 @@ from app.modules.products.infrastructure.amazon_client import AmazonProductClien
 from app.modules.scheduled_deals.domain.models import ScheduledDeal, ScheduledDealStatus
 from app.modules.scheduled_deals.infrastructure.repository import ScheduledDealRepository
 from app.modules.telegram.application.post_generator import TelegramPostGenerator
+from app.modules.telegram.application.whatsapp_copy import send_whatsapp_copy
 from app.modules.telegram.infrastructure.telegram_bot import TelegramBot
 
 logger = logging.getLogger(__name__)
@@ -173,6 +174,7 @@ class ScheduledPublicationWorker:
         scheduled.deal.published_at = now
         # Después de actualizar el deal: el registro guarda el precio publicado.
         await self._record(scheduled, destination_channel_id)
+        await self._send_whatsapp_copy(scheduled)
         scheduled.status = ScheduledDealStatus.PUBLISHED
         scheduled.cancellation_reason = None
         await self.repo.update(scheduled)
@@ -189,9 +191,21 @@ class ScheduledPublicationWorker:
         ):
             raise RuntimeError("Telegram rechazo la publicacion")
         await self._record(scheduled, destination)
+        await self._send_whatsapp_copy(scheduled)
         scheduled.status = ScheduledDealStatus.PUBLISHED
         scheduled.cancellation_reason = None
         await self.repo.update(scheduled)
+
+    async def _send_whatsapp_copy(self, scheduled: ScheduledDeal) -> None:
+        """Después de registrar: el segundo envío pisa `bot.last_message_id`.
+        En un hilo: son hasta tres peticiones HTTP bloqueantes."""
+        await asyncio.to_thread(
+            send_whatsapp_copy,
+            self.bot,
+            chat_id=self.admin_chat_id,
+            telegram_text=scheduled.telegram_text,
+            image_url=scheduled.image_url,
+        )
 
     async def _record(self, scheduled: ScheduledDeal, channel_id: str) -> None:
         if self.publications is None:

@@ -4,6 +4,7 @@ import {
   Eye,
   FileText,
   Globe2,
+  MessageCircle,
   MousePointerClick,
   Search,
   Send,
@@ -36,6 +37,7 @@ const chartConfig = {
 
 const SOURCE_META = {
   telegram: { label: "Telegram", icon: Send },
+  whatsapp: { label: "WhatsApp", icon: MessageCircle },
   organic: { label: "Búsqueda orgánica", icon: Search },
   referral: { label: "Otras webs", icon: Globe2 },
   direct: { label: "Directo / desconocido", icon: MousePointerClick },

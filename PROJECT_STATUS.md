@@ -3,6 +3,22 @@
 
 > Bitácora cronológica inversa. Estado operativo vigente: [`docs/project/11-current-state.md`](docs/project/11-current-state.md); pendientes abiertos: [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md).
 
+## 2026-11-20 · Versión WhatsApp de las publicaciones y fuente `whatsapp` en la analítica
+
+- WhatsApp no tiene API oficial para publicar en Canales: la publicación es semiautomática, sin riesgo de baneo. **Cada publicación de Telegram genera dos envíos**: el post de Telegram y, a continuación, su versión WhatsApp al **canal Admin** (nunca al público), en texto plano y con la misma imagen, lista para copiarla al Canal de WhatsApp desde el móvil. Aplica al panel (chollos y propuestas), a las publicaciones programadas y a la republicación de los avisos de bajada. Si el segundo envío falla, la publicación de Telegram no se ve afectada.
+- Plantilla WhatsApp (`telegram/application/whatsapp_formatter.py`): emojis estándar en lugar de los premium animados (🍄→🔥, 💶→🏷️, 💰→💸, 🛒→👉, ✏️→📝, ⚠️→⏰, 🔗→🌐), negritas `*...*` en título, precio y ahorro, sin hashtags y enlace visible a `https://buenchollotech.com/whatsapp`. Envío: `whatsapp_copy.send_whatsapp_copy` (si la foto falla reintenta solo con texto).
+- API: `POST /v1/telegram/generate` devuelve `whatsapp_text`; `POST /v1/telegram/whatsapp-text` convierte el texto editado; `POST /v1/telegram/notify` acepta `whatsapp_text` (la versión editada en el panel) y responde `whatsapp_sent`.
+- Panel: bloque «Versión WhatsApp» sincronizado con el texto de Telegram (deja de sincronizarse si se edita a mano), botones Copiar y Compartir (hoja de compartir del móvil con imagen y texto; si no, `wa.me`).
+- Analítica: ruta `/whatsapp` → `/?utm_source=whatsapp&utm_medium=social&utm_campaign=canal`, nueva fuente `whatsapp` (también referentes `wa.me`/`whatsapp.com`) y fila propia en el panel de analítica. Alembic `20261120130000` (CHECK de `analytics_events.source`).
+## 2026-11-20 · Retención: tarjetas limpias, Black Friday e histórico de precios
+
+- **Contexto**: un informe de retención detectó el efecto «web vacía» (todas las tarjetas con 0°, 0 comentarios y «Votar producto» sin votos), ninguna página para el Black Friday (27-nov) y ningún dato de precio propio.
+- **Tarjetas**: sin temperatura, voto de producto ni comentarios; se mantienen en la ficha. Se elimina `useMyVotes` (una petición menos por listado). El CTA unificado es «Ir a la oferta».
+- **Portada**: sin pestañas «Más populares / Nuevos / Mayor descuento» («popular» ordenaba por temperatura, con todo a 0); siempre los más nuevos. Un `?sort=` antiguo se ignora.
+- **Black Friday**: landing `/black-friday` (≥ 20 % de descuento, cuenta atrás, Telegram, FAQ y JSON-LD, en el sitemap) y hero de campaña en portada hasta el final del Cyber Monday (30-nov). La fase se calcula con la hora del loader para que el servidor y el cliente coincidan.
+- **Histórico de precios** ([ADR-020](docs/adr/ADR-020-historico-de-precios.md)): tabla `price_history` (Alembic `20261120120000`, aditiva y con semilla desde `product_listings`). La alimentan la revisión diaria (solo precios con stock) y las altas y ediciones de chollos de cualquier tienda. Endpoint `GET /v1/catalog/products/{id}/price-history`. Riesgo asumido por Pedro: la licencia de Amazon Afiliados limita guardar sus precios a 24 h.
+- **Revisión de código** antes del merge: corregidos el falso mínimo por edición manual, los puntos con la tienda equivocada tras cambiar un chollo de tienda, los precios sin stock, la lógica en el router, la carga del histórico completo por petición, el upsert fila a fila del job, el desajuste de hidratación del hero, el texto «más de» frente a «al menos» y el código duplicado o sin uso.
+
 ## 2026-11-18 · SEO, documentación y correcciones de la auditoría
 
 - **SEO y búsqueda con IA** (PR #85, desplegado y verificado en producción): 404 reales, módulo `src/lib/seo` con cabeceras y datos estructurados en todas las páginas, categorías con texto propio y fuera del índice si están vacías, paginación rastreable, sitemap con imágenes, `/llms.txt` dinámico, feed RSS de chollos, `robots.txt` con bots de IA, página «Sobre nosotros», logo de 588 KB a 7 KB y fuentes propias. Informe: [`docs/project/13-seo.md`](docs/project/13-seo.md).

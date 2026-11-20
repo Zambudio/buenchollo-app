@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AlertasRouteImport } from './routes/alertas'
+import { Route as BlackFridayRouteImport } from './routes/black-friday'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as CategoriasRouteImport } from './routes/categorias'
 import { Route as ContactoRouteImport } from './routes/contacto'
@@ -32,6 +33,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SobreNosotrosRouteImport } from './routes/sobre-nosotros'
 import { Route as TelegramRouteImport } from './routes/telegram'
 import { Route as TerminosYCondicionesRouteImport } from './routes/terminos-y-condiciones'
+import { Route as WhatsappRouteImport } from './routes/whatsapp'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAfiliacionRouteImport } from './routes/admin.afiliacion'
 import { Route as AdminAnaliticaRouteImport } from './routes/admin.analitica'
@@ -65,6 +67,11 @@ const AdminRoute = AdminRouteImport.update({
 const AlertasRoute = AlertasRouteImport.update({
   id: '/alertas',
   path: '/alertas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlackFridayRoute = BlackFridayRouteImport.update({
+  id: '/black-friday',
+  path: '/black-friday',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BlogRoute = BlogRouteImport.update({
@@ -167,6 +174,11 @@ const TerminosYCondicionesRoute = TerminosYCondicionesRouteImport.update({
   path: '/terminos-y-condiciones',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WhatsappRoute = WhatsappRouteImport.update({
+  id: '/whatsapp',
+  path: '/whatsapp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -267,6 +279,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/alertas': typeof AlertasRoute
+  '/black-friday': typeof BlackFridayRoute
   '/blog': typeof BlogRouteWithChildren
   '/categorias': typeof CategoriasRoute
   '/contacto': typeof ContactoRoute
@@ -287,6 +300,7 @@ export interface FileRoutesByFullPath {
   '/sobre-nosotros': typeof SobreNosotrosRoute
   '/telegram': typeof TelegramRoute
   '/terminos-y-condiciones': typeof TerminosYCondicionesRoute
+  '/whatsapp': typeof WhatsappRoute
   '/admin/afiliacion': typeof AdminAfiliacionRoute
   '/admin/analitica': typeof AdminAnaliticaRoute
   '/admin/blog': typeof AdminBlogRoute
@@ -310,6 +324,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/alertas': typeof AlertasRoute
+  '/black-friday': typeof BlackFridayRoute
   '/blog': typeof BlogRouteWithChildren
   '/categorias': typeof CategoriasRoute
   '/contacto': typeof ContactoRoute
@@ -330,6 +345,7 @@ export interface FileRoutesByTo {
   '/sobre-nosotros': typeof SobreNosotrosRoute
   '/telegram': typeof TelegramRoute
   '/terminos-y-condiciones': typeof TerminosYCondicionesRoute
+  '/whatsapp': typeof WhatsappRoute
   '/admin/afiliacion': typeof AdminAfiliacionRoute
   '/admin/analitica': typeof AdminAnaliticaRoute
   '/admin/blog': typeof AdminBlogRoute
@@ -355,6 +371,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/alertas': typeof AlertasRoute
+  '/black-friday': typeof BlackFridayRoute
   '/blog': typeof BlogRouteWithChildren
   '/categorias': typeof CategoriasRoute
   '/contacto': typeof ContactoRoute
@@ -375,6 +392,7 @@ export interface FileRoutesById {
   '/sobre-nosotros': typeof SobreNosotrosRoute
   '/telegram': typeof TelegramRoute
   '/terminos-y-condiciones': typeof TerminosYCondicionesRoute
+  '/whatsapp': typeof WhatsappRoute
   '/admin/afiliacion': typeof AdminAfiliacionRoute
   '/admin/analitica': typeof AdminAnaliticaRoute
   '/admin/blog': typeof AdminBlogRoute
@@ -401,6 +419,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/alertas'
+    | '/black-friday'
     | '/blog'
     | '/categorias'
     | '/contacto'
@@ -421,6 +440,7 @@ export interface FileRouteTypes {
     | '/sobre-nosotros'
     | '/telegram'
     | '/terminos-y-condiciones'
+    | '/whatsapp'
     | '/admin/afiliacion'
     | '/admin/analitica'
     | '/admin/blog'
@@ -444,6 +464,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/alertas'
+    | '/black-friday'
     | '/blog'
     | '/categorias'
     | '/contacto'
@@ -464,6 +485,7 @@ export interface FileRouteTypes {
     | '/sobre-nosotros'
     | '/telegram'
     | '/terminos-y-condiciones'
+    | '/whatsapp'
     | '/admin/afiliacion'
     | '/admin/analitica'
     | '/admin/blog'
@@ -488,6 +510,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/alertas'
+    | '/black-friday'
     | '/blog'
     | '/categorias'
     | '/contacto'
@@ -508,6 +531,7 @@ export interface FileRouteTypes {
     | '/sobre-nosotros'
     | '/telegram'
     | '/terminos-y-condiciones'
+    | '/whatsapp'
     | '/admin/afiliacion'
     | '/admin/analitica'
     | '/admin/blog'
@@ -533,6 +557,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   AlertasRoute: typeof AlertasRoute
+  BlackFridayRoute: typeof BlackFridayRoute
   BlogRoute: typeof BlogRouteWithChildren
   CategoriasRoute: typeof CategoriasRoute
   ContactoRoute: typeof ContactoRoute
@@ -553,6 +578,7 @@ export interface RootRouteChildren {
   SobreNosotrosRoute: typeof SobreNosotrosRoute
   TelegramRoute: typeof TelegramRoute
   TerminosYCondicionesRoute: typeof TerminosYCondicionesRoute
+  WhatsappRoute: typeof WhatsappRoute
   AlertasNuevaRoute: typeof AlertasNuevaRoute
   BlogSlugRoute: typeof BlogSlugRoute
   CategoriaSlugRoute: typeof CategoriaSlugRoute
@@ -580,6 +606,13 @@ declare module '@tanstack/react-router' {
       path: '/alertas'
       fullPath: '/alertas'
       preLoaderRoute: typeof AlertasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/black-friday': {
+      id: '/black-friday'
+      path: '/black-friday'
+      fullPath: '/black-friday'
+      preLoaderRoute: typeof BlackFridayRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/blog': {
@@ -720,6 +753,13 @@ declare module '@tanstack/react-router' {
       path: '/terminos-y-condiciones'
       fullPath: '/terminos-y-condiciones'
       preLoaderRoute: typeof TerminosYCondicionesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/whatsapp': {
+      id: '/whatsapp'
+      path: '/whatsapp'
+      fullPath: '/whatsapp'
+      preLoaderRoute: typeof WhatsappRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -908,6 +948,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   AlertasRoute: AlertasRoute,
+  BlackFridayRoute: BlackFridayRoute,
   BlogRoute: BlogRouteWithChildren,
   CategoriasRoute: CategoriasRoute,
   ContactoRoute: ContactoRoute,
@@ -928,6 +969,7 @@ const rootRouteChildren: RootRouteChildren = {
   SobreNosotrosRoute: SobreNosotrosRoute,
   TelegramRoute: TelegramRoute,
   TerminosYCondicionesRoute: TerminosYCondicionesRoute,
+  WhatsappRoute: WhatsappRoute,
   AlertasNuevaRoute: AlertasNuevaRoute,
   BlogSlugRoute: BlogSlugRoute,
   CategoriaSlugRoute: CategoriaSlugRoute,

@@ -64,6 +64,7 @@
   `noindex`.
 - **Portada**: H1 con la palabra clave y un bloque de **preguntas frecuentes** visible
   (`SiteFaq`), el mismo que se publica como `FAQPage`.
+- **Landings de campaña** (`/black-friday`, 2026-11-20): URL fija sin año, reutilizable cada edición para acumular autoridad; el año va en el título. Lista los chollos activos con al menos un 20 % de descuento y tiene FAQ visible con su `FAQPage`, `CollectionPage`, `BreadcrumbList` e `ItemList`. Está en el sitemap. Las fechas de cada edición se añaden en `src/lib/campaigns.ts`.
 - **«Sobre nosotros»** (`/sobre-nosotros`): quién publica, cómo se seleccionan y
   verifican los chollos (revisión antes de publicar y comprobación diaria de precio y
   stock), transparencia sobre afiliación y contacto. Es la señal de confianza

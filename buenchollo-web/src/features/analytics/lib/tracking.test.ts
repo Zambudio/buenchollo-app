@@ -56,6 +56,31 @@ describe("resolveAttribution", () => {
     });
   });
 
+  it("cuenta aparte las visitas del Canal de WhatsApp", () => {
+    expect(
+      resolveAttribution(
+        new URL(
+          "https://buenchollotech.com/?utm_source=whatsapp&utm_medium=social&utm_campaign=canal",
+        ),
+        "",
+        "buenchollotech.com",
+      ),
+    ).toEqual({
+      source: "whatsapp",
+      sourceDetail: "whatsapp",
+      medium: "social",
+      campaign: "canal",
+      referrerHost: null,
+    });
+    expect(
+      resolveAttribution(
+        new URL("https://buenchollotech.com/"),
+        "https://wa.me/",
+        "buenchollotech.com",
+      ),
+    ).toMatchObject({ source: "whatsapp", medium: "social" });
+  });
+
   it("clasifica como orgánica una entrada desde buscadores", () => {
     expect(
       resolveAttribution(

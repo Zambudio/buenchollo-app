@@ -1,7 +1,8 @@
 """Revisión diaria del catálogo (tarea programada `price_check`).
 
 Ya no borra chollos: por cada listing de Amazon consulta precio y stock,
-actualiza el listing y su deal principal y aplica las reglas de
+actualiza el listing y su deal principal, apunta el precio en el histórico
+(`price_history`) y aplica las reglas de
 `catalog.domain.offer_rules` (terminar / reactivar oferta). Solo elimina una
 tienda del producto tras `purge_after_days` sin disponibilidad confirmada; si
 el producto se queda sin tiendas, el repositorio elimina producto y deals.
@@ -23,6 +24,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from starlette.concurrency import run_in_threadpool
 
 from app.modules.catalog.domain.models import AVAILABLE
+from app.modules.catalog.domain.price_history import SOURCE_PRICE_CHECK, PriceObservation
 from app.modules.catalog.domain.offer_rules import (
     Observation,
     OfferState,
@@ -166,11 +168,14 @@ class PriceCheckHandler:
         if removed:
             logger.info("Catálogo: %d producto(s) sin chollos eliminados", removed)
         applied: list[Candidate] = []
+        history: list[PriceObservation] = []
         for check in checks:
             outcome = self._outcome(check, config, now)
             if outcome is None:
                 continue
             self._write_observation(check, outcome, now)
+            if not outcome.purge and (entry := self._history_entry(check, now)) is not None:
+                history.append(entry)
             if outcome.purge:
                 candidate = self._candidate(check, "purged", "listing_purged") if check.deal else None
                 deleted = await self.catalog_repo.purge_listing(check.listing)
@@ -182,7 +187,28 @@ class PriceCheckHandler:
                 candidate = self._candidate(check, outcome.transition, outcome.reason)
                 self._write_transition(check, outcome, now)
                 applied.append(candidate)
+        # Un único upsert para todo el histórico de la ejecución.
+        await self.catalog_repo.record_prices(history)
         return applied
+
+    @staticmethod
+    def _history_entry(check: ListingCheck, now: datetime) -> PriceObservation | None:
+        """Precio observado para el histórico. Solo cuenta un precio al que se
+        podía comprar: sin precio o sin stock no se apunta (un precio de un
+        producto agotado daría un falso mínimo histórico)."""
+        obs, listing = check.observation, check.listing
+        if not obs.found or obs.price is None or not obs.in_stock:
+            return None
+        return PriceObservation(
+            listing_id=listing.id,
+            product_id=listing.product_id,
+            store_id=getattr(listing, "store_id", None),
+            price=obs.price,
+            reference_price=obs.reference_price,
+            in_stock=obs.in_stock,
+            source=SOURCE_PRICE_CHECK,
+            observed_at=now,
+        )
 
     def _outcome(self, check: ListingCheck, config: dict, now: datetime) -> _Outcome | None:
         obs = check.observation

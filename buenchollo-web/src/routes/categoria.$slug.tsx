@@ -1,7 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { Layout } from "@/components/layout/Layout";
 import { DealCard } from "@/features/deals/components/DealCard";
-import { useMyVotes } from "@/features/deals/hooks/useMyVotes";
 import { categoriesService, type Category } from "@/services/api/categories";
 import { dealsService } from "@/services/api/deals";
 import { ApiError } from "@/services/api/client";
@@ -49,7 +48,6 @@ export const Route = createFileRoute("/categoria/$slug")({
 function CategoryPage() {
   const { slug } = Route.useParams();
   const { cat, tops, categories, deals } = Route.useLoaderData();
-  const myVotes = useMyVotes(deals.map((d) => d.id));
 
   const subcategories = categories.filter((category) => category.parent_id === cat.id);
   const parentSlug = categories.find((category) => category.id === cat.parent_id)?.slug ?? null;
@@ -87,7 +85,7 @@ function CategoryPage() {
         ) : (
           <div className="deal-feed-grid">
             {deals.map((d) => (
-              <DealCard key={d.id} deal={d} myVote={myVotes[d.id]} />
+              <DealCard key={d.id} deal={d} />
             ))}
           </div>
         )}
