@@ -61,21 +61,23 @@ describe("campaignStatus", () => {
 describe("countdown", () => {
   it("descompone en días, horas y minutos y nunca es negativa", () => {
     const now = at("2026-11-20T10:00:00Z");
-    expect(countdownTo(at("2026-11-26T23:00:00Z"), now)).toEqual({
+    expect(countdownTo(at("2026-11-26T23:00:30Z"), now)).toEqual({
       days: 6,
       hours: 13,
       minutes: 0,
+      seconds: 30,
     });
     expect(countdownTo(at("2026-11-19T00:00:00Z"), now)).toEqual({
       days: 0,
       hours: 0,
       minutes: 0,
+      seconds: 0,
     });
   });
 
   it("formatea omitiendo los días a cero", () => {
-    expect(formatCountdown({ days: 6, hours: 7, minutes: 12 })).toBe("6 d 7 h 12 min");
-    expect(formatCountdown({ days: 0, hours: 3, minutes: 5 })).toBe("3 h 5 min");
+    expect(formatCountdown({ days: 6, hours: 7, minutes: 12, seconds: 5 })).toBe("6 d 7 h 12 min");
+    expect(formatCountdown({ days: 0, hours: 3, minutes: 5, seconds: 0 })).toBe("3 h 5 min");
   });
 
   it("formatea la fecha del evento en hora de Madrid", () => {

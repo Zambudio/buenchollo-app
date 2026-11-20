@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Clock, Send } from "lucide-react";
+import { ArrowRight, Send } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { DealCard } from "@/features/deals/components/DealCard";
-import { CampaignCountdown } from "@/features/campaigns/CampaignCountdown";
+import { CampaignHero } from "@/features/campaigns/CampaignHero";
 import { dealsService } from "@/services/api/deals";
 import { withFallback } from "@/lib/fallback";
-import { BLACK_FRIDAY, campaignStatus, formatCampaignDate, lastDayOf } from "@/lib/campaigns";
+import { BLACK_FRIDAY, campaignStatus } from "@/lib/campaigns";
 import { pageHead } from "@/lib/seo/head";
 import { campaignFaq, campaignPageSeo } from "@/lib/seo/campaign";
 import { TELEGRAM_URL } from "@/lib/site";
@@ -42,55 +42,26 @@ export const Route = createFileRoute("/black-friday")({
 function BlackFridayPage() {
   const { deals, total, now } = Route.useLoaderData();
   const status = campaignStatus(BLACK_FRIDAY, new Date(now));
-  const { edition, phase, target } = status;
   const faq = campaignFaq(BLACK_FRIDAY, status);
-  const lastDay = lastDayOf(edition);
 
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        <header className="campaign-hero campaign-landing-header">
-          <div className="campaign-hero-copy">
-            <span className="eyebrow">
-              {phase === "live"
-                ? "Ya ha empezado"
-                : phase === "upcoming"
-                  ? `Empieza el ${formatCampaignDate(edition.start)}`
-                  : "Edición terminada"}
-            </span>
-            <h1>
-              {BLACK_FRIDAY.name} {edition.year}
-              <br />
-              <span>chollos de tecnología verificados</span>
-            </h1>
-            <p>
-              Ofertas de tecnología con al menos un {BLACK_FRIDAY.minDiscount} % de descuento,
-              ordenadas de mayor a menor. Revisamos cada chollo antes de publicarlo y comprobamos su
-              precio y stock a diario.
-            </p>
+        <CampaignHero
+          campaign={BLACK_FRIDAY}
+          status={status}
+          headingLevel="h1"
+          cta={
             <a
               href={TELEGRAM_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="campaign-hero-cta"
+              className="neon-sign-cta"
             >
-              <Send size={17} aria-hidden="true" /> Avisos al momento en Telegram
+              <Send size={18} aria-hidden="true" /> Avisos al momento en Telegram
             </a>
-          </div>
-          {target && (
-            <div className="campaign-hero-countdown">
-              <span className="campaign-hero-countdown-label">
-                <Clock size={15} aria-hidden="true" />{" "}
-                {phase === "live" ? "Termina en" : "Empieza en"}
-              </span>
-              <CampaignCountdown
-                target={target}
-                fallback={formatCampaignDate(phase === "live" ? lastDay : edition.start)}
-                className="campaign-hero-countdown-value"
-              />
-            </div>
-          )}
-        </header>
+          }
+        />
 
         <h2 className="feed-section-title">
           {total > 0
