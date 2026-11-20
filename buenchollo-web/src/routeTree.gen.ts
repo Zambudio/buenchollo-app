@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AlertasRouteImport } from './routes/alertas'
+import { Route as BlackFridayRouteImport } from './routes/black-friday'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as CategoriasRouteImport } from './routes/categorias'
 import { Route as ContactoRouteImport } from './routes/contacto'
@@ -65,6 +66,11 @@ const AdminRoute = AdminRouteImport.update({
 const AlertasRoute = AlertasRouteImport.update({
   id: '/alertas',
   path: '/alertas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlackFridayRoute = BlackFridayRouteImport.update({
+  id: '/black-friday',
+  path: '/black-friday',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BlogRoute = BlogRouteImport.update({
@@ -267,6 +273,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/alertas': typeof AlertasRoute
+  '/black-friday': typeof BlackFridayRoute
   '/blog': typeof BlogRouteWithChildren
   '/categorias': typeof CategoriasRoute
   '/contacto': typeof ContactoRoute
@@ -310,6 +317,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/alertas': typeof AlertasRoute
+  '/black-friday': typeof BlackFridayRoute
   '/blog': typeof BlogRouteWithChildren
   '/categorias': typeof CategoriasRoute
   '/contacto': typeof ContactoRoute
@@ -355,6 +363,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/alertas': typeof AlertasRoute
+  '/black-friday': typeof BlackFridayRoute
   '/blog': typeof BlogRouteWithChildren
   '/categorias': typeof CategoriasRoute
   '/contacto': typeof ContactoRoute
@@ -401,6 +410,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/alertas'
+    | '/black-friday'
     | '/blog'
     | '/categorias'
     | '/contacto'
@@ -444,6 +454,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/alertas'
+    | '/black-friday'
     | '/blog'
     | '/categorias'
     | '/contacto'
@@ -488,6 +499,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/alertas'
+    | '/black-friday'
     | '/blog'
     | '/categorias'
     | '/contacto'
@@ -533,6 +545,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   AlertasRoute: typeof AlertasRoute
+  BlackFridayRoute: typeof BlackFridayRoute
   BlogRoute: typeof BlogRouteWithChildren
   CategoriasRoute: typeof CategoriasRoute
   ContactoRoute: typeof ContactoRoute
@@ -580,6 +593,13 @@ declare module '@tanstack/react-router' {
       path: '/alertas'
       fullPath: '/alertas'
       preLoaderRoute: typeof AlertasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/black-friday': {
+      id: '/black-friday'
+      path: '/black-friday'
+      fullPath: '/black-friday'
+      preLoaderRoute: typeof BlackFridayRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/blog': {
@@ -908,6 +928,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   AlertasRoute: AlertasRoute,
+  BlackFridayRoute: BlackFridayRoute,
   BlogRoute: BlogRouteWithChildren,
   CategoriasRoute: CategoriasRoute,
   ContactoRoute: ContactoRoute,

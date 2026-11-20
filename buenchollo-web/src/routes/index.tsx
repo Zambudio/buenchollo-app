@@ -14,6 +14,8 @@ import { HomeSidebar } from "@/features/home/HomeSidebar";
 import { blogService } from "@/services/api/blog";
 import { TopBanner } from "@/features/home/TopBanner";
 import { loadBannerTops } from "@/features/home/bannerTops";
+import { CampaignHero } from "@/features/campaigns/CampaignHero";
+import { BLACK_FRIDAY, campaignStatus } from "@/lib/campaigns";
 
 const PAGE_SIZE = 30;
 
@@ -85,6 +87,7 @@ function HomePage() {
   const currentPage = data.page;
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
   const dealsHeadingRef = useRef<HTMLHeadingElement>(null);
+  const campaign = campaignStatus(BLACK_FRIDAY);
 
   const handleFilterChange = (next: HomeFilterKey) => {
     void navigate({ search: toHomeSearch(next, 1) });
@@ -122,7 +125,12 @@ function HomePage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {/* Sin texto visible de cabecera (decisión de diseño); el H1 se mantiene para SEO y lectores de pantalla. */}
         <h1 className="sr-only">{HOME_H1}</h1>
-        <TopBanner tops={data.tops} />
+        {/* Durante una campaña estacional el hero la anuncia; fuera de ella, los tops. */}
+        {campaign.promoted ? (
+          <CampaignHero campaign={BLACK_FRIDAY} status={campaign} />
+        ) : (
+          <TopBanner tops={data.tops} />
+        )}
         {/* Filtros fuera de la rejilla: el primer chollo y la columna lateral arrancan a la misma altura. */}
         <HomeFilterTabs value={filter} onChange={handleFilterChange} />
         <div className="home-content-layout mt-6">
