@@ -1,15 +1,17 @@
 /** Presentación de la tarjeta de chollo. `DealCard` aporta estado y efectos
- *  (votos, favoritos, tracking); con `preview` se pinta igual pero sin
- *  enlaces ni acciones (vista previa de "Publicar chollo"). */
+ *  (favoritos, tracking); con `preview` se pinta igual pero sin enlaces ni
+ *  acciones (vista previa de "Publicar chollo").
+ *
+ *  La tarjeta no muestra temperatura, voto de producto ni contador de
+ *  comentarios: con la comunidad aún arrancando salían todos a 0 y restaban
+ *  credibilidad. Siguen disponibles en la ficha del chollo. */
 import { Link } from "@tanstack/react-router";
-import { Heart, ExternalLink, MessageSquare, Share2 } from "lucide-react";
+import { Heart, ExternalLink, Share2 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { formatPrice, formatRelativeTime, calculateDiscount } from "@/lib/format";
 import { ShareDialog } from "@/features/deals/components/ShareBox";
-import { DealVoteControl } from "@/features/deals/components/DealVoteControl";
 import { StoreAvailability } from "@/features/deals/components/StoreAvailability";
 import { DealAuthor } from "@/features/deals/components/DealAuthor";
-import { ProductVoteButton } from "@/features/catalog/ProductVoteButton";
 import type { DealAuthor as DealAuthorData } from "@/services/api/submissions";
 
 export interface DealCardData {
@@ -40,19 +42,13 @@ export interface DealCardData {
 export interface DealCardViewProps {
   deal: DealCardData;
   imageLoading?: "eager" | "lazy";
-  /** Sin enlaces, votos, favoritos, compartir ni tracking. */
+  /** Sin enlaces, favoritos, compartir ni tracking. */
   preview?: boolean;
-  temperature: number;
-  myVote?: number;
-  voting?: boolean;
-  onVote?: (vote: 1 | -1) => void;
   fav?: boolean;
   favLoading?: boolean;
   onToggleFav?: (e: React.MouseEvent) => void;
   onCtaClick?: () => void;
 }
-
-const noop = () => {};
 
 interface CardLinkProps {
   preview: boolean;
@@ -83,10 +79,6 @@ export function DealCardView({
   deal,
   imageLoading = "lazy",
   preview = false,
-  temperature,
-  myVote = 0,
-  voting = false,
-  onVote = noop,
   fav = false,
   favLoading = false,
   onToggleFav,
@@ -173,15 +165,6 @@ export function DealCardView({
 
       <div className="deal-card-body flex flex-col flex-1">
         <div className="deal-card-top">
-          <div className="deal-card-votes">
-            <DealVoteControl
-              temperature={temperature}
-              myVote={myVote}
-              disabled={preview || voting}
-              onVote={onVote}
-            />
-            {!preview && deal.product_id && <ProductVoteButton productId={deal.product_id} />}
-          </div>
           <span className="posted-date deal-card-posted">
             Publicado {formatRelativeTime(deal.published_at)}
           </span>
@@ -221,14 +204,6 @@ export function DealCardView({
 
         <div className="deal-card-actions product-social-row">
           <div className="social-actions">
-            <button
-              type="button"
-              aria-label="Ver comentarios"
-              className="social-count"
-              disabled={preview}
-            >
-              <MessageSquare /> {deal.comment_count ?? 0}
-            </button>
             {preview ? (
               shareButton
             ) : (
@@ -258,7 +233,7 @@ export function DealCardView({
             aria-label={`Ver oferta de ${deal.title} en ${deal.store?.name ?? "la tienda"}`}
             className="deal-cta btn-cta inline-flex items-center gap-1.5 shrink-0 transition-colors"
           >
-            Ir al chollo <ExternalLink className="size-4" />
+            Ir a la oferta <ExternalLink className="size-4" />
           </a>
         </div>
       </div>

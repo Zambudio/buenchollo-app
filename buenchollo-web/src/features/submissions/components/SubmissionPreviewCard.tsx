@@ -41,7 +41,6 @@ export function SubmissionPreviewCard({
           published_at: now,
           store: store ? { id: "preview", name: store, slug: "" } : null,
         }}
-        temperature={0}
       />
       <figcaption className="sr-only">
         {shownTitle}

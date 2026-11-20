@@ -4,7 +4,6 @@ import { Layout } from "@/components/layout/Layout";
 import { DealCard } from "@/features/deals/components/DealCard";
 import { DealPagination } from "@/features/deals/components/DealPagination";
 import { HomeFilterTabs, type HomeFilterKey } from "@/features/deals/components/HomeFilterTabs";
-import { useMyVotes } from "@/features/deals/hooks/useMyVotes";
 import { useAuth } from "@/hooks/useAuth";
 import { dealsService, favoritesApi } from "@/services/api/deals";
 import { pageHead } from "@/lib/seo/head";
@@ -86,7 +85,6 @@ function HomePage() {
   const currentPage = data.page;
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
   const dealsHeadingRef = useRef<HTMLHeadingElement>(null);
-  const myVotes = useMyVotes(deals.map((d) => d.id));
 
   const handleFilterChange = (next: HomeFilterKey) => {
     void navigate({ search: toHomeSearch(next, 1) });
@@ -143,7 +141,6 @@ function HomePage() {
                     key={d.id}
                     deal={d}
                     isFavorite={favIds.has(d.id)}
-                    myVote={myVotes[d.id]}
                     imageLoading={index < 3 ? "eager" : "lazy"}
                   />
                 ))}

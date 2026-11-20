@@ -23,12 +23,12 @@ const deal: DealCardData = {
 
 describe("DealCardView precio", () => {
   it("la tarjeta interactiva siempre usa formatPrice (también con 0)", () => {
-    const { container } = render(<DealCardView deal={deal} temperature={0} />);
+    const { container } = render(<DealCardView deal={deal} />);
     expect(container.querySelector(".price-now")!.textContent).toBe(formatPrice(0));
   });
 
   it("la vista previa sin precio muestra el marcador", () => {
-    const { container } = render(<DealCardView preview deal={deal} temperature={0} />);
+    const { container } = render(<DealCardView preview deal={deal} />);
     expect(container.querySelector(".price-now")).toHaveTextContent("— €");
   });
 });

@@ -423,7 +423,7 @@
 .deal-card-media img {
   padding: 0.45rem;
 }
-/* Cuerpo de la tarjeta (estilo listado de chollos): votos y fecha arriba, título,
+/* Cuerpo de la tarjeta (estilo listado de chollos): fecha arriba, título,
    línea de precio + descuento + tienda + autor, descripción y acciones abajo. */
 .deal-card-body {
   min-width: 0;
@@ -436,13 +436,6 @@
   justify-content: space-between;
   gap: 0.5rem;
   flex-wrap: wrap;
-}
-.deal-card-votes {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  flex-wrap: wrap;
-  min-width: 0;
 }
 .deal-card .deal-card-posted {
   padding: 0.22rem 0.5rem;

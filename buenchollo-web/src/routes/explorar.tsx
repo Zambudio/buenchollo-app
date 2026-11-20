@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { DealCard, type DealCardData } from "@/features/deals/components/DealCard";
 import { DealPagination } from "@/features/deals/components/DealPagination";
-import { useMyVotes } from "@/features/deals/hooks/useMyVotes";
 import { useAuth } from "@/hooks/useAuth";
 import { z } from "zod";
 import { dealsService, favoritesApi } from "@/services/api/deals";
@@ -71,7 +70,6 @@ function ExplorePage() {
   const requestedPage = params.page ?? 1;
   const currentPage = Math.min(requestedPage, totalPages);
   const resultsRef = useRef<HTMLDivElement>(null);
-  const myVotes = useMyVotes(deals.map((d) => d.id));
 
   useEffect(() => {
     Promise.all([storesService.getAll(), categoriesService.getAll()])
@@ -353,12 +351,7 @@ function ExplorePage() {
               <>
                 <div className={`deal-feed-grid transition-opacity ${loading ? "opacity-60" : ""}`}>
                   {deals.map((d) => (
-                    <DealCard
-                      key={d.id}
-                      deal={d}
-                      isFavorite={favIds.has(d.id)}
-                      myVote={myVotes[d.id]}
-                    />
+                    <DealCard key={d.id} deal={d} isFavorite={favIds.has(d.id)} />
                   ))}
                 </div>
                 <div className="mt-8 border-t border-surface-700 pt-6">

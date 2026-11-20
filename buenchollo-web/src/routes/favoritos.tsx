@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { favoritesApi } from "@/services/api/deals";
 import { Layout } from "@/components/layout/Layout";
 import { DealCard, type DealCardData } from "@/features/deals/components/DealCard";
-import { useMyVotes } from "@/features/deals/hooks/useMyVotes";
 import { useAuth } from "@/hooks/useAuth";
 import { useRequireLogin } from "@/hooks/useRequireLogin";
 
@@ -26,7 +25,6 @@ export const Route = createFileRoute("/favoritos")({
 function FavoritesPage() {
   const { user } = useAuth();
   const [deals, setDeals] = useState<DealCardData[]>([]);
-  const myVotes = useMyVotes(deals.map((d) => d.id));
 
   useRequireLogin();
 
@@ -56,7 +54,7 @@ function FavoritesPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {deals.map((d) => (
-              <DealCard key={d.id} deal={d} isFavorite myVote={myVotes[d.id]} />
+              <DealCard key={d.id} deal={d} isFavorite />
             ))}
           </div>
         )}
