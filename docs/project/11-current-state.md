@@ -34,7 +34,8 @@
 - **Comunidad**: alertas personalizadas, notificaciones in-app y resumen diario por correo (21:00), comentarios y votos, proponer chollos (`/publicar`, `/mis-chollos`) con comprobación de enlace, prefill de Amazon e imágenes subidas, pegadas o por URL ([ADR-015](../adr/ADR-015-ingesta-imagenes-backend.md), [ADR-016](../adr/ADR-016-propuestas-comunidad-y-afiliados.md)).
 - **Blog** con categorías, comentarios, votos, RSS, sitemap y contador público de lecturas.
 - **Cuenta**: confirmación por correo en el registro, recuperación de contraseña, correo de bienvenida idempotente, perfil, Google OAuth y páginas legales.
-- **Atribución**: la ruta `/telegram` fija `utm_source=telegram` y redirige a la portada; el enlace afiliado de compra no cambia.
+- **Atribución**: las rutas `/telegram` y `/whatsapp` fijan `utm_source=telegram` / `utm_source=whatsapp` y redirigen a la portada; cada canal sale como fuente propia en la analítica. El enlace afiliado de compra no cambia.
+- **Versión WhatsApp**: cada publicación de Telegram (panel, programadas y avisos de bajada) envía un segundo mensaje al canal Admin con la versión para el Canal de WhatsApp (emojis estándar, enlace `/whatsapp`), lista para copiarla a mano: WhatsApp no tiene API oficial para Canales.
 
 ### Administración
 

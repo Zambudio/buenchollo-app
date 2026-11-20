@@ -76,6 +76,8 @@ class TelegramNotifyRequest(BaseModel):
     # Chollo al que pertenece (para registrar la publicación). Si el panel no lo
     # conoce, se busca por el ASIN de `affiliate_url`.
     deal_id: UUID | None = None
+    # Versión WhatsApp editada en el panel; si falta se deriva de `text`.
+    whatsapp_text: str | None = Field(default=None, max_length=10_000)
 
     # Flujo rápido (legado, se usa si text es None)
     title: str | None = None

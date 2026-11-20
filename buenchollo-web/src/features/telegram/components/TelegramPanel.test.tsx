@@ -460,6 +460,23 @@ describe("TelegramPanel · registro de publicaciones", () => {
       await waitFor(() => expect(whatsapp).toHaveValue("🔥 *Versión WA*"));
     });
 
+    it("al publicar manda también la versión WhatsApp para el canal Admin", async () => {
+      const user = userEvent.setup();
+      mocks.notify.mockResolvedValue({ ok: true, whatsapp_sent: true });
+      renderWithProviders(<TelegramPanel dealData={dealData} onClose={vi.fn()} />);
+      const whatsapp = await screen.findByLabelText(/versión whatsapp/i);
+      await waitFor(() => expect(whatsapp).toHaveValue("🔥 *Versión WA*"));
+      fireEvent.change(whatsapp, { target: { value: "Mi versión WA" } });
+
+      await waitFor(() =>
+        expect(screen.getByRole("button", { name: /PUBLICAR AHORA/ })).toBeEnabled(),
+      );
+      await user.click(screen.getByRole("button", { name: /PUBLICAR AHORA/ }));
+
+      await waitFor(() => expect(mocks.notify).toHaveBeenCalled());
+      expect(mocks.notify.mock.calls[0]?.[0]).toMatchObject({ whatsapp_text: "Mi versión WA" });
+    });
+
     it("copia el texto de WhatsApp al portapapeles", async () => {
       const user = userEvent.setup();
       const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();

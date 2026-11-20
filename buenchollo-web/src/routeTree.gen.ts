@@ -32,6 +32,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SobreNosotrosRouteImport } from './routes/sobre-nosotros'
 import { Route as TelegramRouteImport } from './routes/telegram'
 import { Route as TerminosYCondicionesRouteImport } from './routes/terminos-y-condiciones'
+import { Route as WhatsappRouteImport } from './routes/whatsapp'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAfiliacionRouteImport } from './routes/admin.afiliacion'
 import { Route as AdminAnaliticaRouteImport } from './routes/admin.analitica'
@@ -167,6 +168,11 @@ const TerminosYCondicionesRoute = TerminosYCondicionesRouteImport.update({
   path: '/terminos-y-condiciones',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WhatsappRoute = WhatsappRouteImport.update({
+  id: '/whatsapp',
+  path: '/whatsapp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -287,6 +293,7 @@ export interface FileRoutesByFullPath {
   '/sobre-nosotros': typeof SobreNosotrosRoute
   '/telegram': typeof TelegramRoute
   '/terminos-y-condiciones': typeof TerminosYCondicionesRoute
+  '/whatsapp': typeof WhatsappRoute
   '/admin/afiliacion': typeof AdminAfiliacionRoute
   '/admin/analitica': typeof AdminAnaliticaRoute
   '/admin/blog': typeof AdminBlogRoute
@@ -330,6 +337,7 @@ export interface FileRoutesByTo {
   '/sobre-nosotros': typeof SobreNosotrosRoute
   '/telegram': typeof TelegramRoute
   '/terminos-y-condiciones': typeof TerminosYCondicionesRoute
+  '/whatsapp': typeof WhatsappRoute
   '/admin/afiliacion': typeof AdminAfiliacionRoute
   '/admin/analitica': typeof AdminAnaliticaRoute
   '/admin/blog': typeof AdminBlogRoute
@@ -375,6 +383,7 @@ export interface FileRoutesById {
   '/sobre-nosotros': typeof SobreNosotrosRoute
   '/telegram': typeof TelegramRoute
   '/terminos-y-condiciones': typeof TerminosYCondicionesRoute
+  '/whatsapp': typeof WhatsappRoute
   '/admin/afiliacion': typeof AdminAfiliacionRoute
   '/admin/analitica': typeof AdminAnaliticaRoute
   '/admin/blog': typeof AdminBlogRoute
@@ -421,6 +430,7 @@ export interface FileRouteTypes {
     | '/sobre-nosotros'
     | '/telegram'
     | '/terminos-y-condiciones'
+    | '/whatsapp'
     | '/admin/afiliacion'
     | '/admin/analitica'
     | '/admin/blog'
@@ -464,6 +474,7 @@ export interface FileRouteTypes {
     | '/sobre-nosotros'
     | '/telegram'
     | '/terminos-y-condiciones'
+    | '/whatsapp'
     | '/admin/afiliacion'
     | '/admin/analitica'
     | '/admin/blog'
@@ -508,6 +519,7 @@ export interface FileRouteTypes {
     | '/sobre-nosotros'
     | '/telegram'
     | '/terminos-y-condiciones'
+    | '/whatsapp'
     | '/admin/afiliacion'
     | '/admin/analitica'
     | '/admin/blog'
@@ -553,6 +565,7 @@ export interface RootRouteChildren {
   SobreNosotrosRoute: typeof SobreNosotrosRoute
   TelegramRoute: typeof TelegramRoute
   TerminosYCondicionesRoute: typeof TerminosYCondicionesRoute
+  WhatsappRoute: typeof WhatsappRoute
   AlertasNuevaRoute: typeof AlertasNuevaRoute
   BlogSlugRoute: typeof BlogSlugRoute
   CategoriaSlugRoute: typeof CategoriaSlugRoute
@@ -720,6 +733,13 @@ declare module '@tanstack/react-router' {
       path: '/terminos-y-condiciones'
       fullPath: '/terminos-y-condiciones'
       preLoaderRoute: typeof TerminosYCondicionesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/whatsapp': {
+      id: '/whatsapp'
+      path: '/whatsapp'
+      fullPath: '/whatsapp'
+      preLoaderRoute: typeof WhatsappRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -928,6 +948,7 @@ const rootRouteChildren: RootRouteChildren = {
   SobreNosotrosRoute: SobreNosotrosRoute,
   TelegramRoute: TelegramRoute,
   TerminosYCondicionesRoute: TerminosYCondicionesRoute,
+  WhatsappRoute: WhatsappRoute,
   AlertasNuevaRoute: AlertasNuevaRoute,
   BlogSlugRoute: BlogSlugRoute,
   CategoriaSlugRoute: CategoriaSlugRoute,

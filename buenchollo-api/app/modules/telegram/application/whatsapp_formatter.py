@@ -10,7 +10,8 @@ import re
 
 from app.modules.telegram.application.post_generator import LINK_TEXT
 
-WHATSAPP_LINK_URL = "https://buenchollotech.com"
+# /whatsapp redirige con utm_source=whatsapp: las visitas se miden aparte.
+WHATSAPP_LINK_URL = "https://buenchollotech.com/whatsapp"
 
 # Emoji del post de Telegram → (emoji en WhatsApp, línea en negrita)
 _EMOJI_MAP: dict[str, tuple[str, bool]] = {

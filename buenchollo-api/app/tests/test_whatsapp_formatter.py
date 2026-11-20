@@ -35,6 +35,7 @@ def test_sustituye_los_emojis_premium_por_emojis_estandar():
 def test_el_enlace_a_la_web_lleva_la_url_visible():
     text = to_whatsapp_text(_telegram_text())
 
+    assert WHATSAPP_LINK_URL == "https://buenchollotech.com/whatsapp"
     assert text.endswith(f"🌐 Todos los chollos en nuestra web: {WHATSAPP_LINK_URL}")
 
 

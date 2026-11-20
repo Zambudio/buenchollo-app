@@ -345,17 +345,23 @@ export function TelegramPanel({
     setPublishing(true);
     try {
       const selectedImage = images[imageIdx] ?? null;
-      await telegramApi.notify({
+      // Solo si corresponde al texto que se publica (editado a mano o ya
+      // sincronizado); si no, la API la deriva del texto de Telegram.
+      const whatsappUpToDate = whatsappEdited || whatsappSyncedFor.current === text;
+      const whatsapp = whatsappUpToDate && whatsappText.trim() ? whatsappText : null;
+      const result = await telegramApi.notify({
         text,
         image_url: selectedImage,
         channel_id: channelId,
         deal_id: dealData.deal_id ?? null,
         affiliate_url: dealData.affiliate_url,
+        whatsapp_text: whatsapp,
       });
-      const whatsapp = whatsappText;
       toast.success("✅ Publicado en Telegram", {
-        description: whatsapp ? "Falta compartirlo en el Canal de WhatsApp" : undefined,
-        duration: whatsapp ? 15_000 : undefined,
+        description: result.whatsapp_sent
+          ? "La versión WhatsApp está en el canal Admin, lista para copiar"
+          : "La versión WhatsApp no llegó al canal Admin (¿canal sin configurar?)",
+        duration: 15_000,
         action: whatsapp
           ? { label: "Copiar WhatsApp", onClick: () => void handleCopyWhatsAppText(whatsapp) }
           : undefined,
@@ -546,8 +552,8 @@ export function TelegramPanel({
               </button>
             </div>
             <p className="font-mono text-[10px] text-muted-foreground">
-              Sin emojis animados y con la web visible. Desde el móvil, «Compartir» envía imagen y
-              texto; elige tu Canal en WhatsApp.
+              Al publicar se envía también al canal Admin de Telegram para copiarla desde el móvil.
+              «Compartir» abre WhatsApp con imagen y texto; elige tu Canal.
             </p>
           </div>
 

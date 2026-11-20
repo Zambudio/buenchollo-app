@@ -40,6 +40,8 @@ export interface TelegramNotifyRequest {
   channel_id?: string;
   /** Chollo al que pertenece, para registrar la publicación. */
   deal_id?: string | null;
+  /** Versión WhatsApp editada; la API la envía también al canal Admin. */
+  whatsapp_text?: string | null;
   // Flujo rápido (checkbox al guardar)
   title?: string;
   current_price?: number;
@@ -110,7 +112,7 @@ export const telegramApi = {
       .then((r) => r.text);
   },
 
-  notify(data: TelegramNotifyRequest): Promise<{ ok: boolean }> {
-    return apiClient.post<{ ok: boolean }>("/telegram/notify", data);
+  notify(data: TelegramNotifyRequest): Promise<{ ok: boolean; whatsapp_sent?: boolean }> {
+    return apiClient.post<{ ok: boolean; whatsapp_sent?: boolean }>("/telegram/notify", data);
   },
 };

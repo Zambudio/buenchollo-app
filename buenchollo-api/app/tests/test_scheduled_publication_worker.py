@@ -43,10 +43,12 @@ class FakeBot:
     def __init__(self, publish_ok=True):
         self.publish_ok = publish_ok
         self.posts = []
+        # Versión WhatsApp (texto plano, sin entidades) enviada tras publicar
+        self.whatsapp_copies = []
         self.admin_messages = []
 
     def send_preformatted(self, **payload):
-        self.posts.append(payload)
+        (self.posts if payload["entities"] else self.whatsapp_copies).append(payload)
         return self.publish_ok
 
     def send_admin_notification(self, text, chat_id=None):
@@ -112,6 +114,7 @@ async def test_telegram_only_publishes_without_activating_incomplete_web_deal():
     assert scheduled.status == ScheduledDealStatus.PUBLISHED
     assert scheduled.deal.status == "draft"
     assert len(bot.posts) == 1
+    assert [copy["chat_id"] for copy in bot.whatsapp_copies] == ["123-admin"]
 
 
 @pytest.mark.asyncio
@@ -143,6 +146,11 @@ async def test_publica_web_y_telegram_si_precio_y_stock_se_mantienen():
     assert scheduled.deal.shipping_info == "Prime"
     assert len(bot.posts) == 1
     assert bot.posts[0]["chat_id"] == "-100-destination"
+    assert len(bot.whatsapp_copies) == 1
+    whatsapp = bot.whatsapp_copies[0]
+    assert whatsapp["chat_id"] == "123-admin"  # nunca al canal público
+    assert whatsapp["image_url"] == bot.posts[0]["image_url"]
+    assert whatsapp["text"].startswith("🔥 *")
     assert bot.admin_messages == []
 
 

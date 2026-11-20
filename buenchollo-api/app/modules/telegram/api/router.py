@@ -16,6 +16,7 @@ from app.modules.affiliates.application.programs import PublicationBlocked, Publ
 from app.modules.affiliates.domain.offers import NETWORK_TRACKING_HOSTS
 from app.modules.affiliates.infrastructure.repository import AffiliateRepository
 from app.modules.telegram.application.post_generator import TelegramPostGenerator
+from app.modules.telegram.application.whatsapp_copy import send_whatsapp_copy
 from app.modules.telegram.application.whatsapp_formatter import to_whatsapp_text
 from app.modules.telegram.application.publications import channel_kind, record_safely, with_current_price
 from app.modules.telegram.infrastructure.publication_repository import TelegramPublicationRepository
@@ -194,6 +195,7 @@ async def notify_deal(
     """
     Publica en Telegram.
     - Si payload.text está presente → usa send_preformatted (flujo del panel)
+      y envía además la versión WhatsApp al canal Admin.
     - Si no → construye el mensaje en MarkdownV2 (flujo rápido del checkbox)
     """
     bot = _get_bot(settings)
@@ -255,15 +257,26 @@ async def notify_deal(
             sent_by=str(current_user.id),
         )
 
+    whatsapp_sent = False
+    if payload.text:
+        whatsapp_sent = await run_in_threadpool(
+            send_whatsapp_copy,
+            bot,
+            chat_id=settings.telegram_admin_channel_id,
+            telegram_text=payload.text,
+            image_url=payload.image_url,
+            whatsapp_text=payload.whatsapp_text,
+        )
+
     await audit_log(
         db,
         user_id=str(current_user.id),
         action="telegram.notify",
         target_type="channel",
         target_id=channel_id,
-        payload={"title": payload.title, "has_text": bool(payload.text)},
+        payload={"title": payload.title, "has_text": bool(payload.text), "whatsapp_sent": whatsapp_sent},
     )
-    return {"ok": True}
+    return {"ok": True, "whatsapp_sent": whatsapp_sent}
 
 
 @router.get("/publications", response_model=list[TelegramPublicationResponse])
