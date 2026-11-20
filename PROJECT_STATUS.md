@@ -1,5 +1,5 @@
 # PROJECT_STATUS — BuenCholloTech
-*Actualización de producción: 2026-11-18 — Borrador de Telegram en «Editar chollo», apertura por id y borrado desde la ficha desplegados en web, API y scheduler (PR #79–#81, merge `325573f`). Alembic `20261118120000`.*
+*Actualización de producción: 2026-11-20 — Retención (tarjetas limpias, portada sin pestañas, landing `/black-friday`), histórico de precios y versión WhatsApp de las publicaciones desplegados en web, API y scheduler (PR #88 y #89, merge `e735ab5`). Alembic `20261120130000`.*
 
 > Bitácora cronológica inversa. Estado operativo vigente: [`docs/project/11-current-state.md`](docs/project/11-current-state.md); pendientes abiertos: [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md).
 
@@ -12,6 +12,7 @@
 - Analítica: ruta `/whatsapp` → `/?utm_source=whatsapp&utm_medium=social&utm_campaign=canal`, nueva fuente `whatsapp` (también referentes `wa.me`/`whatsapp.com`) y fila propia en el panel de analítica. Alembic `20261120130000` (CHECK de `analytics_events.source`).
 ## 2026-11-20 · Retención: tarjetas limpias, Black Friday e histórico de precios
 
+- **Desplegado** (PR #88, que incluye la #89; merge `e735ab5`): CI en verde (12/12), backup previo con `db-backup` (`bct-prod-20261120T223044Z.dump`, 1,7 MB, 72 tablas con datos), share en `main` por fast-forward y `docker restart buenchollo-api buenchollo-scheduler`, sin rebuild porque no cambian dependencias. Alembic aplicó `20261120120000` (`price_history`) y `20261120130000` (fuente `whatsapp`). Verificado: `/health` y `/health/ready` dan 200, la semilla cargó 354 puntos (uno por listing con precio), `GET /v1/catalog/products/{id}/price-history` responde, y la portada muestra el hero de Black Friday sin pestañas ni votos en las tarjetas. `/black-friday` da 200 y aparece en el sitemap.
 - **Contexto**: un informe de retención detectó el efecto «web vacía» (todas las tarjetas con 0°, 0 comentarios y «Votar producto» sin votos), ninguna página para el Black Friday (27-nov) y ningún dato de precio propio.
 - **Tarjetas**: sin temperatura, voto de producto ni comentarios; se mantienen en la ficha. Se elimina `useMyVotes` (una petición menos por listado). El CTA unificado es «Ir a la oferta».
 - **Portada**: sin pestañas «Más populares / Nuevos / Mayor descuento» («popular» ordenaba por temperatura, con todo a 0); siempre los más nuevos. Un `?sort=` antiguo se ignora.
