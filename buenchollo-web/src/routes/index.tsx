@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { DealCard } from "@/features/deals/components/DealCard";
 import { DealPagination } from "@/features/deals/components/DealPagination";
-import { HomeFilterTabs, type HomeFilterKey } from "@/features/deals/components/HomeFilterTabs";
 import { useAuth } from "@/hooks/useAuth";
 import { dealsService, favoritesApi } from "@/services/api/deals";
 import { pageHead } from "@/lib/seo/head";
@@ -20,44 +19,35 @@ import { BLACK_FRIDAY, campaignStatus } from "@/lib/campaigns";
 const PAGE_SIZE = 30;
 
 interface HomeSearch {
-  sort?: HomeFilterKey;
   page?: number;
 }
 
+/** La portada lista siempre los chollos más nuevos: con la comunidad
+ *  arrancando, «Más populares» (temperatura) no aportaba nada. Un `?sort=`
+ *  antiguo se ignora y el canonical ya apuntaba a la URL sin orden. */
 function parseHomeSearch(search: Record<string, unknown>): HomeSearch {
-  const sort = ["popular", "recent", "discount"].includes(String(search.sort))
-    ? (search.sort as HomeFilterKey)
-    : undefined;
   const parsedPage = Number(search.page);
   const page = Number.isSafeInteger(parsedPage) && parsedPage >= 2 ? parsedPage : undefined;
-  return { sort, page };
+  return { page };
 }
 
-function toHomeSearch(filter: HomeFilterKey, page: number): HomeSearch {
-  return {
-    sort: filter === "popular" ? undefined : filter,
-    page: page === 1 ? undefined : page,
-  };
+function toHomeSearch(page: number): HomeSearch {
+  return { page: page === 1 ? undefined : page };
 }
 
-/** URL rastreable de una página del feed (misma forma que `toHomeSearch`). */
-function homeHref(filter: HomeFilterKey, page: number): string {
-  const { sort, page: pageParam } = toHomeSearch(filter, page);
-  const params = new URLSearchParams();
-  if (sort) params.set("sort", sort);
-  if (pageParam) params.set("page", String(pageParam));
-  const query = params.toString();
-  return query ? `/?${query}` : "/";
+/** URL rastreable de una página del feed. */
+function homeHref(page: number): string {
+  return page === 1 ? "/" : `/?page=${page}`;
 }
 
 export const Route = createFileRoute("/")({
   component: HomePage,
   validateSearch: parseHomeSearch,
-  loaderDeps: ({ search }) => ({ sort: search.sort ?? "popular", page: search.page ?? 1 }),
+  loaderDeps: ({ search }) => ({ page: search.page ?? 1 }),
   loader: async ({ deps }) => {
     const [page, tops, popular, posts] = await Promise.all([
       withFallback(
-        dealsService.getPage({ sort: deps.sort, page: deps.page, page_size: PAGE_SIZE }),
+        dealsService.getPage({ sort: "recent", page: deps.page, page_size: PAGE_SIZE }),
         { items: [], total_pages: 1, page: 1, page_size: PAGE_SIZE, total: 0 },
         "Error cargando chollos de portada",
       ),
@@ -79,7 +69,6 @@ function HomePage() {
   const { user } = useAuth();
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
-  const filter = search.sort ?? "popular";
   const page = search.page ?? 1;
   const data = Route.useLoaderData();
   const deals = data.items;
@@ -89,19 +78,15 @@ function HomePage() {
   const dealsHeadingRef = useRef<HTMLHeadingElement>(null);
   const campaign = campaignStatus(BLACK_FRIDAY);
 
-  const handleFilterChange = (next: HomeFilterKey) => {
-    void navigate({ search: toHomeSearch(next, 1) });
-  };
-
   useEffect(() => {
     if (currentPage !== page) {
-      void navigate({ search: toHomeSearch(filter, currentPage), replace: true });
+      void navigate({ search: toHomeSearch(currentPage), replace: true });
     }
-  }, [currentPage, filter, navigate, page]);
+  }, [currentPage, navigate, page]);
 
   const changePage = (nextPage: number) => {
     if (nextPage < 1 || nextPage > totalPages || nextPage === currentPage) return;
-    void navigate({ search: toHomeSearch(filter, nextPage) });
+    void navigate({ search: toHomeSearch(nextPage) });
     const headingTop = dealsHeadingRef.current?.getBoundingClientRect().top;
     if (headingTop != null) {
       window.scrollTo({ top: Math.max(0, window.scrollY + headingTop - 96), behavior: "smooth" });
@@ -131,17 +116,11 @@ function HomePage() {
         ) : (
           <TopBanner tops={data.tops} />
         )}
-        {/* Filtros fuera de la rejilla: el primer chollo y la columna lateral arrancan a la misma altura. */}
-        <HomeFilterTabs value={filter} onChange={handleFilterChange} />
-        <div className="home-content-layout mt-6">
+        <div className="home-content-layout">
           <div className="home-feed-column">
             <section aria-labelledby="home-deals-heading">
               <h2 ref={dealsHeadingRef} id="home-deals-heading" className="sr-only">
-                {filter === "popular"
-                  ? "Chollos más populares"
-                  : filter === "recent"
-                    ? "Nuevos chollos"
-                    : "Chollos con mayor descuento"}
+                Últimos chollos
               </h2>
               <div className="deal-feed-grid">
                 {deals.map((d, index) => (
@@ -168,7 +147,7 @@ function HomePage() {
                   totalPages={totalPages}
                   loading={false}
                   onPageChange={changePage}
-                  hrefForPage={(target) => homeHref(filter, target)}
+                  hrefForPage={homeHref}
                 />
               </div>
             )}
