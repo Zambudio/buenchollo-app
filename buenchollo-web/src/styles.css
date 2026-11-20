@@ -3,6 +3,8 @@
    del visitante a un tercero. */
 @import "@fontsource-variable/space-grotesk";
 @import "@fontsource-variable/jetbrains-mono";
+/* Solo para el rótulo de neón de campañas (subconjunto latino, ~16 KB). */
+@import "@fontsource/monoton/latin-400.css";
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 @source "../src";
@@ -289,12 +291,12 @@
 .site-nav-link[aria-current="page"] {
   background: color-mix(in srgb, var(--color-cyan-glow) 9%, transparent);
 }
-.site-nav-telegram {
+.site-nav-channel {
   color: var(--color-cyan-glow);
   border: 1px solid var(--color-surface-600);
   border-radius: 999px;
 }
-.site-nav-telegram:hover {
+.site-nav-channel:hover {
   background: color-mix(in srgb, var(--color-cyan-glow) 10%, transparent);
 }
 .eyebrow {
@@ -1436,104 +1438,270 @@
   }
 }
 
-/* Hero de campaña estacional (portada y cabecera de /black-friday). Comparte
-   la estructura del banner de tops; acento en ámbar para distinguir el evento. */
-.campaign-hero {
-  --campaign-accent: #b45309;
+/* Rótulo de neón de campaña (portada y cabecera de /black-friday).
+   Un rótulo de escaparate de noche sobre pared de ladrillo: siempre oscuro,
+   también en el tema claro. Tubos magenta para la marca del evento y cian
+   (el de BuenChollo) para la cuenta atrás. */
+.neon-sign {
+  --ns-night: #07030e;
+  --ns-magenta: #ff2bd6;
+  --ns-magenta-core: #ffe3f8;
+  --ns-cyan: #22d3ee;
+  --ns-cyan-core: #e6fcff;
+  --ns-text: #ece4f5;
+  --ns-muted: #b3a5c6;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 1rem;
-  padding: 1.1rem 1rem;
+  gap: 1.6rem;
+  align-items: center;
+  padding: 1.6rem 1.1rem 1.5rem;
   margin-bottom: 1.5rem;
-  border-radius: 20px;
-  border: 1px solid color-mix(in srgb, var(--campaign-accent) 40%, var(--surface-700));
+  border-radius: 22px;
+  color: var(--ns-text);
+  border: 1px solid rgb(255 43 214 / 0.35);
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.6),
+    0 18px 50px -20px rgb(255 43 214 / 0.45),
+    inset 0 0 60px rgb(255 43 214 / 0.08);
   background:
-    radial-gradient(
-      ellipse at 85% 90%,
-      color-mix(in srgb, var(--campaign-accent) 14%, transparent),
-      transparent 55%
-    ),
-    linear-gradient(
-      115deg,
-      color-mix(in srgb, var(--campaign-accent) 12%, var(--surface-800)),
-      var(--surface-800) 65%
-    );
+    radial-gradient(ellipse 60% 70% at 22% 45%, rgb(255 43 214 / 0.22), transparent 70%),
+    radial-gradient(ellipse 45% 70% at 88% 50%, rgb(34 211 238 / 0.16), transparent 70%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='32'%3E%3Cpath d='M0 .5H60M0 16.5H60M.5 0V16M30.5 16V32' stroke='%23ffffff' stroke-opacity='.055' fill='none'/%3E%3C/svg%3E"),
+    linear-gradient(180deg, #120821, var(--ns-night) 75%);
 }
-.dark .campaign-hero {
-  --campaign-accent: #fbbf24;
+/* Reflejo en el suelo bajo el rótulo. */
+.neon-sign::after {
+  content: "";
+  position: absolute;
+  inset: auto 8% -40px;
+  height: 80px;
+  z-index: -1;
+  background: radial-gradient(ellipse at center, rgb(255 43 214 / 0.28), transparent 70%);
+  filter: blur(14px);
+  pointer-events: none;
 }
-.campaign-hero-copy {
+.neon-sign-copy {
   min-width: 0;
 }
-.campaign-hero .eyebrow {
-  color: var(--campaign-accent);
-}
-.campaign-hero :is(h1, h2) {
-  margin: 0.25rem 0 0.4rem;
-  font-size: clamp(1.5rem, 2.7vw, 2.1rem);
-  font-weight: 750;
-  letter-spacing: -0.035em;
-  line-height: 1.12;
-}
-.campaign-hero :is(h1, h2) span {
-  color: var(--campaign-accent);
-}
-.campaign-hero p {
-  color: var(--muted-foreground);
-  font-size: 0.93rem;
-  max-width: 34rem;
-}
-.campaign-hero-cta {
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-  gap: 0.6rem;
-  margin-top: 0.8rem;
-  padding: 0.65rem 1.1rem;
-  color: #fff;
-  background: #92400e;
-  border-radius: 10px;
-  font-weight: 700;
-}
-.campaign-hero-cta:hover {
-  background: #78350f;
-}
-.dark .campaign-hero-cta {
-  color: #1c1003;
-  background: var(--campaign-accent);
-}
-.dark .campaign-hero-cta:hover {
-  background: #fcd34d;
-}
-.campaign-hero :is(a, button):focus-visible {
-  outline: 2px solid var(--campaign-accent);
-  outline-offset: 3px;
-}
-.campaign-hero-countdown {
-  display: grid;
-  gap: 0.35rem;
-  justify-items: start;
-  align-content: center;
-  padding: 0.9rem 1.1rem;
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--surface-900) 70%, transparent);
-  border: 1px solid var(--surface-700);
-}
-.campaign-hero-countdown-label {
+.neon-sign-eyebrow {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  color: var(--muted-foreground);
-  font-size: 0.78rem;
+  gap: 0.55rem;
+  margin: 0 0 0.9rem;
+  font: 700 0.72rem var(--font-mono);
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  color: var(--ns-cyan-core);
+  text-shadow: 0 0 8px rgb(34 211 238 / 0.7);
 }
-.campaign-hero-countdown-value {
-  font-family: var(--font-mono, ui-monospace, monospace);
-  font-variant-numeric: tabular-nums;
-  font-size: clamp(1.3rem, 2.4vw, 1.75rem);
+.neon-sign-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--ns-magenta);
+  box-shadow:
+    0 0 6px var(--ns-magenta),
+    0 0 14px var(--ns-magenta);
+  animation: ns-pulse 1.4s ease-in-out infinite;
+}
+.neon-sign-title {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+}
+/* La pieza firma: el nombre del evento en tubo de neón. */
+.neon-sign-wordmark {
+  font-family: "Monoton", var(--font-display, sans-serif);
+  font-weight: 400;
+  font-size: clamp(2.15rem, 8.4vw, 5.4rem);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ns-magenta-core);
+  text-shadow:
+    0 0 4px #fff,
+    0 0 10px var(--ns-magenta),
+    0 0 22px var(--ns-magenta),
+    0 0 44px var(--ns-magenta),
+    0 0 80px rgb(255 43 214 / 0.6);
+  animation:
+    ns-power-on 1.8s steps(1, end) both,
+    ns-buzz 7s 2s steps(1, end) infinite;
+}
+.neon-sign-year {
+  font-size: clamp(1.05rem, 2.2vw, 1.45rem);
   font-weight: 700;
-  color: var(--foreground);
+  letter-spacing: -0.01em;
+  color: var(--ns-cyan-core);
+  text-shadow:
+    0 0 6px rgb(34 211 238 / 0.8),
+    0 0 18px rgb(34 211 238 / 0.45);
+}
+.neon-sign-text {
+  margin: 0.8rem 0 0;
+  max-width: 34rem;
+  color: var(--ns-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.neon-sign-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
+  padding: 0.8rem 1.35rem;
+  border: 2px solid var(--ns-magenta);
+  border-radius: 999px;
+  color: #fff;
+  font-weight: 700;
+  background: rgb(255 43 214 / 0.08);
+  text-shadow: 0 0 8px rgb(255 43 214 / 0.9);
+  box-shadow:
+    0 0 12px rgb(255 43 214 / 0.55),
+    inset 0 0 12px rgb(255 43 214 / 0.35);
+  transition:
+    background 0.2s,
+    color 0.2s,
+    box-shadow 0.2s,
+    text-shadow 0.2s;
+}
+.neon-sign-cta:hover {
+  color: var(--ns-night);
+  background: var(--ns-magenta);
+  text-shadow: none;
+  box-shadow:
+    0 0 18px var(--ns-magenta),
+    0 0 42px rgb(255 43 214 / 0.6);
+}
+.neon-sign :is(a, button):focus-visible {
+  outline: 2px solid var(--ns-cyan);
+  outline-offset: 4px;
+}
+.neon-sign-clock {
+  display: grid;
+  gap: 0.7rem;
+  justify-items: start;
+}
+.neon-sign-clock-label {
+  margin: 0;
+  font: 700 0.72rem var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ns-muted);
+}
+.neon-countdown {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(0.4rem, 1.6vw, 0.8rem);
+  width: 100%;
+  max-width: 26rem;
+}
+.neon-countdown-cell {
+  display: grid;
+  gap: 0.45rem;
+  justify-items: center;
+}
+.neon-countdown-tube {
+  --tube: var(--ns-cyan);
+  --tube-core: var(--ns-cyan-core);
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 1 / 1.08;
+  border: 2px solid var(--tube);
+  border-radius: 14px;
+  background: rgb(0 0 0 / 0.55);
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: clamp(1.55rem, 5.2vw, 2.6rem);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: var(--tube-core);
+  text-shadow:
+    0 0 4px #fff,
+    0 0 10px var(--tube),
+    0 0 24px var(--tube);
+  box-shadow:
+    0 0 10px var(--tube),
+    0 0 26px rgb(34 211 238 / 0.35),
+    inset 0 0 14px rgb(34 211 238 / 0.35);
+}
+.neon-countdown-tube.is-seconds {
+  --tube: var(--ns-magenta);
+  --tube-core: var(--ns-magenta-core);
+  box-shadow:
+    0 0 10px var(--tube),
+    0 0 26px rgb(255 43 214 / 0.35),
+    inset 0 0 14px rgb(255 43 214 / 0.35);
+}
+.neon-countdown-label {
+  font: 700 0.68rem var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ns-muted);
+}
+@keyframes ns-power-on {
+  0%,
+  12%,
+  22%,
+  34% {
+    opacity: 0.15;
+    text-shadow: none;
+  }
+  8%,
+  18%,
+  28%,
+  42%,
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes ns-buzz {
+  0%,
+  91%,
+  93%,
+  96%,
+  100% {
+    opacity: 1;
+  }
+  92%,
+  95% {
+    opacity: 0.55;
+  }
+}
+@keyframes ns-pulse {
+  50% {
+    opacity: 0.35;
+    box-shadow: 0 0 2px var(--ns-magenta);
+  }
+}
+@media (min-width: 900px) {
+  .neon-sign {
+    grid-template-columns: minmax(0, 1fr) minmax(19rem, 25rem);
+    gap: 2.5rem;
+    padding: 2rem 2.4rem;
+  }
+  .neon-sign-clock {
+    justify-items: stretch;
+  }
+}
+@media (max-width: 639px) {
+  .neon-sign-cta {
+    width: 100%;
+  }
+  .neon-sign-text {
+    font-size: 0.9rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .neon-sign-wordmark,
+  .neon-sign-dot {
+    animation: none;
+  }
 }
 .campaign-more-link {
   display: inline-flex;
@@ -1541,22 +1709,4 @@
   gap: 0.4rem;
   color: var(--cyan-glow);
   font-weight: 600;
-}
-@media (min-width: 720px) {
-  .campaign-hero {
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    padding: 1.2rem 1.7rem;
-  }
-  .campaign-hero-countdown {
-    min-width: 13rem;
-  }
-}
-@media (max-width: 639px) {
-  .campaign-hero-cta {
-    width: 100%;
-  }
-  .campaign-hero p {
-    font-size: 0.88rem;
-  }
 }

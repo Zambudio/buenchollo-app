@@ -82,18 +82,20 @@ export interface Countdown {
   days: number;
   hours: number;
   minutes: number;
+  seconds: number;
 }
 
 export function countdownTo(target: Date, now: Date = new Date()): Countdown {
-  const totalMinutes = Math.max(0, Math.floor((target.getTime() - now.getTime()) / 60_000));
+  const total = Math.max(0, Math.floor((target.getTime() - now.getTime()) / 1000));
   return {
-    days: Math.floor(totalMinutes / 1440),
-    hours: Math.floor((totalMinutes % 1440) / 60),
-    minutes: totalMinutes % 60,
+    days: Math.floor(total / 86_400),
+    hours: Math.floor((total % 86_400) / 3600),
+    minutes: Math.floor((total % 3600) / 60),
+    seconds: total % 60,
   };
 }
 
-/** «6 d 7 h 12 min», omitiendo los días cuando ya no quedan. */
+/** «6 d 7 h 12 min», omitiendo los días cuando ya no quedan (texto accesible). */
 export function formatCountdown({ days, hours, minutes }: Countdown): string {
   return days > 0 ? `${days} d ${hours} h ${minutes} min` : `${hours} h ${minutes} min`;
 }
