@@ -5,7 +5,7 @@ import { DealCard } from "@/features/deals/components/DealCard";
 import { CampaignCountdown } from "@/features/campaigns/CampaignCountdown";
 import { dealsService } from "@/services/api/deals";
 import { withFallback } from "@/lib/fallback";
-import { BLACK_FRIDAY, campaignStatus, formatCampaignDate } from "@/lib/campaigns";
+import { BLACK_FRIDAY, campaignStatus, formatCampaignDate, lastDayOf } from "@/lib/campaigns";
 import { pageHead } from "@/lib/seo/head";
 import { campaignFaq, campaignPageSeo } from "@/lib/seo/campaign";
 import { TELEGRAM_URL } from "@/lib/site";
@@ -26,18 +26,25 @@ export const Route = createFileRoute("/black-friday")({
       { items: [], total_pages: 1, page: 1, page_size: PAGE_SIZE, total: 0 },
       "Error cargando chollos de Black Friday",
     );
-    return { deals: page.items, total: page.total };
+    // La hora se fija en el loader para que servidor y cliente pinten la misma fase.
+    return { deals: page.items, total: page.total, now: Date.now() };
   },
   head: ({ loaderData }) =>
-    pageHead(campaignPageSeo(BLACK_FRIDAY, campaignStatus(BLACK_FRIDAY), loaderData?.deals ?? [])),
+    pageHead(
+      campaignPageSeo(
+        BLACK_FRIDAY,
+        campaignStatus(BLACK_FRIDAY, new Date(loaderData?.now ?? Date.now())),
+        loaderData?.deals ?? [],
+      ),
+    ),
 });
 
 function BlackFridayPage() {
-  const { deals, total } = Route.useLoaderData();
-  const status = campaignStatus(BLACK_FRIDAY);
+  const { deals, total, now } = Route.useLoaderData();
+  const status = campaignStatus(BLACK_FRIDAY, new Date(now));
   const { edition, phase, target } = status;
   const faq = campaignFaq(BLACK_FRIDAY, status);
-  const lastDay = new Date(new Date(edition.end).getTime() - 1).toISOString();
+  const lastDay = lastDayOf(edition);
 
   return (
     <Layout>
@@ -87,12 +94,12 @@ function BlackFridayPage() {
 
         <h2 className="feed-section-title">
           {total > 0
-            ? `${total} chollos con más de un ${BLACK_FRIDAY.minDiscount} % de descuento`
+            ? `${total} chollos con al menos un ${BLACK_FRIDAY.minDiscount} % de descuento`
             : "Chollos de Black Friday"}
         </h2>
         {deals.length === 0 ? (
           <p className="py-10 text-center font-mono text-sm text-muted-foreground">
-            Ahora mismo no hay chollos con más de un {BLACK_FRIDAY.minDiscount} % de descuento.
+            Ahora mismo no hay chollos con al menos un {BLACK_FRIDAY.minDiscount} % de descuento.
             Únete al canal de Telegram y te avisamos en cuanto salgan.
           </p>
         ) : (

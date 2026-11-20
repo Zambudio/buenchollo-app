@@ -199,14 +199,21 @@ async def test_link_new_deal_apunta_el_precio_inicial_en_el_historico(session):
     assert history[0].product_id == deal.product_id
 
 
-async def test_record_price_un_punto_por_dia_con_el_minimo_del_dia(session):
+def _obs(deal, price, *, days=3, source="price_check"):
+    from app.modules.catalog.domain.price_history import PriceObservation
+
+    return PriceObservation(
+        listing_id=deal.listing_id, product_id=deal.product_id, store_id=deal.store_id,
+        price=price, reference_price=None, in_stock=True, source=source,
+        observed_at=datetime.now(timezone.utc) + timedelta(days=days),
+    )
+
+
+async def test_record_prices_un_punto_por_dia_con_el_minimo_del_dia(session):
     repo = CatalogRepository(session)
     deal = await _add_linked(session, repo, _deal("B0REPOH002", price=50.0))
-    later = datetime.now(timezone.utc) + timedelta(days=3)
-    args = dict(listing_id=deal.listing_id, product_id=deal.product_id, store_id=None,
-                reference_price=None, in_stock=True, source="price_check")
-    await repo.record_price(price=45, now=later, **args)
-    await repo.record_price(price=48, now=later, **args)
+    await repo.record_prices([_obs(deal, 45)])
+    await repo.record_prices([_obs(deal, 48)])
     await session.flush()
 
     history = await _history(session, deal.listing_id)
@@ -214,16 +221,33 @@ async def test_record_price_un_punto_por_dia_con_el_minimo_del_dia(session):
     await session.refresh(history[-1])
     assert (float(history[-1].price), float(history[-1].low_price)) == (48.0, 45.0)
 
-    points = await repo.price_points(deal.product_id)
-    assert [float(p.price) for p in points] == [50.0, 48.0]
+    summary = await repo.all_time_summary(deal.product_id)
+    assert summary.days_tracked == 2 and float(summary.low) == 45.0
+    points = await repo.price_points(deal.product_id, since=history[-1].observed_on)
+    assert [float(p.price) for p in points] == [48.0]
 
 
-async def test_record_price_ignora_precios_nulos_o_cero(session):
+async def test_edicion_manual_sustituye_el_minimo_del_dia(session):
+    repo = CatalogRepository(session)
+    deal = await _add_linked(session, repo, _deal("B0REPOH004", price=199.0))
+    await repo.record_prices([_obs(deal, 1.99, days=0, source="deal")])  # precio mal tecleado
+    await repo.record_prices([_obs(deal, 199, days=0, source="deal")])  # corregido
+    history = await _history(session, deal.listing_id)
+    await session.refresh(history[0])
+    assert float(history[0].low_price) == 199.0
+
+
+async def test_record_deal_price_no_apunta_si_el_chollo_cambio_de_tienda(session):
+    repo = CatalogRepository(session)
+    deal = await _add_linked(session, repo, _deal("B0REPOH005", price=30.0))
+    deal.external_id = "OTRA-TIENDA-1"
+    deal.current_price = 25.0
+    await repo.record_deal_price(deal, now=datetime.now(timezone.utc) + timedelta(days=2))
+    assert len(await _history(session, deal.listing_id)) == 1
+
+
+async def test_record_prices_ignora_precios_nulos_o_cero(session):
     repo = CatalogRepository(session)
     deal = await _add_linked(session, repo, _deal("B0REPOH003", price=10.0))
-    args = dict(listing_id=deal.listing_id, product_id=deal.product_id, store_id=None,
-                reference_price=None, in_stock=None, source="price_check",
-                now=datetime.now(timezone.utc) + timedelta(days=1))
-    await repo.record_price(price=None, **args)
-    await repo.record_price(price=0, **args)
+    await repo.record_prices([_obs(deal, None, days=1), _obs(deal, 0, days=1)])
     assert len(await _history(session, deal.listing_id)) == 1

@@ -1,7 +1,7 @@
 /** SEO de las landings de campaña (`/black-friday`). La URL no lleva año: se
  *  reutiliza cada edición para acumular autoridad; el año va en el título. */
 import type { Campaign, CampaignStatus } from "@/lib/campaigns";
-import { formatCampaignDate } from "@/lib/campaigns";
+import { formatCampaignDate, lastDayOf } from "@/lib/campaigns";
 import { withBrand, type PageSeo } from "./head";
 import {
   breadcrumbSchema,
@@ -14,7 +14,7 @@ import {
 
 export function campaignFaq(campaign: Campaign, status: CampaignStatus): FaqItem[] {
   const { edition } = status;
-  const lastDay = formatCampaignDate(new Date(new Date(edition.end).getTime() - 1).toISOString());
+  const lastDay = formatCampaignDate(lastDayOf(edition));
   return [
     {
       question: `¿Cuándo es el ${campaign.name} ${edition.year}?`,

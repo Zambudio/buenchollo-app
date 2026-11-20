@@ -59,7 +59,8 @@ export const Route = createFileRoute("/")({
         "Error cargando artículos del blog",
       ),
     ]);
-    return { ...page, popular, posts, tops };
+    // La hora se fija en el loader para que servidor y cliente elijan el mismo hero.
+    return { ...page, popular, posts, tops, now: Date.now() };
   },
   head: ({ loaderData }) =>
     pageHead(homeSeo({ page: loaderData?.page ?? 1, deals: loaderData?.items ?? [] })),
@@ -76,7 +77,7 @@ function HomePage() {
   const currentPage = data.page;
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
   const dealsHeadingRef = useRef<HTMLHeadingElement>(null);
-  const campaign = campaignStatus(BLACK_FRIDAY);
+  const campaign = campaignStatus(BLACK_FRIDAY, new Date(data.now));
 
   useEffect(() => {
     if (currentPage !== page) {

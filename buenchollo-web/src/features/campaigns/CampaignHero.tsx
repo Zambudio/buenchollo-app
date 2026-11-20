@@ -1,10 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, Clock } from "lucide-react";
-import { formatCampaignDate, type Campaign, type CampaignStatus } from "@/lib/campaigns";
+import { formatCampaignDate, lastDayOf, type Campaign, type CampaignStatus } from "@/lib/campaigns";
 import { CampaignCountdown } from "./CampaignCountdown";
-
-/** `end` es exclusivo (medianoche del día siguiente): el último día es el anterior. */
-const lastDayOf = (end: string) => new Date(new Date(end).getTime() - 1).toISOString();
 
 /** Hero de portada mientras una campaña estacional está anunciada o en curso. */
 export function CampaignHero({ campaign, status }: { campaign: Campaign; status: CampaignStatus }) {
@@ -36,7 +33,7 @@ export function CampaignHero({ campaign, status }: { campaign: Campaign; status:
           </span>
           <CampaignCountdown
             target={target}
-            fallback={formatCampaignDate(live ? lastDayOf(edition.end) : edition.start)}
+            fallback={formatCampaignDate(live ? lastDayOf(edition) : edition.start)}
             className="campaign-hero-countdown-value"
           />
         </div>

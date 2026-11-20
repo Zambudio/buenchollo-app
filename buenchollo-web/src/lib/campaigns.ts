@@ -39,6 +39,11 @@ export const BLACK_FRIDAY: Campaign = {
   ],
 };
 
+/** `end` es exclusivo (medianoche del día siguiente): el último día del evento es el anterior. */
+export function lastDayOf(edition: CampaignEdition): string {
+  return new Date(new Date(edition.end).getTime() - 1).toISOString();
+}
+
 export type CampaignPhase = "upcoming" | "live" | "ended";
 
 export interface CampaignStatus {

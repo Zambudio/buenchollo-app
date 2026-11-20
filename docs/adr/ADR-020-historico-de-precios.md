@@ -14,14 +14,14 @@ Pronto se publicarán chollos de más tiendas (Awin y Tradedoubler, [ADR-019](AD
 
 ## Decisión
 
-1. **Tabla `price_history`** (migración `20261120120000`): un punto por listing y día natural de Madrid (`uq_price_history_listing_day`). Guarda `product_id` y `store_id` para consultar por producto en todas sus tiendas. `price` es la última observación del día y `low_price` la más baja (upsert con `LEAST`). También guarda `reference_price`, `in_stock`, `source` y `observed_at`. Tiene RLS activado, como el resto de tablas, porque solo la API accede.
+1. **Tabla `price_history`** (migración `20261120120000`): un punto por listing y día natural de Madrid (`uq_price_history_listing_day`). Guarda `product_id` y `store_id` para consultar por producto en todas sus tiendas. `price` es la última observación del día y `low_price` la más baja entre las automáticas (upsert con `LEAST`). Una edición manual (`source = deal`) sustituye el mínimo del día en lugar de combinarse con él: así un precio mal tecleado y corregido no queda como mínimo histórico. También guarda `reference_price`, `in_stock`, `source` y `observed_at`. Tiene RLS activado, como el resto de tablas, porque solo la API accede.
 2. **Fuentes de datos:**
-   - `price_check`: la revisión diaria apunta el precio de cada listing que Amazon devuelve con precio. No apunta nada si el lote falla, si el producto no aparece, si llega sin precio o si el listing se purga.
-   - `deal`: el alta (`link_new_deal`), la reactivación y la edición manual de `current_price` de un chollo, de cualquier tienda.
+   - `price_check`: la revisión diaria apunta el precio de cada listing que Amazon devuelve con precio **y con stock**, en un único upsert al final de la ejecución. No apunta nada si el lote falla, si el producto no aparece, si llega sin precio, si está agotado (sería un falso mínimo, porque no se podía comprar) o si el listing se purga.
+   - `deal`: el alta (`link_new_deal`), la reactivación y la edición manual de `current_price` de un chollo, de cualquier tienda. Si el chollo ya no coincide con su listing (cambió de tienda o de identificador), no se apunta, porque sería el precio de otra tienda.
    - `backfill`: la migración siembra el precio actual de cada listing.
    - Las tiendas no Amazon solo reciben puntos con las altas y ediciones hasta que sus feeds se revisen de forma periódica.
-3. **Reglas puras** en `catalog/domain/price_history.py`: `observed_day` y `compute_stats`. Esta última calcula el mínimo histórico con su fecha y el mínimo, máximo y media de una ventana (90 días por defecto). Con varias tiendas, cada día cuenta con su precio más bajo.
-4. **API:** `GET /v1/catalog/products/{id}/price-history?days=90` (de 7 a 365, límite de 60 peticiones por minuto) devuelve los puntos de la ventana y las estadísticas.
+3. **Reglas puras** en `catalog/domain/price_history.py`: `observed_day`, `window_start` y `compute_stats`, que calcula el mínimo, el máximo y la media de una ventana (90 días por defecto). Con varias tiendas, cada día cuenta con su precio más bajo. El resumen de todo el histórico (días con datos, primer día, mínimo histórico y su fecha) se calcula en SQL (`CatalogRepository.all_time_summary`) para no cargar puntos antiguos.
+4. **API:** `GET /v1/catalog/products/{id}/price-history?days=90` (de 7 a 365, límite de 60 peticiones por minuto) devuelve los puntos de la ventana y las estadísticas. La lógica vive en el caso de uso `catalog/application/price_history_service.py`; el router solo la expone.
 5. **Sin interfaz todavía:** las etiquetas («Mínimo histórico», «Precio normal») y el veredicto se construirán cuando haya datos suficientes.
 
 ## Consecuencias

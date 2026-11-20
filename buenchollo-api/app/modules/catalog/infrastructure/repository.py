@@ -1,7 +1,7 @@
 from datetime import date, datetime, timezone
 from decimal import Decimal
 
-from sqlalchemy import delete, exists, func, select, update
+from sqlalchemy import case, delete, exists, func, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -14,7 +14,13 @@ from app.modules.catalog.domain.models import (
     Product,
     ProductListing,
 )
-from app.modules.catalog.domain.price_history import SOURCE_DEAL, PricePoint, observed_day
+from app.modules.catalog.domain.price_history import (
+    SOURCE_DEAL,
+    AllTimeSummary,
+    PriceObservation,
+    PricePoint,
+    observed_day,
+)
 from app.modules.deals.domain.models import Deal
 from app.modules.stores.domain.models import Store
 
@@ -110,58 +116,77 @@ class CatalogRepository:
 
     async def record_deal_price(self, deal: Deal, now: datetime | None = None) -> None:
         """Apunta en el histórico el precio con el que se publica o edita un
-        chollo (sirve para cualquier tienda, no solo las que revisa el job)."""
+        chollo (sirve para cualquier tienda, no solo las que revisa el job).
+
+        Si el chollo ya no corresponde a su listing (se cambió de tienda o de
+        identificador), no apunta nada: sería el precio de otra tienda."""
         if deal.listing_id is None or deal.product_id is None:
             return
-        await self.record_price(
-            listing_id=deal.listing_id,
-            product_id=deal.product_id,
-            store_id=deal.store_id,
-            price=deal.current_price,
-            reference_price=deal.previous_price,
-            in_stock=None,
-            source=SOURCE_DEAL,
-            now=now or datetime.now(timezone.utc),
+        listing = await self.session.get(ProductListing, deal.listing_id)
+        external_id = (deal.external_id or "").strip().upper() or None
+        if (
+            listing is None
+            or listing.store_id != deal.store_id
+            or (listing.external_id or "").upper() != (external_id or "")
+        ):
+            return
+        await self.record_prices(
+            [
+                PriceObservation(
+                    listing_id=deal.listing_id,
+                    product_id=deal.product_id,
+                    store_id=deal.store_id,
+                    price=deal.current_price,
+                    reference_price=deal.previous_price,
+                    in_stock=None,
+                    source=SOURCE_DEAL,
+                    observed_at=now or datetime.now(timezone.utc),
+                )
+            ]
         )
 
-    async def record_price(
-        self,
-        *,
-        listing_id: str,
-        product_id: str,
-        store_id: str | None,
-        price,
-        reference_price,
-        in_stock: bool | None,
-        source: str,
-        now: datetime,
-    ) -> None:
-        """Un punto por listing y día: si ya hay uno ese día se actualiza con la
-        última observación y se conserva el precio más bajo del día."""
-        if price is None or Decimal(str(price)) <= 0:
+    async def record_prices(self, observations: list[PriceObservation]) -> None:
+        """Un punto por listing y día, en un único upsert. Si ya hay uno ese día
+        se actualiza con la última observación. `low_price` guarda el mínimo del
+        día de las observaciones automáticas; una edición manual lo sustituye
+        (corrige, p. ej., un precio mal tecleado en vez de fijarlo como mínimo)."""
+        rows = {}
+        for obs in observations:
+            if obs.price is None or Decimal(str(obs.price)) <= 0:
+                continue
+            day = observed_day(obs.observed_at)
+            previous = rows.get((obs.listing_id, day))
+            low = obs.price
+            if previous is not None and obs.source != SOURCE_DEAL:
+                low = min(Decimal(str(previous["low_price"])), Decimal(str(obs.price)))
+            rows[(obs.listing_id, day)] = dict(
+                listing_id=obs.listing_id,
+                product_id=obs.product_id,
+                store_id=obs.store_id,
+                observed_on=day,
+                price=obs.price,
+                low_price=low,
+                reference_price=obs.reference_price,
+                in_stock=obs.in_stock,
+                source=obs.source,
+                observed_at=obs.observed_at,
+            )
+        if not rows:
             return
-        values = dict(
-            listing_id=listing_id,
-            product_id=product_id,
-            store_id=store_id,
-            observed_on=observed_day(now),
-            price=price,
-            low_price=price,
-            reference_price=reference_price,
-            in_stock=in_stock,
-            source=source,
-            observed_at=now,
-        )
-        stmt = pg_insert(PriceHistory).values(**values)
+        stmt = pg_insert(PriceHistory).values(list(rows.values()))
+        excluded = stmt.excluded
         stmt = stmt.on_conflict_do_update(
             constraint="uq_price_history_listing_day",
             set_={
-                "price": stmt.excluded.price,
-                "low_price": func.least(PriceHistory.low_price, stmt.excluded.low_price),
-                "reference_price": func.coalesce(stmt.excluded.reference_price, PriceHistory.reference_price),
-                "in_stock": func.coalesce(stmt.excluded.in_stock, PriceHistory.in_stock),
-                "source": stmt.excluded.source,
-                "observed_at": stmt.excluded.observed_at,
+                "price": excluded.price,
+                "low_price": case(
+                    (excluded.source == SOURCE_DEAL, excluded.low_price),
+                    else_=func.least(PriceHistory.low_price, excluded.low_price),
+                ),
+                "reference_price": func.coalesce(excluded.reference_price, PriceHistory.reference_price),
+                "in_stock": func.coalesce(excluded.in_stock, PriceHistory.in_stock),
+                "source": excluded.source,
+                "observed_at": excluded.observed_at,
             },
         )
         await self.session.execute(stmt)
@@ -175,9 +200,35 @@ class CatalogRepository:
             query = query.where(PriceHistory.observed_on >= since)
         rows = await self.session.execute(query.order_by(PriceHistory.observed_on, PriceHistory.store_id))
         return [
-            PricePoint(observed_on=r.observed_on, price=Decimal(r.price), low_price=Decimal(r.low_price), store_id=r.store_id)
+            PricePoint(
+                observed_on=r.observed_on, price=Decimal(r.price), low_price=Decimal(r.low_price), store_id=r.store_id
+            )
             for r in rows
         ]
+
+    async def all_time_summary(self, product_id: str) -> AllTimeSummary:
+        """Resumen de todo el histórico calculado en SQL (sin cargar los puntos)."""
+        day_low = func.least(PriceHistory.low_price, PriceHistory.price)
+        totals = (
+            await self.session.execute(
+                select(
+                    func.count(func.distinct(PriceHistory.observed_on)),
+                    func.min(PriceHistory.observed_on),
+                    func.min(day_low),
+                ).where(PriceHistory.product_id == product_id)
+            )
+        ).one()
+        days, first_seen, low = totals
+        if not days:
+            return AllTimeSummary(0, None, None, None)
+        low_on = (
+            await self.session.execute(
+                select(func.max(PriceHistory.observed_on)).where(
+                    PriceHistory.product_id == product_id, day_low == low
+                )
+            )
+        ).scalar()
+        return AllTimeSummary(days, first_seen, Decimal(low), low_on)
 
     async def purge_listing(self, listing: ProductListing) -> list[str]:
         """Quita la tienda del producto. Si el producto se queda sin tiendas se

@@ -9,6 +9,7 @@ from types import SimpleNamespace
 import pytest
 
 from app.modules.catalog.domain.offer_rules import Observation
+from app.modules.catalog.domain.price_history import PriceObservation
 from app.modules.products.domain.entities import ProductPreview
 from app.modules.products.infrastructure.amazon_client import MAX_ITEMS_PER_REQUEST
 from app.modules.scheduled_tasks.application.price_check_handler import ListingCheck, PriceCheckHandler
@@ -70,10 +71,10 @@ class FakeCatalogRepo:
         self.pairs = pairs or []
         self.purged: list[str] = []
         self.deleted_ids = deleted_ids or []
-        self.recorded: list[dict] = []
+        self.recorded: list = []
 
-    async def record_price(self, **kwargs):
-        self.recorded.append(kwargs)
+    async def record_prices(self, observations):
+        self.recorded.extend(observations)
 
     async def get_checkable(self):
         return self.pairs
@@ -365,10 +366,10 @@ async def test_apunta_el_precio_observado_en_el_historico():
         [ListingCheck(listing, _deal(), _obs("97", reference="130", discount=25))], CONFIG, NOW
     )
     assert repo.recorded == [
-        dict(
+        PriceObservation(
             listing_id="listing-1", product_id="product-1", store_id="store-1",
             price=Decimal("97"), reference_price=Decimal("130"), in_stock=True,
-            source="price_check", now=NOW,
+            source="price_check", observed_at=NOW,
         )
     ]
 
@@ -377,16 +378,16 @@ async def test_apunta_el_precio_observado_en_el_historico():
 async def test_listing_sin_deal_tambien_alimenta_el_historico():
     repo = FakeCatalogRepo()
     await _handler(repo=repo).apply([ListingCheck(_listing(), None, _obs("80"))], CONFIG, NOW)
-    assert [r["price"] for r in repo.recorded] == [Decimal("80")]
+    assert [r.price for r in repo.recorded] == [Decimal("80")]
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "observation",
-    [None, _obs(None, found=False, in_stock=False), _obs(None)],
-    ids=["lote_fallido", "no_encontrado", "sin_precio"],
+    [None, _obs(None, found=False, in_stock=False), _obs(None), _obs("49.99", in_stock=False)],
+    ids=["lote_fallido", "no_encontrado", "sin_precio", "agotado"],
 )
-async def test_no_apunta_sin_precio_observado(observation):
+async def test_no_apunta_sin_precio_comprable(observation):
     repo = FakeCatalogRepo()
     await _handler(repo=repo).apply([ListingCheck(_listing(), _deal(), observation)], CONFIG, NOW)
     assert repo.recorded == []
