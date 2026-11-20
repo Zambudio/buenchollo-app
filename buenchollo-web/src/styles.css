@@ -423,7 +423,7 @@
 .deal-card-media img {
   padding: 0.45rem;
 }
-/* Cuerpo de la tarjeta (estilo listado de chollos): votos y fecha arriba, título,
+/* Cuerpo de la tarjeta (estilo listado de chollos): fecha arriba, título,
    línea de precio + descuento + tienda + autor, descripción y acciones abajo. */
 .deal-card-body {
   min-width: 0;
@@ -436,13 +436,6 @@
   justify-content: space-between;
   gap: 0.5rem;
   flex-wrap: wrap;
-}
-.deal-card-votes {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  flex-wrap: wrap;
-  min-width: 0;
 }
 .deal-card .deal-card-posted {
   padding: 0.22rem 0.5rem;
@@ -1440,5 +1433,130 @@
   }
   .top-banner h2 span::before {
     content: " ";
+  }
+}
+
+/* Hero de campaña estacional (portada y cabecera de /black-friday). Comparte
+   la estructura del banner de tops; acento en ámbar para distinguir el evento. */
+.campaign-hero {
+  --campaign-accent: #b45309;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  padding: 1.1rem 1rem;
+  margin-bottom: 1.5rem;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--campaign-accent) 40%, var(--surface-700));
+  background:
+    radial-gradient(
+      ellipse at 85% 90%,
+      color-mix(in srgb, var(--campaign-accent) 14%, transparent),
+      transparent 55%
+    ),
+    linear-gradient(
+      115deg,
+      color-mix(in srgb, var(--campaign-accent) 12%, var(--surface-800)),
+      var(--surface-800) 65%
+    );
+}
+.dark .campaign-hero {
+  --campaign-accent: #fbbf24;
+}
+.campaign-hero-copy {
+  min-width: 0;
+}
+.campaign-hero .eyebrow {
+  color: var(--campaign-accent);
+}
+.campaign-hero :is(h1, h2) {
+  margin: 0.25rem 0 0.4rem;
+  font-size: clamp(1.5rem, 2.7vw, 2.1rem);
+  font-weight: 750;
+  letter-spacing: -0.035em;
+  line-height: 1.12;
+}
+.campaign-hero :is(h1, h2) span {
+  color: var(--campaign-accent);
+}
+.campaign-hero p {
+  color: var(--muted-foreground);
+  font-size: 0.93rem;
+  max-width: 34rem;
+}
+.campaign-hero-cta {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+  padding: 0.65rem 1.1rem;
+  color: #fff;
+  background: #92400e;
+  border-radius: 10px;
+  font-weight: 700;
+}
+.campaign-hero-cta:hover {
+  background: #78350f;
+}
+.dark .campaign-hero-cta {
+  color: #1c1003;
+  background: var(--campaign-accent);
+}
+.dark .campaign-hero-cta:hover {
+  background: #fcd34d;
+}
+.campaign-hero :is(a, button):focus-visible {
+  outline: 2px solid var(--campaign-accent);
+  outline-offset: 3px;
+}
+.campaign-hero-countdown {
+  display: grid;
+  gap: 0.35rem;
+  justify-items: start;
+  align-content: center;
+  padding: 0.9rem 1.1rem;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-900) 70%, transparent);
+  border: 1px solid var(--surface-700);
+}
+.campaign-hero-countdown-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.campaign-hero-countdown-value {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(1.3rem, 2.4vw, 1.75rem);
+  font-weight: 700;
+  color: var(--foreground);
+}
+.campaign-more-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--cyan-glow);
+  font-weight: 600;
+}
+@media (min-width: 720px) {
+  .campaign-hero {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    padding: 1.2rem 1.7rem;
+  }
+  .campaign-hero-countdown {
+    min-width: 13rem;
+  }
+}
+@media (max-width: 639px) {
+  .campaign-hero-cta {
+    width: 100%;
+  }
+  .campaign-hero p {
+    font-size: 0.88rem;
   }
 }

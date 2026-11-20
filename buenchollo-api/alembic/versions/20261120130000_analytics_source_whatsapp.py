@@ -3,14 +3,14 @@
 Las publicaciones del Canal de WhatsApp enlazan a `/whatsapp`, que redirige con
 `utm_source=whatsapp`: esas visitas se cuentan aparte de «Otras webs».
 
-Revision ID: 20261120120000
-Revises: 20261118120000
+Revision ID: 20261120130000
+Revises: 20261120120000
 """
 
 from alembic import op
 
-revision = "20261120120000"
-down_revision = "20261118120000"
+revision = "20261120130000"
+down_revision = "20261120120000"
 branch_labels = None
 depends_on = None
 

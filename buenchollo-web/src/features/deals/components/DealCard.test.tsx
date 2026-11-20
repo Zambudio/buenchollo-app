@@ -9,12 +9,11 @@
  *  - @/services/api/deals → favoritesApi.toggle stub.
  *  - sonner.toast → spyable.
  */
-import { screen, waitFor } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DealCard, type DealCardData } from "@/features/deals/components/DealCard";
 import { renderWithProviders } from "@/test/utils";
-import { resetProductVotes } from "@/features/catalog/productVotes";
 
 // vi.hoisted: estos mocks se materializan ANTES que los vi.mock(), que a su
 // vez son hoisteados por Vitest al top del módulo. Sin esto, los vi.mock()
@@ -22,8 +21,6 @@ import { resetProductVotes } from "@/features/catalog/productVotes";
 const mocks = vi.hoisted(() => ({
   useAuth: vi.fn(),
   toggle: vi.fn(),
-  productVote: vi.fn(),
-  productMyVotes: vi.fn(),
   toast: { error: vi.fn(), success: vi.fn() },
 }));
 
@@ -45,9 +42,6 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 
 vi.mock("@/hooks/useAuth", () => ({ useAuth: mocks.useAuth }));
-vi.mock("@/services/api/catalog", () => ({
-  catalogService: { vote: mocks.productVote, myVotes: mocks.productMyVotes },
-}));
 
 vi.mock("@/services/api/deals", async (importActual) => {
   const actual = await importActual<typeof import("@/services/api/deals")>();
@@ -57,12 +51,8 @@ vi.mock("@/services/api/deals", async (importActual) => {
 vi.mock("sonner", () => ({ toast: mocks.toast }));
 
 beforeEach(() => {
-  resetProductVotes();
   mocks.useAuth.mockReturnValue({ user: null, isAdmin: false });
   mocks.toggle.mockReset();
-  mocks.productVote.mockReset();
-  mocks.productMyVotes.mockReset();
-  mocks.productMyVotes.mockResolvedValue([]);
   mocks.toast.error.mockReset();
 });
 
@@ -133,7 +123,7 @@ describe("DealCard", () => {
     expect(heading.querySelector("a")).toHaveAttribute("href", "/chollo/monitor-27-pulgadas-4k");
   });
 
-  it("el botón 'ir al chollo' enlaza a la URL de afiliado", () => {
+  it("el botón 'ir a la oferta' enlaza a la URL de afiliado", () => {
     renderWithProviders(<DealCard deal={buildDeal()} />);
     const link = screen.getByRole("link", {
       name: /ver oferta de monitor 27 pulgadas 4k en amazon/i,
@@ -176,24 +166,19 @@ describe("DealCard", () => {
     expect(mocks.toast.error).not.toHaveBeenCalled();
   });
 
-  it("permite votar el producto en el top sin cambiar el voto del chollo", async () => {
-    mocks.useAuth.mockReturnValue({ user: { id: "u-1" }, isAdmin: false });
-    mocks.productVote.mockResolvedValue({ voted: true });
-    renderWithProviders(<DealCard deal={buildDeal({ product_id: "product-1" })} />);
-
-    await userEvent.click(screen.getByRole("button", { name: "Votar este producto para el top" }));
-
-    expect(mocks.productVote).toHaveBeenCalledWith("product-1");
-    await waitFor(() =>
-      expect(
-        screen.getByRole("button", { name: "Retirar voto a este producto del top" }),
-      ).toHaveAttribute("aria-pressed", "true"),
+  it("no muestra temperatura, voto de producto ni contador de comentarios", () => {
+    renderWithProviders(
+      <DealCard deal={buildDeal({ product_id: "product-1", comment_count: 0, temperature: 0 })} />,
     );
-    expect(screen.getByLabelText("Temperatura: 120 grados")).toBeInTheDocument();
+    expect(screen.queryByLabelText(/temperatura/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /votar este producto/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /ver comentarios/i })).not.toBeInTheDocument();
   });
 
-  it("omite el voto de producto si el chollo no tiene producto vinculado", () => {
-    renderWithProviders(<DealCard deal={buildDeal({ product_id: null })} />);
-    expect(screen.queryByText("Votar producto")).not.toBeInTheDocument();
+  it("el CTA a la tienda dice 'Ir a la oferta'", () => {
+    renderWithProviders(<DealCard deal={buildDeal()} />);
+    expect(screen.getByRole("link", { name: /ver oferta de/i })).toHaveTextContent(
+      "Ir a la oferta",
+    );
   });
 });

@@ -44,6 +44,7 @@ export interface SitemapPost {
 export const STATIC_SITEMAP_ENTRIES: SitemapEntry[] = [
   { path: "/", changefreq: "hourly", priority: "1.0" },
   { path: "/categorias", changefreq: "daily", priority: "0.8" },
+  { path: "/black-friday", changefreq: "daily", priority: "0.8" },
   { path: "/blog", changefreq: "daily", priority: "0.7" },
   { path: "/sobre-nosotros", changefreq: "monthly", priority: "0.5" },
   { path: "/contacto", changefreq: "yearly", priority: "0.3" },

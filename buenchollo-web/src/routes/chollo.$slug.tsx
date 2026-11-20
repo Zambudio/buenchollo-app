@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { dealsService, favoritesApi, type DealDetailData } from "@/services/api/deals";
 import { Layout } from "@/components/layout/Layout";
 import { DealCard, type DealCardData } from "@/features/deals/components/DealCard";
-import { useMyVotes } from "@/features/deals/hooks/useMyVotes";
 import { Comments } from "@/features/deals/components/Comments";
 import { RecommendedAlertsBlock } from "@/features/alerts/components/RecommendedAlertsBlock";
 import { ShareDialog } from "@/features/deals/components/ShareBox";
@@ -104,7 +103,6 @@ function DealDetail() {
   const [thumbApi, setThumbApi] = useState<CarouselApi>();
   const [thumbCanPrev, setThumbCanPrev] = useState(false);
   const [thumbCanNext, setThumbCanNext] = useState(false);
-  const relatedVotes = useMyVotes(related.map((d) => d.id));
 
   useEffect(() => {
     if (!relatedApi) return;
@@ -686,11 +684,11 @@ function DealDetail() {
               >
                 {isExpired ? (
                   <>
-                    VER PRECIO ACTUAL EN LA TIENDA <ExternalLink className="size-4" />
+                    Ver precio actual en la tienda <ExternalLink className="size-4" />
                   </>
                 ) : (
                   <>
-                    IR A LA OFERTA <ExternalLink className="size-4" />
+                    Ir a la oferta <ExternalLink className="size-4" />
                   </>
                 )}
               </a>
@@ -806,7 +804,7 @@ function DealDetail() {
               <CarouselContent>
                 {related.map((d) => (
                   <CarouselItem key={d.id} className="basis-[85%] sm:basis-1/2 lg:basis-1/4">
-                    <DealCard deal={d} myVote={relatedVotes[d.id]} />
+                    <DealCard deal={d} />
                   </CarouselItem>
                 ))}
               </CarouselContent>

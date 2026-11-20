@@ -9,6 +9,7 @@ from types import SimpleNamespace
 import pytest
 
 from app.modules.catalog.domain.offer_rules import Observation
+from app.modules.catalog.domain.price_history import PriceObservation
 from app.modules.products.domain.entities import ProductPreview
 from app.modules.products.infrastructure.amazon_client import MAX_ITEMS_PER_REQUEST
 from app.modules.scheduled_tasks.application.price_check_handler import ListingCheck, PriceCheckHandler
@@ -70,6 +71,10 @@ class FakeCatalogRepo:
         self.pairs = pairs or []
         self.purged: list[str] = []
         self.deleted_ids = deleted_ids or []
+        self.recorded: list = []
+
+    async def record_prices(self, observations):
+        self.recorded.extend(observations)
 
     async def get_checkable(self):
         return self.pairs
@@ -348,3 +353,51 @@ async def test_tras_avisar_una_bajada_volver_al_precio_normal_no_termina_la_ofer
     deal = _deal(offer_price=Decimal("100"), admin_notified_price=Decimal("90"))
     applied = await _handler().apply([ListingCheck(_listing(), deal, _obs("100"))], CONFIG, NOW)
     assert applied == [] and deal.status == "active"
+
+
+# --- histórico de precios ---
+
+
+@pytest.mark.asyncio
+async def test_apunta_el_precio_observado_en_el_historico():
+    repo = FakeCatalogRepo()
+    listing = _listing(store_id="store-1")
+    await _handler(repo=repo).apply(
+        [ListingCheck(listing, _deal(), _obs("97", reference="130", discount=25))], CONFIG, NOW
+    )
+    assert repo.recorded == [
+        PriceObservation(
+            listing_id="listing-1", product_id="product-1", store_id="store-1",
+            price=Decimal("97"), reference_price=Decimal("130"), in_stock=True,
+            source="price_check", observed_at=NOW,
+        )
+    ]
+
+
+@pytest.mark.asyncio
+async def test_listing_sin_deal_tambien_alimenta_el_historico():
+    repo = FakeCatalogRepo()
+    await _handler(repo=repo).apply([ListingCheck(_listing(), None, _obs("80"))], CONFIG, NOW)
+    assert [r.price for r in repo.recorded] == [Decimal("80")]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "observation",
+    [None, _obs(None, found=False, in_stock=False), _obs(None), _obs("49.99", in_stock=False)],
+    ids=["lote_fallido", "no_encontrado", "sin_precio", "agotado"],
+)
+async def test_no_apunta_sin_precio_comprable(observation):
+    repo = FakeCatalogRepo()
+    await _handler(repo=repo).apply([ListingCheck(_listing(), _deal(), observation)], CONFIG, NOW)
+    assert repo.recorded == []
+
+
+@pytest.mark.asyncio
+async def test_no_apunta_si_el_listing_se_purga():
+    repo = FakeCatalogRepo()
+    listing = _listing(unavailable_since=NOW - timedelta(days=40))
+    await _handler(repo=repo).apply(
+        [ListingCheck(listing, _deal(), _obs(None, found=False, in_stock=False))], CONFIG, NOW
+    )
+    assert repo.purged == ["listing-1"] and repo.recorded == []

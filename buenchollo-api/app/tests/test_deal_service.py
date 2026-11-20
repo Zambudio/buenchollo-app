@@ -394,3 +394,35 @@ async def test_reactivar_conserva_los_datos_de_oferta_que_vienen_en_el_alta():
     assert existing.expires_at == "2026-12-31T23:59:00Z"
     assert existing.coupon_code == "NUEVO5"
     assert existing.previous_price == 120.0
+
+
+@pytest.mark.asyncio
+async def test_reactivar_deal_con_listing_apunta_el_precio_en_el_historico():
+    _, repo, _ = _build_service()
+    existing = _expired_existing(listing_id="listing-1")
+    repo.find_by_external_id = AsyncMock(return_value=existing)
+    repo.reload = AsyncMock(return_value=existing)
+    catalog = MagicMock()
+    catalog.link_new_deal = AsyncMock()
+    catalog.record_deal_price = AsyncMock()
+    service = DealService(repo, None, catalog)
+
+    await service.create_deal({"title": "X", "current_price": 5.0, "external_id": "B0DABC1234"}, "user-1")
+
+    catalog.link_new_deal.assert_not_awaited()
+    catalog.record_deal_price.assert_awaited_once_with(existing)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("payload", "recorded"), [({"current_price": 79.0}, True), ({"title": "Otro"}, False)])
+async def test_editar_precio_apunta_en_el_historico(payload, recorded):
+    _, repo, _ = _build_service()
+    deal = _stub_deal(listing_id="listing-1", product_id="product-1")
+    repo.get_by_id = AsyncMock(return_value=deal)
+    catalog = MagicMock()
+    catalog.record_deal_price = AsyncMock()
+    service = DealService(repo, None, catalog)
+
+    await service.update_deal(deal.id, payload)
+
+    assert catalog.record_deal_price.await_count == (1 if recorded else 0)

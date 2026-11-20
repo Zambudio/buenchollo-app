@@ -27,7 +27,7 @@ que las comprobaciones del administrador distorsionen los datos.
    debe usar `https://buenchollotech.com/telegram` para el enlace general hacia la web, sin cambiar
    el enlace de compra del producto.
    *Ampliación (2026-11-20)*: `/whatsapp` hace lo mismo con `utm_source=whatsapp` y la fuente
-   `whatsapp` se cuenta aparte (CHECK de `analytics_events.source`, migración `20261120120000`).
+   `whatsapp` se cuenta aparte (CHECK de `analytics_events.source`, migración `20261120130000`).
    La versión WhatsApp de cada publicación enlaza a `https://buenchollotech.com/whatsapp`.
 5. Contabilizar el contador público del blog una vez por navegador, artículo y día mediante una
    tabla de unicidad; conservar todos los pageviews para el análisis interno.

@@ -1,8 +1,15 @@
 import { SITE_FAQ } from "@/lib/seo/site-content";
+import type { FaqItem } from "@/lib/seo/schema";
 
 /** Preguntas frecuentes visibles. Son las mismas del JSON-LD `FAQPage`: los
  *  buscadores y asistentes de IA solo deben citar lo que el usuario ve. */
-export function SiteFaq({ headingLevel = "h2" }: { headingLevel?: "h2" | "h3" }) {
+export function SiteFaq({
+  headingLevel = "h2",
+  items = SITE_FAQ,
+}: {
+  headingLevel?: "h2" | "h3";
+  items?: FaqItem[];
+}) {
   const Heading = headingLevel;
   return (
     <section aria-labelledby="site-faq-heading" className="mt-12 border-t border-surface-700 pt-8">
@@ -10,7 +17,7 @@ export function SiteFaq({ headingLevel = "h2" }: { headingLevel?: "h2" | "h3" })
         Preguntas frecuentes
       </Heading>
       <div className="space-y-2">
-        {SITE_FAQ.map((item) => (
+        {items.map((item) => (
           <details
             key={item.question}
             className="group bg-surface-800 border border-surface-700 rounded-lg px-4 py-3"
