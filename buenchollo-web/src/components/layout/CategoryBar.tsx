@@ -1,6 +1,7 @@
-import { TELEGRAM_URL } from "@/lib/site";
+import { TELEGRAM_URL, WHATSAPP_URL } from "@/lib/site";
 import { Link } from "@tanstack/react-router";
-import { ArrowUpRight, Compass, House, Newspaper, Send, Trophy } from "lucide-react";
+import { Compass, House, Newspaper, Send, Trophy } from "lucide-react";
+import { WhatsAppIcon } from "./WhatsAppIcon";
 
 const LINKS = [
   { label: "Inicio", to: "/" as const, icon: House },
@@ -29,17 +30,26 @@ export function CategoryBar() {
             </Link>
           ))}
         </div>
-        <a
-          href={TELEGRAM_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="site-nav-telegram flex items-center gap-1.5 my-2 text-xs sm:text-sm font-semibold px-3 sm:px-3.5 py-1.5 transition-colors shrink-0"
-        >
-          <Send className="size-3.5" />
-          <span className="sm:hidden">Telegram</span>
-          <span className="hidden sm:inline">Telegram</span>
-          <ArrowUpRight className="hidden sm:block size-3.5" />
-        </a>
+        <div className="flex items-center gap-2 shrink-0">
+          <a
+            href={TELEGRAM_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="site-nav-channel flex items-center gap-1.5 my-2 text-xs sm:text-sm font-semibold px-3 sm:px-3.5 py-1.5 transition-colors"
+          >
+            <Send className="size-3.5" aria-hidden="true" />
+            Telegram
+          </a>
+          <a
+            href={WHATSAPP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="site-nav-channel flex items-center gap-1.5 my-2 text-xs sm:text-sm font-semibold px-3 sm:px-3.5 py-1.5 transition-colors"
+          >
+            <WhatsAppIcon className="size-3.5" />
+            WhatsApp
+          </a>
+        </div>
       </div>
     </nav>
   );
