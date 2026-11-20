@@ -28,6 +28,8 @@ export interface TelegramGenerateResponse {
   suggested_categories: string[];
   /** Copy escrito por la IA; null si no se pidió o falló (se usó `description`). */
   ai_copy?: string | null;
+  /** El mismo post adaptado a WhatsApp (emojis estándar), para compartirlo a mano. */
+  whatsapp_text?: string;
 }
 
 export interface TelegramNotifyRequest {
@@ -38,6 +40,8 @@ export interface TelegramNotifyRequest {
   channel_id?: string;
   /** Chollo al que pertenece, para registrar la publicación. */
   deal_id?: string | null;
+  /** Versión WhatsApp editada; la API la envía también al canal Admin. */
+  whatsapp_text?: string | null;
   // Flujo rápido (checkbox al guardar)
   title?: string;
   current_price?: number;
@@ -101,7 +105,14 @@ export const telegramApi = {
     return apiClient.post<TelegramGenerateResponse>("/telegram/generate", data);
   },
 
-  notify(data: TelegramNotifyRequest): Promise<{ ok: boolean }> {
-    return apiClient.post<{ ok: boolean }>("/telegram/notify", data);
+  /** Convierte el post de Telegram (ya editado) a su versión de WhatsApp. */
+  whatsappText(text: string): Promise<string> {
+    return apiClient
+      .post<{ text: string }>("/telegram/whatsapp-text", { text })
+      .then((r) => r.text);
+  },
+
+  notify(data: TelegramNotifyRequest): Promise<{ ok: boolean; whatsapp_sent?: boolean }> {
+    return apiClient.post<{ ok: boolean; whatsapp_sent?: boolean }>("/telegram/notify", data);
   },
 };

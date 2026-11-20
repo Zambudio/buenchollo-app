@@ -3,6 +3,13 @@
 
 > Bitácora cronológica inversa. Estado operativo vigente: [`docs/project/11-current-state.md`](docs/project/11-current-state.md); pendientes abiertos: [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md).
 
+## 2026-11-20 · Versión WhatsApp de las publicaciones y fuente `whatsapp` en la analítica
+
+- WhatsApp no tiene API oficial para publicar en Canales: la publicación es semiautomática, sin riesgo de baneo. **Cada publicación de Telegram genera dos envíos**: el post de Telegram y, a continuación, su versión WhatsApp al **canal Admin** (nunca al público), en texto plano y con la misma imagen, lista para copiarla al Canal de WhatsApp desde el móvil. Aplica al panel (chollos y propuestas), a las publicaciones programadas y a la republicación de los avisos de bajada. Si el segundo envío falla, la publicación de Telegram no se ve afectada.
+- Plantilla WhatsApp (`telegram/application/whatsapp_formatter.py`): emojis estándar en lugar de los premium animados (🍄→🔥, 💶→🏷️, 💰→💸, 🛒→👉, ✏️→📝, ⚠️→⏰, 🔗→🌐), negritas `*...*` en título, precio y ahorro, sin hashtags y enlace visible a `https://buenchollotech.com/whatsapp`. Envío: `whatsapp_copy.send_whatsapp_copy` (si la foto falla reintenta solo con texto).
+- API: `POST /v1/telegram/generate` devuelve `whatsapp_text`; `POST /v1/telegram/whatsapp-text` convierte el texto editado; `POST /v1/telegram/notify` acepta `whatsapp_text` (la versión editada en el panel) y responde `whatsapp_sent`.
+- Panel: bloque «Versión WhatsApp» sincronizado con el texto de Telegram (deja de sincronizarse si se edita a mano), botones Copiar y Compartir (hoja de compartir del móvil con imagen y texto; si no, `wa.me`).
+- Analítica: ruta `/whatsapp` → `/?utm_source=whatsapp&utm_medium=social&utm_campaign=canal`, nueva fuente `whatsapp` (también referentes `wa.me`/`whatsapp.com`) y fila propia en el panel de analítica. Alembic `20261120130000` (CHECK de `analytics_events.source`).
 ## 2026-11-20 · Retención: tarjetas limpias, Black Friday e histórico de precios
 
 - **Contexto**: un informe de retención detectó el efecto «web vacía» (todas las tarjetas con 0°, 0 comentarios y «Votar producto» sin votos), ninguna página para el Black Friday (27-nov) y ningún dato de precio propio.

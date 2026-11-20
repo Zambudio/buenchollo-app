@@ -38,6 +38,16 @@ class TelegramGenerateResponse(BaseModel):
     suggested_categories: list[str]
     # Copy escrito por la IA (None si no se pidió o la IA falló y se usó `description`).
     ai_copy: str | None = None
+    # El mismo post adaptado a WhatsApp (emojis estándar), para compartirlo a mano.
+    whatsapp_text: str = ""
+
+
+class WhatsAppTextRequest(BaseModel):
+    text: str = Field(max_length=10_000)
+
+
+class WhatsAppTextResponse(BaseModel):
+    text: str
 
 
 # ── Categorías ────────────────────────────────────────────────────────────────
@@ -66,6 +76,8 @@ class TelegramNotifyRequest(BaseModel):
     # Chollo al que pertenece (para registrar la publicación). Si el panel no lo
     # conoce, se busca por el ASIN de `affiliate_url`.
     deal_id: UUID | None = None
+    # Versión WhatsApp editada en el panel; si falta se deriva de `text`.
+    whatsapp_text: str | None = Field(default=None, max_length=10_000)
 
     # Flujo rápido (legado, se usa si text es None)
     title: str | None = None

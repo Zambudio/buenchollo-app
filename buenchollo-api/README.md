@@ -161,8 +161,9 @@ Todos los routers de negocio cuelgan de **`/v1/`**. Sólo `/health` y
 | `PATCH` | `/v1/scheduled-deals/admin/{id}/schedule` | Reprogramar por drag & drop |
 | `DELETE` | `/v1/scheduled-deals/admin/{id}` | Borrar programación y conservar el borrador |
 | `POST` | `/v1/products/preview-from-url` | Autocompletado desde URL de Amazon (`provider`: motor de IA) |
-| `POST` | `/v1/telegram/generate` | Texto del post; con `ai_copy` + `provider` la IA reescribe la línea ✏️ |
-| `POST` | `/v1/telegram/notify` | Enviar al canal (queda registrado) |
+| `POST` | `/v1/telegram/generate` | Texto del post; con `ai_copy` + `provider` la IA reescribe la línea ✏️. Devuelve también `whatsapp_text` |
+| `POST` | `/v1/telegram/whatsapp-text` | Convierte un post de Telegram (ya editado) a su versión de WhatsApp |
+| `POST` | `/v1/telegram/notify` | Enviar al canal (queda registrado) y la versión WhatsApp al canal Admin (`whatsapp_sent`) |
 | `GET` | `/v1/telegram/publications?deal_id=` | Envíos registrados de un chollo |
 | `GET` | `/v1/admin/stats` | 6 KPIs en una query |
 | `GET` | `/v1/admin/audit` | Audit log paginado |

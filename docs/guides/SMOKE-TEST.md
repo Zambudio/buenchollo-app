@@ -90,6 +90,8 @@ Cada sección lleva el resultado esperado entre paréntesis. Marca con
 - [ ] Editar chollo → cambios visibles.
 - [ ] Borrar chollo → desaparece.
 - [ ] Promoción a Telegram desde panel funciona (TelegramPanel).
+- [ ] El panel muestra la «Versión WhatsApp» (sin 🍄, con la web visible), se actualiza al editar el texto de Telegram y «Copiar» / «Compartir en WhatsApp» funcionan (en móvil, imagen + texto). Al publicar llega al canal Admin un segundo mensaje con la versión WhatsApp (enlace `/whatsapp`).
+- [ ] `https://buenchollotech.com/whatsapp` redirige a la portada con `utm_source=whatsapp` y la visita sale como «WhatsApp» en Admin → Analítica.
 - [ ] `/admin/categorias`, `/admin/tiendas`, `/admin/usuarios` cargan.
 - [ ] Usuario no admin que accede a `/admin` → redirigido o 403.
 - [ ] Audit log: cada acción admin queda registrada con `user_id` y `request_id`

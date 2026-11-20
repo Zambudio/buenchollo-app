@@ -23,6 +23,7 @@ from decimal import Decimal
 from starlette.concurrency import run_in_threadpool
 
 from app.modules.telegram.application.post_generator import _format_price_es
+from app.modules.telegram.application.whatsapp_copy import send_whatsapp_copy
 from app.modules.telegram.application.reprice import reprice_publication_text
 
 logger = logging.getLogger(__name__)
@@ -163,6 +164,9 @@ class ReactivationNotifier:
         if not await self._call(self.bot.send_preformatted, text=text, entities=entities,
                                 image_url=image_url, chat_id=self.admin_chat_id):
             logger.warning("No se pudo enviar al canal Admin la publicación corregida de %s", deal.slug)
+            return
+        await self._call(send_whatsapp_copy, self.bot, chat_id=self.admin_chat_id,
+                         telegram_text=text, image_url=image_url)
 
     def _republishable(self, deal, publication, now: datetime) -> tuple[str, str | None]:
         """Última publicación registrada con el precio corregido; si no existe (o

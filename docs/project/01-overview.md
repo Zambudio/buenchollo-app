@@ -55,7 +55,7 @@ y comentan, y el sistema notifica vía **alertas personalizadas** y un
 | 📊 `analytics` | Analítica first-party, atribución por sesión, contador de blog y exclusión de dispositivo |
 | 📝 `blog` / `blog_comments` | Artículos, categorías editoriales, votos y comentarios del blog |
 | 📦 `products` | Preview de URL Amazon (extracción ASIN + enriquecimiento IA con copywriting y categorías) |
-| ✈️ `telegram` | Publicación al canal con formato emoji premium, hashtags IA y programación de deals |
+| ✈️ `telegram` | Publicación al canal con formato emoji premium, hashtags IA y programación de deals; versión para el Canal de WhatsApp (se comparte a mano) |
 | 🗓️ `scheduled_deals` | Cola y calendario de publicaciones web/Telegram, con edición previa integral |
 | ⏱️ `scheduled_tasks` | Motor registrable de mantenimiento y revisión periódica de precios |
 | 🏷️ `categories` | Catálogo maestro (admin) |
