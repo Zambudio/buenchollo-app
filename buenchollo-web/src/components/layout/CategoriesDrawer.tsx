@@ -1,6 +1,7 @@
-import { TELEGRAM_URL } from "@/lib/site";
+import { TELEGRAM_URL, WHATSAPP_URL } from "@/lib/site";
 import { logError } from "@/lib/logger";
 import { Link } from "@tanstack/react-router";
+import { WhatsAppIcon } from "./WhatsAppIcon";
 import { useEffect, useState } from "react";
 import {
   X,
@@ -257,6 +258,16 @@ export function CategoriesDrawer({ open, onClose }: Props) {
             >
               <Send className="size-4 text-cyan-glow shrink-0" />
               <span>Canal de Telegram</span>
+            </a>
+            <a
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={onClose}
+              className={itemCls}
+            >
+              <WhatsAppIcon className="size-4 text-cyan-glow shrink-0" />
+              <span>Canal de WhatsApp</span>
             </a>
           </div>
         </div>

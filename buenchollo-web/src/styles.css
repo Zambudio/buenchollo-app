@@ -291,12 +291,12 @@
 .site-nav-link[aria-current="page"] {
   background: color-mix(in srgb, var(--color-cyan-glow) 9%, transparent);
 }
-.site-nav-telegram {
+.site-nav-channel {
   color: var(--color-cyan-glow);
   border: 1px solid var(--color-surface-600);
   border-radius: 999px;
 }
-.site-nav-telegram:hover {
+.site-nav-channel:hover {
   background: color-mix(in srgb, var(--color-cyan-glow) 10%, transparent);
 }
 .eyebrow {
