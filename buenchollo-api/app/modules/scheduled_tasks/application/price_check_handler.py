@@ -1,7 +1,8 @@
 """Revisión diaria del catálogo (tarea programada `price_check`).
 
 Ya no borra chollos: por cada listing de Amazon consulta precio y stock,
-actualiza el listing y su deal principal y aplica las reglas de
+actualiza el listing y su deal principal, apunta el precio en el histórico
+(`price_history`) y aplica las reglas de
 `catalog.domain.offer_rules` (terminar / reactivar oferta). Solo elimina una
 tienda del producto tras `purge_after_days` sin disponibilidad confirmada; si
 el producto se queda sin tiendas, el repositorio elimina producto y deals.
@@ -23,6 +24,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from starlette.concurrency import run_in_threadpool
 
 from app.modules.catalog.domain.models import AVAILABLE
+from app.modules.catalog.domain.price_history import SOURCE_PRICE_CHECK
 from app.modules.catalog.domain.offer_rules import (
     Observation,
     OfferState,
@@ -171,6 +173,8 @@ class PriceCheckHandler:
             if outcome is None:
                 continue
             self._write_observation(check, outcome, now)
+            if not outcome.purge:
+                await self._record_history(check, now)
             if outcome.purge:
                 candidate = self._candidate(check, "purged", "listing_purged") if check.deal else None
                 deleted = await self.catalog_repo.purge_listing(check.listing)
@@ -183,6 +187,22 @@ class PriceCheckHandler:
                 self._write_transition(check, outcome, now)
                 applied.append(candidate)
         return applied
+
+    async def _record_history(self, check: ListingCheck, now: datetime) -> None:
+        """Apunta el precio observado en el histórico (solo si Amazon dio precio)."""
+        obs, listing = check.observation, check.listing
+        if not obs.found or obs.price is None:
+            return
+        await self.catalog_repo.record_price(
+            listing_id=listing.id,
+            product_id=listing.product_id,
+            store_id=getattr(listing, "store_id", None),
+            price=obs.price,
+            reference_price=obs.reference_price,
+            in_stock=obs.in_stock,
+            source=SOURCE_PRICE_CHECK,
+            now=now,
+        )
 
     def _outcome(self, check: ListingCheck, config: dict, now: datetime) -> _Outcome | None:
         obs = check.observation

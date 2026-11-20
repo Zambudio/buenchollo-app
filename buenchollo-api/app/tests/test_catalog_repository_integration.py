@@ -180,3 +180,50 @@ async def test_get_checkable_y_limpieza_ignoran_productos_sin_chollos(session):
     assert listing_id not in {listing.id for listing, _ in await repo.get_checkable()}
     assert await repo.delete_orphan_products() >= 1
     assert await session.get(Product, product_id) is None
+
+
+async def _history(session, listing_id):
+    from app.modules.catalog.domain.models import PriceHistory
+
+    rows = await session.execute(
+        select(PriceHistory).where(PriceHistory.listing_id == listing_id).order_by(PriceHistory.observed_on)
+    )
+    return list(rows.scalars())
+
+
+async def test_link_new_deal_apunta_el_precio_inicial_en_el_historico(session):
+    repo = CatalogRepository(session)
+    deal = await _add_linked(session, repo, _deal("B0REPOH001", price=42.0))
+    history = await _history(session, deal.listing_id)
+    assert [(float(h.price), h.source) for h in history] == [(42.0, "deal")]
+    assert history[0].product_id == deal.product_id
+
+
+async def test_record_price_un_punto_por_dia_con_el_minimo_del_dia(session):
+    repo = CatalogRepository(session)
+    deal = await _add_linked(session, repo, _deal("B0REPOH002", price=50.0))
+    later = datetime.now(timezone.utc) + timedelta(days=3)
+    args = dict(listing_id=deal.listing_id, product_id=deal.product_id, store_id=None,
+                reference_price=None, in_stock=True, source="price_check")
+    await repo.record_price(price=45, now=later, **args)
+    await repo.record_price(price=48, now=later, **args)
+    await session.flush()
+
+    history = await _history(session, deal.listing_id)
+    assert len(history) == 2
+    await session.refresh(history[-1])
+    assert (float(history[-1].price), float(history[-1].low_price)) == (48.0, 45.0)
+
+    points = await repo.price_points(deal.product_id)
+    assert [float(p.price) for p in points] == [50.0, 48.0]
+
+
+async def test_record_price_ignora_precios_nulos_o_cero(session):
+    repo = CatalogRepository(session)
+    deal = await _add_linked(session, repo, _deal("B0REPOH003", price=10.0))
+    args = dict(listing_id=deal.listing_id, product_id=deal.product_id, store_id=None,
+                reference_price=None, in_stock=None, source="price_check",
+                now=datetime.now(timezone.utc) + timedelta(days=1))
+    await repo.record_price(price=None, **args)
+    await repo.record_price(price=0, **args)
+    assert len(await _history(session, deal.listing_id)) == 1

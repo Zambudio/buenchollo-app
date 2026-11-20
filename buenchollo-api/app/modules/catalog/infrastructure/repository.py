@@ -1,4 +1,8 @@
+from datetime import date, datetime, timezone
+from decimal import Decimal
+
 from sqlalchemy import delete, exists, func, select, update
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -6,9 +10,11 @@ from app.modules.catalog.domain.models import (
     AVAILABLE,
     SOURCE_AMAZON,
     SOURCE_MANUAL,
+    PriceHistory,
     Product,
     ProductListing,
 )
+from app.modules.catalog.domain.price_history import SOURCE_DEAL, PricePoint, observed_day
 from app.modules.deals.domain.models import Deal
 from app.modules.stores.domain.models import Store
 
@@ -100,6 +106,78 @@ class CatalogRepository:
         deal.listing_id = listing.id
         deal.offer_price = deal.current_price
         await self.session.flush()
+        await self.record_deal_price(deal)
+
+    async def record_deal_price(self, deal: Deal, now: datetime | None = None) -> None:
+        """Apunta en el histórico el precio con el que se publica o edita un
+        chollo (sirve para cualquier tienda, no solo las que revisa el job)."""
+        if deal.listing_id is None or deal.product_id is None:
+            return
+        await self.record_price(
+            listing_id=deal.listing_id,
+            product_id=deal.product_id,
+            store_id=deal.store_id,
+            price=deal.current_price,
+            reference_price=deal.previous_price,
+            in_stock=None,
+            source=SOURCE_DEAL,
+            now=now or datetime.now(timezone.utc),
+        )
+
+    async def record_price(
+        self,
+        *,
+        listing_id: str,
+        product_id: str,
+        store_id: str | None,
+        price,
+        reference_price,
+        in_stock: bool | None,
+        source: str,
+        now: datetime,
+    ) -> None:
+        """Un punto por listing y día: si ya hay uno ese día se actualiza con la
+        última observación y se conserva el precio más bajo del día."""
+        if price is None or Decimal(str(price)) <= 0:
+            return
+        values = dict(
+            listing_id=listing_id,
+            product_id=product_id,
+            store_id=store_id,
+            observed_on=observed_day(now),
+            price=price,
+            low_price=price,
+            reference_price=reference_price,
+            in_stock=in_stock,
+            source=source,
+            observed_at=now,
+        )
+        stmt = pg_insert(PriceHistory).values(**values)
+        stmt = stmt.on_conflict_do_update(
+            constraint="uq_price_history_listing_day",
+            set_={
+                "price": stmt.excluded.price,
+                "low_price": func.least(PriceHistory.low_price, stmt.excluded.low_price),
+                "reference_price": func.coalesce(stmt.excluded.reference_price, PriceHistory.reference_price),
+                "in_stock": func.coalesce(stmt.excluded.in_stock, PriceHistory.in_stock),
+                "source": stmt.excluded.source,
+                "observed_at": stmt.excluded.observed_at,
+            },
+        )
+        await self.session.execute(stmt)
+
+    async def price_points(self, product_id: str, since: date | None = None) -> list[PricePoint]:
+        """Puntos del histórico de un producto (todas sus tiendas), del más antiguo al más reciente."""
+        query = select(
+            PriceHistory.observed_on, PriceHistory.price, PriceHistory.low_price, PriceHistory.store_id
+        ).where(PriceHistory.product_id == product_id)
+        if since is not None:
+            query = query.where(PriceHistory.observed_on >= since)
+        rows = await self.session.execute(query.order_by(PriceHistory.observed_on, PriceHistory.store_id))
+        return [
+            PricePoint(observed_on=r.observed_on, price=Decimal(r.price), low_price=Decimal(r.low_price), store_id=r.store_id)
+            for r in rows
+        ]
 
     async def purge_listing(self, listing: ProductListing) -> list[str]:
         """Quita la tienda del producto. Si el producto se queda sin tiendas se

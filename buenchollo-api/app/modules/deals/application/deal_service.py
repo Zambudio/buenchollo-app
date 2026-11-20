@@ -137,8 +137,11 @@ class DealService:
         if deal.status == "active":
             deal.published_at = datetime.now(timezone.utc)
         await self.repo.update(deal)
-        if self.catalog is not None and deal.listing_id is None:
-            await self.catalog.link_new_deal(deal)
+        if self.catalog is not None:
+            if deal.listing_id is None:
+                await self.catalog.link_new_deal(deal)  # ya apunta el precio en el histórico
+            else:
+                await self.catalog.record_deal_price(deal)
         logger.info("Chollo %s reactivado por un alta del mismo producto", deal.id)
         return await self.repo.reload(deal.id)
 
@@ -161,6 +164,8 @@ class DealService:
         if "affiliate_url" in update_data or "external_id" in update_data:
             deal.canonical_url = self._canonical_url_for(deal.affiliate_url, deal.external_id)
         await self.repo.update(deal)
+        if self.catalog is not None and "current_price" in update_data:
+            await self.catalog.record_deal_price(deal)
         updated = await self.repo.get_by_id(deal_id)
         # AlertMatcher comprueba internamente que status == "active".
         if updated and self.matcher:

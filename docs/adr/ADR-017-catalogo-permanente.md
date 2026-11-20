@@ -51,7 +51,8 @@ permanente y multitienda, con la sección de chollos y Telegram como capa rápid
    tiendas solo se quita esa; si no, se eliminan producto y deals. Un fallo de Amazon nunca
    cuenta como «no disponible».
 6. **Amazon:** solo se guarda el precio vigente, sobrescrito en cada revisión; ningún
-   histórico. La ficha solo presenta un precio como actual si tiene ≤ 24 h. Peticiones
+   histórico. *Sustituido el 2026-11-20 por [ADR-020](ADR-020-historico-de-precios.md):
+   ahora hay histórico propio en `price_history`.* La ficha solo presenta un precio como actual si tiene ≤ 24 h. Peticiones
    espaciadas (~1/s, la Creators API responde 429 si se excede), un reintento por lote y
    solo identificadores con formato ASIN (uno inválido hace que Amazon rechace el lote).
 7. **Alta de un producto conocido:** panel, propuesta aprobada o chollo programado
