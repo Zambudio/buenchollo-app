@@ -7,7 +7,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { dealsService, favoritesApi } from "@/services/api/deals";
 import { pageHead } from "@/lib/seo/head";
 import { HOME_H1, homeSeo } from "@/lib/seo/home";
-import { SiteFaq } from "@/features/home/SiteFaq";
 import { withFallback } from "@/lib/fallback";
 import { HomeSidebar } from "@/features/home/HomeSidebar";
 import { blogService } from "@/services/api/blog";
@@ -169,7 +168,6 @@ function HomePage() {
           </div>
           <HomeSidebar weeklyTop={data.weeklyTop} posts={data.posts} now={data.now} />
         </div>
-        {currentPage === 1 && <SiteFaq />}
       </div>
     </Layout>
   );

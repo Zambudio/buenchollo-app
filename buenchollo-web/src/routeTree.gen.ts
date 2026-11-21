@@ -25,6 +25,7 @@ import { Route as NotificacionesRouteImport } from './routes/notificaciones'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as PoliticaDeCookiesRouteImport } from './routes/politica-de-cookies'
 import { Route as PoliticaDePrivacidadRouteImport } from './routes/politica-de-privacidad'
+import { Route as PreguntasFrecuentesRouteImport } from './routes/preguntas-frecuentes'
 import { Route as PublicarRouteImport } from './routes/publicar'
 import { Route as RegistroRouteImport } from './routes/registro'
 import { Route as RestablecerPasswordRouteImport } from './routes/restablecer-password'
@@ -132,6 +133,11 @@ const PoliticaDeCookiesRoute = PoliticaDeCookiesRouteImport.update({
 const PoliticaDePrivacidadRoute = PoliticaDePrivacidadRouteImport.update({
   id: '/politica-de-privacidad',
   path: '/politica-de-privacidad',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PreguntasFrecuentesRoute = PreguntasFrecuentesRouteImport.update({
+  id: '/preguntas-frecuentes',
+  path: '/preguntas-frecuentes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PublicarRoute = PublicarRouteImport.update({
@@ -292,6 +298,7 @@ export interface FileRoutesByFullPath {
   '/perfil': typeof PerfilRoute
   '/politica-de-cookies': typeof PoliticaDeCookiesRoute
   '/politica-de-privacidad': typeof PoliticaDePrivacidadRoute
+  '/preguntas-frecuentes': typeof PreguntasFrecuentesRoute
   '/publicar': typeof PublicarRoute
   '/registro': typeof RegistroRoute
   '/restablecer-password': typeof RestablecerPasswordRoute
@@ -337,6 +344,7 @@ export interface FileRoutesByTo {
   '/perfil': typeof PerfilRoute
   '/politica-de-cookies': typeof PoliticaDeCookiesRoute
   '/politica-de-privacidad': typeof PoliticaDePrivacidadRoute
+  '/preguntas-frecuentes': typeof PreguntasFrecuentesRoute
   '/publicar': typeof PublicarRoute
   '/registro': typeof RegistroRoute
   '/restablecer-password': typeof RestablecerPasswordRoute
@@ -384,6 +392,7 @@ export interface FileRoutesById {
   '/perfil': typeof PerfilRoute
   '/politica-de-cookies': typeof PoliticaDeCookiesRoute
   '/politica-de-privacidad': typeof PoliticaDePrivacidadRoute
+  '/preguntas-frecuentes': typeof PreguntasFrecuentesRoute
   '/publicar': typeof PublicarRoute
   '/registro': typeof RegistroRoute
   '/restablecer-password': typeof RestablecerPasswordRoute
@@ -432,6 +441,7 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/politica-de-cookies'
     | '/politica-de-privacidad'
+    | '/preguntas-frecuentes'
     | '/publicar'
     | '/registro'
     | '/restablecer-password'
@@ -477,6 +487,7 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/politica-de-cookies'
     | '/politica-de-privacidad'
+    | '/preguntas-frecuentes'
     | '/publicar'
     | '/registro'
     | '/restablecer-password'
@@ -523,6 +534,7 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/politica-de-cookies'
     | '/politica-de-privacidad'
+    | '/preguntas-frecuentes'
     | '/publicar'
     | '/registro'
     | '/restablecer-password'
@@ -570,6 +582,7 @@ export interface RootRouteChildren {
   PerfilRoute: typeof PerfilRoute
   PoliticaDeCookiesRoute: typeof PoliticaDeCookiesRoute
   PoliticaDePrivacidadRoute: typeof PoliticaDePrivacidadRoute
+  PreguntasFrecuentesRoute: typeof PreguntasFrecuentesRoute
   PublicarRoute: typeof PublicarRoute
   RegistroRoute: typeof RegistroRoute
   RestablecerPasswordRoute: typeof RestablecerPasswordRoute
@@ -697,6 +710,13 @@ declare module '@tanstack/react-router' {
       path: '/politica-de-privacidad'
       fullPath: '/politica-de-privacidad'
       preLoaderRoute: typeof PoliticaDePrivacidadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/preguntas-frecuentes': {
+      id: '/preguntas-frecuentes'
+      path: '/preguntas-frecuentes'
+      fullPath: '/preguntas-frecuentes'
+      preLoaderRoute: typeof PreguntasFrecuentesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/publicar': {
@@ -961,6 +981,7 @@ const rootRouteChildren: RootRouteChildren = {
   PerfilRoute: PerfilRoute,
   PoliticaDeCookiesRoute: PoliticaDeCookiesRoute,
   PoliticaDePrivacidadRoute: PoliticaDePrivacidadRoute,
+  PreguntasFrecuentesRoute: PreguntasFrecuentesRoute,
   PublicarRoute: PublicarRoute,
   RegistroRoute: RegistroRoute,
   RestablecerPasswordRoute: RestablecerPasswordRoute,

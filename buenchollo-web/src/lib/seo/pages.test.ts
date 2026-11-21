@@ -19,7 +19,7 @@ describe("homeSeo", () => {
     const seo = homeSeo({ page: 1, deals });
     expect(seo.path).toBe("/");
     expect(seo.title).toContain("Chollos de tecnología hoy");
-    expect(types(seo.jsonLd)).toEqual(["Organization", "WebSite", "ItemList", "FAQPage"]);
+    expect(types(seo.jsonLd)).toEqual(["Organization", "WebSite", "ItemList"]);
     expect(HOME_H1).toContain("Chollos de tecnología");
   });
 
@@ -169,5 +169,14 @@ describe("schema", () => {
     const faq = faqSchema(SITE_FAQ);
     expect(faq.mainEntity).toHaveLength(SITE_FAQ.length);
     expect(faq.mainEntity[0]!.acceptedAnswer.text).toBe(SITE_FAQ[0]!.answer);
+  });
+});
+
+describe("faqPageSeo", () => {
+  it("publica las preguntas visibles como FAQPage en su propia página", async () => {
+    const { faqPageSeo, FAQ_PATH } = await import("./faq");
+    const seo = faqPageSeo();
+    expect(seo.path).toBe(FAQ_PATH);
+    expect(types(seo.jsonLd)).toEqual(["CollectionPage", "BreadcrumbList", "FAQPage"]);
   });
 });

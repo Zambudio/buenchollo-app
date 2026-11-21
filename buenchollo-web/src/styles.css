@@ -1823,3 +1823,44 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+
+/* Ficha del chollo en el móvil. Fuera de las capas a propósito: tiene que
+   ganar a las utilidades de Tailwind del marcado (gap-8, mb-3, mb-4…). El
+   resumen se «aplana» (display: contents) para intercalar la galería; sin hueco
+   de rejilla, cada bloque marca su espacio: compacto arriba (título, precio,
+   tienda, fin de oferta y botón van juntos) y más aire después. */
+@media (max-width: 878px) {
+  .product-layout {
+    gap: 0;
+  }
+  .product-summary > *,
+  .product-info > * {
+    margin-top: 0;
+    margin-bottom: 16px;
+  }
+  .product-summary > .product-title {
+    margin-bottom: 10px;
+    font-size: 1.6rem;
+    line-height: 1.2;
+  }
+  .product-summary > .product-price-block {
+    margin-bottom: 8px;
+  }
+  .product-summary > .product-price-freshness {
+    margin-bottom: 8px;
+  }
+  .product-summary > .product-availability {
+    margin-bottom: 2px;
+  }
+  .product-summary > .product-countdown {
+    margin-top: 12px;
+    margin-bottom: 14px;
+  }
+  .product-summary > .product-cta {
+    margin-top: 4px;
+    margin-bottom: 20px;
+  }
+  .product-gallery {
+    margin-bottom: 16px;
+  }
+}

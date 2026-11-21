@@ -42,4 +42,34 @@ export const SITE_FAQ: FaqItem[] = [
     answer:
       "Sí. Con una cuenta puedes proponer un chollo desde «Publicar chollo»; el equipo lo revisa antes de publicarlo.",
   },
+  {
+    question: "¿Qué son «Los chollos de la semana»?",
+    answer:
+      "Cada domingo publicamos en Telegram y WhatsApp los 10 chollos activos con más descuento de los últimos 7 días, con una imagen de todos ellos. En la portada, el «Top de la semana» muestra ese mismo ranking en directo.",
+  },
+  {
+    question: "¿Cómo veo los chollos nuevos desde mi última visita?",
+    answer:
+      "Sin necesidad de cuenta: junto a «Inicio» te indicamos cuántos chollos se han publicado desde tu última visita, y en la portada una línea marca dónde empiezan los que ya viste.",
+  },
+  {
+    question: "¿Qué significa el porcentaje de descuento?",
+    answer:
+      "Es la rebaja del precio actual respecto al precio anterior o de referencia que indica la tienda. Lo mostramos junto al precio anterior para que puedas comparar.",
+  },
+  {
+    question: "¿Puede cambiar el precio de un chollo?",
+    answer:
+      "Sí. Las tiendas cambian sus precios en cualquier momento y el precio válido es siempre el que ves en la tienda al comprar. Comprobamos los precios a diario y, si una oferta termina, la ficha lo indica.",
+  },
+  {
+    question: "¿Dónde se compra el producto?",
+    answer:
+      "Siempre en la tienda que ofrece el chollo, por ejemplo Amazon. BuenChollo Tech no vende productos ni gestiona pedidos, envíos, garantías ni devoluciones: de todo eso se encarga la tienda.",
+  },
+  {
+    question: "¿Tenéis canal de WhatsApp?",
+    answer:
+      "Sí. Además del canal de Telegram, puedes seguir nuestro Canal de WhatsApp. Los enlaces a los dos están en la barra superior de la web.",
+  },
 ];

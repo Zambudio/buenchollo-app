@@ -72,6 +72,11 @@ export function Footer() {
               </Link>
             </li>
             <li>
+              <Link to="/preguntas-frecuentes" className="hover:text-foreground">
+                Preguntas frecuentes
+              </Link>
+            </li>
+            <li>
               <Link to="/contacto" className="hover:text-foreground">
                 Contacto
               </Link>
