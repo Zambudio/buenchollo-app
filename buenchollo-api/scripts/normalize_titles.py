@@ -21,7 +21,9 @@ import asyncio
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent) if "__file__" in globals() else "/app")
+# Por stdin (`python -`) __file__ vale "<stdin>": entonces la app está en /app.
+_FILE = globals().get("__file__", "<stdin>")
+sys.path.insert(0, "/app" if _FILE == "<stdin>" else str(Path(_FILE).resolve().parent.parent))
 
 from sqlalchemy import select  # noqa: E402
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine  # noqa: E402

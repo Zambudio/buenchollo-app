@@ -40,6 +40,12 @@ from app.modules.deals.domain.titles import is_shouting, needs_manual_review, no
         ("Playstation Mando inalámbrico DualSense®: Colección Hyperpop", "Playstation Mando inalámbrico DualSense: Colección Hyperpop"),
         ("  Monitor   gaming  27\"  ", "Monitor gaming 27\""),
         ("CABLE DE CARGA PARA EL MÓVIL Y LA TABLETA", "Cable de Carga para el Móvil y la Tableta"),
+        (
+            "AURICULARES BLUETOOTH USB-C CON IA PARA NIÑOS",
+            "Auriculares Bluetooth USB-C con IA para Niños",
+        ),
+        ("FUNDA PARA IPHONE 15 PRO MAX COLOR NEGRO", "Funda para iPhone 15 Pro Max Color Negro"),
+        ("REPETIDOR WIFI PARA CASA CON ENCHUFE", "Repetidor WiFi para Casa con Enchufe"),
     ],
 )
 def test_normaliza_titulos_reales(raw, expected):

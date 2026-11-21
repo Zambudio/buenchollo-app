@@ -4,6 +4,7 @@ import {
   VISIT_KEY,
   nextVisitState,
   resetVisitBaselineCache,
+  touchVisit,
   visitBaseline,
 } from "./lastVisit";
 
@@ -54,6 +55,24 @@ describe("visitBaseline", () => {
     );
     const saved = JSON.parse(window.localStorage.getItem(VISIT_KEY) ?? "{}");
     expect(saved.lastSeen).toBe("2026-11-21T10:00:00.000Z");
+  });
+
+  it("navegar mantiene viva la visita y no cambia la referencia", () => {
+    window.localStorage.setItem(
+      VISIT_KEY,
+      JSON.stringify({
+        baseline: "2026-11-19T08:00:00.000Z",
+        lastSeen: "2026-11-21T10:00:00.000Z",
+      }),
+    );
+    // Navegación a los 25 min y a los 50 min: nunca hay 30 min seguidos sin actividad.
+    touchVisit(at("2026-11-21T10:25:00Z"));
+    touchVisit(at("2026-11-21T10:50:00Z"));
+    const saved = JSON.parse(window.localStorage.getItem(VISIT_KEY) ?? "{}");
+    expect(saved).toEqual({
+      baseline: "2026-11-19T08:00:00.000Z",
+      lastSeen: "2026-11-21T10:50:00.000Z",
+    });
   });
 
   it("ignora un valor guardado corrupto", () => {

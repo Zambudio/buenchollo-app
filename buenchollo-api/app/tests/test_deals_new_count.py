@@ -3,7 +3,8 @@
 from datetime import datetime, timedelta, timezone
 
 from app.main import app
-from app.modules.deals.api.router import NEW_COUNT_MAX_DAYS, get_deal_repository
+from app.modules.deals.api.router import get_deal_repository
+from app.modules.deals.application.new_deals import NEW_COUNT_MAX_DAYS
 
 
 class FakeRepo:

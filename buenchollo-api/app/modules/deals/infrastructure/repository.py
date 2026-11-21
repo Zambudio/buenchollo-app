@@ -81,7 +81,18 @@ class DealRepository:
         result = await self.session.execute(
             self._base_deal_query()
             .where(Deal.status == "active", Deal.published_at >= since, Deal.current_price > 0)
-            .order_by(Deal.discount_percentage.desc().nullslast(), Deal.published_at.desc(), Deal.id.desc())
+            .order_by(
+                # El mismo descuento que muestra el resumen: el guardado o, si
+                # falta, el calculado con el precio anterior.
+                func.coalesce(
+                    Deal.discount_percentage,
+                    func.round(100 * (1 - Deal.current_price / func.nullif(Deal.previous_price, 0))),
+                )
+                .desc()
+                .nullslast(),
+                Deal.published_at.desc(),
+                Deal.id.desc(),
+            )
             .limit(limit)
         )
         return list(result.scalars().all())

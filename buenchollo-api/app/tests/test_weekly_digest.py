@@ -1,6 +1,6 @@
 """«Los chollos de la semana»: texto, versión WhatsApp y envío al canal Admin."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from decimal import Decimal
 from types import SimpleNamespace
 
@@ -27,13 +27,21 @@ def _deal(i: int, **overrides):
     return SimpleNamespace(**base)
 
 
-def test_week_label():
-    assert wd.week_label(NOW) == "16–22 de noviembre"
-    assert wd.week_label(datetime(2026, 12, 2, 12, tzinfo=timezone.utc)) == "26 de noviembre – 2 de diciembre"
+WINDOW = wd.week_window(NOW)
+
+
+def test_semana_de_siete_dias_naturales_en_hora_de_madrid():
+    assert wd.week_label(WINDOW) == "16–22 de noviembre"
+    assert WINDOW.since.isoformat() == "2026-11-16T00:00:00+01:00"
+    other = wd.week_window(datetime(2026, 12, 2, 12, tzinfo=timezone.utc))
+    assert wd.week_label(other) == "26 de noviembre – 2 de diciembre"
 
 
 def test_texto_con_cabecera_chollos_numerados_y_enlace_a_la_web():
-    text = wd.build_weekly_digest([_deal(1), _deal(2, previous_price=None, discount_percentage=None)], NOW, "https://bct.test")
+    text, count = wd.build_weekly_digest(
+        [_deal(1), _deal(2, previous_price=None, discount_percentage=None)], WINDOW, "https://bct.test"
+    )
+    assert count == 2
     assert text.startswith("📅 Los chollos de la semana · 16–22 de noviembre\n\n")
     assert "🍄 1. Producto 1\n💶 99,99 € (antes 149,99 €) | -33 %\n🛒 https://www.amazon.es/dp/B000000001?tag=x\n" in text
     assert "🍄 2. Producto 2\n💶 99,99 €\n" in text
@@ -41,29 +49,31 @@ def test_texto_con_cabecera_chollos_numerados_y_enlace_a_la_web():
 
 
 def test_sin_enlace_de_afiliado_usa_la_ficha_de_la_web():
-    text = wd.build_weekly_digest([_deal(1, affiliate_url=None)], NOW, "https://bct.test/")
+    text, _ = wd.build_weekly_digest([_deal(1, affiliate_url=None)], WINDOW, "https://bct.test/")
     assert "🛒 https://bct.test/chollo/producto-1" in text
 
 
 def test_calcula_el_descuento_si_falta():
-    text = wd.build_weekly_digest([_deal(1, discount_percentage=None, current_price=75, previous_price=100)], NOW, "x")
+    text, _ = wd.build_weekly_digest(
+        [_deal(1, discount_percentage=None, current_price=75, previous_price=100)], WINDOW, "x"
+    )
     assert "| -25 %" in text
 
 
 def test_sin_chollos_no_hay_resumen():
-    assert wd.build_weekly_digest([], NOW, "x") is None
+    assert wd.build_weekly_digest([], WINDOW, "x") == (None, 0)
 
 
 def test_corta_la_lista_si_no_cabe_en_un_mensaje():
     deals = [_deal(i, title="Título muy largo " * 20) for i in range(10)]
-    text = wd.build_weekly_digest(deals, NOW, "x")
+    text, count = wd.build_weekly_digest(deals, WINDOW, "x")
     assert len(text) <= wd.MAX_TEXT_LENGTH
     assert text.rstrip().endswith(f"🔗 {LINK_TEXT}")
-    assert text.count("🍄") < 10
+    assert count == text.count("🍄") < 10
 
 
 def test_version_whatsapp_con_cabecera_en_negrita():
-    text = wd.build_weekly_digest([_deal(1)], NOW, "x")
+    text, _ = wd.build_weekly_digest([_deal(1)], WINDOW, "x")
     wa = wd.whatsapp_version(text)
     assert wa.startswith("*📅 Los chollos de la semana · 16–22 de noviembre*\n")
     assert "🔥 *1. Producto 1*" in wa
@@ -92,16 +102,38 @@ class FakeBot:
         return self.ok
 
 
-def _service(deals, bot, chat="-100admin"):
-    return wd.WeeklyDigestService(FakeRepo(deals), bot, lambda t: [{"type": "bold"}], chat, "https://bct.test")
+class FakeGuard:
+    """Bloquea los chollos cuyo enlace de afiliado esté en `blocked`."""
+
+    def __init__(self, blocked=()):
+        self.blocked = set(blocked)
+
+    async def blockers_for(self, data):
+        return ["affiliate_program"] if data["affiliate_url"] in self.blocked else []
+
+
+def _service(deals, bot, chat="-100admin", guard=None):
+    return wd.WeeklyDigestService(
+        FakeRepo(deals), bot, lambda t: [{"type": "bold"}], chat, "https://bct.test", guard=guard
+    )
 
 
 @pytest.mark.asyncio
-async def test_preview_pide_la_ultima_semana_y_top_10():
-    service = _service([_deal(1)], FakeBot())
+async def test_preview_pide_la_semana_y_publica_10_como_mucho():
+    service = _service([_deal(i) for i in range(1, 15)], FakeBot())
     digest = await service.preview(NOW)
-    assert service.deal_repo.args == (NOW - timedelta(days=7), 10)
-    assert digest.count == 1 and digest.telegram_text and digest.whatsapp_text
+    assert service.deal_repo.args == (WINDOW.since, 25)
+    assert digest.count == 10 and digest.telegram_text and digest.whatsapp_text
+
+
+@pytest.mark.asyncio
+async def test_omite_los_chollos_de_redes_que_ya_no_cumplen_las_reglas():
+    awin_url = "https://www.awin1.com/cread.php?awinmid=1"
+    awin = _deal(1, affiliate_url=awin_url, data_source="awin")
+    service = _service([awin, _deal(2)], FakeBot(), guard=FakeGuard(blocked={awin_url}))
+    digest = await service.preview(NOW)
+    assert digest.count == 1
+    assert "Producto 1" not in digest.telegram_text and "1. Producto 2" in digest.telegram_text
 
 
 @pytest.mark.asyncio

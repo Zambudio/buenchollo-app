@@ -28,9 +28,9 @@ export function CategoryBar() {
             >
               {Icon && <Icon className="size-4" aria-hidden="true" />}
               {label}
+              {to === "/" && <NewDealsBadge />}
             </Link>
           ))}
-          <NewDealsBadge />
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <a

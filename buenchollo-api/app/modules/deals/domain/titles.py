@@ -37,11 +37,25 @@ _REPLACEMENTS = {
 # Siglas y marcas que se escriben en mayúsculas y no hay que «bajar».
 _KEEP_UPPER = frozenset(
     """
-    AKG AMD ANC AOC ASUS ATX BT CPU DDR DJI DLSS DP DVD EU FHD GB GPS GPU HD HDD HDMI HDR HP HQ II III
+    AI AKG AMD ANC AOC ASUS ATX BT CPU DDR DJI DLSS DP DVD EU FHD GB GPS GPU HD HDD HDMI HDR HP HQ IA II III
     IPS IV JBL KB LCD LED LG MB MSI NAS NFC NVME NZXT OLED PC PCIE PD PS QHD QLED QNED RAM RGB ROG
     SATA SD SSD TB TCL TKL TUF TV TWS UHD UK USA USB VA VR WQHD XL XXL
     """.split()
 )
+
+# Marcas y términos con grafía propia (se escriben así aunque llegaran en mayúsculas).
+_BRAND_CASE = {
+    "AIRPODS": "AirPods",
+    "IMAC": "iMac",
+    "IPAD": "iPad",
+    "IPHONE": "iPhone",
+    "MACBOOK": "MacBook",
+    "PLAYSTATION": "PlayStation",
+    "TIKTOK": "TikTok",
+    "WIFI": "WiFi",
+    "XBOX": "Xbox",
+    "YOUTUBE": "YouTube",
+}
 
 # Palabras cortas que van en minúscula en un título (salvo al principio).
 _SMALL_WORDS = frozenset("a al con de del e el en la las los o para por sin u y".split())
@@ -70,7 +84,17 @@ def _clean_characters(title: str) -> str:
 
 def _is_shouted(word: str) -> bool:
     letters = word.replace("-", "")
-    return bool(_SHOUTED.match(word)) and letters.isupper() and word.upper() not in _KEEP_UPPER
+    return (
+        bool(_SHOUTED.match(word))
+        and letters.isupper()
+        and not any(part in _KEEP_UPPER for part in word.split("-"))
+    )
+
+
+def _soften_part(part: str) -> str:
+    if part in _KEEP_UPPER or len(part) < 2:
+        return part
+    return _BRAND_CASE.get(part, part[:1].upper() + part[1:].lower())
 
 
 def is_shouting(title: str) -> bool:
@@ -93,9 +117,7 @@ def _soften(word: str, first: bool) -> str:
     lower = core.lower()
     if not first and lower in _SMALL_WORDS:  # «DE», «Y», «LA» (también de una letra)
         return word.replace(core, lower, 1)
-    if len(letters) < 2 or core.upper() in _KEEP_UPPER:
-        return word
-    fixed = "-".join(part[:1].upper() + part[1:].lower() for part in core.split("-"))
+    fixed = "-".join(_soften_part(part) for part in core.split("-"))
     return word.replace(core, fixed, 1)
 
 

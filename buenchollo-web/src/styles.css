@@ -1719,19 +1719,15 @@
 .new-deals-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  margin-left: 0.25rem;
-  padding: 0.2rem 0.6rem;
+  gap: 0.3rem;
+  margin-left: 0.15rem;
+  padding: 0.1rem 0.5rem;
   border-radius: 999px;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 700;
   color: var(--cyan-glow);
   background: color-mix(in srgb, var(--cyan-glow) 12%, transparent);
   border: 1px solid color-mix(in srgb, var(--cyan-glow) 40%, transparent);
-  transition: background 0.2s;
-}
-.new-deals-badge:hover {
-  background: color-mix(in srgb, var(--cyan-glow) 22%, transparent);
 }
 .new-deals-badge-dot {
   width: 0.45rem;

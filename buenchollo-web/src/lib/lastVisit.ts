@@ -1,8 +1,9 @@
 /**
  * «Novedades desde tu última visita», sin cuenta: el navegador recuerda cuándo
- * estuvo aquí por última vez. Una visita termina tras 30 minutos sin cargar
- * ninguna página; entonces la referencia pasa a ser el final de la anterior.
- * Funciona igual con varias pestañas abiertas (todo vive en localStorage).
+ * estuvo aquí por última vez. Una visita termina tras 30 minutos sin actividad
+ * (cargar o navegar entre páginas, o volver a la pestaña; ver `touchVisit`);
+ * entonces la referencia pasa a ser el final de la anterior. Funciona igual
+ * con varias pestañas abiertas (todo vive en localStorage).
  */
 import { readLocal, writeLocal } from "./storage";
 
@@ -57,6 +58,15 @@ export function visitBaseline(now: Date = new Date()): Date | null {
   writeLocal(VISIT_KEY, JSON.stringify(next));
   cached = next.baseline ? new Date(next.baseline) : null;
   return cached;
+}
+
+/**
+ * Mantiene viva la visita: se llama al navegar dentro de la web y al volver a
+ * la pestaña. No cambia la referencia ya calculada para esta carga de página.
+ */
+export function touchVisit(now: Date = new Date()): void {
+  if (typeof window === "undefined") return;
+  writeLocal(VISIT_KEY, JSON.stringify(nextVisitState(readState(), now)));
 }
 
 /** Solo para tests. */
