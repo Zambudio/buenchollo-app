@@ -1455,11 +1455,11 @@
   overflow: hidden;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 1.6rem;
+  gap: 1.1rem;
   align-items: center;
-  padding: 1.6rem 1.1rem 1.5rem;
+  padding: 1.1rem 1.1rem 1.15rem;
   margin-bottom: 1.5rem;
-  border-radius: 22px;
+  border-radius: 18px;
   color: var(--ns-text);
   border: 1px solid rgb(255 43 214 / 0.35);
   box-shadow:
@@ -1476,8 +1476,8 @@
 .neon-sign::after {
   content: "";
   position: absolute;
-  inset: auto 8% -40px;
-  height: 80px;
+  inset: auto 8% -30px;
+  height: 56px;
   z-index: -1;
   background: radial-gradient(ellipse at center, rgb(255 43 214 / 0.28), transparent 70%);
   filter: blur(14px);
@@ -1490,8 +1490,8 @@
   display: inline-flex;
   align-items: center;
   gap: 0.55rem;
-  margin: 0 0 0.9rem;
-  font: 700 0.72rem var(--font-mono);
+  margin: 0 0 0.55rem;
+  font: 700 0.68rem var(--font-mono);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ns-cyan-core);
@@ -1509,16 +1509,17 @@
 }
 .neon-sign-title {
   display: grid;
-  gap: 0.55rem;
+  gap: 0.35rem;
   margin: 0;
 }
 /* La pieza firma: el nombre del evento en tubo de neón. */
 .neon-sign-wordmark {
   font-family: "Monoton", var(--font-display, sans-serif);
   font-weight: 400;
-  font-size: clamp(2.15rem, 8.4vw, 5.4rem);
-  line-height: 1;
+  font-size: clamp(1.7rem, 6.2vw, 3.1rem);
+  line-height: 1.05;
   letter-spacing: 0.02em;
+  word-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--ns-magenta-core);
   text-shadow:
@@ -1532,7 +1533,7 @@
     ns-buzz 7s 2s steps(1, end) infinite;
 }
 .neon-sign-year {
-  font-size: clamp(1.05rem, 2.2vw, 1.45rem);
+  font-size: clamp(0.95rem, 1.7vw, 1.15rem);
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--ns-cyan-core);
@@ -1541,10 +1542,10 @@
     0 0 18px rgb(34 211 238 / 0.45);
 }
 .neon-sign-text {
-  margin: 0.8rem 0 0;
-  max-width: 34rem;
+  margin: 0.45rem 0 0;
+  max-width: 40rem;
   color: var(--ns-muted);
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   line-height: 1.5;
 }
 .neon-sign-cta {
@@ -1552,8 +1553,8 @@
   align-items: center;
   justify-content: center;
   gap: 0.6rem;
-  margin-top: 1.25rem;
-  padding: 0.8rem 1.35rem;
+  margin-top: 0.85rem;
+  padding: 0.55rem 1.15rem;
   border: 2px solid var(--ns-magenta);
   border-radius: 999px;
   color: #fff;
@@ -1583,7 +1584,7 @@
 }
 .neon-sign-clock {
   display: grid;
-  gap: 0.7rem;
+  gap: 0.5rem;
   justify-items: start;
 }
 .neon-sign-clock-label {
@@ -1596,13 +1597,13 @@
 .neon-countdown {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: clamp(0.4rem, 1.6vw, 0.8rem);
+  gap: clamp(0.4rem, 1.4vw, 0.6rem);
   width: 100%;
-  max-width: 26rem;
+  max-width: 19rem;
 }
 .neon-countdown-cell {
   display: grid;
-  gap: 0.45rem;
+  gap: 0.3rem;
   justify-items: center;
 }
 .neon-countdown-tube {
@@ -1611,13 +1612,13 @@
   display: grid;
   place-items: center;
   width: 100%;
-  aspect-ratio: 1 / 1.08;
+  aspect-ratio: 1 / 1;
   border: 2px solid var(--tube);
-  border-radius: 14px;
+  border-radius: 12px;
   background: rgb(0 0 0 / 0.55);
   font-family: var(--font-mono);
   font-weight: 800;
-  font-size: clamp(1.55rem, 5.2vw, 2.6rem);
+  font-size: clamp(1.3rem, 4.4vw, 1.85rem);
   font-variant-numeric: tabular-nums;
   line-height: 1;
   color: var(--tube-core);
@@ -1681,12 +1682,15 @@
 }
 @media (min-width: 900px) {
   .neon-sign {
-    grid-template-columns: minmax(0, 1fr) minmax(19rem, 25rem);
-    gap: 2.5rem;
-    padding: 2rem 2.4rem;
+    grid-template-columns: minmax(0, 1fr) minmax(16rem, 19rem);
+    gap: 2rem;
+    padding: 1.15rem 1.8rem;
   }
   .neon-sign-clock {
     justify-items: stretch;
+  }
+  .neon-sign-wordmark {
+    white-space: nowrap;
   }
 }
 @media (max-width: 639px) {
