@@ -1,5 +1,6 @@
-"""Collage del resumen semanal: una imagen con la foto de cada chollo y su
-número del top, para identificar de un vistazo los enlaces del mensaje.
+"""Collage del resumen semanal: una imagen vertical (1080×1620, se ve grande en
+el móvil) con la foto, el número del top, el precio, el descuento y el título
+de cada chollo, para identificar de un vistazo los enlaces del mensaje.
 
 Usa Space Grotesk, la tipografía de la web (`app/assets/fonts`). Si no se
 pudiera cargar, cae a la fuente escalable de Pillow (sin «€» ni «–»).
@@ -7,7 +8,6 @@ pudiera cargar, cae a la fuente escalable de Pillow (sin «€» ni «–»).
 
 import io
 import logging
-import math
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -16,11 +16,12 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 logger = logging.getLogger(__name__)
 
-WIDTH, HEIGHT = 1600, 900
-HEADER = 128
+WIDTH, HEIGHT = 1080, 1620
+HEADER = 150
 PADDING = 26
-GAP = 20
-COLUMNS = 5
+GAP = 16
+COLUMNS = 2
+ROWS = 5
 
 # Colores de la marca (tema oscuro de la web).
 _NIGHT = (7, 10, 20)
@@ -42,6 +43,7 @@ class CollageItem:
     image: bytes | None
     price: str
     discount: int | None
+    title: str = ""
 
 
 _FONT_PATH = Path(__file__).resolve().parents[3] / "assets" / "fonts" / "SpaceGrotesk-latin.woff2"
@@ -79,70 +81,84 @@ def _text_center(draw: ImageDraw.ImageDraw, center: tuple[float, float], text: s
     draw.text(center, text, font=font, fill=fill, anchor="mm", stroke_width=stroke, stroke_fill=fill)
 
 
+def _wrap(draw: ImageDraw.ImageDraw, text: str, font, width: float, max_lines: int) -> list[str]:
+    """Parte el texto en líneas que caben en `width`; la última acaba en «…» si sobra."""
+    lines: list[str] = []
+    words = text.split()
+    while words and len(lines) < max_lines:
+        line = words.pop(0)
+        while words and draw.textlength(f"{line} {words[0]}", font=font) <= width:
+            line = f"{line} {words.pop(0)}"
+        lines.append(line)
+    if words and lines:
+        last = lines[-1]
+        while last and draw.textlength(f"{last}…", font=font) > width:
+            last = last[:-1].rstrip()
+        lines[-1] = f"{last}…"
+    return lines
+
+
 def build_collage(items: list[CollageItem], title: str, subtitle: str) -> bytes:
-    """JPEG 1600×900: cabecera y una cuadrícula de hasta 5 columnas."""
+    """JPEG 1080×1620: cabecera y 2 columnas × 5 filas de tarjetas horizontales."""
     canvas = Image.new("RGB", (WIDTH, HEIGHT), _NIGHT)
     draw = ImageDraw.Draw(canvas)
 
     # Cabecera
-    draw.text((PADDING + 2, 30), title, font=_font(54), fill=(255, 255, 255))
-    draw.text((PADDING + 4, 92), subtitle, font=_font(28, "Medium"), fill=_CYAN)
+    draw.text((PADDING + 2, 34), title, font=_font(62), fill=(255, 255, 255))
+    draw.text((PADDING + 4, 104), subtitle, font=_font(30, "Medium"), fill=_CYAN)
     draw.line([(PADDING, HEADER), (WIDTH - PADDING, HEADER)], fill=_RULE, width=2)
 
     if not items:
         return _jpeg(canvas)
 
-    columns = min(COLUMNS, len(items))
-    rows = math.ceil(len(items) / COLUMNS)
-    grid_top = HEADER + PADDING
-    tile_w = (WIDTH - 2 * PADDING - (columns - 1) * GAP) // columns
-    tile_h = (HEIGHT - grid_top - PADDING - (rows - 1) * GAP) // rows
-    price_band = 78
+    grid_top = HEADER + 22
+    tile_w = (WIDTH - 2 * PADDING - (COLUMNS - 1) * GAP) // COLUMNS
+    tile_h = (HEIGHT - grid_top - PADDING - (ROWS - 1) * GAP) // ROWS
+    inner = 14
+    photo_side = min(tile_h - 2 * inner, 200)
 
-    price_font, discount_font, number_font = _font(34), _font(27), _font(40)
-    for index, item in enumerate(items):
+    discount_font, number_font, title_font = _font(26), _font(34), _font(21, "Medium")
+    for index, item in enumerate(items[: COLUMNS * ROWS]):
         row, col = divmod(index, COLUMNS)
         x = PADDING + col * (tile_w + GAP)
         y = grid_top + row * (tile_h + GAP)
         draw.rounded_rectangle([x, y, x + tile_w, y + tile_h], radius=18, fill=_CARD)
 
-        # Foto del producto, centrada en la zona superior.
-        box = (tile_w - 36, tile_h - price_band - 30)
+        # Foto del producto a la izquierda, centrada en su hueco.
+        box = (photo_side, photo_side)
+        bx0, by0 = x + inner, y + (tile_h - photo_side) // 2
         photo = _product_image(item.image, box)
         if photo is not None:
-            px = x + (tile_w - photo.width) // 2
-            py = y + 18 + (box[1] - photo.height) // 2
-            canvas.paste(photo, (px, py), photo)
+            canvas.paste(photo, (bx0 + (photo_side - photo.width) // 2, by0 + (photo_side - photo.height) // 2), photo)
         else:
-            _text_center(draw, (x + tile_w / 2, y + 18 + box[1] / 2), "Sin imagen", _font(26, "Medium"), _MUTED)
+            _text_center(draw, (bx0 + photo_side / 2, by0 + photo_side / 2), "Sin imagen", _font(22, "Medium"), _MUTED)
 
-        # Precio y descuento
-        band_y = y + tile_h - price_band
-        draw.line([(x + 16, band_y), (x + tile_w - 16, band_y)], fill=(226, 232, 240), width=2)
-        center_y = band_y + price_band / 2
+        # Precio, descuento y título a la derecha.
+        tx = bx0 + photo_side + 16
+        tw = x + tile_w - inner - tx
+        size = 40
+        price_font = _font(size)
+        while size > 24 and draw.textlength(item.price, font=price_font) > tw:
+            size -= 2
+            price_font = _font(size)
+        ty = y + 30
+        draw.text((tx, ty), item.price, font=price_font, fill=_TEXT, anchor="lt")
+        ty += size + 12
         if item.discount:
             chip = f"-{item.discount} %"
-            chip_w = draw.textlength(chip, font=discount_font) + 22
-            # Precios largos (12.999,00 €): se reduce la letra hasta que quepan en la tarjeta.
-            size = 34
-            font = price_font
-            while size > 20 and draw.textlength(item.price, font=font) + 12 + chip_w > tile_w - 32:
-                size -= 2
-                font = _font(size)
-            price_w = draw.textlength(item.price, font=font)
-            start = x + (tile_w - (price_w + 12 + chip_w)) / 2
-            draw.text((start, center_y), item.price, font=font, fill=_TEXT, anchor="lm")
-            cx = start + price_w + 12
-            draw.rounded_rectangle([cx, center_y - 21, cx + chip_w, center_y + 21], radius=10, fill=_ORANGE)
-            _text_center(draw, (cx + chip_w / 2, center_y), chip, discount_font, (255, 255, 255))
-        else:
-            _text_center(draw, (x + tile_w / 2, center_y), item.price, price_font, _TEXT)
+            chip_w = draw.textlength(chip, font=discount_font) + 20
+            draw.rounded_rectangle([tx, ty, tx + chip_w, ty + 36], radius=10, fill=_ORANGE)
+            _text_center(draw, (tx + chip_w / 2, ty + 18), chip, discount_font, (255, 255, 255))
+            ty += 36 + 14
+        for line in _wrap(draw, item.title, title_font, tw, 3):
+            draw.text((tx, ty), line, font=title_font, fill=_MUTED, anchor="lt")
+            ty += 27
 
-        # Número del top
-        r = 34
-        bx, by = x + 14 + r, y + 14 + r
-        draw.ellipse([bx - r, by - r, bx + r, by + r], fill=_BADGE, outline=_CYAN, width=4)
-        _text_center(draw, (bx, by), str(item.position), number_font, (255, 255, 255))
+        # Número del top, sobre la esquina de la foto.
+        r = 28
+        cx, cy = x + 10 + r, y + 10 + r
+        draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=_BADGE, outline=_CYAN, width=4)
+        _text_center(draw, (cx, cy), str(item.position), number_font, (255, 255, 255))
 
     return _jpeg(canvas)
 

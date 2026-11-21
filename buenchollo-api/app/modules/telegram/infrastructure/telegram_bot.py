@@ -181,15 +181,25 @@ class TelegramBot:
         downloaded = self._download_image(url)
         return downloaded[0] if downloaded else None
 
-    def send_photo_bytes(self, content: bytes, chat_id: str | None = None, caption: str = "") -> bool:
-        """Envía una imagen generada en memoria (p. ej. el collage del resumen semanal)."""
+    def send_photo_bytes(
+        self,
+        content: bytes,
+        chat_id: str | None = None,
+        caption: str = "",
+        entities: list[dict] | None = None,
+    ) -> bool:
+        """Envía una imagen generada en memoria (p. ej. el collage del resumen
+        semanal), con pie de foto y entidades (emojis premium, negrita, enlaces)."""
         self.last_error = None
         self.last_message_id = None
         chat = self._resolve_chat(chat_id)
+        data: dict[str, Any] = {"chat_id": chat, "caption": caption}
+        if entities:
+            data["caption_entities"] = json.dumps(entities)
         try:
             resp = requests.post(
                 self._url("sendPhoto"),
-                data={"chat_id": chat, "caption": caption},
+                data=data,
                 files={"photo": ("collage.jpg", content, "image/jpeg")},
                 timeout=30,
             )

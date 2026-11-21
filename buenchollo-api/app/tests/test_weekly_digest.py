@@ -111,9 +111,9 @@ class FakeBot:
     def download_image(self, url):
         return _png() if url else None
 
-    def send_photo_bytes(self, content, chat_id=None, caption=""):
+    def send_photo_bytes(self, content, chat_id=None, caption="", entities=None):
         self.photos.append(content)
-        self.sent.append({"photo": True, "chat_id": chat_id})
+        self.sent.append({"photo": True, "chat_id": chat_id, "caption": caption, "entities": entities})
         return self.photo_ok
 
     def send_preformatted(self, *, text, entities, image_url=None, chat_id=None):
@@ -156,24 +156,27 @@ async def test_omite_los_chollos_de_redes_que_ya_no_cumplen_las_reglas():
 
 
 @pytest.mark.asyncio
-async def test_envia_collage_y_las_dos_versiones_al_canal_admin():
+async def test_publica_collage_con_el_texto_en_un_mensaje_y_luego_whatsapp():
     bot = FakeBot()
     service = _service([_deal(1, image_url="https://img/1.jpg"), _deal(2, image_url=None)], bot)
-    assert service.send(await service.preview(NOW)) is True
-    assert [m["chat_id"] for m in bot.sent] == ["-100admin"] * 3
-    assert bot.sent[0] == {"photo": True, "chat_id": "-100admin"}
-    assert bot.sent[1]["entities"] == [{"type": "bold"}]
-    assert bot.sent[2]["entities"] == [] and bot.sent[2]["text"].startswith("*📅")
+    digest = await service.preview(NOW)
+    assert service.send(digest) is True
+    assert [m["chat_id"] for m in bot.sent] == ["-100admin"] * 2
+    assert bot.sent[0]["photo"] and bot.sent[0]["caption"] == digest.telegram_text
+    assert bot.sent[0]["entities"] == [{"type": "bold"}]
+    assert bot.sent[1]["entities"] == [] and bot.sent[1]["text"].startswith("*📅")
     with Image.open(io.BytesIO(bot.photos[0])) as collage:
-        assert (collage.format, collage.size) == ("JPEG", (1600, 900))
+        assert (collage.format, collage.size) == ("JPEG", (1080, 1620))
 
 
 @pytest.mark.asyncio
-async def test_si_falla_el_collage_el_texto_sale_igual():
+async def test_si_falla_la_foto_sale_el_texto_completo_sin_imagen():
     bot = FakeBot(photo_ok=False)
     service = _service([_deal(1, image_url="https://img/1.jpg")], bot)
-    assert service.send(await service.preview(NOW)) is True
-    assert len([m for m in bot.sent if "text" in m]) == 2
+    digest = await service.preview(NOW)
+    assert service.send(digest) is True
+    texts = [m["text"] for m in bot.sent if "text" in m]
+    assert texts[0] == digest.full_text and len(texts) == 2
 
 
 @pytest.mark.asyncio
@@ -186,6 +189,26 @@ async def test_si_no_se_puede_generar_el_collage_el_texto_sale_igual(monkeypatch
     service = _service([_deal(1, image_url="https://img/1.jpg")], bot)
     assert service.send(await service.preview(NOW)) is True
     assert bot.photos == [] and len(bot.sent) == 2
+
+
+def test_pie_de_foto_completo_si_cabe():
+    caption, count = wd.build_caption([_deal(1), _deal(2)], WINDOW, "x")
+    full, _ = wd.build_weekly_digest([_deal(1), _deal(2)], WINDOW, "x")
+    assert caption == full and count == 2
+
+
+def test_pie_de_foto_se_recorta_hasta_1024_con_los_10_enlaces_enteros():
+    deals = [
+        _deal(i, title="Auriculares inalámbricos con cancelación de ruido y estuche de carga " * 2,
+              affiliate_url=f"https://link.amazon/B0{i:08d}X")
+        for i in range(10)
+    ]
+    caption, count = wd.build_caption(deals, WINDOW, "x")
+    assert count == 10
+    assert len(caption.rstrip().encode("utf-16-le")) // 2 <= wd.CAPTION_LIMIT
+    for i in range(10):
+        assert f"https://link.amazon/B0{i:08d}X" in caption
+    assert "…" in caption and caption.rstrip().endswith(f"🔗 {LINK_TEXT}")
 
 
 def test_las_fotos_lentas_dejan_hueco_sin_retrasar_el_resumen(monkeypatch):
@@ -207,9 +230,9 @@ def test_las_fotos_lentas_dejan_hueco_sin_retrasar_el_resumen(monkeypatch):
 def test_precios_largos_caben_en_la_tarjeta():
     from app.modules.telegram.application.weekly_collage import CollageItem, build_collage
 
-    items = [CollageItem(i, None, "12.999,00 €", 42) for i in range(1, 11)]
+    items = [CollageItem(i, None, "12.999,00 €", 42, "Televisor OLED de 77 pulgadas " * 3) for i in range(1, 11)]
     with Image.open(io.BytesIO(build_collage(items, "T", "S"))) as img:
-        assert img.size == (1600, 900)
+        assert img.size == (1080, 1620)
 
 
 def test_imagenes_gigantes_se_omiten():
@@ -226,7 +249,7 @@ def test_collage_con_fuente_de_la_web_y_huecos_sin_imagen():
     assert "Space Grotesk" in " ".join(_font(30).getname())
     items = [CollageItem(i, _png() if i % 2 else None, "1.299,00 €", 42 if i % 3 else None) for i in range(1, 8)]
     with Image.open(io.BytesIO(build_collage(items, "LOS CHOLLOS DE LA SEMANA", "16–22 de noviembre"))) as img:
-        assert img.size == (1600, 900)
+        assert img.size == (1080, 1620)
 
 
 @pytest.mark.asyncio
@@ -240,7 +263,7 @@ async def test_sin_chollos_o_sin_canal_no_envia():
 
 @pytest.mark.asyncio
 async def test_si_telegram_rechaza_no_envia_la_version_whatsapp():
-    bot = FakeBot(ok=False)
+    bot = FakeBot(ok=False, photo_ok=False)
     service = _service([_deal(1)], bot)
     assert service.send(await service.preview(NOW)) is False
     assert len([m for m in bot.sent if "text" in m]) == 1
