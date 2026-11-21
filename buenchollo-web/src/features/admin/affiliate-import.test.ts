@@ -1,6 +1,7 @@
 // FIXTURES sintéticas: ningún dato corresponde a un producto real.
 import { describe, expect, it } from "vitest";
 import {
+  applyEnrichment,
   applyImport,
   buildDealPayload,
   emptyForm,
@@ -111,5 +112,64 @@ describe("applyImport", () => {
     expect(payload.affiliate_program_id).toBe("prog-1");
     const amazon = buildDealPayload({ ...emptyForm(), title: "x", current_price: "10" }, null);
     expect("data_source" in amazon).toBe(false);
+  });
+});
+
+describe("applyEnrichment (IA tras importar de una red)", () => {
+  const ai = {
+    short_description: "Monitor QHD rápido para jugar",
+    long_description: "**QHD** a 165 Hz",
+    telegram_text: "Monitor QHD 165 Hz a precio de chollo",
+    category_id: "cat-1",
+    subcategory_id: "sub-1",
+  };
+
+  it("rellena descripción corta, larga, post y categoría que vienen del catálogo o vacíos", () => {
+    const imported = applyImport(emptyForm(), result()).form;
+    const out = applyEnrichment(imported, ai, { category_id: "cat-1", subcategory_id: "sub-1" });
+    expect(out.short_description).toBe(ai.short_description);
+    expect(out.description).toBe(ai.long_description);
+    expect(out.telegram_text).toBe(ai.telegram_text);
+    expect(out.category_id).toBe("cat-1");
+    expect(out.subcategory_id).toBe("sub-1");
+  });
+
+  it("no pisa lo que el editor ya ha escrito a mano", () => {
+    const imported = applyImport(emptyForm(), result()).form;
+    const edited = {
+      ...imported,
+      short_description: "Mi frase",
+      description: "Mi texto",
+      telegram_text: "Mi post",
+      category_id: "cat-9",
+      subcategory_id: "sub-9",
+    };
+    const out = applyEnrichment(edited, ai, { category_id: "cat-1", subcategory_id: "sub-1" });
+    expect(out.short_description).toBe("Mi frase");
+    expect(out.description).toBe("Mi texto");
+    expect(out.telegram_text).toBe("Mi post");
+    expect(out.category_id).toBe("cat-9");
+    expect(out.subcategory_id).toBe("sub-9");
+  });
+
+  it("una respuesta sin la forma esperada no rompe el formulario", () => {
+    const imported = applyImport(emptyForm(), result()).form;
+    const out = applyEnrichment(imported, [] as unknown as typeof ai, {
+      category_id: "",
+      subcategory_id: "",
+    });
+    expect(out).toEqual(imported);
+  });
+
+  it("ignora textos vacíos de la IA", () => {
+    const imported = applyImport(emptyForm(), result()).form;
+    const out = applyEnrichment(
+      imported,
+      { ...ai, short_description: "", long_description: "  " },
+      { category_id: "", subcategory_id: "" },
+    );
+    expect(out.short_description).toBe("Panel IPS QHD.");
+    expect(out.description).toBe("Panel IPS QHD 165 Hz.");
+    expect(out.category_id).toBe("");
   });
 });

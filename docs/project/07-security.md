@@ -40,6 +40,7 @@ es falsificable (ver recomendación en `08-deployment.md`).
 | `POST /v1/deals/{id}/vote` | 30/min |
 | `POST /v1/deals/{id}/click` | 60/min |
 | `POST /v1/products/preview-from-url` | 10/min (además exige `require_admin` desde 2026-11-07) |
+| `POST /v1/products/enrich` | 10/min y `require_admin` (IA para importaciones de Awin / Tradedoubler, desde 2026-11-21) |
 | `POST /v1/telegram/publish` | 5/min |
 | `POST /v1/submissions/check-link` | 20/min **por usuario** |
 | `POST /v1/submissions` | 10/min **por usuario** |

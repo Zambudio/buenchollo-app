@@ -105,6 +105,9 @@
   aprobación de las tiendas y contrastar con datos reales las columnas del feed Awin, la
   respuesta de la Products API (`offers`, `priceHistory`, `productImage`) y la zona horaria
   de `last_updated`. Procedimiento: `docs/guides/AFFILIATE-ACTIVATION-RUNBOOK.md`.
+  **2026-11-21: Awin validado en vivo con Coolmod** (feed CSV de 12.995 filas sin errores:
+  título, precio, envío, stock, marca, EAN, imagen y categoría bien leídos; el feed no trae
+  PVP). Queda Tradedoubler (MediaMarkt sigue sin feeds) para cerrarla.
 - **TD-47 — Deeplink de Tradedoubler sin ficha no documentado públicamente.** Solo se usa
   si el propietario lo confirma por programa («Deeplink verificado»).
 - **TD-48 — Programar publicaciones exige ASIN.** Los chollos de redes no se pueden

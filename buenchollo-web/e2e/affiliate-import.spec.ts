@@ -134,6 +134,17 @@ async function setup(page: Page) {
       return route.fulfill({ json: { scheduled_at: "2026-11-09T10:00:00Z" } });
     }
     if (path.endsWith("/telegram/categories")) return route.fulfill({ json: { categories: [] } });
+    if (path.endsWith("/products/enrich")) {
+      return route.fulfill({
+        json: {
+          short_description: "FIXTURE Monitor QHD rápido para jugar",
+          long_description: "**FIXTURE** panel QHD a 165 Hz",
+          telegram_text: "FIXTURE monitor QHD a buen precio",
+          category_id: null,
+          subcategory_id: null,
+        },
+      });
+    }
     return route.fulfill({ json: [] });
   });
   await page.route(`${supabaseUrl}/auth/v1/user`, (route) =>
@@ -180,6 +191,13 @@ for (const viewport of [
     await expect(panel.getByText("Producto importado", { exact: true }).first()).toBeVisible();
     await expect(panel.getByText(/PVP recomendado del feed: 279.00/)).toBeVisible();
     await expect(page.getByPlaceholder("Título *")).toHaveValue("FIXTURE Monitor 27 QHD");
+    // La IA propone la descripción corta y la larga a partir del catálogo.
+    await expect(page.getByPlaceholder("Descripción corta")).toHaveValue(
+      "FIXTURE Monitor QHD rápido para jugar",
+    );
+    await expect(page.getByPlaceholder("Descripción larga")).toHaveValue(
+      "**FIXTURE** panel QHD a 165 Hz",
+    );
     await expect(page.getByPlaceholder("Precio anterior")).toHaveValue("");
     await expect(page.getByLabel("Estado", { exact: true })).toHaveValue("draft");
     await expect(page.getByText("Solo se puede guardar como borrador:")).toBeVisible();
