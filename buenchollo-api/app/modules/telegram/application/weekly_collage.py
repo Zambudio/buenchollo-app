@@ -1,6 +1,10 @@
-"""Collage del resumen semanal: una imagen vertical (1080×1620, se ve grande en
-el móvil) con la foto, el número del top, el precio, el descuento y el título
-de cada chollo, para identificar de un vistazo los enlaces del mensaje.
+"""Collage del resumen semanal: una imagen vertical con la foto, el número del
+top, el precio, el descuento y el título de cada chollo, para identificar de un
+vistazo los enlaces del mensaje.
+
+Proporción 5:6 (1080×1296): Telegram recorta en el chat las fotos más altas
+que ~3:4, y una 2:3 obligaba a abrirla para verla entera. Así se ve completa
+y a todo el ancho del mensaje.
 
 Usa Space Grotesk, la tipografía de la web (`app/assets/fonts`). Si no se
 pudiera cargar, cae a la fuente escalable de Pillow (sin «€» ni «–»).
@@ -16,10 +20,10 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 logger = logging.getLogger(__name__)
 
-WIDTH, HEIGHT = 1080, 1620
-HEADER = 150
-PADDING = 26
-GAP = 16
+WIDTH, HEIGHT = 1080, 1296
+HEADER = 118
+PADDING = 22
+GAP = 12
 COLUMNS = 2
 ROWS = 5
 
@@ -103,25 +107,25 @@ def _wrap(draw: ImageDraw.ImageDraw, text: str, font, width: float, max_lines: i
 
 
 def build_collage(items: list[CollageItem], title: str, subtitle: str) -> bytes:
-    """JPEG 1080×1620: cabecera y 2 columnas × 5 filas de tarjetas horizontales."""
+    """JPEG 1080×1296: cabecera y 2 columnas × 5 filas de tarjetas horizontales."""
     canvas = Image.new("RGB", (WIDTH, HEIGHT), _NIGHT)
     draw = ImageDraw.Draw(canvas)
 
     # Cabecera
-    draw.text((PADDING + 2, 34), title, font=_font(62), fill=(255, 255, 255))
-    draw.text((PADDING + 4, 104), subtitle, font=_font(30, "Medium"), fill=_CYAN)
+    draw.text((PADDING + 2, 22), title, font=_font(56), fill=(255, 255, 255))
+    draw.text((PADDING + 4, 82), subtitle, font=_font(26, "Medium"), fill=_CYAN)
     draw.line([(PADDING, HEADER), (WIDTH - PADDING, HEADER)], fill=_RULE, width=2)
 
     if not items:
         return _jpeg(canvas)
 
-    grid_top = HEADER + 22
+    grid_top = HEADER + 16
     tile_w = (WIDTH - 2 * PADDING - (COLUMNS - 1) * GAP) // COLUMNS
     tile_h = (HEIGHT - grid_top - PADDING - (ROWS - 1) * GAP) // ROWS
-    inner = 14
-    photo_side = min(tile_h - 2 * inner, 200)
+    inner = 12
+    photo_side = tile_h - 2 * inner
 
-    discount_font, number_font, title_font = _font(26), _font(34), _font(21, "Medium")
+    discount_font, number_font, title_font = _font(25), _font(30), _font(21, "Medium")
     for index, item in enumerate(items[: COLUMNS * ROWS]):
         row, col = divmod(index, COLUMNS)
         x = PADDING + col * (tile_w + GAP)
@@ -140,27 +144,29 @@ def build_collage(items: list[CollageItem], title: str, subtitle: str) -> bytes:
         # Precio, descuento y título a la derecha.
         tx = bx0 + photo_side + 16
         tw = x + tile_w - inner - tx
+        # Precio y descuento en la misma línea (grandes); debajo, el título.
+        chip = f"-{item.discount} %" if item.discount else ""
+        chip_w = draw.textlength(chip, font=discount_font) + 18 if chip else 0
         size = 40
         price_font = _font(size)
-        while size > 24 and draw.textlength(item.price, font=price_font) > tw:
+        while size > 24 and draw.textlength(item.price, font=price_font) + (chip_w + 10 if chip else 0) > tw:
             size -= 2
             price_font = _font(size)
-        ty = y + 30
+        ty = y + 20
         draw.text((tx, ty), item.price, font=price_font, fill=_TEXT, anchor="lt")
-        ty += size + 12
-        if item.discount:
-            chip = f"-{item.discount} %"
-            chip_w = draw.textlength(chip, font=discount_font) + 20
-            draw.rounded_rectangle([tx, ty, tx + chip_w, ty + 36], radius=10, fill=_ORANGE)
-            _text_center(draw, (tx + chip_w / 2, ty + 18), chip, discount_font, (255, 255, 255))
-            ty += 36 + 14
+        if chip:
+            cx = tx + draw.textlength(item.price, font=price_font) + 10
+            cy = ty + size / 2 + 3
+            draw.rounded_rectangle([cx, cy - 17, cx + chip_w, cy + 17], radius=9, fill=_ORANGE)
+            _text_center(draw, (cx + chip_w / 2, cy), chip, discount_font, (255, 255, 255))
+        ty += size + 16
         for line in _wrap(draw, item.title, title_font, tw, 3):
             draw.text((tx, ty), line, font=title_font, fill=_MUTED, anchor="lt")
-            ty += 27
+            ty += 26
 
         # Número del top, sobre la esquina de la foto.
-        r = 28
-        cx, cy = x + 10 + r, y + 10 + r
+        r = 24
+        cx, cy = x + 8 + r, y + 8 + r
         draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=_BADGE, outline=_CYAN, width=4)
         _text_center(draw, (cx, cy), str(item.position), number_font, (255, 255, 255))
 
