@@ -1,7 +1,16 @@
 # PROJECT_STATUS — BuenCholloTech
-*Actualización de producción: 2026-11-20 — Retención (tarjetas limpias, portada sin pestañas, landing `/black-friday`), histórico de precios y versión WhatsApp de las publicaciones desplegados en web, API y scheduler (PR #88 y #89, merge `e735ab5`). Alembic `20261120130000`.*
+*Actualización de producción: 2026-11-21 — Rótulo de neón del Black Friday en portada y `/black-friday` y botón del Canal de WhatsApp en la navegación, desplegados en la web (PR #91, que incluye la #92; merge `3fe1ee2`). Solo web: la API y el scheduler no cambian. Alembic sigue en `20261120130000`.*
 
 > Bitácora cronológica inversa. Estado operativo vigente: [`docs/project/11-current-state.md`](docs/project/11-current-state.md); pendientes abiertos: [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md).
+
+## 2026-11-21 · Rótulo de neón del Black Friday
+
+- **Desplegado** (PR #91, que incluye la #92; merge `3fe1ee2`, 2026-11-21 00:04): CI de `main` en verde y Workers Builds en verde; solo cambia la web (Cloudflare Worker), sin tocar el NAS. Verificado: la portada y `/black-friday` sirven el rótulo (`neon-sign`) y `/black-friday` da 200.
+- **Qué es**: el hero plano de campaña pasa a ser un rótulo de neón de escaparate sobre pared de ladrillo, siempre oscuro (también en tema claro). «BLACK FRIDAY» en tubo magenta con encendido parpadeante al cargar y zumbido ocasional; cuenta atrás en tubos cian (días, horas, min y seg, los segundos en magenta) y CTA de neón. Respeta `prefers-reduced-motion`.
+- **Dónde**: portada (`h2`, enlace a la landing) y cabecera de `/black-friday` (`h1`, CTA de Telegram), ambos con `CampaignHero` (`src/features/campaigns/`), que acepta `headingLevel` y `cta`. Estilos `.neon-sign*` en `src/styles.css`.
+- **Cuenta atrás**: `CampaignCountdown` avanza cada segundo (antes cada 30 s) con `role="timer"` y el texto accesible de `formatCountdown`. En el servidor pinta guiones con la misma caja: sin saltos de diseño ni desajuste de hidratación. `countdownTo` (`src/lib/campaigns.ts`) devuelve también `seconds`.
+- **Dependencia nueva**: `@fontsource/monoton` 5.3.0 (fuente Monoton alojada en la propia web, solo el subconjunto latino, ~16 KB).
+- **Tests**: `campaigns.test.ts` cubre los segundos en `countdownTo`; tests, `tsc` y ESLint en verde; revisado en local en escritorio.
 
 ## 2026-11-20 · Versión WhatsApp de las publicaciones y fuente `whatsapp` en la analítica
 
@@ -11,6 +20,7 @@
 - Web: botón «WhatsApp» con su logo junto a «Telegram» en la barra de navegación (que pierde la flecha) y «Canal de WhatsApp» en el menú lateral; enlace en `WHATSAPP_URL` (`src/lib/site.ts`).
 - Panel: bloque «Versión WhatsApp» sincronizado con el texto de Telegram (deja de sincronizarse si se edita a mano), botones Copiar y Compartir (hoja de compartir del móvil con imagen y texto; si no, `wa.me`).
 - Analítica: ruta `/whatsapp` → `/?utm_source=whatsapp&utm_medium=social&utm_campaign=canal`, nueva fuente `whatsapp` (también referentes `wa.me`/`whatsapp.com`) y fila propia en el panel de analítica. Alembic `20261120130000` (CHECK de `analytics_events.source`).
+
 ## 2026-11-20 · Retención: tarjetas limpias, Black Friday e histórico de precios
 
 - **Desplegado** (PR #88, que incluye la #89; merge `e735ab5`): CI en verde (12/12), backup previo con `db-backup` (`bct-prod-20261120T223044Z.dump`, 1,7 MB, 72 tablas con datos), share en `main` por fast-forward y `docker restart buenchollo-api buenchollo-scheduler`, sin rebuild porque no cambian dependencias. Alembic aplicó `20261120120000` (`price_history`) y `20261120130000` (fuente `whatsapp`). Verificado: `/health` y `/health/ready` dan 200, la semilla cargó 354 puntos (uno por listing con precio), `GET /v1/catalog/products/{id}/price-history` responde, y la portada muestra el hero de Black Friday sin pestañas ni votos en las tarjetas. `/black-friday` da 200 y aparece en el sitemap.
