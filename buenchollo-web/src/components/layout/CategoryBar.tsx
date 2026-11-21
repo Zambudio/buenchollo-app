@@ -2,6 +2,7 @@ import { TELEGRAM_URL, WHATSAPP_URL } from "@/lib/site";
 import { Link } from "@tanstack/react-router";
 import { Compass, House, Newspaper, Send, Trophy } from "lucide-react";
 import { WhatsAppIcon } from "./WhatsAppIcon";
+import { NewDealsBadge } from "@/features/deals/components/NewDealsBadge";
 
 const LINKS = [
   { label: "Inicio", to: "/" as const, icon: House },
@@ -29,6 +30,7 @@ export function CategoryBar() {
               {label}
             </Link>
           ))}
+          <NewDealsBadge />
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <a

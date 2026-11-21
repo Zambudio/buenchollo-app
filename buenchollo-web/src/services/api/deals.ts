@@ -227,6 +227,12 @@ export const dealsService = {
       });
   },
 
+  /** Chollos activos publicados desde la última visita (píldora «N nuevos»). */
+  countNewSince: (since: Date): Promise<number> =>
+    apiClient
+      .get<{ count: number }>(`/deals/new-count?since=${encodeURIComponent(since.toISOString())}`)
+      .then((r) => r.count),
+
   /** Obtiene un chollo por su slug */
   getBySlug: (slug: string): Promise<DealDetailData> =>
     apiClient.get<DealDetailData>(`/deals/${slug}`),

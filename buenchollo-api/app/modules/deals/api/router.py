@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime, timedelta, timezone
 from typing import Literal
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,6 +16,7 @@ from app.modules.deals.api.schemas import (
     DealCreate,
     DealDetailResponse,
     DealPageResponse,
+    NewCountResponse,
     DealUpdate,
     VoteRequest,
     VoteResponse,
@@ -30,6 +32,8 @@ from app.modules.affiliates.infrastructure.repository import AffiliateRepository
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/deals", tags=["deals"])
+
+NEW_COUNT_MAX_DAYS = 30
 
 
 def get_deal_repository(db: AsyncSession = Depends(get_db)) -> DealRepository:
@@ -61,6 +65,21 @@ async def get_latest_deals(
     repo: DealRepository = Depends(get_deal_repository)
 ):
     return await repo.get_latest_active(limit=limit)
+
+
+@router.get("/new-count", response_model=NewCountResponse)
+@limiter.limit("60/minute")
+async def count_new_deals(
+    request: Request,
+    since: datetime = Query(..., description="Última visita del usuario (ISO 8601)"),
+    repo: DealRepository = Depends(get_deal_repository),
+):
+    """Cuántos chollos activos hay nuevos desde la última visita (la web guarda
+    esa fecha en el navegador, sin cuenta). Como mucho se miran 30 días atrás."""
+    if since.tzinfo is None:
+        since = since.replace(tzinfo=timezone.utc)
+    floor = datetime.now(timezone.utc) - timedelta(days=NEW_COUNT_MAX_DAYS)
+    return {"count": await repo.count_active_since(max(since, floor))}
 
 
 @router.get("/popular", response_model=list[DealCardResponse])

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { DealCard } from "@/features/deals/components/DealCard";
 import { DealPagination } from "@/features/deals/components/DealPagination";
@@ -15,6 +15,7 @@ import { TopBanner } from "@/features/home/TopBanner";
 import { loadBannerTops } from "@/features/home/bannerTops";
 import { CampaignHero } from "@/features/campaigns/CampaignHero";
 import { BLACK_FRIDAY, campaignStatus } from "@/lib/campaigns";
+import { visitBaseline } from "@/lib/lastVisit";
 
 const PAGE_SIZE = 30;
 
@@ -75,6 +76,13 @@ function HomePage() {
   const totalPages = data.total_pages;
   const currentPage = data.page;
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
+  // Separador «lo nuevo desde tu última visita»: solo en el navegador (tras montar).
+  const [baseline, setBaseline] = useState<Date | null>(null);
+  useEffect(() => setBaseline(visitBaseline()), []);
+  const firstSeenIndex =
+    baseline && currentPage === 1
+      ? deals.findIndex((d) => new Date(d.published_at).getTime() <= baseline.getTime())
+      : -1;
   const dealsHeadingRef = useRef<HTMLHeadingElement>(null);
   const campaign = campaignStatus(BLACK_FRIDAY, new Date(data.now));
 
@@ -124,12 +132,18 @@ function HomePage() {
               </h2>
               <div className="deal-feed-grid">
                 {deals.map((d, index) => (
-                  <DealCard
-                    key={d.id}
-                    deal={d}
-                    isFavorite={favIds.has(d.id)}
-                    imageLoading={index < 3 ? "eager" : "lazy"}
-                  />
+                  <Fragment key={d.id}>
+                    {index > 0 && index === firstSeenIndex && (
+                      <div className="feed-new-divider" role="separator">
+                        <span>Hasta aquí, lo nuevo desde tu última visita</span>
+                      </div>
+                    )}
+                    <DealCard
+                      deal={d}
+                      isFavorite={favIds.has(d.id)}
+                      imageLoading={index < 3 ? "eager" : "lazy"}
+                    />
+                  </Fragment>
                 ))}
               </div>
             </section>

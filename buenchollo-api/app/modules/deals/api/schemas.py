@@ -228,3 +228,7 @@ class DealUpdate(BaseModel):
         if value is not None and not value.strip():
             raise ValueError("El título no puede estar vacío")
         return value.strip() if value is not None else None
+
+
+class NewCountResponse(BaseModel):
+    count: int
