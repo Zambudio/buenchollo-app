@@ -104,3 +104,10 @@ class TelegramPublicationResponse(BaseModel):
     repriced_text: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class WeeklyDigestResponse(BaseModel):
+    telegram_text: str | None
+    whatsapp_text: str | None
+    count: int
+    sent: bool
