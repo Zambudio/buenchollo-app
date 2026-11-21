@@ -14,6 +14,7 @@ publicación (las mismas que comprueba `/telegram/notify`).
 
 import asyncio
 import logging
+from concurrent.futures import ThreadPoolExecutor, wait
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta, timezone
@@ -116,15 +117,34 @@ class WeeklyDigest:
     window: WeekWindow | None = None
 
 
+# Tiempo máximo para bajar todas las fotos del collage (en paralelo): una tienda
+# lenta deja su hueco con «Sin imagen» en vez de retrasar el resumen.
+COLLAGE_DOWNLOAD_SECONDS = 25
+
+
+def _download_all(urls: list[str | None], download: Callable[[str], bytes | None]) -> list[bytes | None]:
+    pool = ThreadPoolExecutor(max_workers=max(1, len(urls)))
+    futures = [pool.submit(download, url) if url else None for url in urls]
+    done, _ = wait([f for f in futures if f is not None], timeout=COLLAGE_DOWNLOAD_SECONDS)
+    pool.shutdown(wait=False, cancel_futures=True)
+    images: list[bytes | None] = []
+    for future in futures:
+        try:
+            images.append(future.result() if future is not None and future in done else None)
+        except Exception:
+            images.append(None)
+    return images
+
+
 def collage_items(deals: list, download: Callable[[str], bytes | None]) -> list[CollageItem]:
+    images = _download_all([deal.image_url for deal in deals], download)
     items = []
-    for position, deal in enumerate(deals, start=1):
+    for position, (deal, image) in enumerate(zip(deals, images), start=1):
         price = float(deal.current_price)
         previous = float(deal.previous_price) if deal.previous_price else None
         discount = deal.discount_percentage
         if not discount and previous and previous > price:
             discount = round((1 - price / previous) * 100)
-        image = download(deal.image_url) if deal.image_url else None
         items.append(CollageItem(position, image, f"{_format_price_es(price)} €", discount or None))
     return items
 
@@ -191,7 +211,9 @@ class WeeklyDigestService:
 
     def send(self, digest: WeeklyDigest) -> bool:
         """Envía al canal Admin el collage, el texto de Telegram y el de WhatsApp.
-        Devuelve si salió el texto de Telegram (un fallo del collage no lo impide)."""
+        Devuelve si salió el texto de Telegram (un fallo del collage no lo impide).
+        El collage va primero para que el canal se lea de arriba abajo; si
+        Telegram rechazara después el texto, el collage quedaría solo (raro)."""
         if not digest.telegram_text or not self.admin_chat_id:
             return False
         image = self.collage(digest)

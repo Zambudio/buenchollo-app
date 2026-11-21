@@ -30,6 +30,10 @@ _MUTED = (100, 116, 139)
 _CYAN = (34, 211, 238)
 _ORANGE = (234, 88, 12)
 _BADGE = (12, 18, 34)
+_RULE = (16, 80, 96)  # cian al 35 % sobre el fondo
+
+# Imágenes descargadas de tiendas: nunca se decodifica más que esto (≈ 4000×6000).
+MAX_SOURCE_PIXELS = 24_000_000
 
 
 @dataclass(frozen=True)
@@ -50,7 +54,7 @@ def _font(size: int, weight: str = "Bold") -> ImageFont.FreeTypeFont | ImageFont
         font.set_variation_by_name(weight)
         return font
     except Exception:
-        logger.warning("Space Grotesk no disponible para el collage; se usa la fuente de Pillow")
+        logger.error("Space Grotesk no disponible para el collage; se usa la fuente de Pillow (sin «€» ni «–»)")
         return ImageFont.load_default(size=size)
 
 
@@ -59,9 +63,13 @@ def _product_image(raw: bytes | None, box: tuple[int, int]) -> Image.Image | Non
         return None
     try:
         with Image.open(io.BytesIO(raw)) as img:
-            img = ImageOps.exif_transpose(img).convert("RGBA")
+            if img.width * img.height > MAX_SOURCE_PIXELS:
+                logger.warning("Imagen de producto demasiado grande para el collage; se omite")
+                return None
+            img.draft("RGB", box)  # JPEG: decodifica ya reducida
+            img = ImageOps.exif_transpose(img)
             img.thumbnail(box, Image.LANCZOS)
-            return img.copy()
+            return img.convert("RGBA")
     except Exception:
         logger.warning("Imagen de producto no legible para el collage")
         return None
@@ -79,7 +87,7 @@ def build_collage(items: list[CollageItem], title: str, subtitle: str) -> bytes:
     # Cabecera
     draw.text((PADDING + 2, 30), title, font=_font(54), fill=(255, 255, 255))
     draw.text((PADDING + 4, 92), subtitle, font=_font(28, "Medium"), fill=_CYAN)
-    draw.line([(PADDING, HEADER), (WIDTH - PADDING, HEADER)], fill=(34, 211, 238, 90), width=2)
+    draw.line([(PADDING, HEADER), (WIDTH - PADDING, HEADER)], fill=_RULE, width=2)
 
     if not items:
         return _jpeg(canvas)
@@ -115,9 +123,15 @@ def build_collage(items: list[CollageItem], title: str, subtitle: str) -> bytes:
         if item.discount:
             chip = f"-{item.discount} %"
             chip_w = draw.textlength(chip, font=discount_font) + 22
-            price_w = draw.textlength(item.price, font=price_font)
+            # Precios largos (12.999,00 €): se reduce la letra hasta que quepan en la tarjeta.
+            size = 34
+            font = price_font
+            while size > 20 and draw.textlength(item.price, font=font) + 12 + chip_w > tile_w - 32:
+                size -= 2
+                font = _font(size)
+            price_w = draw.textlength(item.price, font=font)
             start = x + (tile_w - (price_w + 12 + chip_w)) / 2
-            draw.text((start, center_y), item.price, font=price_font, fill=_TEXT, anchor="lm")
+            draw.text((start, center_y), item.price, font=font, fill=_TEXT, anchor="lm")
             cx = start + price_w + 12
             draw.rounded_rectangle([cx, center_y - 21, cx + chip_w, center_y + 21], radius=10, fill=_ORANGE)
             _text_center(draw, (cx + chip_w / 2, center_y), chip, discount_font, (255, 255, 255))

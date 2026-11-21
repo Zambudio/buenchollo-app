@@ -314,7 +314,9 @@ async def preview_weekly_digest(
 
 
 @router.get("/weekly-digest/image", response_class=Response)
+@limiter.limit("20/hour")
 async def preview_weekly_digest_image(
+    request: Request,
     db: AsyncSession = Depends(get_db),
     settings: Settings = Depends(get_settings),
     _auth=Depends(require_admin),

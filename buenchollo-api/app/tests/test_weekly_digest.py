@@ -188,6 +188,38 @@ async def test_si_no_se_puede_generar_el_collage_el_texto_sale_igual(monkeypatch
     assert bot.photos == [] and len(bot.sent) == 2
 
 
+def test_las_fotos_lentas_dejan_hueco_sin_retrasar_el_resumen(monkeypatch):
+    import time
+
+    monkeypatch.setattr(wd, "COLLAGE_DOWNLOAD_SECONDS", 0.3)
+
+    def download(url):
+        if "lenta" in url:
+            time.sleep(2)
+        return url.encode()
+
+    start = time.monotonic()
+    images = wd._download_all(["https://a/1.jpg", "https://lenta/2.jpg", None], download)
+    assert time.monotonic() - start < 1.5
+    assert images == [b"https://a/1.jpg", None, None]
+
+
+def test_precios_largos_caben_en_la_tarjeta():
+    from app.modules.telegram.application.weekly_collage import CollageItem, build_collage
+
+    items = [CollageItem(i, None, "12.999,00 €", 42) for i in range(1, 11)]
+    with Image.open(io.BytesIO(build_collage(items, "T", "S"))) as img:
+        assert img.size == (1600, 900)
+
+
+def test_imagenes_gigantes_se_omiten():
+    from app.modules.telegram.application import weekly_collage as wc
+
+    buf = io.BytesIO()
+    Image.new("RGB", (6000, 5000), (255, 255, 255)).save(buf, format="PNG")
+    assert wc._product_image(buf.getvalue(), (200, 200)) is None
+
+
 def test_collage_con_fuente_de_la_web_y_huecos_sin_imagen():
     from app.modules.telegram.application.weekly_collage import CollageItem, _font, build_collage
 
