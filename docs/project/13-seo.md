@@ -114,6 +114,7 @@ funciones puras y probadas en `src/lib/seo/` (cobertura ≥ 98 %).
   favicon de 32 y 192 px, icono de Apple de 180 px y `logo-512.png` optimizado.
 - Fuentes **Space Grotesk** y **JetBrains Mono** variables alojadas en la propia web
   (`@fontsource-variable`, `font-display: swap`): sin peticiones a Google Fonts.
+  El rótulo del Black Friday añade **Monoton** (`@fontsource/monoton`, solo latino, ~16 KB).
 - Fechas formateadas con `timeZone: "Europe/Madrid"` (`TIME_ZONE` en
   `src/lib/format.ts`): el HTML del servidor coincide con el del navegador.
 
