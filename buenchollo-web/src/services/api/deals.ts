@@ -210,10 +210,6 @@ export const dealsService = {
   getLatest: (limit = 8): Promise<DealCardData[]> =>
     apiClient.get<DealCardData[]>(`/deals/latest?limit=${limit}`),
 
-  /** Obtiene los chollos más populares/calientes */
-  getPopular: (limit = 4): Promise<DealCardData[]> =>
-    apiClient.get<DealCardData[]>(`/deals/popular?limit=${limit}`),
-
   /** Pagina estable del feed principal, ya ordenada en el servidor. */
   getPage: (params: DealPageParams): Promise<DealPageResponse> => {
     const queryParams = new URLSearchParams();
@@ -230,6 +226,12 @@ export const dealsService = {
         throw error;
       });
   },
+
+  /** Chollos activos publicados desde la última visita (píldora «N nuevos»). */
+  countNewSince: (since: Date): Promise<number> =>
+    apiClient
+      .get<{ count: number }>(`/deals/new-count?since=${encodeURIComponent(since.toISOString())}`)
+      .then((r) => r.count),
 
   /** Obtiene un chollo por su slug */
   getBySlug: (slug: string): Promise<DealDetailData> =>

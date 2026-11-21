@@ -67,6 +67,36 @@ class DealRepository:
         )
         return list(result.scalars().all())
 
+    async def count_active_since(self, since) -> int:
+        """Chollos activos publicados (o reactivados) después de `since`: el
+        contador de «novedades desde tu última visita»."""
+        result = await self.session.execute(
+            select(func.count()).select_from(Deal).where(Deal.status == "active", Deal.published_at > since)
+        )
+        return int(result.scalar() or 0)
+
+    async def get_top_discount_active_since(self, since, limit: int = 10) -> list[Deal]:
+        """Los activos publicados (o reactivados) desde `since` con más
+        descuento: el resumen semanal «chollos de la semana»."""
+        result = await self.session.execute(
+            self._base_deal_query()
+            .where(Deal.status == "active", Deal.published_at >= since, Deal.current_price > 0)
+            .order_by(
+                # El mismo descuento que muestra el resumen: el guardado o, si
+                # falta, el calculado con el precio anterior.
+                func.coalesce(
+                    Deal.discount_percentage,
+                    func.round(100 * (1 - Deal.current_price / func.nullif(Deal.previous_price, 0))),
+                )
+                .desc()
+                .nullslast(),
+                Deal.published_at.desc(),
+                Deal.id.desc(),
+            )
+            .limit(limit)
+        )
+        return list(result.scalars().all())
+
     async def get_popular_active(self, limit: int = 10) -> list[Deal]:
         result = await self.session.execute(
             self._base_deal_query()
