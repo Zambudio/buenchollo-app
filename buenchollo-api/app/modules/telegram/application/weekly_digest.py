@@ -2,11 +2,11 @@
 
 Toma los chollos activos publicados (o reactivados) en los 7 días naturales
 anteriores (hora de Madrid) con más descuento y envía al canal Admin de
-Telegram tres mensajes: un collage con la foto de cada chollo y su número del
-top, la versión de Telegram del texto (emojis premium y negrita, como los posts
-normales) y la versión de WhatsApp, para que el admin los reenvíe al canal
-oficial y los copie al Canal de WhatsApp a mano. Nunca publica directamente en
-el canal público.
+Telegram dos mensajes: la publicación de Telegram (un collage vertical con la
+foto, el número, el precio y el descuento de cada chollo, y el texto con los
+enlaces como pie de foto, como los chollos) y la versión de WhatsApp con el
+texto completo, para que el admin la reenvíe al canal oficial y la copie al
+Canal de WhatsApp a mano. Nunca publica directamente en el canal público.
 
 La lista es la de `deals.application.weekly_top` (la misma que el lateral
 «Top de la semana» de la web), que ya deja fuera los chollos de Awin/Tradedoubler
@@ -49,38 +49,100 @@ def week_label(window: WeekWindow) -> str:
     return f"{start.day} de {_MONTHS[start.month]} – {end.day} de {_MONTHS[end.month]}"
 
 
-def _deal_block(position: int, deal, site_url: str) -> str:
+def _discount(deal) -> int | None:
     price = float(deal.current_price)
     previous = float(deal.previous_price) if deal.previous_price else None
     discount = deal.discount_percentage
     if not discount and previous and previous > price:
         discount = round((1 - price / previous) * 100)
-    line = f"💶 {_format_price_es(price)} €"
-    if previous and previous > price:
-        line += f" (antes {_format_price_es(previous)} €)"
-    if discount:
-        line += f" | -{discount} %"
+    return discount or None
+
+
+def _shorten(title: str, max_chars: int | None) -> str:
+    if max_chars is None or len(title) <= max_chars:
+        return title
+    return title[: max_chars - 1].rstrip(" ,.-(") + "…"
+
+
+def _deal_block(
+    position: int,
+    deal,
+    site_url: str,
+    *,
+    with_previous: bool = True,
+    with_price: bool = True,
+    title_max: int | None = None,
+) -> str:
+    price = float(deal.current_price)
+    previous = float(deal.previous_price) if deal.previous_price else None
+    discount = _discount(deal)
     link = deal.affiliate_url or f"{site_url.rstrip('/')}/chollo/{deal.slug}"
-    return f"🍄 {position}. {deal.title}\n{line}\n🛒 {link}\n\n"
+    block = f"🍄 {position}. {_shorten(deal.title, title_max)}\n"
+    if with_price:
+        line = f"💶 {_format_price_es(price)} €"
+        if with_previous and previous and previous > price:
+            line += f" (antes {_format_price_es(previous)} €)"
+        if discount:
+            line += f" | -{discount} %"
+        block += line + "\n"
+    return block + f"🛒 {link}\n\n"
+
+
+def _header(window: WeekWindow) -> str:
+    return f"📅 Los chollos de la semana · {week_label(window)}\n\n"
+
+
+_FOOTER = f"🔗 {LINK_TEXT}\n\n"
 
 
 def build_weekly_digest(deals: list, window: WeekWindow, site_url: str) -> tuple[str | None, int]:
-    """Texto del resumen para Telegram y cuántos chollos lleva (None, 0 si no
-    hay). Si no caben todos en un mensaje, se corta la lista (nunca un chollo
-    a medias)."""
+    """Texto completo del resumen (versión WhatsApp y respaldo sin imagen) y
+    cuántos chollos lleva (None, 0 si no hay). Si no caben todos en un mensaje,
+    se corta la lista (nunca un chollo a medias)."""
     if not deals:
         return None, 0
-    header = f"📅 Los chollos de la semana · {week_label(window)}\n\n"
-    footer = f"🔗 {LINK_TEXT}\n\n"
+    header = _header(window)
     body = ""
     included = 0
     for deal in deals:
         block = _deal_block(included + 1, deal, site_url)
-        if len(header) + len(body) + len(block) + len(footer) > MAX_TEXT_LENGTH:
+        if len(header) + len(body) + len(block) + len(_FOOTER) > MAX_TEXT_LENGTH:
             break
         body += block
         included += 1
-    return header + body + footer, included
+    return header + body + _FOOTER, included
+
+
+# Telegram limita a 1024 caracteres (UTF-16) el texto que acompaña a una foto.
+CAPTION_LIMIT = 1024
+# De más a menos completo: el collage ya muestra precio y descuento, así que el
+# pie de foto se va recortando hasta caber. Los enlaces siempre van enteros.
+_CAPTION_LEVELS = (
+    {"with_previous": True, "with_price": True, "title_max": None},
+    {"with_previous": False, "with_price": True, "title_max": None},
+    {"with_previous": False, "with_price": True, "title_max": 45},
+    {"with_previous": False, "with_price": True, "title_max": 32},
+    {"with_previous": False, "with_price": False, "title_max": 32},
+    {"with_previous": False, "with_price": False, "title_max": 22},
+)
+
+
+def _utf16_len(text: str) -> int:
+    return len(text.encode("utf-16-le")) // 2
+
+
+def build_caption(deals: list, window: WeekWindow, site_url: str) -> tuple[str | None, int]:
+    """Texto para publicar junto al collage, en un solo mensaje (como los
+    chollos): el más completo que quepa en el pie de foto de Telegram."""
+    if not deals:
+        return None, 0
+    for count in range(len(deals), 0, -1):
+        for level in _CAPTION_LEVELS:
+            body = "".join(_deal_block(i, deal, site_url, **level) for i, deal in enumerate(deals[:count], 1))
+            text = (_header(window) + body + _FOOTER).rstrip()
+            if _utf16_len(text) <= CAPTION_LIMIT:
+                return text, count
+    return None, 0
 
 
 def whatsapp_version(telegram_text: str) -> str:
@@ -92,12 +154,18 @@ def whatsapp_version(telegram_text: str) -> str:
 
 @dataclass
 class WeeklyDigest:
+    # Texto de la publicación de Telegram: el pie de foto del collage (máx. 1024
+    # caracteres) o, si no cabe ni un chollo, el texto completo.
     telegram_text: str | None
     whatsapp_text: str | None
     count: int
     # Los chollos que van en el mensaje, en orden (para el collage).
     deals: list = field(default_factory=list)
     window: WeekWindow | None = None
+    # Texto completo (con precio anterior y títulos enteros): respaldo sin imagen.
+    full_text: str | None = None
+    # Si `telegram_text` cabe como pie de foto del collage.
+    caption_fits: bool = True
 
 
 # Tiempo máximo para bajar todas las fotos del collage (en paralelo): una tienda
@@ -123,12 +191,8 @@ def collage_items(deals: list, download: Callable[[str], bytes | None]) -> list[
     images = _download_all([deal.image_url for deal in deals], download)
     items = []
     for position, (deal, image) in enumerate(zip(deals, images), start=1):
-        price = float(deal.current_price)
-        previous = float(deal.previous_price) if deal.previous_price else None
-        discount = deal.discount_percentage
-        if not discount and previous and previous > price:
-            discount = round((1 - price / previous) * 100)
-        items.append(CollageItem(position, image, f"{_format_price_es(price)} €", discount or None))
+        price = f"{_format_price_es(float(deal.current_price))} €"
+        items.append(CollageItem(position, image, price, _discount(deal), deal.title))
     return items
 
 
@@ -162,8 +226,21 @@ class WeeklyDigestService:
         window = week_window(now)
         # El mismo ranking que el lateral «Top de la semana» de la web.
         deals = await weekly_top(self.deal_repo, self.guard, WEEKLY_DIGEST_LIMIT, now)
-        text, count = build_weekly_digest(deals, window, self.site_url)
-        return WeeklyDigest(text, whatsapp_version(text) if text else None, count, deals[:count], window)
+        caption, count = build_caption(deals, window, self.site_url)
+        # El collage, el pie, el texto completo y WhatsApp llevan los mismos chollos.
+        full, full_count = build_weekly_digest(deals[:count] if caption else deals, window, self.site_url)
+        if caption is None:
+            logger.warning("Resumen semanal: el texto no cabe como pie de foto; irá aparte del collage")
+            count = full_count
+        return WeeklyDigest(
+            caption or full,
+            whatsapp_version(full) if full else None,
+            count,
+            deals[:count],
+            window,
+            full_text=full,
+            caption_fits=caption is not None,
+        )
 
     def collage(self, digest: WeeklyDigest) -> bytes | None:
         try:
@@ -173,21 +250,39 @@ class WeeklyDigestService:
             return None
 
     def send(self, digest: WeeklyDigest) -> bool:
-        """Envía al canal Admin el collage, el texto de Telegram y el de WhatsApp.
-        Devuelve si salió el texto de Telegram (un fallo del collage no lo impide).
-        El collage va primero para que el canal se lea de arriba abajo; si
-        Telegram rechazara después el texto, el collage quedaría solo (raro)."""
+        """Envía al canal Admin la publicación de Telegram (collage con el texto
+        como pie de foto, en un solo mensaje, como los chollos) y después la
+        versión de WhatsApp. Si el collage falla, sale el texto completo sin
+        imagen. Devuelve si salió la publicación de Telegram."""
         if not digest.telegram_text or not self.admin_chat_id:
             return False
         image = self.collage(digest)
-        if image and not self.bot.send_photo_bytes(image, chat_id=self.admin_chat_id):
-            logger.warning("No se pudo enviar el collage del resumen semanal: %s", getattr(self.bot, "last_error", None))
-        sent = self.bot.send_preformatted(
-            text=digest.telegram_text,
-            entities=self.build_entities(digest.telegram_text),
-            image_url=None,
-            chat_id=self.admin_chat_id,
-        )
+        sent = False
+        if image and digest.caption_fits:
+            sent = self.bot.send_photo_bytes(
+                image,
+                chat_id=self.admin_chat_id,
+                caption=digest.telegram_text,
+                entities=self.build_entities(digest.telegram_text),
+            )
+            if not sent and getattr(self.bot, "last_delivery_unknown", False):
+                # Sin respuesta (p. ej. tiempo agotado): Telegram pudo haberla
+                # publicado. No se reenvía en texto para no duplicar el resumen.
+                logger.error("Resumen semanal: no se sabe si llegó la publicación; no se reenvía")
+                return False
+            if not sent:
+                logger.warning("No se pudo enviar el collage del resumen: %s", getattr(self.bot, "last_error", None))
+        elif image:
+            # El texto no cabe como pie: collage suelto y después el texto completo.
+            self.bot.send_photo_bytes(image, chat_id=self.admin_chat_id)
+        if not sent:
+            text = digest.full_text or digest.telegram_text
+            sent = self.bot.send_preformatted(
+                text=text,
+                entities=self.build_entities(text),
+                image_url=None,
+                chat_id=self.admin_chat_id,
+            )
         if not sent:
             logger.error("Telegram rechazó el resumen semanal: %s", getattr(self.bot, "last_error", None))
             return False

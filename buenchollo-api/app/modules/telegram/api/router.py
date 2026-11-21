@@ -309,7 +309,11 @@ async def preview_weekly_digest(
     """Vista previa del resumen semanal tal y como saldría ahora (no envía nada)."""
     digest = await build_weekly_digest_service(db, settings).preview()
     return WeeklyDigestResponse(
-        telegram_text=digest.telegram_text, whatsapp_text=digest.whatsapp_text, count=digest.count, sent=False
+        telegram_text=digest.telegram_text,
+        full_text=digest.full_text,
+        whatsapp_text=digest.whatsapp_text,
+        count=digest.count,
+        sent=False
     )
 
 
@@ -351,5 +355,9 @@ async def send_weekly_digest(
         payload={"count": digest.count, "sent": sent},
     )
     return WeeklyDigestResponse(
-        telegram_text=digest.telegram_text, whatsapp_text=digest.whatsapp_text, count=digest.count, sent=sent
+        telegram_text=digest.telegram_text,
+        full_text=digest.full_text,
+        whatsapp_text=digest.whatsapp_text,
+        count=digest.count,
+        sent=sent
     )
