@@ -73,6 +73,8 @@ function searchDealsRequest(params?: DealSearchParams): Promise<DealCardData[]> 
   return apiClient.get<DealCardData[]>(qs ? `/deals?${qs}` : "/deals");
 }
 
+let weeklyTopCache: { at: number; limit: number; request: Promise<DealCardData[]> } | null = null;
+
 type DealPageParams = Omit<DealSearchParams, "limit" | "offset"> & {
   sort: "recent" | "popular" | "discount" | "price_asc";
   page: number;
@@ -225,6 +227,20 @@ export const dealsService = {
         if (error instanceof ApiError && error.status === 404) return getLegacyDealPage(params);
         throw error;
       });
+  },
+
+  /** «Top de la semana»: activos con más descuento de los últimos 7 días (máx. 10).
+   *  Caché de 60 s: no depende de la página del feed, así que paginar no lo repite. */
+  getWeeklyTop: (limit = 10): Promise<DealCardData[]> => {
+    const now = Date.now();
+    if (!weeklyTopCache || weeklyTopCache.limit !== limit || now - weeklyTopCache.at > 60_000) {
+      const request = apiClient.get<DealCardData[]>(`/deals/weekly-top?limit=${limit}`);
+      weeklyTopCache = { at: now, limit, request };
+      request.catch(() => {
+        if (weeklyTopCache?.request === request) weeklyTopCache = null;
+      });
+    }
+    return weeklyTopCache.request;
   },
 
   /** Chollos activos publicados desde la última visita (píldora «N nuevos»). */

@@ -9,6 +9,7 @@ from app.core.rate_limit import limiter
 from app.modules.deals.infrastructure.repository import DealRepository
 from app.modules.deals.application.deal_service import DealService
 from app.modules.deals.application.new_deals import count_new_since
+from app.modules.deals.application.weekly_top import WEEKLY_TOP_MAX, weekly_top
 from app.modules.deals.domain.exceptions import DealNotFound
 from app.modules.deals.api.schemas import (
     DealSitemapEntry,
@@ -76,6 +77,19 @@ async def count_new_deals(
     """Cuántos chollos activos hay nuevos desde la última visita (la web guarda
     esa fecha en el navegador, sin cuenta)."""
     return {"count": await count_new_since(repo, since)}
+
+
+@router.get("/weekly-top", response_model=list[DealCardResponse])
+@limiter.limit("60/minute")
+async def get_weekly_top(
+    request: Request,
+    limit: int = Query(WEEKLY_TOP_MAX, ge=1, le=WEEKLY_TOP_MAX),
+    repo: DealRepository = Depends(get_deal_repository),
+    db: AsyncSession = Depends(get_db),
+):
+    """«Top de la semana»: activos con más descuento de los últimos 7 días
+    naturales (hora de Madrid). El mismo ranking que el resumen del domingo."""
+    return await weekly_top(repo, PublicationGuard(AffiliateRepository(db)), limit)
 
 
 @router.get("/popular", response_model=list[DealCardResponse])

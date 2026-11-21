@@ -46,7 +46,7 @@ export const Route = createFileRoute("/")({
   validateSearch: parseHomeSearch,
   loaderDeps: ({ search }) => ({ page: search.page ?? 1 }),
   loader: async ({ deps }) => {
-    const [page, tops, posts] = await Promise.all([
+    const [page, tops, posts, weeklyTop] = await Promise.all([
       withFallback(
         dealsService.getPage({ sort: "recent", page: deps.page, page_size: PAGE_SIZE }),
         { items: [], total_pages: 1, page: 1, page_size: PAGE_SIZE, total: 0 },
@@ -58,9 +58,10 @@ export const Route = createFileRoute("/")({
         [],
         "Error cargando artículos del blog",
       ),
+      withFallback(dealsService.getWeeklyTop(10), [], "Error cargando el top de la semana"),
     ]);
     // La hora se fija en el loader para que servidor y cliente elijan el mismo hero.
-    return { ...page, posts, tops, now: Date.now() };
+    return { ...page, posts, tops, weeklyTop, now: Date.now() };
   },
   head: ({ loaderData }) =>
     pageHead(homeSeo({ page: loaderData?.page ?? 1, deals: loaderData?.items ?? [] })),
@@ -166,7 +167,7 @@ function HomePage() {
               </div>
             )}
           </div>
-          <HomeSidebar posts={data.posts} />
+          <HomeSidebar weeklyTop={data.weeklyTop} posts={data.posts} now={data.now} />
         </div>
         {currentPage === 1 && <SiteFaq />}
       </div>
