@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from uuid import UUID
 import asyncio
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Response
 from starlette.concurrency import run_in_threadpool
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -311,6 +311,23 @@ async def preview_weekly_digest(
     return WeeklyDigestResponse(
         telegram_text=digest.telegram_text, whatsapp_text=digest.whatsapp_text, count=digest.count, sent=False
     )
+
+
+@router.get("/weekly-digest/image", response_class=Response)
+@limiter.limit("20/hour")
+async def preview_weekly_digest_image(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+    _auth=Depends(require_admin),
+):
+    """Collage del resumen semanal tal y como saldría ahora (JPEG; no envía nada)."""
+    service = build_weekly_digest_service(db, settings)
+    digest = await service.preview()
+    image = await run_in_threadpool(service.collage, digest)
+    if image is None:
+        return Response(status_code=204)
+    return Response(content=image, media_type="image/jpeg", headers={"Cache-Control": "no-store"})
 
 
 @router.post("/weekly-digest/send", response_model=WeeklyDigestResponse)

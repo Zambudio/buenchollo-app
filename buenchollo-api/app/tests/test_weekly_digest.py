@@ -1,10 +1,12 @@
 """«Los chollos de la semana»: texto, versión WhatsApp y envío al canal Admin."""
 
+import io
 from datetime import datetime, timezone
 from decimal import Decimal
 from types import SimpleNamespace
 
 import pytest
+from PIL import Image
 
 from app.core.config import Settings
 from app.modules.telegram.application import weekly_digest as wd
@@ -22,6 +24,7 @@ def _deal(i: int, **overrides):
         previous_price=Decimal("149.99"),
         discount_percentage=33,
         affiliate_url=f"https://www.amazon.es/dp/B00000000{i}?tag=x",
+        image_url=None,
     )
     base.update(overrides)
     return SimpleNamespace(**base)
@@ -91,11 +94,27 @@ class FakeRepo:
         return self.deals
 
 
+def _png() -> bytes:
+    buf = io.BytesIO()
+    Image.new("RGB", (40, 30), (200, 30, 30)).save(buf, format="PNG")
+    return buf.getvalue()
+
+
 class FakeBot:
-    def __init__(self, ok=True):
+    def __init__(self, ok=True, photo_ok=True):
         self.ok = ok
+        self.photo_ok = photo_ok
         self.sent: list[dict] = []
+        self.photos: list[bytes] = []
         self.last_error = None
+
+    def download_image(self, url):
+        return _png() if url else None
+
+    def send_photo_bytes(self, content, chat_id=None, caption=""):
+        self.photos.append(content)
+        self.sent.append({"photo": True, "chat_id": chat_id})
+        return self.photo_ok
 
     def send_preformatted(self, *, text, entities, image_url=None, chat_id=None):
         self.sent.append({"text": text, "entities": entities, "chat_id": chat_id})
@@ -137,13 +156,77 @@ async def test_omite_los_chollos_de_redes_que_ya_no_cumplen_las_reglas():
 
 
 @pytest.mark.asyncio
-async def test_envia_las_dos_versiones_al_canal_admin():
+async def test_envia_collage_y_las_dos_versiones_al_canal_admin():
     bot = FakeBot()
-    service = _service([_deal(1)], bot)
+    service = _service([_deal(1, image_url="https://img/1.jpg"), _deal(2, image_url=None)], bot)
     assert service.send(await service.preview(NOW)) is True
-    assert [m["chat_id"] for m in bot.sent] == ["-100admin", "-100admin"]
-    assert bot.sent[0]["entities"] == [{"type": "bold"}]
-    assert bot.sent[1]["entities"] == [] and bot.sent[1]["text"].startswith("*📅")
+    assert [m["chat_id"] for m in bot.sent] == ["-100admin"] * 3
+    assert bot.sent[0] == {"photo": True, "chat_id": "-100admin"}
+    assert bot.sent[1]["entities"] == [{"type": "bold"}]
+    assert bot.sent[2]["entities"] == [] and bot.sent[2]["text"].startswith("*📅")
+    with Image.open(io.BytesIO(bot.photos[0])) as collage:
+        assert (collage.format, collage.size) == ("JPEG", (1600, 900))
+
+
+@pytest.mark.asyncio
+async def test_si_falla_el_collage_el_texto_sale_igual():
+    bot = FakeBot(photo_ok=False)
+    service = _service([_deal(1, image_url="https://img/1.jpg")], bot)
+    assert service.send(await service.preview(NOW)) is True
+    assert len([m for m in bot.sent if "text" in m]) == 2
+
+
+@pytest.mark.asyncio
+async def test_si_no_se_puede_generar_el_collage_el_texto_sale_igual(monkeypatch):
+    def boom(*_args, **_kwargs):
+        raise RuntimeError("Pillow roto")
+
+    monkeypatch.setattr(wd, "build_collage", boom)
+    bot = FakeBot()
+    service = _service([_deal(1, image_url="https://img/1.jpg")], bot)
+    assert service.send(await service.preview(NOW)) is True
+    assert bot.photos == [] and len(bot.sent) == 2
+
+
+def test_las_fotos_lentas_dejan_hueco_sin_retrasar_el_resumen(monkeypatch):
+    import time
+
+    monkeypatch.setattr(wd, "COLLAGE_DOWNLOAD_SECONDS", 0.3)
+
+    def download(url):
+        if "lenta" in url:
+            time.sleep(2)
+        return url.encode()
+
+    start = time.monotonic()
+    images = wd._download_all(["https://a/1.jpg", "https://lenta/2.jpg", None], download)
+    assert time.monotonic() - start < 1.5
+    assert images == [b"https://a/1.jpg", None, None]
+
+
+def test_precios_largos_caben_en_la_tarjeta():
+    from app.modules.telegram.application.weekly_collage import CollageItem, build_collage
+
+    items = [CollageItem(i, None, "12.999,00 €", 42) for i in range(1, 11)]
+    with Image.open(io.BytesIO(build_collage(items, "T", "S"))) as img:
+        assert img.size == (1600, 900)
+
+
+def test_imagenes_gigantes_se_omiten():
+    from app.modules.telegram.application import weekly_collage as wc
+
+    buf = io.BytesIO()
+    Image.new("RGB", (6000, 5000), (255, 255, 255)).save(buf, format="PNG")
+    assert wc._product_image(buf.getvalue(), (200, 200)) is None
+
+
+def test_collage_con_fuente_de_la_web_y_huecos_sin_imagen():
+    from app.modules.telegram.application.weekly_collage import CollageItem, _font, build_collage
+
+    assert "Space Grotesk" in " ".join(_font(30).getname())
+    items = [CollageItem(i, _png() if i % 2 else None, "1.299,00 €", 42 if i % 3 else None) for i in range(1, 8)]
+    with Image.open(io.BytesIO(build_collage(items, "LOS CHOLLOS DE LA SEMANA", "16–22 de noviembre"))) as img:
+        assert img.size == (1600, 900)
 
 
 @pytest.mark.asyncio
@@ -160,7 +243,7 @@ async def test_si_telegram_rechaza_no_envia_la_version_whatsapp():
     bot = FakeBot(ok=False)
     service = _service([_deal(1)], bot)
     assert service.send(await service.preview(NOW)) is False
-    assert len(bot.sent) == 1
+    assert len([m for m in bot.sent if "text" in m]) == 1
 
 
 @pytest.mark.asyncio

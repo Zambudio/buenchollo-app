@@ -9,6 +9,7 @@
 - **Títulos**: normalización al publicar y editar (`deals/domain/titles.py`), conservadora con modelos, siglas y marcas, y probada con los 354 títulos reales. Limpieza de los ya publicados con `scripts/normalize_titles.py` (simula por defecto; `--apply` escribe y genera un informe antes/después). Los slugs no cambian.
 - **Novedades desde tu última visita**: contador «N nuevos» junto a «Inicio» y separador en la portada, sin cuenta (`localStorage`). Endpoint `GET /v1/deals/new-count`.
 - **«Los chollos de la semana»**: domingos a las 22:30 al canal Admin (Telegram + WhatsApp), top 10 por descuento de los activos de la semana. Vista previa y envío manual para admins en `/v1/telegram/weekly-digest`. `WEEKLY_DIGEST_ENABLED` (true por defecto).
+- **Collage del resumen**: antes del texto se envía una imagen 1600×900 con la foto, el número del top, el precio y el descuento de cada chollo, para saber qué es cada enlace. La genera Pillow con la tipografía de la web (Space Grotesk, OFL, en `buenchollo-api/app/assets/fonts`). Si falla, el texto sale igual. Vista previa para admins en `GET /v1/telegram/weekly-digest/image`.
 - Revisión de código antes del merge: visita mantenida al navegar, reglas de afiliación en el resumen, semana alineada entre etiqueta y consulta, siglas con guion y marcas en los títulos, y el contador visible en el móvil.
 
 ## 2026-11-20 · Versión WhatsApp de las publicaciones y fuente `whatsapp` en la analítica
