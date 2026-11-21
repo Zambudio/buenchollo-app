@@ -1863,4 +1863,8 @@
   .product-gallery {
     margin-bottom: 16px;
   }
+  /* La fila de votos y compartir conserva su separación superior (borde). */
+  .product-summary > .product-social-row {
+    margin-top: 4px;
+  }
 }

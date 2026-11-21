@@ -20,7 +20,7 @@ export const SITE_FAQ: FaqItem[] = [
   {
     question: "¿Cómo sé que un chollo sigue disponible?",
     answer:
-      "Cada chollo se revisa antes de publicarse y una comprobación automática diaria consulta el precio y el stock en la tienda. Si el precio sube o el producto se agota, la oferta se marca como terminada y deja de anunciarse como chollo.",
+      "Cada chollo se revisa antes de publicarse y, en los de Amazon, una comprobación automática diaria consulta el precio y el stock. Si el precio sube o el producto se agota, la oferta se marca como terminada y deja de anunciarse como chollo.",
   },
   {
     question: "¿Es gratis usar BuenChollo Tech?",
@@ -45,7 +45,7 @@ export const SITE_FAQ: FaqItem[] = [
   {
     question: "¿Qué son «Los chollos de la semana»?",
     answer:
-      "Cada domingo publicamos en Telegram y WhatsApp los 10 chollos activos con más descuento de los últimos 7 días, con una imagen de todos ellos. En la portada, el «Top de la semana» muestra ese mismo ranking en directo.",
+      "Cada domingo publicamos en nuestros canales de Telegram y WhatsApp un resumen con los chollos activos con más descuento de los últimos 7 días (hasta 10). En la portada, el «Top de la semana» muestra ese mismo ranking en directo.",
   },
   {
     question: "¿Cómo veo los chollos nuevos desde mi última visita?",
@@ -60,7 +60,7 @@ export const SITE_FAQ: FaqItem[] = [
   {
     question: "¿Puede cambiar el precio de un chollo?",
     answer:
-      "Sí. Las tiendas cambian sus precios en cualquier momento y el precio válido es siempre el que ves en la tienda al comprar. Comprobamos los precios a diario y, si una oferta termina, la ficha lo indica.",
+      "Sí. Las tiendas cambian sus precios en cualquier momento y el precio válido es siempre el que ves en la tienda al comprar. Los precios de Amazon los comprobamos a diario y, si una oferta termina, la ficha lo indica.",
   },
   {
     question: "¿Dónde se compra el producto?",
@@ -70,6 +70,6 @@ export const SITE_FAQ: FaqItem[] = [
   {
     question: "¿Tenéis canal de WhatsApp?",
     answer:
-      "Sí. Además del canal de Telegram, puedes seguir nuestro Canal de WhatsApp. Los enlaces a los dos están en la barra superior de la web.",
+      "Sí. Además del canal de Telegram, puedes seguir nuestro Canal de WhatsApp. Encontrarás los enlaces a los dos en la barra de navegación y en el menú de la web.",
   },
 ];

@@ -62,7 +62,7 @@
   principales (`CATEGORY_INTROS` en `src/lib/seo/category.ts`); las subcategorías
   usan una plantilla. Una categoría sin chollos ni productos destacados queda en
   `noindex`.
-- **Portada**: H1 con la palabra clave. Desde el 2026-11-22 sin bloque de preguntas
+- **Portada**: H1 con la palabra clave. Desde el 2026-11-21 sin bloque de preguntas
   frecuentes: quedaba mal al final del feed.
 - **Preguntas frecuentes** (`/preguntas-frecuentes`, enlazada en el pie, en INFO): las
   preguntas de `SITE_FAQ` (`SiteFaq`), las mismas que se publican ahí como `FAQPage`.

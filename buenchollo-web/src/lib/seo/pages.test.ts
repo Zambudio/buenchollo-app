@@ -177,6 +177,6 @@ describe("faqPageSeo", () => {
     const { faqPageSeo, FAQ_PATH } = await import("./faq");
     const seo = faqPageSeo();
     expect(seo.path).toBe(FAQ_PATH);
-    expect(types(seo.jsonLd)).toEqual(["CollectionPage", "BreadcrumbList", "FAQPage"]);
+    expect(types(seo.jsonLd)).toEqual(["BreadcrumbList", "FAQPage"]);
   });
 });

@@ -3,7 +3,7 @@
 
 > Bitácora cronológica inversa. Estado operativo vigente: [`docs/project/11-current-state.md`](docs/project/11-current-state.md); pendientes abiertos: [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md).
 
-## 2026-11-22 · Preguntas frecuentes en su página y ficha compacta en el móvil
+## 2026-11-21 · Preguntas frecuentes en su página y ficha compacta en el móvil
 
 - **Preguntas frecuentes**: fuera de la portada (quedaban mal al final del feed) y a `/preguntas-frecuentes`, enlazada en el pie (INFO), en el sitemap y en `/llms.txt`, con 6 preguntas nuevas: el resumen de la semana, las novedades desde la última visita, qué significa el descuento, cambios de precio, dónde se compra y el canal de WhatsApp. El `FAQPage` va con ellas; la portada ya no lo publica. «Sobre nosotros» enlaza a la página en lugar de repetirlas.
 - **Ficha del chollo en el móvil**: los bloques de arriba estaban muy separados porque las utilidades de Tailwind (`gap-8`, `mb-3`…) sumaban huecos al «aplanar» el resumen. Ahora una regla fuera de las capas marca el espaciado: título, precio, tienda, fin de oferta y botón van juntos.
