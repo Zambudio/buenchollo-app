@@ -181,9 +181,10 @@ function AdminDeals() {
         },
         aiProvider,
       );
-      const category = ai.category_id
-        ? resolveCategorySelection(ai.category_id, ai.subcategory_id ?? "", cats, subcats)
-        : { category_id: "", subcategory_id: "" };
+      const category =
+        typeof ai?.category_id === "string" && ai.category_id
+          ? resolveCategorySelection(ai.category_id, ai.subcategory_id ?? "", cats, subcats)
+          : { category_id: "", subcategory_id: "" };
       setForm((f) => applyEnrichment(f, ai, category));
       toast.success("Textos y categoría propuestos por la IA");
     } catch (e: unknown) {

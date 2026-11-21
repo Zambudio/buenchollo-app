@@ -390,17 +390,16 @@ export function applyEnrichment(
 ): DealForm {
   const snapshot = form.import_snapshot ?? {};
   const next: DealForm = { ...form };
+  // Respuesta de red: no se da por buena la forma (un campo ausente no debe romper el editor).
+  const text = (value: unknown) => (typeof value === "string" ? value.trim() : "");
+  const short = text(ai?.short_description);
+  const long = text(ai?.long_description);
+  const post = text(ai?.telegram_text);
   const replaceable = (field: "short_description" | "description") =>
     !form[field].trim() || form[field] === snapshot[field];
-  if (ai.short_description.trim() && replaceable("short_description")) {
-    next.short_description = ai.short_description.trim();
-  }
-  if (ai.long_description.trim() && replaceable("description")) {
-    next.description = ai.long_description.trim();
-  }
-  if (ai.telegram_text.trim() && !(form.telegram_text ?? "").trim()) {
-    next.telegram_text = ai.telegram_text.trim();
-  }
+  if (short && replaceable("short_description")) next.short_description = short;
+  if (long && replaceable("description")) next.description = long;
+  if (post && !(form.telegram_text ?? "").trim()) next.telegram_text = post;
   if (!form.category_id && category.category_id) {
     next.category_id = category.category_id;
     next.subcategory_id = category.subcategory_id;

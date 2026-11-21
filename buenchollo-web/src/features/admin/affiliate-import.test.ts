@@ -152,6 +152,15 @@ describe("applyEnrichment (IA tras importar de una red)", () => {
     expect(out.subcategory_id).toBe("sub-9");
   });
 
+  it("una respuesta sin la forma esperada no rompe el formulario", () => {
+    const imported = applyImport(emptyForm(), result()).form;
+    const out = applyEnrichment(imported, [] as unknown as typeof ai, {
+      category_id: "",
+      subcategory_id: "",
+    });
+    expect(out).toEqual(imported);
+  });
+
   it("ignora textos vacíos de la IA", () => {
     const imported = applyImport(emptyForm(), result()).form;
     const out = applyEnrichment(
