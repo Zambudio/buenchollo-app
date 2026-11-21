@@ -1,11 +1,12 @@
 """«Los chollos de la semana»: resumen de los domingos a las 22:30 (Madrid).
 
-Toma los chollos activos publicados (o reactivados) en la semana (de lunes a
-domingo, en hora de Madrid) con más descuento y envía al canal Admin de
-Telegram dos mensajes: la versión de Telegram (emojis premium y negrita, como
-los posts normales) y la versión de WhatsApp, para que el admin la reenvíe al
-canal oficial y la copie al Canal de WhatsApp a mano. Nunca publica
-directamente en el canal público.
+Toma los chollos activos publicados (o reactivados) en los 7 días naturales
+anteriores (hora de Madrid) con más descuento y envía al canal Admin de
+Telegram tres mensajes: un collage con la foto de cada chollo y su número del
+top, la versión de Telegram del texto (emojis premium y negrita, como los posts
+normales) y la versión de WhatsApp, para que el admin los reenvíe al canal
+oficial y los copie al Canal de WhatsApp a mano. Nunca publica directamente en
+el canal público.
 
 Un chollo de Awin/Tradedoubler solo entra si sigue cumpliendo las reglas de
 publicación (las mismas que comprueba `/telegram/notify`).
@@ -14,13 +15,14 @@ publicación (las mismas que comprueba `/telegram/notify`).
 import asyncio
 import logging
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 from app.core.config import Settings
 from app.core.jobs import SCHEDULER_TIMEZONE, job_session
 from app.modules.affiliates.application.programs import needs_network_rules
+from app.modules.telegram.application.weekly_collage import CollageItem, build_collage
 from app.modules.telegram.application.post_generator import LINK_TEXT, _format_price_es
 from app.modules.telegram.application.whatsapp_copy import send_whatsapp_copy
 from app.modules.telegram.application.whatsapp_formatter import to_whatsapp_text
@@ -109,6 +111,30 @@ class WeeklyDigest:
     telegram_text: str | None
     whatsapp_text: str | None
     count: int
+    # Los chollos que van en el mensaje, en orden (para el collage).
+    deals: list = field(default_factory=list)
+    window: WeekWindow | None = None
+
+
+def collage_items(deals: list, download: Callable[[str], bytes | None]) -> list[CollageItem]:
+    items = []
+    for position, deal in enumerate(deals, start=1):
+        price = float(deal.current_price)
+        previous = float(deal.previous_price) if deal.previous_price else None
+        discount = deal.discount_percentage
+        if not discount and previous and previous > price:
+            discount = round((1 - price / previous) * 100)
+        image = download(deal.image_url) if deal.image_url else None
+        items.append(CollageItem(position, image, f"{_format_price_es(price)} €", discount or None))
+    return items
+
+
+def build_digest_collage(digest: "WeeklyDigest", download: Callable[[str], bytes | None]) -> bytes | None:
+    """JPEG con la foto y el número de cada chollo del resumen (None si no hay)."""
+    if not digest.deals or digest.window is None:
+        return None
+    subtitle = f"{week_label(digest.window)}  ·  buenchollotech.com"
+    return build_collage(collage_items(digest.deals, download), "LOS CHOLLOS DE LA SEMANA", subtitle)
 
 
 class WeeklyDigestService:
@@ -154,12 +180,23 @@ class WeeklyDigestService:
             if len(deals) == WEEKLY_DIGEST_LIMIT:
                 break
         text, count = build_weekly_digest(deals, window, self.site_url)
-        return WeeklyDigest(text, whatsapp_version(text) if text else None, count)
+        return WeeklyDigest(text, whatsapp_version(text) if text else None, count, deals[:count], window)
+
+    def collage(self, digest: WeeklyDigest) -> bytes | None:
+        try:
+            return build_digest_collage(digest, self.bot.download_image)
+        except Exception:
+            logger.exception("No se pudo generar el collage del resumen semanal")
+            return None
 
     def send(self, digest: WeeklyDigest) -> bool:
-        """Envía las dos versiones al canal Admin. Devuelve si salió la de Telegram."""
+        """Envía al canal Admin el collage, el texto de Telegram y el de WhatsApp.
+        Devuelve si salió el texto de Telegram (un fallo del collage no lo impide)."""
         if not digest.telegram_text or not self.admin_chat_id:
             return False
+        image = self.collage(digest)
+        if image and not self.bot.send_photo_bytes(image, chat_id=self.admin_chat_id):
+            logger.warning("No se pudo enviar el collage del resumen semanal: %s", getattr(self.bot, "last_error", None))
         sent = self.bot.send_preformatted(
             text=digest.telegram_text,
             entities=self.build_entities(digest.telegram_text),
