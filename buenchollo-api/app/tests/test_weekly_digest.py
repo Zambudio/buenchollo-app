@@ -194,7 +194,7 @@ async def test_si_no_se_puede_generar_el_collage_el_texto_sale_igual(monkeypatch
 def test_pie_de_foto_completo_si_cabe():
     caption, count = wd.build_caption([_deal(1), _deal(2)], WINDOW, "x")
     full, _ = wd.build_weekly_digest([_deal(1), _deal(2)], WINDOW, "x")
-    assert caption == full and count == 2
+    assert caption == full.rstrip() and count == 2
 
 
 def test_pie_de_foto_se_recorta_hasta_1024_con_los_10_enlaces_enteros():
@@ -209,6 +209,51 @@ def test_pie_de_foto_se_recorta_hasta_1024_con_los_10_enlaces_enteros():
     for i in range(10):
         assert f"https://link.amazon/B0{i:08d}X" in caption
     assert "…" in caption and caption.rstrip().endswith(f"🔗 {LINK_TEXT}")
+
+
+@pytest.mark.asyncio
+async def test_si_ningun_chollo_cabe_en_el_pie_sale_collage_y_texto_completo():
+    bot = FakeBot()
+    url = "https://www.awin1.com/cread.php?" + "p=x&" * 300
+    service = _service([_deal(1, affiliate_url=url, image_url="https://img/1.jpg")], bot)
+    digest = await service.preview(NOW)
+    assert digest.caption_fits is False and digest.count == 1
+    assert service.send(digest) is True
+    assert bot.sent[0]["photo"] and bot.sent[0]["caption"] == ""
+    assert bot.sent[1]["text"] == digest.full_text
+
+
+@pytest.mark.asyncio
+async def test_sin_respuesta_de_telegram_no_se_reenvia_en_texto():
+    class TimeoutBot(FakeBot):
+        def send_photo_bytes(self, *args, **kwargs):
+            self.last_delivery_unknown = True
+            return super().send_photo_bytes(*args, **kwargs)
+
+    bot = TimeoutBot(photo_ok=False)
+    service = _service([_deal(1, image_url="https://img/1.jpg")], bot)
+    assert service.send(await service.preview(NOW)) is False
+    assert [m for m in bot.sent if "text" in m] == []
+
+
+@pytest.mark.asyncio
+async def test_whatsapp_y_texto_completo_llevan_los_mismos_chollos_que_el_pie():
+    long_url = "https://www.awin1.com/cread.php?" + "p=x&" * 40
+    deals = [_deal(i, affiliate_url=long_url + str(i)) for i in range(1, 11)]
+    digest = await _service(deals, FakeBot()).preview(NOW)
+    assert digest.count < 10
+    assert digest.full_text.count("🍄") == digest.count == digest.telegram_text.count("🍄")
+
+
+def test_palabras_mas_anchas_que_la_tarjeta_se_cortan():
+    from PIL import ImageDraw
+
+    from app.modules.telegram.application.weekly_collage import _font, _wrap
+
+    draw = ImageDraw.Draw(Image.new("RGB", (10, 10)))
+    lines = _wrap(draw, "Xiaomi-Redmi-Note-13-Pro+-5G-256GB-Negro-Medianoche", _font(21, "Medium"), 200, 3)
+    assert all(draw.textlength(line, font=_font(21, "Medium")) <= 200 for line in lines)
+    assert lines[0].endswith("…")
 
 
 def test_las_fotos_lentas_dejan_hueco_sin_retrasar_el_resumen(monkeypatch):

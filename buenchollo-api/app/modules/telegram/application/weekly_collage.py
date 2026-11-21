@@ -90,11 +90,15 @@ def _wrap(draw: ImageDraw.ImageDraw, text: str, font, width: float, max_lines: i
         while words and draw.textlength(f"{line} {words[0]}", font=font) <= width:
             line = f"{line} {words.pop(0)}"
         lines.append(line)
-    if words and lines:
-        last = lines[-1]
-        while last and draw.textlength(f"{last}…", font=font) > width:
-            last = last[:-1].rstrip()
-        lines[-1] = f"{last}…"
+    def fit(line: str) -> str:
+        while line and draw.textlength(f"{line}…", font=font) > width:
+            line = line[:-1].rstrip()
+        return f"{line}…"
+
+    # Una palabra más ancha que la línea (p. ej. un modelo con guiones) se corta.
+    lines = [line if draw.textlength(line, font=font) <= width else fit(line) for line in lines]
+    if words and lines and not lines[-1].endswith("…"):
+        lines[-1] = fit(lines[-1])
     return lines
 
 

@@ -192,6 +192,9 @@ class TelegramBot:
         semanal), con pie de foto y entidades (emojis premium, negrita, enlaces)."""
         self.last_error = None
         self.last_message_id = None
+        # True si no hubo respuesta (tiempo agotado, conexión cortada): la foto
+        # pudo llegar igualmente, así que quien llama no debe reenviarla.
+        self.last_delivery_unknown = False
         chat = self._resolve_chat(chat_id)
         data: dict[str, Any] = {"chat_id": chat, "caption": caption}
         if entities:
@@ -211,6 +214,7 @@ class TelegramBot:
             return False
         except Exception as exc:
             self.last_error = self._redact(exc)
+            self.last_delivery_unknown = True
             logger.error("Telegram sendPhoto (imagen generada) falló: %s", self.last_error)
             return False
 

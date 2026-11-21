@@ -139,8 +139,8 @@ def build_caption(deals: list, window: WeekWindow, site_url: str) -> tuple[str |
     for count in range(len(deals), 0, -1):
         for level in _CAPTION_LEVELS:
             body = "".join(_deal_block(i, deal, site_url, **level) for i, deal in enumerate(deals[:count], 1))
-            text = _header(window) + body + _FOOTER
-            if _utf16_len(text.rstrip()) <= CAPTION_LIMIT:
+            text = (_header(window) + body + _FOOTER).rstrip()
+            if _utf16_len(text) <= CAPTION_LIMIT:
                 return text, count
     return None, 0
 
@@ -154,7 +154,8 @@ def whatsapp_version(telegram_text: str) -> str:
 
 @dataclass
 class WeeklyDigest:
-    # Pie de foto del collage (publicación de Telegram, máx. 1024 caracteres).
+    # Texto de la publicación de Telegram: el pie de foto del collage (máx. 1024
+    # caracteres) o, si no cabe ni un chollo, el texto completo.
     telegram_text: str | None
     whatsapp_text: str | None
     count: int
@@ -163,6 +164,8 @@ class WeeklyDigest:
     window: WeekWindow | None = None
     # Texto completo (con precio anterior y títulos enteros): respaldo sin imagen.
     full_text: str | None = None
+    # Si `telegram_text` cabe como pie de foto del collage.
+    caption_fits: bool = True
 
 
 # Tiempo máximo para bajar todas las fotos del collage (en paralelo): una tienda
@@ -223,10 +226,20 @@ class WeeklyDigestService:
         window = week_window(now)
         # El mismo ranking que el lateral «Top de la semana» de la web.
         deals = await weekly_top(self.deal_repo, self.guard, WEEKLY_DIGEST_LIMIT, now)
-        full, _ = build_weekly_digest(deals, window, self.site_url)
         caption, count = build_caption(deals, window, self.site_url)
+        # El collage, el pie, el texto completo y WhatsApp llevan los mismos chollos.
+        full, full_count = build_weekly_digest(deals[:count] if caption else deals, window, self.site_url)
+        if caption is None:
+            logger.warning("Resumen semanal: el texto no cabe como pie de foto; irá aparte del collage")
+            count = full_count
         return WeeklyDigest(
-            caption, whatsapp_version(full) if full else None, count, deals[:count], window, full_text=full
+            caption or full,
+            whatsapp_version(full) if full else None,
+            count,
+            deals[:count],
+            window,
+            full_text=full,
+            caption_fits=caption is not None,
         )
 
     def collage(self, digest: WeeklyDigest) -> bytes | None:
@@ -245,15 +258,23 @@ class WeeklyDigestService:
             return False
         image = self.collage(digest)
         sent = False
-        if image:
+        if image and digest.caption_fits:
             sent = self.bot.send_photo_bytes(
                 image,
                 chat_id=self.admin_chat_id,
                 caption=digest.telegram_text,
                 entities=self.build_entities(digest.telegram_text),
             )
+            if not sent and getattr(self.bot, "last_delivery_unknown", False):
+                # Sin respuesta (p. ej. tiempo agotado): Telegram pudo haberla
+                # publicado. No se reenvía en texto para no duplicar el resumen.
+                logger.error("Resumen semanal: no se sabe si llegó la publicación; no se reenvía")
+                return False
             if not sent:
                 logger.warning("No se pudo enviar el collage del resumen: %s", getattr(self.bot, "last_error", None))
+        elif image:
+            # El texto no cabe como pie: collage suelto y después el texto completo.
+            self.bot.send_photo_bytes(image, chat_id=self.admin_chat_id)
         if not sent:
             text = digest.full_text or digest.telegram_text
             sent = self.bot.send_preformatted(
