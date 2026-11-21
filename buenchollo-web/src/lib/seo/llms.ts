@@ -61,6 +61,7 @@ export function buildLlmsTxt({ deals, categories, posts, generatedAt }: LlmsInpu
     `- [Categorías](${SITE_URL}/categorias): índice de categorías y subcategorías de chollos.`,
     `- [Blog y guías de compra](${SITE_URL}/blog): comparativas y consejos para comprar tecnología.`,
     `- [Sobre nosotros](${SITE_URL}/sobre-nosotros): cómo se seleccionan y verifican los chollos.`,
+    `- [Preguntas frecuentes](${SITE_URL}/preguntas-frecuentes): cómo funciona la web, los avisos y los precios.`,
     `- [Feed RSS de chollos](${SITE_URL}/rss.xml): últimas ofertas publicadas.`,
     "",
   ];

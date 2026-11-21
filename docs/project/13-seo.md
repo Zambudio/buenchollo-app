@@ -62,8 +62,11 @@
   principales (`CATEGORY_INTROS` en `src/lib/seo/category.ts`); las subcategorías
   usan una plantilla. Una categoría sin chollos ni productos destacados queda en
   `noindex`.
-- **Portada**: H1 con la palabra clave y un bloque de **preguntas frecuentes** visible
-  (`SiteFaq`), el mismo que se publica como `FAQPage`.
+- **Portada**: H1 con la palabra clave. Desde el 2026-11-21 sin bloque de preguntas
+  frecuentes: quedaba mal al final del feed.
+- **Preguntas frecuentes** (`/preguntas-frecuentes`, enlazada en el pie, en INFO): las
+  preguntas de `SITE_FAQ` (`SiteFaq`), las mismas que se publican ahí como `FAQPage`.
+  «Sobre nosotros» enlaza a ella en lugar de repetirlas.
 - **Landings de campaña** (`/black-friday`, 2026-11-20): URL fija sin año, reutilizable cada edición para acumular autoridad; el año va en el título. Lista los chollos activos con al menos un 20 % de descuento y tiene FAQ visible con su `FAQPage`, `CollectionPage`, `BreadcrumbList` e `ItemList`. Está en el sitemap. Las fechas de cada edición se añaden en `src/lib/campaigns.ts`.
 - **«Sobre nosotros»** (`/sobre-nosotros`): quién publica, cómo se seleccionan y
   verifican los chollos (revisión antes de publicar y comprobación diaria de precio y
@@ -77,7 +80,8 @@
 
 | Página | Nodos |
 |---|---|
-| Portada | `Organization`, `WebSite` (+ `SearchAction`), `ItemList` de chollos, `FAQPage` |
+| Portada | `Organization`, `WebSite` (+ `SearchAction`), `ItemList` de chollos |
+| Preguntas frecuentes | `CollectionPage`, `BreadcrumbList`, `FAQPage` |
 | Ficha activa | `Product` + `Offer` (precio, moneda, disponibilidad, `priceValidUntil` solo si es futura, vendedor), `BreadcrumbList` |
 | Ficha terminada | Solo `BreadcrumbList` (sin `Product` para no anunciar un precio que no se muestra) |
 | Categoría | `CollectionPage`, `BreadcrumbList`, `ItemList` |
@@ -122,9 +126,9 @@ funciones puras y probadas en `src/lib/seo/` (cobertura ≥ 98 %).
   usan `noindex`.
 - **Un loader de página de detalle** lanza `notFound()` ante un 404 de la API y deja
   propagarse los demás errores; nunca devuelve datos vacíos con 200.
-- **Textos de `site-content.ts`** (resumen y FAQ): aparecen en la portada, en
-  «Sobre nosotros», en el JSON-LD y en `/llms.txt`. Solo afirmaciones verdaderas y
-  comprobables en el producto.
+- **Textos de `site-content.ts`** (resumen y FAQ): la FAQ se muestra en
+  `/preguntas-frecuentes` (y su `FAQPage`) y en `/llms.txt`; el resumen, en «Sobre
+  nosotros» y en `/llms.txt`. Todo lo que dicen tiene que ser cierto en el producto.
 - **Categorías nuevas**: añadir su introducción a `CATEGORY_INTROS` si es principal.
 - **Despliegue**: si cambia el contrato de `/v1/deals/sitemap`, desplegar la API antes
   que la web.

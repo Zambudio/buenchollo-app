@@ -47,6 +47,7 @@ export const STATIC_SITEMAP_ENTRIES: SitemapEntry[] = [
   { path: "/black-friday", changefreq: "daily", priority: "0.8" },
   { path: "/blog", changefreq: "daily", priority: "0.7" },
   { path: "/sobre-nosotros", changefreq: "monthly", priority: "0.5" },
+  { path: "/preguntas-frecuentes", changefreq: "monthly", priority: "0.5" },
   { path: "/contacto", changefreq: "yearly", priority: "0.3" },
   { path: "/politica-de-privacidad", changefreq: "yearly", priority: "0.2" },
   { path: "/terminos-y-condiciones", changefreq: "yearly", priority: "0.2" },

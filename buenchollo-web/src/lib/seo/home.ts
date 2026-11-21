@@ -1,13 +1,6 @@
 /** SEO de la portada: la página que debe posicionar «chollos de tecnología». */
 import { withBrand, type PageSeo } from "./head";
-import {
-  dealListSchema,
-  faqSchema,
-  organizationSchema,
-  websiteSchema,
-  type ListedDeal,
-} from "./schema";
-import { SITE_FAQ } from "./site-content";
+import { dealListSchema, organizationSchema, websiteSchema, type ListedDeal } from "./schema";
 
 export const HOME_H1 = "Chollos de tecnología hoy: ofertas y descuentos verificados";
 
@@ -41,7 +34,6 @@ export function homeSeo({ page, deals }: HomeSeoInput): PageSeo {
             ),
           ]
         : []),
-      ...(first ? [faqSchema(SITE_FAQ)] : []),
     ],
   };
 }
