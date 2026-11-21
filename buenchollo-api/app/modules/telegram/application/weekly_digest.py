@@ -8,8 +8,9 @@ normales) y la versión de WhatsApp, para que el admin los reenvíe al canal
 oficial y los copie al Canal de WhatsApp a mano. Nunca publica directamente en
 el canal público.
 
-Un chollo de Awin/Tradedoubler solo entra si sigue cumpliendo las reglas de
-publicación (las mismas que comprueba `/telegram/notify`).
+La lista es la de `deals.application.weekly_top` (la misma que el lateral
+«Top de la semana» de la web), que ya deja fuera los chollos de Awin/Tradedoubler
+que no cumplen las reglas de publicación.
 """
 
 import asyncio
@@ -18,12 +19,11 @@ from concurrent.futures import ThreadPoolExecutor, wait
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from zoneinfo import ZoneInfo
 
 from app.core.config import Settings
-from app.core.jobs import SCHEDULER_TIMEZONE, job_session
-from app.modules.affiliates.application.programs import needs_network_rules
-from app.modules.deals.domain.week import WeekWindow, week_window  # noqa: F401  (ventana común con la web)
+from app.core.jobs import job_session
+from app.modules.deals.application.weekly_top import weekly_top
+from app.modules.deals.domain.week import WeekWindow, week_window
 from app.modules.telegram.application.weekly_collage import CollageItem, build_collage
 from app.modules.telegram.application.post_generator import LINK_TEXT, _format_price_es
 from app.modules.telegram.application.whatsapp_copy import send_whatsapp_copy
@@ -32,12 +32,9 @@ from app.modules.telegram.application.whatsapp_formatter import to_whatsapp_text
 logger = logging.getLogger(__name__)
 
 WEEKLY_DIGEST_LIMIT = 10
-# Se piden más de los que se publican por si alguno no pasa las reglas de afiliación.
-_CANDIDATES = 25
 # Telegram admite 4096 caracteres por mensaje; se deja margen.
 MAX_TEXT_LENGTH = 3900
 
-_MADRID = ZoneInfo(SCHEDULER_TIMEZONE)
 _MONTHS = [
     "", "enero", "febrero", "marzo", "abril", "mayo", "junio",
     "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
@@ -160,31 +157,11 @@ class WeeklyDigestService:
         self.site_url = site_url
         self.guard = guard
 
-    async def _publishable(self, deal) -> bool:
-        """Los chollos de redes de afiliación deben seguir cumpliendo sus reglas
-        (programa aprobado, datos no caducados…), como en `/telegram/notify`."""
-        if self.guard is None:
-            return True
-        from app.modules.deals.application.deal_service import _GUARD_FIELDS
-
-        data = {column: getattr(deal, column, None) for column in _GUARD_FIELDS}
-        data["status"] = "active"
-        if not needs_network_rules(data):
-            return True
-        blockers = await self.guard.blockers_for(data)
-        if blockers:
-            logger.info("Resumen semanal: se omite %s (%s)", getattr(deal, "slug", "?"), ", ".join(blockers))
-        return not blockers
-
     async def preview(self, now: datetime | None = None) -> WeeklyDigest:
-        window = week_window(now or datetime.now(timezone.utc))
-        candidates = await self.deal_repo.get_top_discount_active_since(window.since, limit=_CANDIDATES)
-        deals = []
-        for deal in candidates:
-            if await self._publishable(deal):
-                deals.append(deal)
-            if len(deals) == WEEKLY_DIGEST_LIMIT:
-                break
+        now = now or datetime.now(timezone.utc)
+        window = week_window(now)
+        # El mismo ranking que el lateral «Top de la semana» de la web.
+        deals = await weekly_top(self.deal_repo, self.guard, WEEKLY_DIGEST_LIMIT, now)
         text, count = build_weekly_digest(deals, window, self.site_url)
         return WeeklyDigest(text, whatsapp_version(text) if text else None, count, deals[:count], window)
 

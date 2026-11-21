@@ -11,8 +11,8 @@ const NEW_MS = 24 * 60 * 60 * 1000;
  * - «Top de la semana»: los activos con más descuento de los últimos 7 días
  *   (el mismo ranking que el resumen de los domingos). Se calcula en cada
  *   visita, así que entra lo nuevo y cambia de orden solo. «Nuevo» marca lo
- *   publicado en las últimas 24 h; `now` es la hora del loader, la misma en
- *   el servidor y en el navegador.
+ *   dado de alta en las últimas 24 h (no un chollo antiguo reactivado); `now`
+ *   es la hora del loader, la misma en el servidor y en el navegador.
  * - Sustituye a «Más populares», que ordenaba por votos (todos a 0).
  */
 export function HomeSidebar({
@@ -36,7 +36,7 @@ export function HomeSidebar({
               const discount =
                 deal.discount_percentage ??
                 calculateDiscount(deal.current_price, deal.previous_price);
-              const isNew = now - new Date(deal.published_at).getTime() < NEW_MS;
+              const isNew = now - new Date(deal.created_at ?? deal.published_at).getTime() < NEW_MS;
               return (
                 <li key={deal.id}>
                   <Link to="/chollo/$slug" params={{ slug: deal.slug }}>

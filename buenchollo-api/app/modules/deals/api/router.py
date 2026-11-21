@@ -80,13 +80,16 @@ async def count_new_deals(
 
 
 @router.get("/weekly-top", response_model=list[DealCardResponse])
+@limiter.limit("60/minute")
 async def get_weekly_top(
+    request: Request,
     limit: int = Query(WEEKLY_TOP_MAX, ge=1, le=WEEKLY_TOP_MAX),
     repo: DealRepository = Depends(get_deal_repository),
+    db: AsyncSession = Depends(get_db),
 ):
     """«Top de la semana»: activos con más descuento de los últimos 7 días
     naturales (hora de Madrid). El mismo ranking que el resumen del domingo."""
-    return await weekly_top(repo, limit)
+    return await weekly_top(repo, PublicationGuard(AffiliateRepository(db)), limit)
 
 
 @router.get("/popular", response_model=list[DealCardResponse])
