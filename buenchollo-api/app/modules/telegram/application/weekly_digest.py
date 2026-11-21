@@ -49,6 +49,14 @@ def week_label(window: WeekWindow) -> str:
     return f"{start.day} de {_MONTHS[start.month]} – {end.day} de {_MONTHS[end.month]}"
 
 
+# El número del top en emoji (el mismo que lleva cada tarjeta del collage).
+_KEYCAPS = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"]
+
+
+def number_emoji(position: int) -> str:
+    return _KEYCAPS[position - 1] if 1 <= position <= len(_KEYCAPS) else f"{position}."
+
+
 def _discount(deal) -> int | None:
     price = float(deal.current_price)
     previous = float(deal.previous_price) if deal.previous_price else None
@@ -77,7 +85,7 @@ def _deal_block(
     previous = float(deal.previous_price) if deal.previous_price else None
     discount = _discount(deal)
     link = deal.affiliate_url or f"{site_url.rstrip('/')}/chollo/{deal.slug}"
-    block = f"🍄 {position}. {_shorten(deal.title, title_max)}\n"
+    block = f"{number_emoji(position)} {_shorten(deal.title, title_max)}\n"
     if with_price:
         line = f"💶 {_format_price_es(price)} €"
         if with_previous and previous and previous > price:
@@ -146,10 +154,16 @@ def build_caption(deals: list, window: WeekWindow, site_url: str) -> tuple[str |
 
 
 def whatsapp_version(telegram_text: str) -> str:
-    """La versión WhatsApp de los posts, con la cabecera en negrita."""
-    text = to_whatsapp_text(telegram_text)
-    first, _, rest = text.partition("\n")
-    return f"*{first}*\n{rest}" if first else text
+    """La versión WhatsApp de los posts, con la cabecera y los títulos en negrita."""
+    lines = to_whatsapp_text(telegram_text).split("\n")
+    for i, line in enumerate(lines):
+        for emoji in _KEYCAPS:
+            if line.startswith(f"{emoji} "):
+                lines[i] = f"{emoji} *{line[len(emoji) + 1:].replace('*', '')}*"
+                break
+    if lines and lines[0]:
+        lines[0] = f"*{lines[0]}*"
+    return "\n".join(lines)
 
 
 @dataclass
