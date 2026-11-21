@@ -45,14 +45,13 @@ export const Route = createFileRoute("/")({
   validateSearch: parseHomeSearch,
   loaderDeps: ({ search }) => ({ page: search.page ?? 1 }),
   loader: async ({ deps }) => {
-    const [page, tops, popular, posts] = await Promise.all([
+    const [page, tops, posts] = await Promise.all([
       withFallback(
         dealsService.getPage({ sort: "recent", page: deps.page, page_size: PAGE_SIZE }),
         { items: [], total_pages: 1, page: 1, page_size: PAGE_SIZE, total: 0 },
         "Error cargando chollos de portada",
       ),
       withFallback(loadBannerTops(), [], "Error cargando tops de portada"),
-      withFallback(dealsService.getPopular(3), [], "Error cargando chollos populares"),
       withFallback(
         blogService.getPosts({ page_size: 3 }).then((result) => result.items),
         [],
@@ -60,7 +59,7 @@ export const Route = createFileRoute("/")({
       ),
     ]);
     // La hora se fija en el loader para que servidor y cliente elijan el mismo hero.
-    return { ...page, popular, posts, tops, now: Date.now() };
+    return { ...page, posts, tops, now: Date.now() };
   },
   head: ({ loaderData }) =>
     pageHead(homeSeo({ page: loaderData?.page ?? 1, deals: loaderData?.items ?? [] })),
@@ -153,7 +152,7 @@ function HomePage() {
               </div>
             )}
           </div>
-          <HomeSidebar popular={data.popular} posts={data.posts} />
+          <HomeSidebar posts={data.posts} />
         </div>
         {currentPage === 1 && <SiteFaq />}
       </div>

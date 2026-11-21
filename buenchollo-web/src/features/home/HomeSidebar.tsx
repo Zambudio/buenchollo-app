@@ -1,45 +1,12 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, BookOpen, TrendingUp } from "lucide-react";
+import { ArrowRight, BookOpen } from "lucide-react";
 import type { BlogPostCard } from "@/services/api/blog";
-import type { DealCardData } from "@/features/deals/components/DealCard";
-import { formatPrice } from "@/lib/format";
 
-export function HomeSidebar({
-  popular,
-  posts,
-}: {
-  popular: DealCardData[];
-  posts: BlogPostCard[];
-}) {
+/** Columna lateral de la portada. Sin «Más populares»: ordenaba por votos y,
+ *  con la comunidad arrancando, todos estaban a 0. */
+export function HomeSidebar({ posts }: { posts: BlogPostCard[] }) {
   return (
     <aside className="home-sidebar" aria-label="Más por descubrir">
-      <section className="sidebar-panel">
-        <h2>
-          <TrendingUp size={19} aria-hidden="true" /> Más populares
-        </h2>
-        {popular.length ? (
-          <ul>
-            {popular.map((deal) => (
-              <li key={deal.id}>
-                <Link to="/chollo/$slug" params={{ slug: deal.slug }}>
-                  {deal.image_url && (
-                    <img src={deal.image_url} alt="" loading="lazy" width="64" height="64" />
-                  )}
-                  <span>
-                    {deal.title}
-                    <strong>{formatPrice(deal.current_price)}</strong>
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>Los chollos destacados aparecerán aquí.</p>
-        )}
-        <Link className="sidebar-more" to="/explorar">
-          Ver todos <ArrowRight size={15} />
-        </Link>
-      </section>
       <section className="sidebar-panel">
         <h2>
           <BookOpen size={19} aria-hidden="true" /> En el blog

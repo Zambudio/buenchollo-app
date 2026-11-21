@@ -210,10 +210,6 @@ export const dealsService = {
   getLatest: (limit = 8): Promise<DealCardData[]> =>
     apiClient.get<DealCardData[]>(`/deals/latest?limit=${limit}`),
 
-  /** Obtiene los chollos más populares/calientes */
-  getPopular: (limit = 4): Promise<DealCardData[]> =>
-    apiClient.get<DealCardData[]>(`/deals/popular?limit=${limit}`),
-
   /** Pagina estable del feed principal, ya ordenada en el servidor. */
   getPage: (params: DealPageParams): Promise<DealPageResponse> => {
     const queryParams = new URLSearchParams();
