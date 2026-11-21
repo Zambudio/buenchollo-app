@@ -36,6 +36,7 @@ import type { TelegramScheduleRequest } from "@/features/telegram/components/Tel
 import type { TelegramGenerateRequest } from "@/services/api/telegram";
 import { DEFAULT_AI_PROVIDER, isAiProvider, type AiProvider } from "@/lib/ai-providers";
 import {
+  applyEnrichment,
   applyImport,
   buildDealPayload,
   dealToForm,
@@ -165,6 +166,31 @@ function AdminDeals() {
     setShowForm(true);
   };
 
+  /** Awin / Tradedoubler: con los datos del catálogo, la IA propone descripción
+   *  corta, descripción larga, post de Telegram y categoría (como en Amazon).
+   *  Solo rellena lo vacío o lo que sigue igual que en el catálogo; si la IA
+   *  falla, la importación ya está hecha y solo se avisa. */
+  const enrichImported = async (offer: NonNullable<ImportResponse["offer"]>) => {
+    try {
+      const ai = await productsApi.enrich(
+        {
+          title: (offer.title ?? "").slice(0, 300),
+          description: (offer.description ?? "").slice(0, 10_000),
+          brand: (offer.brand ?? "").slice(0, 120),
+          category_hint: (offer.category_hint ?? "").slice(0, 200),
+        },
+        aiProvider,
+      );
+      const category = ai.category_id
+        ? resolveCategorySelection(ai.category_id, ai.subcategory_id ?? "", cats, subcats)
+        : { category_id: "", subcategory_id: "" };
+      setForm((f) => applyEnrichment(f, ai, category));
+      toast.success("Textos y categoría propuestos por la IA");
+    } catch (e: unknown) {
+      toast.warning("La IA no ha podido proponer textos: " + errorMessage(e));
+    }
+  };
+
   /** Awin / Tradedoubler: importa y rellena el formulario SIN publicar ni
    *  abrir Telegram. Lo editado a mano no se pisa (se listan conflictos). */
   const runAffiliateImport = async (req: ImportRequest) => {
@@ -193,6 +219,9 @@ function AdminDeals() {
       toast.success(
         result.stage === "product_imported" ? "Producto importado (borrador)" : "Enlace generado",
       );
+      if (result.stage === "product_imported" && result.offer.title) {
+        await enrichImported(result.offer);
+      }
     } catch (e: unknown) {
       toast.error(errorMessage(e));
     } finally {

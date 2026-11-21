@@ -39,4 +39,28 @@ export const productsApi = {
       { url, ...(provider ? { provider } : {}) },
       { signal: AbortSignal.timeout(PREVIEW_FROM_URL_TIMEOUT_MS) },
     ),
+  /** Copywriting y categoría con IA de un producto importado de Awin / Tradedoubler. */
+  enrich: (req: ProductEnrichRequest, provider?: AiProvider): Promise<ProductEnrichResponse> =>
+    apiClient.post<ProductEnrichResponse>(
+      "/products/enrich",
+      { ...req, ...(provider ? { provider } : {}) },
+      { signal: AbortSignal.timeout(PREVIEW_FROM_URL_TIMEOUT_MS) },
+    ),
 };
+
+/** Cuerpo de POST /products/enrich (schema ProductEnrichRequest del backend). */
+export interface ProductEnrichRequest {
+  title: string;
+  description?: string;
+  brand?: string;
+  category_hint?: string;
+}
+
+/** Respuesta de POST /products/enrich. */
+export interface ProductEnrichResponse {
+  short_description: string;
+  long_description: string;
+  telegram_text: string;
+  category_id: string | null;
+  subcategory_id: string | null;
+}

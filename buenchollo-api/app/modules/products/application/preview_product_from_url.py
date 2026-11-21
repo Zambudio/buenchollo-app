@@ -45,7 +45,103 @@ class AIEnricher(Protocol):
         """Return a dict with AI-generated fields (short_description, category_id, …)."""
 
 
-# ── Caso de uso ───────────────────────────────────────────────────────────────
+# ── Casos de uso ──────────────────────────────────────────────────────────────
+
+class EnrichProductUseCase:
+    """Copywriting y categorización con IA de un producto ya conocido.
+
+    Lo usa el autocompletado de Amazon y también el de las redes de afiliación
+    (Awin / Tradedoubler), que traen los datos del catálogo pero no los textos
+    de venta ni la categoría de la web.
+    """
+
+    def __init__(self, category_client: CategoryClient, ai_assistant: AIEnricher) -> None:
+        self.category_client = category_client
+        self.ai_assistant = ai_assistant
+
+    def execute(
+        self,
+        *,
+        title: str,
+        description: str = "",
+        brand: str = "",
+        category_hint: str = "",
+        provider: str | None = None,
+    ) -> ProductPreview:
+        """Enriquece un producto a partir de sus datos (título, descripción…)."""
+        context = description.strip()
+        if category_hint.strip():
+            context = f"Categoría en la tienda: {category_hint.strip()}\n{context}".strip()
+        product = ProductPreview(title=title.strip(), brand=brand.strip(), description=context)
+        product = self.enrich(product, provider)
+        # El rescate del enriquecedor devuelve como descripción larga el contexto
+        # tal cual: sin la línea de categoría, que solo era pista para la IA.
+        if product.long_description == context:
+            product.long_description = description.strip()
+        return product
+
+    def enrich(self, product: ProductPreview, provider: str | None = None) -> ProductPreview:
+        """Aplica la IA sobre `product` y garantiza una categoría (Varios si no)."""
+        # Sync categories from Supabase for the AI context
+        categories = self.category_client.get_categories_hierarchy()
+        categories_prompt = self.category_client.format_categories_for_prompt(categories)
+
+        # Categorize and enrich with AI
+        ai_data = self.ai_assistant.enrich_product(product, categories_prompt, provider=provider)
+
+        # Merge AI data into the product entity
+        if ai_data:
+            # Categorización
+            product.category_id = ai_data.get("category_id") or product.category_id
+            product.subcategory_id = ai_data.get("subcategory_id") or product.subcategory_id
+
+            # Textos persuasivos
+            product.short_description = ai_data.get("short_description") or product.short_description
+            product.long_description = (
+                ai_data.get("long_description") or ai_data.get("description") or product.long_description
+            )
+            product.telegram_text = ai_data.get("telegram_text") or product.telegram_text
+
+            # Metadatos
+            if ai_data.get("expires_at"):
+                product.expires_at = ai_data.get("expires_at")
+
+        _ensure_category(product, categories)
+        return product
+
+
+def _ensure_category(product: ProductPreview, categories: list[dict[str, Any]]) -> None:
+    """Fallback de categorización garantizado si la IA no clasificó o dejó incompleta la taxonomía."""
+    if product.category_id and product.subcategory_id:
+        return
+    varios_cat = next(
+        (
+            c for c in categories
+            if not c.get("parent_id") and (
+                c.get("name", "").strip().lower() == "varios" or c.get("slug") == "varios-xly2"
+            )
+        ),
+        None,
+    )
+    varios_cat_id = varios_cat["id"] if varios_cat else "99b72435-42f6-4628-a1af-3f66af5e4a88"
+    varios_sub = next(
+        (
+            c for c in categories
+            if c.get("parent_id") == varios_cat_id and (
+                c.get("name", "").strip().lower() == "varios" or c.get("slug") == "varios-y175"
+            )
+        ),
+        None,
+    )
+    varios_sub_id = varios_sub["id"] if varios_sub else "970d38ab-20e8-43e8-97a1-5c84dfd391c5"
+
+    if not product.category_id:
+        product.category_id = varios_cat_id
+        product.subcategory_id = varios_sub_id
+    elif not product.subcategory_id:
+        first_sub = next((c for c in categories if c.get("parent_id") == product.category_id), None)
+        product.subcategory_id = first_sub["id"] if first_sub else varios_sub_id
+
 
 class PreviewProductFromUrlUseCase:
     """Coordinate fetching product data, categorizing with AI and preparing response."""
@@ -70,57 +166,4 @@ class PreviewProductFromUrlUseCase:
         if not product.description and product.features:
             product.description = " - ".join(product.features)
 
-        # Sync categories from Supabase for the AI context
-        categories = self.category_client.get_categories_hierarchy()
-        categories_prompt = self.category_client.format_categories_for_prompt(categories)
-
-        # Categorize and enrich with AI
-        ai_data = self.ai_assistant.enrich_product(product, categories_prompt, provider=provider)
-        
-        # Merge AI data into the product entity
-        if ai_data:
-            # Categorización
-            product.category_id = ai_data.get("category_id") or product.category_id
-            product.subcategory_id = ai_data.get("subcategory_id") or product.subcategory_id
-            
-            # Textos persuasivos
-            product.short_description = ai_data.get("short_description") or product.short_description
-            product.long_description = ai_data.get("long_description") or ai_data.get("description") or product.long_description
-            product.telegram_text = ai_data.get("telegram_text") or product.telegram_text
-            
-            # Metadatos
-            if ai_data.get("expires_at"):
-                product.expires_at = ai_data.get("expires_at")
-
-        # Fallback de categorización garantizado si la IA no clasificó o dejó incompleta la taxonomía
-        if not product.category_id or not product.subcategory_id:
-            varios_cat = next(
-                (
-                    c for c in categories
-                    if not c.get("parent_id") and (
-                        c.get("name", "").strip().lower() == "varios" or c.get("slug") == "varios-xly2"
-                    )
-                ),
-                None,
-            )
-            varios_cat_id = varios_cat["id"] if varios_cat else "99b72435-42f6-4628-a1af-3f66af5e4a88"
-            varios_sub = next(
-                (
-                    c for c in categories
-                    if c.get("parent_id") == varios_cat_id and (
-                        c.get("name", "").strip().lower() == "varios" or c.get("slug") == "varios-y175"
-                    )
-                ),
-                None,
-            )
-            varios_sub_id = varios_sub["id"] if varios_sub else "970d38ab-20e8-43e8-97a1-5c84dfd391c5"
-
-            if not product.category_id:
-                product.category_id = varios_cat_id
-                product.subcategory_id = varios_sub_id
-            elif not product.subcategory_id:
-                first_sub = next((c for c in categories if c.get("parent_id") == product.category_id), None)
-                product.subcategory_id = first_sub["id"] if first_sub else varios_sub_id
-
-        return product
-
+        return EnrichProductUseCase(self.category_client, self.ai_assistant).enrich(product, provider)

@@ -9,8 +9,14 @@ from app.core.security import require_admin
 from app.modules.deals.api.router import get_deal_repository
 from app.modules.deals.domain.exceptions import DuplicateDealError
 from app.modules.deals.infrastructure.repository import DealRepository
-from app.modules.products.api.schemas import ProductPreviewFromUrlRequest, ProductPreviewResponse
+from app.modules.products.api.schemas import (
+    ProductEnrichRequest,
+    ProductEnrichResponse,
+    ProductPreviewFromUrlRequest,
+    ProductPreviewResponse,
+)
 from app.modules.products.application.preview_product_from_url import (
+    EnrichProductUseCase,
     PreviewProductFromUrlUseCase,
 )
 from app.modules.products.infrastructure.amazon_client import (
@@ -80,3 +86,36 @@ async def preview_from_url(
     product = await run_in_threadpool(use_case.execute, payload.url, payload.provider)
     return ProductPreviewResponse.model_validate(product)
 
+
+def get_enrich_use_case(
+    category_client: SupabaseCategoryClient = Depends(get_category_client),
+    ai_assistant: OpenAIAssistant = Depends(get_ai_assistant),
+) -> EnrichProductUseCase:
+    """Caso de uso de enriquecimiento (sin Amazon)."""
+    return EnrichProductUseCase(category_client, ai_assistant)
+
+
+# Solo admin: cada llamada consume cupo del motor de IA. Lo usa el autocompletado
+# de Awin / Tradedoubler para la descripción corta, la categoría y el post.
+@router.post(
+    "/enrich",
+    response_model=ProductEnrichResponse,
+    dependencies=[Depends(require_admin)],
+)
+@limiter.limit("10/minute")
+async def enrich_product(
+    request: Request,
+    payload: ProductEnrichRequest,
+    use_case: EnrichProductUseCase = Depends(get_enrich_use_case),
+) -> ProductEnrichResponse:
+    """Copywriting y categoría con IA a partir de los datos del catálogo."""
+    product = await run_in_threadpool(
+        lambda: use_case.execute(
+            title=payload.title,
+            description=payload.description,
+            brand=payload.brand,
+            category_hint=payload.category_hint,
+            provider=payload.provider,
+        )
+    )
+    return ProductEnrichResponse.model_validate(product)

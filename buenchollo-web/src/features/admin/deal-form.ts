@@ -371,3 +371,39 @@ export function resolveConflict(form: DealForm, conflict: ImportConflict): DealF
   }
   return next;
 }
+
+/** Textos y categoría que propone la IA (POST /products/enrich). */
+export interface EnrichmentData {
+  short_description: string;
+  long_description: string;
+  telegram_text: string;
+}
+
+/** Tras importar de Awin / Tradedoubler, aplica los textos de la IA donde el
+ *  formulario está vacío o conserva el texto del catálogo (sin tocar), y la
+ *  categoría (ya validada contra el catálogo) solo si no hay ninguna elegida.
+ *  Lo escrito a mano nunca se pisa. */
+export function applyEnrichment(
+  form: DealForm,
+  ai: EnrichmentData,
+  category: { category_id: string; subcategory_id: string },
+): DealForm {
+  const snapshot = form.import_snapshot ?? {};
+  const next: DealForm = { ...form };
+  const replaceable = (field: "short_description" | "description") =>
+    !form[field].trim() || form[field] === snapshot[field];
+  if (ai.short_description.trim() && replaceable("short_description")) {
+    next.short_description = ai.short_description.trim();
+  }
+  if (ai.long_description.trim() && replaceable("description")) {
+    next.description = ai.long_description.trim();
+  }
+  if (ai.telegram_text.trim() && !(form.telegram_text ?? "").trim()) {
+    next.telegram_text = ai.telegram_text.trim();
+  }
+  if (!form.category_id && category.category_id) {
+    next.category_id = category.category_id;
+    next.subcategory_id = category.subcategory_id;
+  }
+  return next;
+}

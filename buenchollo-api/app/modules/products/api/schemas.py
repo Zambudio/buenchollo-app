@@ -56,3 +56,33 @@ class ProductPreviewResponse(BaseModel):
         """Return zero for missing discount values in the public response."""
         return 0 if value is None else value
 
+
+class ProductEnrichRequest(BaseModel):
+    """Datos de un producto importado (Awin / Tradedoubler) para la IA."""
+
+    title: str = Field(..., max_length=300)
+    description: str = Field(default="", max_length=10_000)
+    brand: str = Field(default="", max_length=120)
+    category_hint: str = Field(default="", max_length=200)
+    provider: str | None = Field(default=None, description="Proveedor de IA: 'omniroute', 'openai' o 'auto'")
+
+    @field_validator("title")
+    @classmethod
+    def validate_title(cls, value: str) -> str:
+        """Reject blank titles after trimming whitespace."""
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("El título no puede estar vacío.")
+        return cleaned
+
+
+class ProductEnrichResponse(BaseModel):
+    """Textos de venta y categoría propuestos por la IA."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    short_description: str = ""
+    long_description: str = ""
+    telegram_text: str = ""
+    category_id: str | None = None
+    subcategory_id: str | None = None

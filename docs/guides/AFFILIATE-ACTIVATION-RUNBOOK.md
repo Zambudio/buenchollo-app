@@ -5,7 +5,7 @@
 > [`AFFILIATE-NETWORKS.md`](AFFILIATE-NETWORKS.md) y [ADR-019](../adr/ADR-019-redes-afiliacion-awin-tradedoubler.md).
 > Acceso al NAS: [`NAS-SSH.md`](NAS-SSH.md).
 
-## 0. Punto de partida (2026-11-08)
+## 0. Punto de partida (2026-11-08; actualizado 2026-11-21)
 
 - Código **en producción**: PR #78 (merge `c47269c`), API y scheduler recreados,
   Alembic en `20261108120000`. El job diario `run_awin_feed_sync` (05:17) está registrado.
@@ -16,9 +16,9 @@
 | Red | ID | Tienda | Adhesión en la red | En la BD |
 |---|---|---|---|---|
 | Awin | 20982 | PcComponentes | `pending` | `unknown`, deshabilitado |
-| Awin | 124624 | Coolmod | `pending` | `unknown`, deshabilitado |
-| Awin | 77630 | Fnac ES | `pending` | `unknown`, deshabilitado, **sin tienda vinculada** |
-| Awin | 21707 | Samsung ES | `pending` | `unknown`, deshabilitado |
+| Awin | 124624 | Coolmod | **`joined`** (12-nov) | **habilitado** el 21-nov; feed 114170 «Predeterminado» (es, 12.995 productos); espacios web + Telegram; imágenes web + Telegram marcadas por Pedro (las condiciones no dicen nada de imágenes) |
+| Awin | 77630 | Fnac ES | **`rejected`** (21-nov) | deshabilitado, sin tienda vinculada |
+| Awin | 21707 | Samsung ES | **`joined`** (21-nov) | deshabilitado; feed 53975 (912 productos) disponible |
 | Awin | 37166 | Miravia (influencers/redes) | `pending` | `unknown`, deshabilitado |
 | Awin | 37168 | Miravia (otros modelos) | `notjoined` | `unknown`, deshabilitado |
 | Tradedoubler | 270504 | MediaMarkt ES | sin feeds accesibles | `unknown`, deshabilitado |
@@ -108,7 +108,8 @@ En Awin (*Advertisers → My Programmes → <tienda> → Terms*) o Tradedoubler 
 
 ### Awin
 
-1. **SINCRONIZAR FEEDS AWIN** (descubre los feeds del programa).
+1. **SINCRONIZAR FEEDS AWIN** (descubre los feeds del programa). Solo mira los programas
+   **habilitados**: habilita y guarda la ficha (§4) antes, o saldrá «FEEDS (0)».
 2. En la ficha, marcar el feed **en español** (idioma `es`, el de más productos si hay
    varios) y **SINCRONIZAR ESTE PROGRAMA**. Va en segundo plano.
 3. Pasados unos minutos, repetir el script del §2: en `db.feed_sync` debe salir

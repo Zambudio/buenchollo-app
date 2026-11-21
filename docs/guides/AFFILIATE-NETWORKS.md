@@ -1,10 +1,10 @@
 # Redes de afiliación: Awin y Tradedoubler
 
 > Guía viva. Decisión de diseño en [ADR-019](../adr/ADR-019-redes-afiliacion-awin-tradedoubler.md).
-> Estado a 2026-11-08: **en producción** (PR #78, merge `c47269c`, Alembic `20261108120000`)
-> con las credenciales de ambas redes configuradas en el NAS. **Ninguna tienda aprobada**
-> todavía: todos los programas siguen deshabilitados. El parser solo se ha probado con
-> fixtures sintéticas (`buenchollo-api/app/tests/fixtures/affiliates/`).
+> Estado a 2026-11-21: **en producción** (PR #78, merge `c47269c`, Alembic `20261108120000`)
+> con las credenciales de ambas redes configuradas en el NAS. **Coolmod (Awin) activo**
+> desde el 2026-11-21: feed 114170 sincronizado (12.995 productos) y contrastado con datos
+> reales. Samsung ES aceptado pero sin habilitar; el resto, ver la tabla del runbook.
 >
 > **Para activar una tienda cuando la aprueben: [`AFFILIATE-ACTIVATION-RUNBOOK.md`](AFFILIATE-ACTIVATION-RUNBOOK.md).**
 
@@ -26,6 +26,10 @@ Desde **Admin → Chollos**, el panel «Autocompletar desde Amazon, Awin o Trade
      candidatos (si no hay coincidencia exacta o hay varias variantes) y si ya existe un chollo.
 3. El editor se rellena como **borrador** y muestra tres etapas: *Enlace generado →
    Producto importado → Lista para publicar*. «SOLO ENLACE» genera solo el enlace.
+   Con el producto importado, el editor pide a la IA (`POST /v1/products/enrich`, solo
+   admin, 10/min) la descripción corta, la descripción larga, el post de Telegram y la
+   categoría, igual que en Amazon. Solo rellena lo vacío o lo que sigue como vino del
+   catálogo; si la IA falla, la importación ya está hecha y solo avisa.
 4. Publicar (estado activo, o Telegram) exige pasar las reglas del backend
    (`POST /v1/affiliates/readiness`, `PublicationGuard`). Un borrador siempre se guarda.
 

@@ -3,6 +3,12 @@
 
 > Bitácora cronológica inversa. Estado operativo vigente: [`docs/project/11-current-state.md`](docs/project/11-current-state.md); pendientes abiertos: [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md).
 
+## 2026-11-21 · Coolmod activo en Awin y textos con IA para las redes
+
+- **Coolmod (Awin) en marcha**: adhesión `joined`, programa habilitado (web y Telegram), feed «Predeterminado» (12.995 productos) sincronizado y contrastado con un producto real. Primera validación en vivo del parser de Awin (TD-46). Samsung ES también aceptado (sin habilitar); Fnac rechazado.
+- **Autocompletar de Awin / Tradedoubler con IA**: tras importar del catálogo, el editor pide a `POST /v1/products/enrich` (solo admin, 10/min) la descripción corta, la larga, el post de Telegram y la categoría, con el mismo enriquecedor que Amazon (`EnrichProductUseCase`). No pisa lo escrito a mano. El precio anterior sigue siendo manual: el feed no trae una referencia válida.
+- **Runbook**: la sincronización de feeds solo descubre los de programas habilitados (habilitar antes).
+
 ## 2026-11-21 · Ficha del chollo sin desplazamiento lateral en el móvil
 
 - **Causa**: la rejilla móvil de la ficha (`.product-layout`, `src/styles.css`) usaba `grid-template-columns: 1fr`, que equivale a `minmax(auto, 1fr)`: la columna crecía hasta el ancho intrínseco de la galería (carrusel de miniaturas) y la página se desplazaba de lado. A 360 px la página medía 436 px para 345 px útiles; se cortaban el aviso «Termina» y el borde de la galería.
