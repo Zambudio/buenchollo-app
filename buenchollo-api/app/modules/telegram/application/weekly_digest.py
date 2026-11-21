@@ -17,12 +17,13 @@ import logging
 from concurrent.futures import ThreadPoolExecutor, wait
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
 from app.core.config import Settings
 from app.core.jobs import SCHEDULER_TIMEZONE, job_session
 from app.modules.affiliates.application.programs import needs_network_rules
+from app.modules.deals.domain.week import WeekWindow, week_window  # noqa: F401  (ventana común con la web)
 from app.modules.telegram.application.weekly_collage import CollageItem, build_collage
 from app.modules.telegram.application.post_generator import LINK_TEXT, _format_price_es
 from app.modules.telegram.application.whatsapp_copy import send_whatsapp_copy
@@ -41,21 +42,6 @@ _MONTHS = [
     "", "enero", "febrero", "marzo", "abril", "mayo", "junio",
     "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
 ]
-
-
-@dataclass(frozen=True)
-class WeekWindow:
-    first_day: date
-    last_day: date
-    since: datetime  # medianoche (Madrid) del primer día
-
-
-def week_window(now: datetime) -> WeekWindow:
-    """Los 7 días naturales que acaban hoy (hora de Madrid). Etiqueta y consulta
-    usan la misma ventana: un chollo no sale en dos resúmenes seguidos."""
-    last_day = now.astimezone(_MADRID).date()
-    first_day = last_day - timedelta(days=6)
-    return WeekWindow(first_day, last_day, datetime.combine(first_day, time.min, tzinfo=_MADRID))
 
 
 def week_label(window: WeekWindow) -> str:

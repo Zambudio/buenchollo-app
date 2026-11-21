@@ -227,6 +227,10 @@ export const dealsService = {
       });
   },
 
+  /** «Top de la semana»: activos con más descuento de los últimos 7 días (máx. 10). */
+  getWeeklyTop: (limit = 10): Promise<DealCardData[]> =>
+    apiClient.get<DealCardData[]>(`/deals/weekly-top?limit=${limit}`),
+
   /** Chollos activos publicados desde la última visita (píldora «N nuevos»). */
   countNewSince: (since: Date): Promise<number> =>
     apiClient
