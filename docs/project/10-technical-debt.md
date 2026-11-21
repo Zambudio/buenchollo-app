@@ -73,6 +73,14 @@
   todo el `.env`; logos de marca enlazados desde Wikimedia; tipos de la API escritos a mano;
   componentes de `components/ui` sin uso. Detalle en el § 5.3 del informe de auditoría.
 
+## 🟡 Baja — responsive (2026-11-21)
+
+- **TD-63 — Cabecera desborda a 320 px con sesión iniciada.** En pantallas de 320 px
+  (móviles muy estrechos) y con sesión iniciada, la fila derecha de la cabecera
+  (`components/layout/Header.tsx`: publicar, notificaciones, avatar y menú) no cabe y
+  produce unos 30 px de desplazamiento lateral en toda la web. A 360 px o más no ocurre.
+  Detectado al corregir el desborde de la ficha del chollo (2026-11-21).
+
 ## 🟡 Baja — dependencias (2026-11-18)
 
 - **TD-50 — `picomatch` con aviso high sin versión corregida (GHSA-fc5q-39xc-vjpf).**

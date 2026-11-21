@@ -1153,7 +1153,9 @@
   @media (max-width: 878px) {
     .product-layout {
       display: grid;
-      grid-template-columns: 1fr;
+      /* minmax(0, …): con `1fr` la columna crece al ancho intrínseco de la
+         galería (carrusel de miniaturas) y desborda el viewport en el móvil. */
+      grid-template-columns: minmax(0, 1fr);
       gap: 16px;
     }
     .product-info,
