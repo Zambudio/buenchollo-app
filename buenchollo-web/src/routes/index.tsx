@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { DealCard } from "@/features/deals/components/DealCard";
 import { DealPagination } from "@/features/deals/components/DealPagination";
@@ -7,7 +7,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { dealsService, favoritesApi } from "@/services/api/deals";
 import { pageHead } from "@/lib/seo/head";
 import { HOME_H1, homeSeo } from "@/lib/seo/home";
-import { SiteFaq } from "@/features/home/SiteFaq";
 import { withFallback } from "@/lib/fallback";
 import { HomeSidebar } from "@/features/home/HomeSidebar";
 import { blogService } from "@/services/api/blog";
@@ -15,6 +14,7 @@ import { TopBanner } from "@/features/home/TopBanner";
 import { loadBannerTops } from "@/features/home/bannerTops";
 import { CampaignHero } from "@/features/campaigns/CampaignHero";
 import { BLACK_FRIDAY, campaignStatus } from "@/lib/campaigns";
+import { visitBaseline } from "@/lib/lastVisit";
 
 const PAGE_SIZE = 30;
 
@@ -45,22 +45,22 @@ export const Route = createFileRoute("/")({
   validateSearch: parseHomeSearch,
   loaderDeps: ({ search }) => ({ page: search.page ?? 1 }),
   loader: async ({ deps }) => {
-    const [page, tops, popular, posts] = await Promise.all([
+    const [page, tops, posts, weeklyTop] = await Promise.all([
       withFallback(
         dealsService.getPage({ sort: "recent", page: deps.page, page_size: PAGE_SIZE }),
         { items: [], total_pages: 1, page: 1, page_size: PAGE_SIZE, total: 0 },
         "Error cargando chollos de portada",
       ),
       withFallback(loadBannerTops(), [], "Error cargando tops de portada"),
-      withFallback(dealsService.getPopular(3), [], "Error cargando chollos populares"),
       withFallback(
         blogService.getPosts({ page_size: 3 }).then((result) => result.items),
         [],
         "Error cargando artículos del blog",
       ),
+      withFallback(dealsService.getWeeklyTop(10), [], "Error cargando el top de la semana"),
     ]);
     // La hora se fija en el loader para que servidor y cliente elijan el mismo hero.
-    return { ...page, popular, posts, tops, now: Date.now() };
+    return { ...page, posts, tops, weeklyTop, now: Date.now() };
   },
   head: ({ loaderData }) =>
     pageHead(homeSeo({ page: loaderData?.page ?? 1, deals: loaderData?.items ?? [] })),
@@ -76,6 +76,13 @@ function HomePage() {
   const totalPages = data.total_pages;
   const currentPage = data.page;
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
+  // Separador «lo nuevo desde tu última visita»: solo en el navegador (tras montar).
+  const [baseline, setBaseline] = useState<Date | null>(null);
+  useEffect(() => setBaseline(visitBaseline()), []);
+  const firstSeenIndex =
+    baseline && currentPage === 1
+      ? deals.findIndex((d) => new Date(d.published_at).getTime() <= baseline.getTime())
+      : -1;
   const dealsHeadingRef = useRef<HTMLHeadingElement>(null);
   const campaign = campaignStatus(BLACK_FRIDAY, new Date(data.now));
 
@@ -125,12 +132,18 @@ function HomePage() {
               </h2>
               <div className="deal-feed-grid">
                 {deals.map((d, index) => (
-                  <DealCard
-                    key={d.id}
-                    deal={d}
-                    isFavorite={favIds.has(d.id)}
-                    imageLoading={index < 3 ? "eager" : "lazy"}
-                  />
+                  <Fragment key={d.id}>
+                    {index > 0 && index === firstSeenIndex && (
+                      <div className="feed-new-divider" role="separator">
+                        <span>Hasta aquí, lo nuevo desde tu última visita</span>
+                      </div>
+                    )}
+                    <DealCard
+                      deal={d}
+                      isFavorite={favIds.has(d.id)}
+                      imageLoading={index < 3 ? "eager" : "lazy"}
+                    />
+                  </Fragment>
                 ))}
               </div>
             </section>
@@ -153,9 +166,8 @@ function HomePage() {
               </div>
             )}
           </div>
-          <HomeSidebar popular={data.popular} posts={data.posts} />
+          <HomeSidebar weeklyTop={data.weeklyTop} posts={data.posts} now={data.now} />
         </div>
-        {currentPage === 1 && <SiteFaq />}
       </div>
     </Layout>
   );

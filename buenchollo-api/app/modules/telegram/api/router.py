@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from uuid import UUID
 import asyncio
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Response
 from starlette.concurrency import run_in_threadpool
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,6 +18,7 @@ from app.modules.affiliates.infrastructure.repository import AffiliateRepository
 from app.modules.telegram.application.post_generator import TelegramPostGenerator
 from app.modules.telegram.application.whatsapp_copy import send_whatsapp_copy
 from app.modules.telegram.application.whatsapp_formatter import to_whatsapp_text
+from app.modules.telegram.application.weekly_digest import build_weekly_digest_service
 from app.modules.telegram.application.publications import channel_kind, record_safely, with_current_price
 from app.modules.telegram.infrastructure.publication_repository import TelegramPublicationRepository
 from app.modules.telegram.domain.exceptions import (
@@ -38,6 +39,7 @@ from app.modules.telegram.api.schemas import (
     TelegramPublicationResponse,
     WhatsAppTextRequest,
     WhatsAppTextResponse,
+    WeeklyDigestResponse,
 )
 
 router = APIRouter(prefix="/telegram", tags=["telegram"])
@@ -294,3 +296,68 @@ async def list_publications(
         TelegramPublicationResponse.model_validate(p).model_copy(update={"repriced_text": text})
         for p, text in zip(publications, repriced)
     ]
+
+
+# ── Resumen semanal «Los chollos de la semana» ────────────────────────────────
+
+@router.get("/weekly-digest", response_model=WeeklyDigestResponse)
+async def preview_weekly_digest(
+    db: AsyncSession = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+    _auth=Depends(require_admin),
+):
+    """Vista previa del resumen semanal tal y como saldría ahora (no envía nada)."""
+    digest = await build_weekly_digest_service(db, settings).preview()
+    return WeeklyDigestResponse(
+        telegram_text=digest.telegram_text,
+        full_text=digest.full_text,
+        whatsapp_text=digest.whatsapp_text,
+        count=digest.count,
+        sent=False
+    )
+
+
+@router.get("/weekly-digest/image", response_class=Response)
+@limiter.limit("20/hour")
+async def preview_weekly_digest_image(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+    _auth=Depends(require_admin),
+):
+    """Collage del resumen semanal tal y como saldría ahora (JPEG; no envía nada)."""
+    service = build_weekly_digest_service(db, settings)
+    digest = await service.preview()
+    image = await run_in_threadpool(service.collage, digest)
+    if image is None:
+        return Response(status_code=204)
+    return Response(content=image, media_type="image/jpeg", headers={"Cache-Control": "no-store"})
+
+
+@router.post("/weekly-digest/send", response_model=WeeklyDigestResponse)
+@limiter.limit("5/hour")
+async def send_weekly_digest(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+    current_user=Depends(require_admin),
+):
+    """Envía ahora el resumen semanal al canal Admin (versiones Telegram y WhatsApp)."""
+    service = build_weekly_digest_service(db, settings)
+    digest = await service.preview()
+    sent = await run_in_threadpool(service.send, digest)
+    await audit_log(
+        db,
+        user_id=str(current_user.id),
+        action="telegram.weekly_digest.send",
+        target_type="channel",
+        target_id="admin",
+        payload={"count": digest.count, "sent": sent},
+    )
+    return WeeklyDigestResponse(
+        telegram_text=digest.telegram_text,
+        full_text=digest.full_text,
+        whatsapp_text=digest.whatsapp_text,
+        count=digest.count,
+        sent=sent
+    )

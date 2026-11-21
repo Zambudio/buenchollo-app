@@ -6,16 +6,24 @@ import type { FaqItem } from "@/lib/seo/schema";
 export function SiteFaq({
   headingLevel = "h2",
   items = SITE_FAQ,
+  showHeading = true,
 }: {
   headingLevel?: "h2" | "h3";
   items?: FaqItem[];
+  showHeading?: boolean;
 }) {
   const Heading = headingLevel;
   return (
-    <section aria-labelledby="site-faq-heading" className="mt-12 border-t border-surface-700 pt-8">
-      <Heading id="site-faq-heading" className="text-xl font-bold tracking-tight mb-4">
-        Preguntas frecuentes
-      </Heading>
+    <section
+      aria-labelledby={showHeading ? "site-faq-heading" : undefined}
+      aria-label={showHeading ? undefined : "Preguntas frecuentes"}
+      className={showHeading ? "mt-12 border-t border-surface-700 pt-8" : "mt-6"}
+    >
+      {showHeading && (
+        <Heading id="site-faq-heading" className="text-xl font-bold tracking-tight mb-4">
+          Preguntas frecuentes
+        </Heading>
+      )}
       <div className="space-y-2">
         {items.map((item) => (
           <details

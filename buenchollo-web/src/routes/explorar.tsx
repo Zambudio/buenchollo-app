@@ -26,6 +26,12 @@ const search = z.object({
  *  componentes (Header, CategoriesDrawer) puedan tipar sus enlaces. */
 export type ExplorarSearch = z.infer<typeof search>;
 
+/** «popular» ordenaba por votos (todos a 0): ya no se ofrece, pero las URLs
+ *  antiguas con `?sort=popular` siguen funcionando como «más recientes». */
+function sortOf(sort: ExplorarSearch["sort"]): "recent" | "discount" | "price_asc" {
+  return !sort || sort === "popular" ? "recent" : sort;
+}
+
 const SITE = "https://buenchollotech.com";
 const PAGE_SIZE = 30;
 
@@ -112,7 +118,7 @@ function ExplorePage() {
         min_price: params.min,
         max_price: params.max,
         min_discount: params.disc,
-        sort: params.sort ?? "recent",
+        sort: sortOf(params.sort),
         page: requestedPage,
         page_size: PAGE_SIZE,
       })
@@ -333,12 +339,11 @@ function ExplorePage() {
                 {loading ? "CARGANDO..." : `${total} RESULTADOS`}
               </span>
               <select
-                value={params.sort ?? "recent"}
+                value={sortOf(params.sort)}
                 onChange={(e) => update({ sort: e.target.value as ExplorarSearch["sort"] })}
                 className="rounded-lg bg-surface-900 border border-surface-700 px-2 py-2 text-sm font-mono"
               >
                 <option value="recent">Más recientes</option>
-                <option value="popular">Más populares</option>
                 <option value="discount">Mayor descuento</option>
                 <option value="price_asc">Precio más bajo</option>
               </select>

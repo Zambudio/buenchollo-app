@@ -242,6 +242,8 @@ class Settings(BaseSettings):
     telegram_admin_channel_id: str = ""
     # Base de los enlaces a la web en avisos (canal Admin de Telegram).
     public_site_url: str = "https://buenchollotech.com"
+    # Resumen «Los chollos de la semana» al canal Admin (domingos 22:30, Madrid).
+    weekly_digest_enabled: bool = True
 
     # Dominios extra (CSV) permitidos para enlaces de afiliado manuales del
     # blog, además de los ya soportados por defecto (ver domain/affiliate_domains.py).

@@ -176,6 +176,48 @@ class TelegramBot:
             logger.error("Telegram sendPhoto con URL falló: %s", self.last_error)
             return False
 
+    def download_image(self, url: str) -> bytes | None:
+        """Descarga una imagen con las mismas defensas que los envíos (SSRF, tamaño)."""
+        downloaded = self._download_image(url)
+        return downloaded[0] if downloaded else None
+
+    def send_photo_bytes(
+        self,
+        content: bytes,
+        chat_id: str | None = None,
+        caption: str = "",
+        entities: list[dict] | None = None,
+    ) -> bool:
+        """Envía una imagen generada en memoria (p. ej. el collage del resumen
+        semanal), con pie de foto y entidades (emojis premium, negrita, enlaces)."""
+        self.last_error = None
+        self.last_message_id = None
+        # True si no hubo respuesta (tiempo agotado, conexión cortada): la foto
+        # pudo llegar igualmente, así que quien llama no debe reenviarla.
+        self.last_delivery_unknown = False
+        chat = self._resolve_chat(chat_id)
+        data: dict[str, Any] = {"chat_id": chat, "caption": caption}
+        if entities:
+            data["caption_entities"] = json.dumps(entities)
+        try:
+            resp = requests.post(
+                self._url("sendPhoto"),
+                data=data,
+                files={"photo": ("collage.jpg", content, "image/jpeg")},
+                timeout=30,
+            )
+            if resp.ok:
+                self.last_message_id = self._message_id(resp)
+                return True
+            self.last_error = self._extract_error(resp)
+            logger.error("Telegram sendPhoto (imagen generada) falló: %s", self.last_error)
+            return False
+        except Exception as exc:
+            self.last_error = self._redact(exc)
+            self.last_delivery_unknown = True
+            logger.error("Telegram sendPhoto (imagen generada) falló: %s", self.last_error)
+            return False
+
     # ── Envío de post formateado (panel Telegram) ──────────────────────────────
 
     def send_preformatted(

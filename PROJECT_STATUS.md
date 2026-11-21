@@ -1,7 +1,22 @@
 # PROJECT_STATUS — BuenCholloTech
-*Actualización de producción: 2026-11-21 — Rótulo de neón del Black Friday en portada y `/black-friday` y botón del Canal de WhatsApp en la navegación, desplegados en la web (PR #91, que incluye la #92; merge `3fe1ee2`). Solo web: la API y el scheduler no cambian. Alembic sigue en `20261120130000`.*
+*Actualización de producción: 2026-11-21 — `main` en `9ac3387` (PR #91 a #102): rótulo de neón del Black Friday, botón del Canal de WhatsApp, fuera «Más populares», títulos normalizados, novedades desde la última visita, «Top de la semana», resumen semanal con collage y preguntas frecuentes en `/preguntas-frecuentes`. Web: Workers Builds en verde en `9ac3387`. API: responden `/health`, `GET /v1/deals/weekly-top`, `GET /v1/deals/new-count` y `/v1/telegram/weekly-digest` (401 sin admin); el commit exacto del NAS y los pasos del despliegue no constan aquí. Sin migraciones nuevas: Alembic `20261120130000`.*
 
 > Bitácora cronológica inversa. Estado operativo vigente: [`docs/project/11-current-state.md`](docs/project/11-current-state.md); pendientes abiertos: [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md).
+
+## 2026-11-21 · Preguntas frecuentes en su página y ficha compacta en el móvil
+
+- **Preguntas frecuentes**: fuera de la portada (quedaban mal al final del feed) y a `/preguntas-frecuentes`, enlazada en el pie (INFO), en el sitemap y en `/llms.txt`, con 6 preguntas nuevas: el resumen de la semana, las novedades desde la última visita, qué significa el descuento, cambios de precio, dónde se compra y el canal de WhatsApp. El `FAQPage` va con ellas; la portada ya no lo publica. «Sobre nosotros» enlaza a la página en lugar de repetirlas.
+- **Ficha del chollo en el móvil**: los bloques de arriba estaban muy separados porque las utilidades de Tailwind (`gap-8`, `mb-3`…) sumaban huecos al «aplanar» el resumen. Ahora una regla fuera de las capas marca el espaciado: título, precio, tienda, fin de oferta y botón van juntos.
+
+## 2026-11-21 · Más populares fuera, títulos limpios, novedades y resumen semanal
+
+- **«Más populares» fuera** de la portada, el menú y `/explorar`: ordenaba por votos y, con todo a 0, mostraba chollos sin criterio. Un `?sort=popular` antiguo funciona como «más recientes».
+- **Títulos**: normalización al publicar y editar (`deals/domain/titles.py`), conservadora con modelos, siglas y marcas, y probada con los 354 títulos reales. Limpieza de los ya publicados con `scripts/normalize_titles.py` (simula por defecto; `--apply` escribe y genera un informe antes/después). Los slugs no cambian.
+- **Novedades desde tu última visita**: contador «N nuevos» junto a «Inicio» y separador en la portada, sin cuenta (`localStorage`). Endpoint `GET /v1/deals/new-count`.
+- **«Los chollos de la semana»**: domingos a las 22:30 al canal Admin (Telegram + WhatsApp), top 10 por descuento de los activos de la semana. Vista previa y envío manual para admins en `/v1/telegram/weekly-digest`. `WEEKLY_DIGEST_ENABLED` (true por defecto).
+- **«Top de la semana» en la portada**: el lateral muestra en vivo el mismo ranking que el resumen del domingo (10 activos con más descuento de la semana, con número, foto, precio, descuento y etiqueta «Nuevo» si es de las últimas 24 h). `GET /v1/deals/weekly-top`.
+- **Collage del resumen**: una imagen vertical 1080×1296 (5:6: Telegram recorta en el chat las más altas que ~3:4) con el número, la foto, el precio y el descuento de cada chollo en grande (los títulos van en el texto, cada uno con su número en emoji 1️⃣–🔟). Va en el mismo mensaje que el texto, como pie de foto, igual que los chollos: el texto se recorta hasta caber en los 1024 caracteres de Telegram (primero se acortan los títulos para conservar el precio anterior, en el formato «34,99 € | -73 % | antes: 129,99 €»; los enlaces siempre enteros). La versión WhatsApp lleva el texto completo. La genera Pillow con la tipografía de la web (Space Grotesk, OFL, en `buenchollo-api/app/assets/fonts`). Si falla, el texto sale igual. Vista previa para admins en `GET /v1/telegram/weekly-digest/image`.
+- Revisión de código antes del merge: visita mantenida al navegar, reglas de afiliación en el resumen, semana alineada entre etiqueta y consulta, siglas con guion y marcas en los títulos, y el contador visible en el móvil.
 
 ## 2026-11-21 · Rótulo de neón del Black Friday
 
@@ -10,6 +25,7 @@
 - **Dónde**: portada (`h2`, enlace a la landing) y cabecera de `/black-friday` (`h1`, CTA de Telegram), ambos con `CampaignHero` (`src/features/campaigns/`), que acepta `headingLevel` y `cta`. Estilos `.neon-sign*` en `src/styles.css`.
 - **Cuenta atrás**: `CampaignCountdown` avanza cada segundo (antes cada 30 s) con `role="timer"` y el texto accesible de `formatCountdown`. En el servidor pinta guiones con la misma caja: sin saltos de diseño ni desajuste de hidratación. `countdownTo` (`src/lib/campaigns.ts`) devuelve también `seconds`.
 - **Dependencia nueva**: `@fontsource/monoton` 5.3.0 (fuente Monoton alojada en la propia web, solo el subconjunto latino, ~16 KB).
+- **Más compacto** (`83bc07d`, PR #94): pasa de unos 450 px de alto a unos 200 px; «BLACK FRIDAY» en una línea y tubos de la cuenta atrás más pequeños.
 - **Tests**: `campaigns.test.ts` cubre los segundos en `countdownTo`; tests, `tsc` y ESLint en verde; revisado en local en escritorio.
 
 ## 2026-11-20 · Versión WhatsApp de las publicaciones y fuente `whatsapp` en la analítica

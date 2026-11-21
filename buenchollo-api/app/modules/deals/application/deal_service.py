@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from app.modules.affiliates.domain.links import InvalidLinkError, canonicalize
 from app.modules.deals.domain.exceptions import DuplicateDealError
 from app.modules.deals.domain.models import Deal
+from app.modules.deals.domain.titles import normalize_title
 from app.modules.deals.domain.utils import auto_slug
 from app.modules.deals.infrastructure.repository import DealRepository
 from app.modules.alerts.application.alert_matcher import AlertMatcher
@@ -85,6 +86,8 @@ class DealService:
         chollo sin oferta (`expired`) se reactiva ese mismo (misma URL, votos y
         comentarios) en vez de crear otro. `revive_id` lo indica el llamante
         cuando ya lo encontró por otra vía (p. ej. por URL canónica)."""
+        if deal_data.get("title"):
+            deal_data["title"] = normalize_title(deal_data["title"])
         existing = await self.repo.get_by_id(revive_id) if revive_id else None
         if existing is None and deal_data.get("external_id"):
             existing = await self.repo.find_by_external_id(deal_data["external_id"], exclude_id=None)
@@ -149,6 +152,8 @@ class DealService:
         deal = await self.repo.get_by_id(deal_id)
         if not deal:
             return None
+        if update_data.get("title"):
+            update_data["title"] = normalize_title(update_data["title"])
         # Sólo validamos si el campo external_id viene en el payload del PUT.
         # Si no viene, conservamos el valor actual y no hay nada que comprobar.
         if "external_id" in update_data:

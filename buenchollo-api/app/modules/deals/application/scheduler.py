@@ -16,6 +16,7 @@ from app.modules.scheduled_tasks.application.scheduler import run_due_scheduled_
 from app.modules.analytics.application.cleanup import run_analytics_cleanup
 from app.modules.emails.application.digest_worker import run_due_alert_digest
 from app.modules.affiliates.application.feed_sync_job import run_awin_feed_sync
+from app.modules.telegram.application.weekly_digest import run_weekly_deals_digest
 
 from app.core.jobs import SCHEDULER_TIMEZONE
 
@@ -92,5 +93,21 @@ def build_deals_scheduler(settings: Settings) -> tuple[BackgroundScheduler, Deal
         id="sync_awin_feeds",
         max_instances=1,
         coalesce=True,
+    )
+    # «Los chollos de la semana» al canal Admin: domingos a las 22:30. Si el
+    # contenedor estaba parado a esa hora, se envía al arrancar dentro de la
+    # hora siguiente (misfire_grace_time); después ya no, para no mandar un
+    # resumen de domingo el lunes.
+    scheduler.add_job(
+        run_weekly_deals_digest,
+        "cron",
+        day_of_week="sun",
+        hour=22,
+        minute=30,
+        args=[settings],
+        id="weekly_deals_digest",
+        max_instances=1,
+        coalesce=True,
+        misfire_grace_time=3600,
     )
     return scheduler, cleaner

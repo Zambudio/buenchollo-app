@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Layout } from "@/components/layout/Layout";
-import { SiteFaq } from "@/features/home/SiteFaq";
 import { absoluteUrl, pageHead, withBrand } from "@/lib/seo/head";
 import { breadcrumbSchema, ORGANIZATION_ID, organizationSchema } from "@/lib/seo/schema";
 import { SITE_SUMMARY } from "@/lib/seo/site-content";
@@ -105,8 +104,13 @@ function SobreNosotros() {
           </a>
           . Si ves un chollo que ya no está disponible, escríbenos o coméntalo en su ficha.
         </p>
-
-        <SiteFaq />
+        <p className="text-muted-foreground leading-relaxed mt-4">
+          ¿Tienes dudas? Consulta las{" "}
+          <Link to="/preguntas-frecuentes" className="text-cyan-glow hover:underline">
+            preguntas frecuentes
+          </Link>
+          .
+        </p>
       </div>
     </Layout>
   );

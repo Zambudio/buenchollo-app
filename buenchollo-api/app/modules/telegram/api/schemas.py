@@ -104,3 +104,13 @@ class TelegramPublicationResponse(BaseModel):
     repriced_text: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class WeeklyDigestResponse(BaseModel):
+    # Pie de foto de la publicación de Telegram (máx. 1024 caracteres).
+    telegram_text: str | None
+    # Texto completo (respaldo sin imagen; base de la versión WhatsApp).
+    full_text: str | None = None
+    whatsapp_text: str | None
+    count: int
+    sent: bool

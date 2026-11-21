@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import {
   X,
   Sparkles,
-  TrendingUp,
   Clock,
   Percent,
   Send,
@@ -156,15 +155,6 @@ export function CategoriesDrawer({ open, onClose }: Props) {
               Tendencias
             </p>
             <nav className="flex flex-col">
-              <Link
-                to="/explorar"
-                search={{ sort: "popular" }}
-                onClick={onClose}
-                className={itemCls}
-              >
-                <TrendingUp className="size-4 text-cyan-glow shrink-0" />
-                <span>Más populares</span>
-              </Link>
               <Link
                 to="/explorar"
                 search={{ sort: "recent" }}

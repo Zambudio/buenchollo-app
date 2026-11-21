@@ -426,3 +426,19 @@ async def test_editar_precio_apunta_en_el_historico(payload, recorded):
     await service.update_deal(deal.id, payload)
 
     assert catalog.record_deal_price.await_count == (1 if recorded else 0)
+
+
+@pytest.mark.asyncio
+async def test_alta_normaliza_el_titulo():
+    service, repo, _ = _build_service()
+    await service.create_deal({"title": "Altavoz Bluetooth 6.0，Negro™", "current_price": 9.99}, "user-1")
+    assert repo.create.await_args.args[0].title == "Altavoz Bluetooth 6.0, Negro"
+
+
+@pytest.mark.asyncio
+async def test_editar_normaliza_el_titulo():
+    service, repo, _ = _build_service()
+    deal = _stub_deal()
+    repo.get_by_id = AsyncMock(return_value=deal)
+    await service.update_deal(deal.id, {"title": "CABLE DE CARGA PARA EL MOVIL"})
+    assert deal.title == "Cable de Carga para el Movil"
