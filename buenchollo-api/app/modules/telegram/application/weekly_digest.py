@@ -88,10 +88,10 @@ def _deal_block(
     block = f"{number_emoji(position)} {_shorten(deal.title, title_max)}\n"
     if with_price:
         line = f"💶 {_format_price_es(price)} €"
-        if with_previous and previous and previous > price:
-            line += f" (antes {_format_price_es(previous)} €)"
         if discount:
             line += f" | -{discount} %"
+        if with_previous and previous and previous > price:
+            line += f" | antes: {_format_price_es(previous)} €"
         block += line + "\n"
     return block + f"🛒 {link}\n\n"
 
@@ -123,15 +123,20 @@ def build_weekly_digest(deals: list, window: WeekWindow, site_url: str) -> tuple
 
 # Telegram limita a 1024 caracteres (UTF-16) el texto que acompaña a una foto.
 CAPTION_LIMIT = 1024
-# De más a menos completo: el collage ya muestra precio y descuento, así que el
-# pie de foto se va recortando hasta caber. Los enlaces siempre van enteros.
+# De más a menos completo: el pie se va recortando hasta caber. Primero se
+# acortan los títulos (el collage ya identifica cada producto) para conservar el
+# precio anterior; después se quita el «antes» y, en último caso, el precio.
+# Los enlaces siempre van enteros.
 _CAPTION_LEVELS = (
     {"with_previous": True, "with_price": True, "title_max": None},
-    {"with_previous": False, "with_price": True, "title_max": None},
-    {"with_previous": False, "with_price": True, "title_max": 45},
+    {"with_previous": True, "with_price": True, "title_max": 45},
+    {"with_previous": True, "with_price": True, "title_max": 32},
+    {"with_previous": True, "with_price": True, "title_max": 24},
+    {"with_previous": True, "with_price": True, "title_max": 20},
+    {"with_previous": True, "with_price": True, "title_max": 16},
     {"with_previous": False, "with_price": True, "title_max": 32},
-    {"with_previous": False, "with_price": False, "title_max": 32},
-    {"with_previous": False, "with_price": False, "title_max": 22},
+    {"with_previous": False, "with_price": True, "title_max": 24},
+    {"with_previous": False, "with_price": False, "title_max": 24},
 )
 
 

@@ -111,10 +111,14 @@ def build_collage(items: list[CollageItem], title: str, subtitle: str) -> bytes:
     canvas = Image.new("RGB", (WIDTH, HEIGHT), _NIGHT)
     draw = ImageDraw.Draw(canvas)
 
-    # Cabecera
-    draw.text((PADDING + 2, 22), title, font=_font(56), fill=(255, 255, 255))
-    draw.text((PADDING + 4, 82), subtitle, font=_font(26, "Medium"), fill=_CYAN)
-    draw.line([(PADDING, HEADER), (WIDTH - PADDING, HEADER)], fill=_RULE, width=2)
+    # Cabecera: solo el título, grande y centrado (un subtítulo no se leería en
+    # el móvil). `subtitle` se mantiene en la firma por compatibilidad.
+    size = 72
+    font = _font(size)
+    while size > 40 and draw.textlength(title, font=font) > WIDTH - 2 * PADDING:
+        size -= 2
+        font = _font(size)
+    _text_center(draw, (WIDTH / 2, HEADER / 2 + 4), title, font, (255, 255, 255))
 
     if not items:
         return _jpeg(canvas)
