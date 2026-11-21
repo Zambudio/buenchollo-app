@@ -3,6 +3,12 @@
 
 > Bitácora cronológica inversa. Estado operativo vigente: [`docs/project/11-current-state.md`](docs/project/11-current-state.md); pendientes abiertos: [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md).
 
+## 2026-11-21 · Ficha del chollo sin desplazamiento lateral en el móvil
+
+- **Causa**: la rejilla móvil de la ficha (`.product-layout`, `src/styles.css`) usaba `grid-template-columns: 1fr`, que equivale a `minmax(auto, 1fr)`: la columna crecía hasta el ancho intrínseco de la galería (carrusel de miniaturas) y la página se desplazaba de lado. A 360 px la página medía 436 px para 345 px útiles; se cortaban el aviso «Termina» y el borde de la galería.
+- **Corrección**: `minmax(0, 1fr)`, que limita la columna al ancho disponible. La cabecera de «Chollos relacionados» puede saltar de línea para que un nombre de categoría largo («VER MÁS DE …») no desborde.
+- **Verificado** con la ficha real a 360, 390 y 414 px (ancho de página igual al de la pantalla) y en escritorio (2 columnas, sin cambios). Queda abierto el desborde de la cabecera a 320 px con sesión iniciada (TD-63).
+
 ## 2026-11-21 · Preguntas frecuentes en su página y ficha compacta en el móvil
 
 - **Preguntas frecuentes**: fuera de la portada (quedaban mal al final del feed) y a `/preguntas-frecuentes`, enlazada en el pie (INFO), en el sitemap y en `/llms.txt`, con 6 preguntas nuevas: el resumen de la semana, las novedades desde la última visita, qué significa el descuento, cambios de precio, dónde se compra y el canal de WhatsApp. El `FAQPage` va con ellas; la portada ya no lo publica. «Sobre nosotros» enlaza a la página en lugar de repetirlas.
