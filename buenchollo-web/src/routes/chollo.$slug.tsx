@@ -782,7 +782,7 @@ function DealDetail() {
 
         {related.length > 0 && (
           <section className="mt-8">
-            <div className="flex items-center justify-between mb-4 border-b border-surface-700 pb-3">
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 mb-4 border-b border-surface-700 pb-3">
               <div className="flex items-center gap-3">
                 <div className="size-2 bg-cyan-glow rounded-full animate-pulse" />
                 <h2 className="text-foreground font-bold text-lg tracking-tight font-mono">
