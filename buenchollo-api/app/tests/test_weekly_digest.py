@@ -46,7 +46,7 @@ def test_texto_con_cabecera_chollos_numerados_y_enlace_a_la_web():
     )
     assert count == 2
     assert text.startswith("📅 Los chollos de la semana · 16–22 de noviembre\n\n")
-    assert "1️⃣ Producto 1\n💶 99,99 € (antes 149,99 €) | -33 %\n🛒 https://www.amazon.es/dp/B000000001?tag=x\n" in text
+    assert "1️⃣ Producto 1\n💶 99,99 € | -33 % | antes: 149,99 €\n🛒 https://www.amazon.es/dp/B000000001?tag=x\n" in text
     assert "2️⃣ Producto 2\n💶 99,99 €\n" in text
     assert "🍄" not in text
     assert text.rstrip().endswith(f"🔗 {LINK_TEXT}")
@@ -61,7 +61,7 @@ def test_calcula_el_descuento_si_falta():
     text, _ = wd.build_weekly_digest(
         [_deal(1, discount_percentage=None, current_price=75, previous_price=100)], WINDOW, "x"
     )
-    assert "| -25 %" in text
+    assert "💶 75,00 € | -25 % | antes: 100,00 €" in text
 
 
 def test_sin_chollos_no_hay_resumen():
