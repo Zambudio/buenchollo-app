@@ -46,8 +46,9 @@ def test_texto_con_cabecera_chollos_numerados_y_enlace_a_la_web():
     )
     assert count == 2
     assert text.startswith("📅 Los chollos de la semana · 16–22 de noviembre\n\n")
-    assert "🍄 1. Producto 1\n💶 99,99 € (antes 149,99 €) | -33 %\n🛒 https://www.amazon.es/dp/B000000001?tag=x\n" in text
-    assert "🍄 2. Producto 2\n💶 99,99 €\n" in text
+    assert "1️⃣ Producto 1\n💶 99,99 € (antes 149,99 €) | -33 %\n🛒 https://www.amazon.es/dp/B000000001?tag=x\n" in text
+    assert "2️⃣ Producto 2\n💶 99,99 €\n" in text
+    assert "🍄" not in text
     assert text.rstrip().endswith(f"🔗 {LINK_TEXT}")
 
 
@@ -72,14 +73,14 @@ def test_corta_la_lista_si_no_cabe_en_un_mensaje():
     text, count = wd.build_weekly_digest(deals, WINDOW, "x")
     assert len(text) <= wd.MAX_TEXT_LENGTH
     assert text.rstrip().endswith(f"🔗 {LINK_TEXT}")
-    assert count == text.count("🍄") < 10
+    assert count == text.count("💶") < 10
 
 
 def test_version_whatsapp_con_cabecera_en_negrita():
     text, _ = wd.build_weekly_digest([_deal(1)], WINDOW, "x")
     wa = wd.whatsapp_version(text)
     assert wa.startswith("*📅 Los chollos de la semana · 16–22 de noviembre*\n")
-    assert "🔥 *1. Producto 1*" in wa
+    assert "1️⃣ *Producto 1*" in wa
     assert "👉 https://www.amazon.es/dp/B000000001?tag=x" in wa
     assert "🌐 Todos los chollos en nuestra web: https://buenchollotech.com/whatsapp" in wa
 
@@ -152,7 +153,7 @@ async def test_omite_los_chollos_de_redes_que_ya_no_cumplen_las_reglas():
     service = _service([awin, _deal(2)], FakeBot(), guard=FakeGuard(blocked={awin_url}))
     digest = await service.preview(NOW)
     assert digest.count == 1
-    assert "Producto 1" not in digest.telegram_text and "1. Producto 2" in digest.telegram_text
+    assert "Producto 1" not in digest.telegram_text and "1️⃣ Producto 2" in digest.telegram_text
 
 
 @pytest.mark.asyncio
@@ -242,7 +243,7 @@ async def test_whatsapp_y_texto_completo_llevan_los_mismos_chollos_que_el_pie():
     deals = [_deal(i, affiliate_url=long_url + str(i)) for i in range(1, 11)]
     digest = await _service(deals, FakeBot()).preview(NOW)
     assert digest.count < 10
-    assert digest.full_text.count("🍄") == digest.count == digest.telegram_text.count("🍄")
+    assert digest.full_text.count("🛒") == digest.count == digest.telegram_text.count("🛒")
 
 
 def test_palabras_mas_anchas_que_la_tarjeta_se_cortan():
@@ -254,6 +255,10 @@ def test_palabras_mas_anchas_que_la_tarjeta_se_cortan():
     lines = _wrap(draw, "Xiaomi-Redmi-Note-13-Pro+-5G-256GB-Negro-Medianoche", _font(21, "Medium"), 200, 3)
     assert all(draw.textlength(line, font=_font(21, "Medium")) <= 200 for line in lines)
     assert lines[0].endswith("…")
+
+
+def test_numero_del_top_en_emoji():
+    assert [wd.number_emoji(i) for i in (1, 9, 10, 11)] == ["1️⃣", "9️⃣", "🔟", "11."]
 
 
 def test_las_fotos_lentas_dejan_hueco_sin_retrasar_el_resumen(monkeypatch):

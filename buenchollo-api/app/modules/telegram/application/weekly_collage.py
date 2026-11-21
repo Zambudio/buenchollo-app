@@ -1,6 +1,6 @@
-"""Collage del resumen semanal: una imagen vertical con la foto, el número del
-top, el precio, el descuento y el título de cada chollo, para identificar de un
-vistazo los enlaces del mensaje.
+"""Collage del resumen semanal: una imagen vertical con lo que se lee de un
+vistazo en el móvil (foto, número del top, precio y descuento, todo grande).
+Los títulos y los enlaces van en el texto de la publicación.
 
 Proporción 5:6 (1080×1296): Telegram recorta en el chat las fotos más altas
 que ~3:4, y una 2:3 obligaba a abrirla para verla entera. Así se ve completa
@@ -125,47 +125,50 @@ def build_collage(items: list[CollageItem], title: str, subtitle: str) -> bytes:
     inner = 12
     photo_side = tile_h - 2 * inner
 
-    discount_font, number_font, title_font = _font(25), _font(30), _font(21, "Medium")
+    number_font = _font(40)
     for index, item in enumerate(items[: COLUMNS * ROWS]):
         row, col = divmod(index, COLUMNS)
         x = PADDING + col * (tile_w + GAP)
         y = grid_top + row * (tile_h + GAP)
         draw.rounded_rectangle([x, y, x + tile_w, y + tile_h], radius=18, fill=_CARD)
 
-        # Foto del producto a la izquierda, centrada en su hueco.
+        # Foto del producto a la izquierda, lo más grande posible.
         box = (photo_side, photo_side)
         bx0, by0 = x + inner, y + (tile_h - photo_side) // 2
         photo = _product_image(item.image, box)
         if photo is not None:
             canvas.paste(photo, (bx0 + (photo_side - photo.width) // 2, by0 + (photo_side - photo.height) // 2), photo)
         else:
-            _text_center(draw, (bx0 + photo_side / 2, by0 + photo_side / 2), "Sin imagen", _font(22, "Medium"), _MUTED)
+            _text_center(draw, (bx0 + photo_side / 2, by0 + photo_side / 2), "Sin imagen", _font(24, "Medium"), _MUTED)
 
-        # Precio, descuento y título a la derecha.
-        tx = bx0 + photo_side + 16
+        # A la derecha, solo lo que se lee de un vistazo: precio y descuento en
+        # grande, centrados (el detalle va en el texto de la publicación).
+        tx = bx0 + photo_side + 14
         tw = x + tile_w - inner - tx
-        # Precio y descuento en la misma línea (grandes); debajo, el título.
-        chip = f"-{item.discount} %" if item.discount else ""
-        chip_w = draw.textlength(chip, font=discount_font) + 18 if chip else 0
-        size = 40
+        size = 62
         price_font = _font(size)
-        while size > 24 and draw.textlength(item.price, font=price_font) + (chip_w + 10 if chip else 0) > tw:
+        while size > 30 and draw.textlength(item.price, font=price_font) > tw:
             size -= 2
             price_font = _font(size)
-        ty = y + 20
-        draw.text((tx, ty), item.price, font=price_font, fill=_TEXT, anchor="lt")
+        chip = f"-{item.discount} %" if item.discount else ""
+        chip_h, chip_size = 58, 40
+        block_h = size + (16 + chip_h if chip else 0)
+        center_x = tx + tw / 2
+        top = y + (tile_h - block_h) / 2
+        _text_center(draw, (center_x, top + size / 2), item.price, price_font, _TEXT)
         if chip:
-            cx = tx + draw.textlength(item.price, font=price_font) + 10
-            cy = ty + size / 2 + 3
-            draw.rounded_rectangle([cx, cy - 17, cx + chip_w, cy + 17], radius=9, fill=_ORANGE)
-            _text_center(draw, (cx + chip_w / 2, cy), chip, discount_font, (255, 255, 255))
-        ty += size + 16
-        for line in _wrap(draw, item.title, title_font, tw, 3):
-            draw.text((tx, ty), line, font=title_font, fill=_MUTED, anchor="lt")
-            ty += 26
+            chip_font = _font(chip_size)
+            chip_w = draw.textlength(chip, font=chip_font) + 32
+            cy = top + size + 16 + chip_h / 2
+            draw.rounded_rectangle(
+                [center_x - chip_w / 2, cy - chip_h / 2, center_x + chip_w / 2, cy + chip_h / 2],
+                radius=14,
+                fill=_ORANGE,
+            )
+            _text_center(draw, (center_x, cy), chip, chip_font, (255, 255, 255))
 
-        # Número del top, sobre la esquina de la foto.
-        r = 24
+        # Número del top, grande, sobre la esquina de la foto.
+        r = 32
         cx, cy = x + 8 + r, y + 8 + r
         draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=_BADGE, outline=_CYAN, width=4)
         _text_center(draw, (cx, cy), str(item.position), number_font, (255, 255, 255))
