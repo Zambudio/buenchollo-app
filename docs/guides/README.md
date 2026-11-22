@@ -12,6 +12,7 @@ Runbooks vigentes para operar el proyecto. La operativa general (instalar, confi
 | Validar un release a mano antes de publicar | [`SMOKE-TEST.md`](SMOKE-TEST.md) |
 | Entender cómo funcionan Awin y Tradedoubler | [`AFFILIATE-NETWORKS.md`](AFFILIATE-NETWORKS.md) |
 | Activar una tienda de Awin o Tradedoubler cuando la aprueben | [`AFFILIATE-ACTIVATION-RUNBOOK.md`](AFFILIATE-ACTIVATION-RUNBOOK.md) |
+| Cambiar o añadir los emojis premium de los posts (icono de cada tienda) | [`TELEGRAM-EMOJIS.md`](TELEGRAM-EMOJIS.md) |
 
 ---
 
