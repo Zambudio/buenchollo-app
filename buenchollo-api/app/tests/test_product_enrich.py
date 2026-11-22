@@ -11,7 +11,11 @@ import pytest
 from app.core.security import require_admin
 from app.main import app
 from app.modules.products.api.router import get_enrich_use_case
-from app.modules.products.application.preview_product_from_url import EnrichProductUseCase
+from app.modules.products.application.preview_product_from_url import (
+    SUMMARY_MAX_CHARS,
+    EnrichProductUseCase,
+    summarize_text,
+)
 
 CATEGORIES = [
     {"id": "cat-tv", "name": "Televisores", "parent_id": None, "slug": "televisores"},
@@ -64,6 +68,23 @@ class TestEnrichProductUseCase:
         ai.enrich_product.side_effect = lambda product, *_a, **_k: {"long_description": product.description}
         product = use_case.execute(title="X", description="Tele 4K", category_hint="Televisores")
         assert product.long_description == "Tele 4K"
+
+    def test_fallback_summarizes_a_long_store_description(self):
+        # Sin IA no se copia la ficha entera de la tienda: frases completas hasta el tope.
+        use_case, ai = _use_case({})
+        ai.enrich_product.side_effect = lambda product, *_a, **_k: {"long_description": product.description}
+        sentence = "El panel Mini LED ofrece un contraste muy alto y colores vivos en cualquier escena. "
+        description = sentence * 30
+        product = use_case.execute(title="X", description=description)
+        assert len(product.long_description) <= SUMMARY_MAX_CHARS
+        assert product.long_description.endswith(".")
+        assert product.long_description.startswith("El panel Mini LED")
+
+    def test_summarize_cuts_by_word_when_no_sentence_fits(self):
+        text = "palabra " * 200
+        out = summarize_text(text, max_len=50)
+        assert len(out) <= 51
+        assert out.endswith("…")
 
     def test_falls_back_to_varios_when_ai_does_not_classify(self):
         use_case, _ = _use_case({})

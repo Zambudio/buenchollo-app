@@ -53,8 +53,17 @@ Tipos de precio anterior: `provider_price_history_30d` (mínimo de los 30 días 
 bajada según el historial de Tradedoubler), `store_strikethrough_verified` y
 `manual_verified` justifican; `rrp`, `feed_original_price` y `none`, no.
 
-El post de Telegram añade la línea de envío y el aviso adicional del programa
-(`disclosure_text`). Los chollos de Amazon no cambian.
+El post de Telegram añade la línea de envío y, solo si el programa lo tiene, el aviso
+adicional del programa (`disclosure_text`). Desde el 2026-11-22 va vacío por defecto (el
+aviso genérico «Enlace de afiliado: podemos recibir…» se retiró de las publicaciones,
+migración `20261122120000`); se rellena solo si unas condiciones exigen un texto propio.
+Los chollos de Amazon no cambian.
+
+Los feeds de Awin pueden traer términos técnicos partidos (Coolmod: «PC Ie», «NV Me»,
+«5600M Hz», «AS Rock»). `fix_split_terms` (`affiliates/domain/offers.py`) recompone solo
+los casos inequívocos en el título y la descripción al leer el feed. Si la IA no responde
+al importar, la descripción larga es un resumen por frases (500 caracteres), nunca la
+ficha entera de la tienda.
 
 ## 3. Credenciales (solo en `buenchollo-api/.env` del NAS)
 

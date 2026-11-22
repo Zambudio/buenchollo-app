@@ -1,5 +1,6 @@
 """Use case that builds a product preview from an Amazon URL or ASIN."""
 
+import re
 from typing import Any, Protocol
 
 from app.core.exceptions import NotFoundError, ServiceUnavailableError
@@ -74,10 +75,11 @@ class EnrichProductUseCase:
             context = f"Categoría en la tienda: {category_hint.strip()}\n{context}".strip()
         product = ProductPreview(title=title.strip(), brand=brand.strip(), description=context)
         product = self.enrich(product, provider)
-        # El rescate del enriquecedor devuelve como descripción larga el contexto
-        # tal cual: sin la línea de categoría, que solo era pista para la IA.
+        # El rescate del enriquecedor (IA caída) devuelve como descripción larga el
+        # contexto tal cual. Sin la línea de categoría, que solo era pista para la
+        # IA, y resumido: nunca la ficha entera de la tienda.
         if product.long_description == context:
-            product.long_description = description.strip()
+            product.long_description = summarize_text(description)
         return product
 
     def enrich(self, product: ProductPreview, provider: str | None = None) -> ProductPreview:
@@ -108,6 +110,29 @@ class EnrichProductUseCase:
 
         _ensure_category(product, categories)
         return product
+
+
+SUMMARY_MAX_CHARS = 500
+
+
+def summarize_text(text: str, max_len: int = SUMMARY_MAX_CHARS) -> str:
+    """Resumen con frases completas del propio texto (sin inventar nada).
+
+    Se usa cuando la IA no responde: mejor dos o tres frases de la tienda que la
+    ficha entera. Si la primera frase ya no cabe, se corta por palabra.
+    """
+    flat = re.sub(r"\s+", " ", text or "").strip()
+    if len(flat) <= max_len:
+        return flat
+    out = ""
+    for sentence in re.split(r"(?<=[.!?])\s+", flat):
+        candidate = f"{out} {sentence}".strip()
+        if len(candidate) > max_len:
+            break
+        out = candidate
+    if out:
+        return out
+    return flat[:max_len].rsplit(" ", 1)[0].rstrip(",;:") + "…"
 
 
 def _ensure_category(product: ProductPreview, categories: list[dict[str, Any]]) -> None:
