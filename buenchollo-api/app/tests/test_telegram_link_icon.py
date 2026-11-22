@@ -77,3 +77,26 @@ def test_other_emojis_unchanged() -> None:
     ids = {e["custom_emoji_id"] for e in generator.build_entities(_post("https://tidd.ly/x")) if e["type"] == "custom_emoji"}
     assert "5242687246162731515" in ids  # 🍄 título
     assert "5201873447554145566" in ids  # 💶 precio
+
+
+@pytest.mark.parametrize(
+    ("store", "url", "icon"),
+    [
+        ("Xiaomi", "https://tidd.ly/x", "5262875916031244720"),
+        ("AliExpress", "https://s.click.aliexpress.com/e/_x", "5373265917092316632"),
+        (None, "https://es.aliexpress.com/item/1.html", "5373265917092316632"),
+        (None, "https://store.steampowered.com/app/1/", "5373144051690258848"),
+        (None, "https://www.mi.com/es/product/x", GENERIC_LINK_ICON),  # el dominio de Xiaomi no lo dice
+    ],
+)
+def test_registered_store_icons(store, url, icon) -> None:
+    assert link_icon_for(url, store) == icon
+
+
+def test_samsung_is_stored_but_not_used_yet() -> None:
+    # Dos emojis: pendiente de que el post escriba dos caracteres base.
+    from app.modules.telegram.application.post_generator import SAMSUNG_LINK_ICON_PARTS, WHATSAPP_ICON
+
+    assert len(SAMSUNG_LINK_ICON_PARTS) == 2
+    assert WHATSAPP_ICON == "5334998226636390258"
+    assert link_icon_for("https://tidd.ly/x", "Samsung") == GENERIC_LINK_ICON
