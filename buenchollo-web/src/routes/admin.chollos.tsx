@@ -162,8 +162,16 @@ function AdminDeals() {
    *  corta, descripción larga, post de Telegram y categoría (como en Amazon).
    *  Solo rellena lo vacío o lo que sigue igual que en el catálogo. Si la IA
    *  falla o no responde a tiempo, la importación ya está hecha: se avisa y la
-   *  descripción del catálogo se resume (nunca la ficha entera de la tienda). */
-  const enrichImported = async (offer: NonNullable<ImportResponse["offer"]>) => {
+   *  descripción del catálogo se resume (nunca la ficha entera de la tienda).
+   *  La IA puede tardar hasta un minuto: si mientras tanto el formulario ya es
+   *  otro (cerrado, otro chollo u otra importación), la respuesta se descarta.
+   *  `importToken` es el `import_snapshot` de esta importación (misma referencia
+   *  mientras el formulario siga siendo el suyo). */
+  const enrichImported = async (
+    offer: NonNullable<ImportResponse["offer"]>,
+    importToken: DealForm["import_snapshot"],
+  ) => {
+    const isSameImport = (f: DealForm) => importToken !== null && f.import_snapshot === importToken;
     try {
       const ai = await productsApi.enrich(
         {
@@ -178,10 +186,11 @@ function AdminDeals() {
         typeof ai?.category_id === "string" && ai.category_id
           ? resolveCategorySelection(ai.category_id, ai.subcategory_id ?? "", cats, subcats)
           : { category_id: "", subcategory_id: "" };
-      setForm((f) => applyEnrichment(f, ai, category));
-      toast.success("Textos y categoría propuestos por la IA");
+      setForm((f) => (isSameImport(f) ? applyEnrichment(f, ai, category) : f));
+      if (ai?.copy_ok === true) toast.success("Textos y categoría propuestos por la IA");
+      else toast.warning("La IA no ha escrito los textos: descripción del catálogo resumida");
     } catch (e: unknown) {
-      setForm(summarizeImportedDescription);
+      setForm((f) => (isSameImport(f) ? summarizeImportedDescription(f) : f));
       toast.warning("La IA no ha podido proponer textos: " + errorMessage(e));
     }
   };
@@ -215,7 +224,7 @@ function AdminDeals() {
         result.stage === "product_imported" ? "Producto importado (borrador)" : "Enlace generado",
       );
       if (result.stage === "product_imported" && result.offer.title) {
-        await enrichImported(result.offer);
+        await enrichImported(result.offer, applied.form.import_snapshot);
       }
     } catch (e: unknown) {
       toast.error(errorMessage(e));

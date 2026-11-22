@@ -125,7 +125,30 @@ describe("applyEnrichment (IA tras importar de una red)", () => {
     telegram_text: "Monitor QHD 165 Hz a precio de chollo",
     category_id: "cat-1",
     subcategory_id: "sub-1",
+    copy_ok: true,
   };
+
+  it("con textos de rescate (copy_ok false) solo resume la descripción y pone la categoría", () => {
+    const sentence = "El panel QHD ofrece un contraste alto y colores vivos en cualquier escena. ";
+    const imported = applyImport(
+      emptyForm(),
+      result({ description: sentence.repeat(20).trim() }),
+    ).form;
+    const out = applyEnrichment(
+      imported,
+      {
+        ...ai,
+        short_description: "FIXTURE Monitor 27",
+        telegram_text: "FIXTURE Monitor 27",
+        copy_ok: false,
+      },
+      { category_id: "cat-1", subcategory_id: "sub-1" },
+    );
+    expect(out.short_description).toBe(imported.short_description);
+    expect(out.telegram_text).toBe(imported.telegram_text);
+    expect(out.description.length).toBeLessThanOrEqual(SUMMARY_MAX_CHARS);
+    expect(out.category_id).toBe("cat-1");
+  });
 
   it("rellena descripción corta, larga, post y categoría que vienen del catálogo o vacíos", () => {
     const imported = applyImport(emptyForm(), result()).form;
@@ -199,7 +222,9 @@ describe("summarizeImportedDescription (la IA no respondió)", () => {
 
   it("corta por palabra si la primera frase no cabe", () => {
     const out = summarizeText("palabra ".repeat(200), 50);
-    expect(out.length).toBeLessThanOrEqual(51);
+    expect(out.length).toBeLessThanOrEqual(50);
     expect(out.endsWith("…")).toBe(true);
+    const url = summarizeText("x".repeat(600), 500);
+    expect(url.length).toBeLessThanOrEqual(500);
   });
 });

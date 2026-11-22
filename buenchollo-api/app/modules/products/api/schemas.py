@@ -86,3 +86,6 @@ class ProductEnrichResponse(BaseModel):
     telegram_text: str = ""
     category_id: str | None = None
     subcategory_id: str | None = None
+    # False: la IA no escribió los textos; solo `long_description` (resumen del
+    # catálogo) y, si la hubo, la categoría.
+    copy_ok: bool = False

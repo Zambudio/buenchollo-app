@@ -1,9 +1,11 @@
 """Use case that builds a product preview from an Amazon URL or ASIN."""
 
 import re
+from dataclasses import dataclass
 from typing import Any, Protocol
 
 from app.core.exceptions import NotFoundError, ServiceUnavailableError
+from app.modules.ai.domain.entities import COPY_FALLBACK_KEY
 from app.modules.products.domain.entities import ProductPreview
 
 
@@ -68,19 +70,43 @@ class EnrichProductUseCase:
         brand: str = "",
         category_hint: str = "",
         provider: str | None = None,
-    ) -> ProductPreview:
-        """Enriquece un producto a partir de sus datos (título, descripción…)."""
+    ) -> "EnrichedProduct":
+        """Enriquece un producto importado a partir de sus datos.
+
+        A diferencia de Amazon, aquí no se inventa nada si la IA cae: sin copy
+        real (`copy_ok=False`) los textos van vacíos y la descripción larga es un
+        resumen del catálogo; sin clasificación de la IA no hay categoría (nada
+        de «Varios» por defecto). El editor decide.
+        """
         context = description.strip()
         if category_hint.strip():
             context = f"Categoría en la tienda: {category_hint.strip()}\n{context}".strip()
         product = ProductPreview(title=title.strip(), brand=brand.strip(), description=context)
-        product = self.enrich(product, provider)
-        # El rescate del enriquecedor (IA caída) devuelve como descripción larga el
-        # contexto tal cual. Sin la línea de categoría, que solo era pista para la
-        # IA, y resumido: nunca la ficha entera de la tienda.
-        if product.long_description == context:
-            product.long_description = summarize_text(description)
-        return product
+        categories = self.category_client.get_categories_hierarchy()
+        categories_prompt = self.category_client.format_categories_for_prompt(categories)
+        ai_data = self.ai_assistant.enrich_product(product, categories_prompt, provider=provider) or {}
+
+        copy_ok = not ai_data.get(COPY_FALLBACK_KEY) and bool(
+            ai_data.get("short_description") or ai_data.get("telegram_text")
+        )
+        long_text = (ai_data.get("long_description") or ai_data.get("description") or "") if copy_ok else ""
+        result = EnrichedProduct(
+            short_description=(ai_data.get("short_description") or "") if copy_ok else "",
+            long_description=long_text or summarize_text(description),
+            telegram_text=(ai_data.get("telegram_text") or "") if copy_ok else "",
+            copy_ok=copy_ok,
+        )
+        category_id = ai_data.get("category_id")
+        if category_id and any(c.get("id") == category_id and not c.get("parent_id") for c in categories):
+            subcategory_id = ai_data.get("subcategory_id")
+            valid_sub = any(
+                c.get("id") == subcategory_id and c.get("parent_id") == category_id for c in categories
+            )
+            if not valid_sub:
+                first = next((c for c in categories if c.get("parent_id") == category_id), None)
+                subcategory_id = first["id"] if first else None
+            result.category_id, result.subcategory_id = category_id, subcategory_id
+        return result
 
     def enrich(self, product: ProductPreview, provider: str | None = None) -> ProductPreview:
         """Aplica la IA sobre `product` y garantiza una categoría (Varios si no)."""
@@ -112,6 +138,20 @@ class EnrichProductUseCase:
         return product
 
 
+@dataclass(slots=True)
+class EnrichedProduct:
+    """Propuesta de la IA para un producto importado (Awin / Tradedoubler)."""
+
+    short_description: str = ""
+    long_description: str = ""
+    telegram_text: str = ""
+    category_id: str | None = None
+    subcategory_id: str | None = None
+    # False: la IA no escribió los textos (caída o vacía); van vacíos salvo el
+    # resumen de la descripción, y el editor no debe tratarlos como propuesta.
+    copy_ok: bool = False
+
+
 SUMMARY_MAX_CHARS = 500
 
 
@@ -132,7 +172,8 @@ def summarize_text(text: str, max_len: int = SUMMARY_MAX_CHARS) -> str:
         out = candidate
     if out:
         return out
-    return flat[:max_len].rsplit(" ", 1)[0].rstrip(",;:") + "…"
+    # Reserva un carácter para «…»: el resultado nunca pasa de `max_len`.
+    return flat[: max_len - 1].rsplit(" ", 1)[0].rstrip(",;:") + "…"
 
 
 def _ensure_category(product: ProductPreview, categories: list[dict[str, Any]]) -> None:

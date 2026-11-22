@@ -214,6 +214,12 @@ async def _deal_store_name(db: AsyncSession, deal_id: UUID | None) -> str | None
         return store.name if store else None
     except Exception:  # noqa: BLE001
         logger.warning("No se pudo leer la tienda del chollo %s para el icono del enlace", deal_id)
+        # Una consulta fallida deja la transacción abortada: sin rollback, el
+        # registro de la publicación (`record_safely`) fallaría después.
+        try:
+            await db.rollback()
+        except Exception:  # noqa: BLE001
+            pass
         return None
 
 

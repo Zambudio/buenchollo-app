@@ -67,4 +67,6 @@ export interface ProductEnrichResponse {
   telegram_text: string;
   category_id: string | null;
   subcategory_id: string | null;
+  /** false: la IA no escribió los textos; solo trae el resumen de la descripción. */
+  copy_ok: boolean;
 }
