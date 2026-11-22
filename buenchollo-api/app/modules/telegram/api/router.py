@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from uuid import UUID
 import asyncio
+import logging
 from fastapi import APIRouter, Depends, Request, Response
 from starlette.concurrency import run_in_threadpool
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,6 +16,7 @@ from app.modules.deals.application.deal_service import _GUARD_FIELDS
 from app.modules.affiliates.application.programs import PublicationBlocked, PublicationGuard
 from app.modules.affiliates.domain.offers import NETWORK_TRACKING_HOSTS
 from app.modules.affiliates.infrastructure.repository import AffiliateRepository
+from app.modules.stores.domain.models import Store
 from app.modules.telegram.application.post_generator import TelegramPostGenerator
 from app.modules.telegram.application.whatsapp_copy import send_whatsapp_copy
 from app.modules.telegram.application.whatsapp_formatter import to_whatsapp_text
@@ -41,6 +43,8 @@ from app.modules.telegram.api.schemas import (
     WhatsAppTextResponse,
     WeeklyDigestResponse,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/telegram", tags=["telegram"])
 
@@ -185,6 +189,23 @@ async def _ensure_network_deal_publishable(db: AsyncSession, payload: TelegramNo
     await PublicationGuard(AffiliateRepository(db)).ensure_publishable(data)
 
 
+async def _deal_store_name(db: AsyncSession, deal_id: UUID | None) -> str | None:
+    """Tienda del chollo, para el icono del enlace (🛒). None si no se conoce:
+    el icono se deduce entonces del dominio del enlace. Es cosmético: un fallo
+    aquí nunca impide publicar."""
+    if deal_id is None:
+        return None
+    try:
+        deal = await DealRepository(db).get_by_id(str(deal_id))
+        if deal is None or not deal.store_id:
+            return None
+        store = await db.get(Store, deal.store_id)
+        return store.name if store else None
+    except Exception:  # noqa: BLE001
+        logger.warning("No se pudo leer la tienda del chollo %s para el icono del enlace", deal_id)
+        return None
+
+
 @router.post("/notify")
 @limiter.limit("5/minute")  # publicación admin: evita doble envío accidental
 async def notify_deal(
@@ -214,7 +235,9 @@ async def notify_deal(
     # Flujo panel: texto pre-formateado con custom entities
     if payload.text:
         generator = TelegramPostGenerator()
-        entities = payload.entities or generator.build_entities(payload.text)
+        entities = payload.entities or generator.build_entities(
+            payload.text, store_name=await _deal_store_name(db, payload.deal_id)
+        )
         ok = await run_in_threadpool(
             bot.send_preformatted,
             text=payload.text,

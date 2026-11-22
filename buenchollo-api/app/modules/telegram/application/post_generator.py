@@ -13,11 +13,46 @@ CUSTOM_EMOJI_MAP: dict[str, str] = {
     "🍄": "5242687246162731515",   # Título
     "💶": "5201873447554145566",   # Precio
     "💰": "5296355151743838259",   # Ahorro
-    "🛒": "5346056560537779652",   # URL
     "✏️": "5395444784611480792",   # Descripción
     "⚠️": "5420323339723881652",   # Fin de oferta
     "🔗": "5282843764451195532",   # Enlace web
 }
+
+# Icono del enlace de compra (🛒): depende de la tienda. Para añadir una tienda,
+# saca el `custom_emoji_id` enviando el emoji premium a @JsonDumpBot (campo
+# `entities[].custom_emoji_id`) y añádelo a STORE_LINK_ICONS con una clave que
+# aparezca en el nombre de la tienda o en el dominio de su web.
+LINK_EMOJI = "🛒"
+AMAZON_LINK_ICON = "5346056560537779652"
+GENERIC_LINK_ICON = "5271604874419647061"   # tiendas sin icono propio (Coolmod...)
+STORE_LINK_ICONS: dict[str, str] = {
+    "amazon": AMAZON_LINK_ICON,
+}
+_AMAZON_HOST_RE = re.compile(r"(^|\.)(amazon\.[a-z.]+|amzn\.[a-z]+|link\.amazon)$")
+_URL_RE = re.compile(r"https?://([^/\s?#]+)", re.I)
+
+
+def _normalize(value: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", value.lower())
+
+
+def link_icon_for(url: str | None, store_name: str | None = None) -> str:
+    """`custom_emoji_id` del 🛒: la tienda del chollo manda (el enlace de Awin,
+    `tidd.ly`, no la dice); sin tienda, se deduce del dominio del enlace."""
+    if store_name:
+        name = _normalize(store_name)
+        for key, icon in STORE_LINK_ICONS.items():
+            if key in name:
+                return icon
+        return GENERIC_LINK_ICON
+    match = _URL_RE.search(url or "")
+    host = match.group(1).lower() if match else ""
+    if _AMAZON_HOST_RE.search(host):
+        return AMAZON_LINK_ICON
+    for key, icon in STORE_LINK_ICONS.items():
+        if key != "amazon" and key in _normalize(host):
+            return icon
+    return GENERIC_LINK_ICON
 
 # Los modelos gratuitos de OmniRoute pueden tardar; pasado este tiempo se usa la descripción.
 COPY_TIMEOUT_SECONDS = 60.0
@@ -137,13 +172,26 @@ class TelegramPostGenerator:
 
     # ── Entidades Telegram Premium ────────────────────────────────────────────
 
-    def build_entities(self, text: str) -> list[dict]:
+    def build_entities(self, text: str, store_name: str | None = None) -> list[dict]:
         """
         Convierte los emojis estándar en Custom Emojis Premium de Telegram
-        y añade bold al mensaje completo.
+        y añade bold al mensaje completo. El 🛒 de cada línea toma el icono de
+        la tienda (`store_name`) o, si no se conoce, el del dominio de su enlace.
         Cálculo de offsets en UTF-16 LE (requerido por la API de Telegram).
         """
         entities: list[dict] = []
+
+        start = 0
+        while (idx := text.find(LINK_EMOJI, start)) != -1:
+            line_end = text.find("\n", idx)
+            line = text[idx : line_end if line_end != -1 else len(text)]
+            entities.append({
+                "type": "custom_emoji",
+                "offset": len(text[:idx].encode("utf-16-le")) // 2,
+                "length": len(LINK_EMOJI.encode("utf-16-le")) // 2,
+                "custom_emoji_id": link_icon_for(line, store_name),
+            })
+            start = idx + len(LINK_EMOJI)
 
         for emoji_char, custom_id in CUSTOM_EMOJI_MAP.items():
             start = 0

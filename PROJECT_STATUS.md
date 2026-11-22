@@ -1,7 +1,11 @@
 # PROJECT_STATUS — BuenCholloTech
-*Actualización de producción: 2026-11-22 — `main` con la PR #105 (aviso genérico fuera de los posts de redes, términos partidos del feed de Coolmod y resumen de la descripción si falla la IA) sobre la #104 (Coolmod activo en Awin e IA al importar). API reiniciada en el NAS; Alembic `20261122120000`.*
+*Actualización de producción: 2026-11-22 — `main` con la PR #106 (icono del enlace por tienda en los posts) sobre la #105 (aviso genérico fuera de los posts de redes, términos partidos del feed de Coolmod) y la #104 (Coolmod activo en Awin e IA al importar). API y scheduler reiniciados en el NAS; Alembic `20261122120000`.*
 
 > Bitácora cronológica inversa. Estado operativo vigente: [`docs/project/11-current-state.md`](docs/project/11-current-state.md); pendientes abiertos: [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md).
+
+## 2026-11-22 · Icono del enlace de compra según la tienda
+
+- El 🛒 de los posts de Telegram era siempre el emoji premium de Amazon, también en Coolmod. Ahora `link_icon_for` (`post_generator.py`) elige por la tienda del chollo (publicación desde el panel con `deal_id`; el enlace de Awin no dice la tienda) o, si no se conoce, por el dominio del enlace de cada línea: Amazon conserva su logo y el resto usa el genérico (`5271604874419647061`) hasta tener icono propio en `STORE_LINK_ICONS`. En el resumen semanal cada línea se decide por su enlace (Amazon, su logo; el resto, el genérico). Proceso para añadir iconos: [`docs/guides/TELEGRAM-EMOJIS.md`](docs/guides/TELEGRAM-EMOJIS.md).
 
 ## 2026-11-22 · Posts de redes sin aviso genérico y catálogo de Coolmod más limpio
 
