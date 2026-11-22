@@ -101,12 +101,23 @@ async def add_category(
 
 # ── Generación de post ─────────────────────────────────────────────────────────
 
+async def _program_notice(db: AsyncSession, program_id: UUID | None) -> str | None:
+    """Aviso adicional del programa de afiliación, leído de la BD. El que mande
+    el navegador no cuenta: una pestaña abierta desde antes de cambiarlo lo
+    seguiría metiendo en el post."""
+    if program_id is None:
+        return None
+    program = await AffiliateRepository(db).get_program(str(program_id))
+    return program.disclosure_text if program else None
+
+
 @router.post("/generate", response_model=TelegramGenerateResponse)
 async def generate_post(
     payload: TelegramGenerateRequest,
     settings: Settings = Depends(get_settings),
     _auth=Depends(require_admin),
     repo: JsonCategoryRepository = Depends(_get_category_repo),
+    db: AsyncSession = Depends(get_db),
 ) -> TelegramGenerateResponse:
     """
     Genera el texto formateado del post y sugiere categorías vía GPT.
@@ -133,7 +144,7 @@ async def generate_post(
         affiliate_url=payload.affiliate_url,
         expires_at=payload.expires_at,
         shipping_info=payload.shipping_info,
-        notice=payload.notice,
+        notice=await _program_notice(db, payload.affiliate_program_id),
     )
 
     categories = repo.load()

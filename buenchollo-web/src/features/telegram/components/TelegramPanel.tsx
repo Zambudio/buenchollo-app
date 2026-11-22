@@ -218,7 +218,7 @@ export function TelegramPanel({
         affiliate_url: dealData.affiliate_url,
         expires_at: dealData.expires_at,
         shipping_info: dealData.shipping_info ?? null,
-        notice: dealData.notice ?? null,
+        affiliate_program_id: dealData.affiliate_program_id ?? null,
       });
       setText(result.text);
       if (result.whatsapp_text !== undefined) {

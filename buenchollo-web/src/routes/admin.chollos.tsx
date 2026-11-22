@@ -20,7 +20,6 @@ import {
 import { productsApi, type AmazonPreviewResponse } from "@/services/api/products";
 import {
   affiliatesApi,
-  type AffiliateProgram,
   type ImportRequest,
   type ImportResponse,
   type ReadinessResponse,
@@ -38,6 +37,7 @@ import { DEFAULT_AI_PROVIDER, isAiProvider, type AiProvider } from "@/lib/ai-pro
 import {
   applyEnrichment,
   applyImport,
+  summarizeImportedDescription,
   buildDealPayload,
   dealToForm,
   emptyForm,
@@ -98,15 +98,7 @@ function AdminDeals() {
   const [importRequest, setImportRequest] = useState<ImportRequest | null>(null);
   const [importConflicts, setImportConflicts] = useState<ImportConflict[]>([]);
   const [readiness, setReadiness] = useState<ReadinessResponse | null>(null);
-  const [programs, setPrograms] = useState<AffiliateProgram[]>([]);
-  useEffect(() => {
-    affiliatesApi
-      .programs()
-      .then(setPrograms)
-      .catch(() => setPrograms([]));
-  }, []);
   const networkForm = isNetworkForm(form);
-  const formProgram = programs.find((p) => p.id === form.affiliate_program_id);
   const nav = useNavigate();
   const handleCalendarOpen = useCallback(() => setCalendarDealId(null), []);
   const handleCalendarChanged = useCallback(() => {
@@ -168,8 +160,9 @@ function AdminDeals() {
 
   /** Awin / Tradedoubler: con los datos del catálogo, la IA propone descripción
    *  corta, descripción larga, post de Telegram y categoría (como en Amazon).
-   *  Solo rellena lo vacío o lo que sigue igual que en el catálogo; si la IA
-   *  falla, la importación ya está hecha y solo se avisa. */
+   *  Solo rellena lo vacío o lo que sigue igual que en el catálogo. Si la IA
+   *  falla o no responde a tiempo, la importación ya está hecha: se avisa y la
+   *  descripción del catálogo se resume (nunca la ficha entera de la tienda). */
   const enrichImported = async (offer: NonNullable<ImportResponse["offer"]>) => {
     try {
       const ai = await productsApi.enrich(
@@ -188,6 +181,7 @@ function AdminDeals() {
       setForm((f) => applyEnrichment(f, ai, category));
       toast.success("Textos y categoría propuestos por la IA");
     } catch (e: unknown) {
+      setForm(summarizeImportedDescription);
       toast.warning("La IA no ha podido proponer textos: " + errorMessage(e));
     }
   };
@@ -363,7 +357,7 @@ function AdminDeals() {
       ...(networkForm
         ? {
             shipping_info: form.shipping_info || null,
-            notice: formProgram?.disclosure_text ?? null,
+            affiliate_program_id: form.affiliate_program_id || null,
           }
         : {}),
     };

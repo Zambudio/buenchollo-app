@@ -372,6 +372,36 @@ export function resolveConflict(form: DealForm, conflict: ImportConflict): DealF
   return next;
 }
 
+/** Tope del resumen de la descripción cuando la IA no responde (igual que en la API). */
+export const SUMMARY_MAX_CHARS = 500;
+
+/** Resumen con frases completas del propio texto, sin inventar nada. Si la
+ *  primera frase ya no cabe, corta por palabra. */
+export function summarizeText(text: string, maxLen = SUMMARY_MAX_CHARS): string {
+  const flat = text.replace(/\s+/g, " ").trim();
+  if (flat.length <= maxLen) return flat;
+  let out = "";
+  for (const sentence of flat.split(/(?<=[.!?])\s+/)) {
+    const candidate = `${out} ${sentence}`.trim();
+    if (candidate.length > maxLen) break;
+    out = candidate;
+  }
+  if (out) return out;
+  const cut = flat.slice(0, maxLen);
+  const lastSpace = cut.lastIndexOf(" ");
+  return `${(lastSpace > 0 ? cut.slice(0, lastSpace) : cut).replace(/[,;:]+$/, "")}…`;
+}
+
+/** Sin IA (no respondió a tiempo o falló): la descripción importada del
+ *  catálogo se resume en lugar de quedarse entera. Solo si sigue tal cual
+ *  vino del catálogo; lo editado a mano no se toca. */
+export function summarizeImportedDescription(form: DealForm): DealForm {
+  const imported = form.import_snapshot?.description;
+  if (!imported || form.description !== imported) return form;
+  const summary = summarizeText(imported);
+  return summary === form.description ? form : { ...form, description: summary };
+}
+
 /** Textos y categoría que propone la IA (POST /products/enrich). */
 export interface EnrichmentData {
   short_description: string;

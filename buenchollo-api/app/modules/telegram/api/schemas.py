@@ -22,9 +22,13 @@ class TelegramGenerateRequest(BaseModel):
     description: str | None = None          # descripción corta o larga
     affiliate_url: str = ""
     expires_at: str | None = None           # ISO string
-    # Redes de afiliación: línea de envío y aviso adicional del programa.
-    # Vacíos en Amazon → el texto queda exactamente como antes.
+    # Redes de afiliación: línea de envío y programa del chollo. El aviso
+    # adicional se lee de ese programa en la BD. Vacíos en Amazon → el texto
+    # queda exactamente como antes.
     shipping_info: str | None = Field(default=None, max_length=200)
+    affiliate_program_id: UUID | None = None
+    # Obsoleto: se ignora (el aviso lo decide el servidor). Se acepta para no
+    # romper una pestaña del panel abierta con la versión anterior.
     notice: str | None = Field(default=None, max_length=300)
     # Chollo ya guardado: la IA reescribe la línea de venta (✏️) a partir de
     # `copy_context` (descripción larga) con el motor elegido en el admin.

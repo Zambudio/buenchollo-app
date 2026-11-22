@@ -3,6 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   applyEnrichment,
   applyImport,
+  SUMMARY_MAX_CHARS,
+  summarizeImportedDescription,
+  summarizeText,
   buildDealPayload,
   emptyForm,
   isNetworkForm,
@@ -171,5 +174,32 @@ describe("applyEnrichment (IA tras importar de una red)", () => {
     expect(out.short_description).toBe("Panel IPS QHD.");
     expect(out.description).toBe("Panel IPS QHD 165 Hz.");
     expect(out.category_id).toBe("");
+  });
+});
+
+describe("summarizeImportedDescription (la IA no respondió)", () => {
+  const sentence = "El panel QHD ofrece un contraste alto y colores vivos en cualquier escena. ";
+  const long = sentence.repeat(20).trim();
+
+  it("resume la descripción que sigue tal cual vino del catálogo", () => {
+    const imported = applyImport(emptyForm(), result({ description: long })).form;
+    const out = summarizeImportedDescription(imported);
+    expect(out.description.length).toBeLessThanOrEqual(SUMMARY_MAX_CHARS);
+    expect(out.description.startsWith("El panel QHD")).toBe(true);
+    expect(out.description.endsWith(".")).toBe(true);
+  });
+
+  it("no toca lo editado a mano ni una descripción corta", () => {
+    const imported = applyImport(emptyForm(), result({ description: long })).form;
+    const edited = { ...imported, description: "Mi texto" };
+    expect(summarizeImportedDescription(edited)).toBe(edited);
+    const short = applyImport(emptyForm(), result()).form;
+    expect(summarizeImportedDescription(short)).toBe(short);
+  });
+
+  it("corta por palabra si la primera frase no cabe", () => {
+    const out = summarizeText("palabra ".repeat(200), 50);
+    expect(out.length).toBeLessThanOrEqual(51);
+    expect(out.endsWith("…")).toBe(true);
   });
 });
