@@ -56,7 +56,7 @@ Extracción de atributos, generación de copies persuasivos para Telegram y cate
 <td width="50%">
 
 ### 🛒 Autocompletado Amazon & Keepa
-Pega una URL de Amazon —incluidos los nuevos enlaces **`link.amazon`**— y el sistema extrae automáticamente el **ASIN, título, precio, descuento, imágenes** e integra la **gráfica de historial de precios de Keepa** en tiempo real.
+Pega una URL de Amazon —incluidos los nuevos enlaces **`link.amazon`**— y el sistema extrae automáticamente el **ASIN, título, precio, descuento, imágenes** e integra la **gráfica de historial de precios de Keepa** en tiempo real. Las tiendas de **Awin / Tradedoubler** (hoy Coolmod) se importan desde su catálogo oficial con enlace afiliado y textos generados por IA.
 
 </td>
 </tr>

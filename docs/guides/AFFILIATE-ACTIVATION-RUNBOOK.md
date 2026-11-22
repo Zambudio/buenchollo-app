@@ -5,13 +5,14 @@
 > [`AFFILIATE-NETWORKS.md`](AFFILIATE-NETWORKS.md) y [ADR-019](../adr/ADR-019-redes-afiliacion-awin-tradedoubler.md).
 > Acceso al NAS: [`NAS-SSH.md`](NAS-SSH.md).
 
-## 0. Punto de partida (2026-11-08; actualizado 2026-11-21)
+## 0. Punto de partida (2026-11-08; actualizado 2026-11-22)
 
-- Código **en producción**: PR #78 (merge `c47269c`), API y scheduler recreados,
-  Alembic en `20261108120000`. El job diario `run_awin_feed_sync` (05:17) está registrado.
+- Código **en producción**: la integración entró con la PR #78 (merge `c47269c`, migración
+  `20261108120000`). Producción va ya por Alembic `20261122120000`, que vacía el aviso de
+  afiliación genérico sembrado entonces (ver §3, punto 3). El job diario `run_awin_feed_sync` (05:17) está registrado.
 - **Credenciales configuradas** en `buenchollo-api/.env` del NAS (las cinco variables;
   ver `AFFILIATE-NETWORKS.md` §3). No hace falta pedirlas otra vez.
-- Ningún programa aprobado todavía. Estado real consultado ese día:
+- Estado de los programas (consultado en la red y en la BD; última revisión 2026-11-21):
 
 | Red | ID | Tienda | Adhesión en la red | En la BD |
 |---|---|---|---|---|
@@ -25,9 +26,10 @@
 
 - Awin `feedList` devolvía 944 feeds, **ninguno** de estas tiendas; Tradedoubler, 0 feeds.
   Un feed de producto solo aparece cuando la tienda acepta.
-- El código de lectura de catálogos (columnas del feed Awin, respuesta de la Products API
-  de Tradedoubler) **solo se ha probado con datos sintéticos**. La primera tienda real
-  es también la primera validación del parser (paso 5).
+- El parser del feed Awin **ya está validado en vivo** con Coolmod (2026-11-21, TD-46); sus
+  términos partidos («PC Ie», «NV Me»…) los recompone `fix_split_terms`. La respuesta de la
+  Products API de Tradedoubler **solo se ha probado con datos sintéticos**: la primera
+  tienda de Tradedoubler será su primera validación (paso 5).
 
 ## 1. Reglas para el agente
 

@@ -1,7 +1,8 @@
 # Redes de afiliación: Awin y Tradedoubler
 
 > Guía viva. Decisión de diseño en [ADR-019](../adr/ADR-019-redes-afiliacion-awin-tradedoubler.md).
-> Estado a 2026-11-21: **en producción** (PR #78, merge `c47269c`, Alembic `20261108120000`)
+> Estado a 2026-11-22: **en producción** desde la PR #78 (merge `c47269c`, migración de la
+> función `20261108120000`; producción va por Alembic `20261122120000`)
 > con las credenciales de ambas redes configuradas en el NAS. **Coolmod (Awin) activo**
 > desde el 2026-11-21: feed 114170 sincronizado (12.995 productos) y contrastado con datos
 > reales. Samsung ES aceptado pero sin habilitar; el resto, ver la tabla del runbook.
