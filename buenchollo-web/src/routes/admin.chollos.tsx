@@ -20,7 +20,6 @@ import {
 import { productsApi, type AmazonPreviewResponse } from "@/services/api/products";
 import {
   affiliatesApi,
-  type AffiliateProgram,
   type ImportRequest,
   type ImportResponse,
   type ReadinessResponse,
@@ -38,6 +37,7 @@ import { DEFAULT_AI_PROVIDER, isAiProvider, type AiProvider } from "@/lib/ai-pro
 import {
   applyEnrichment,
   applyImport,
+  summarizeImportedDescription,
   buildDealPayload,
   dealToForm,
   emptyForm,
@@ -98,15 +98,7 @@ function AdminDeals() {
   const [importRequest, setImportRequest] = useState<ImportRequest | null>(null);
   const [importConflicts, setImportConflicts] = useState<ImportConflict[]>([]);
   const [readiness, setReadiness] = useState<ReadinessResponse | null>(null);
-  const [programs, setPrograms] = useState<AffiliateProgram[]>([]);
-  useEffect(() => {
-    affiliatesApi
-      .programs()
-      .then(setPrograms)
-      .catch(() => setPrograms([]));
-  }, []);
   const networkForm = isNetworkForm(form);
-  const formProgram = programs.find((p) => p.id === form.affiliate_program_id);
   const nav = useNavigate();
   const handleCalendarOpen = useCallback(() => setCalendarDealId(null), []);
   const handleCalendarChanged = useCallback(() => {
@@ -168,9 +160,18 @@ function AdminDeals() {
 
   /** Awin / Tradedoubler: con los datos del catálogo, la IA propone descripción
    *  corta, descripción larga, post de Telegram y categoría (como en Amazon).
-   *  Solo rellena lo vacío o lo que sigue igual que en el catálogo; si la IA
-   *  falla, la importación ya está hecha y solo se avisa. */
-  const enrichImported = async (offer: NonNullable<ImportResponse["offer"]>) => {
+   *  Solo rellena lo vacío o lo que sigue igual que en el catálogo. Si la IA
+   *  falla o no responde a tiempo, la importación ya está hecha: se avisa y la
+   *  descripción del catálogo se resume (nunca la ficha entera de la tienda).
+   *  La IA puede tardar hasta un minuto: si mientras tanto el formulario ya es
+   *  otro (cerrado, otro chollo u otra importación), la respuesta se descarta.
+   *  `importToken` es el `import_snapshot` de esta importación (misma referencia
+   *  mientras el formulario siga siendo el suyo). */
+  const enrichImported = async (
+    offer: NonNullable<ImportResponse["offer"]>,
+    importToken: DealForm["import_snapshot"],
+  ) => {
+    const isSameImport = (f: DealForm) => importToken !== null && f.import_snapshot === importToken;
     try {
       const ai = await productsApi.enrich(
         {
@@ -185,9 +186,11 @@ function AdminDeals() {
         typeof ai?.category_id === "string" && ai.category_id
           ? resolveCategorySelection(ai.category_id, ai.subcategory_id ?? "", cats, subcats)
           : { category_id: "", subcategory_id: "" };
-      setForm((f) => applyEnrichment(f, ai, category));
-      toast.success("Textos y categoría propuestos por la IA");
+      setForm((f) => (isSameImport(f) ? applyEnrichment(f, ai, category) : f));
+      if (ai?.copy_ok === true) toast.success("Textos y categoría propuestos por la IA");
+      else toast.warning("La IA no ha escrito los textos: descripción del catálogo resumida");
     } catch (e: unknown) {
+      setForm((f) => (isSameImport(f) ? summarizeImportedDescription(f) : f));
       toast.warning("La IA no ha podido proponer textos: " + errorMessage(e));
     }
   };
@@ -221,7 +224,7 @@ function AdminDeals() {
         result.stage === "product_imported" ? "Producto importado (borrador)" : "Enlace generado",
       );
       if (result.stage === "product_imported" && result.offer.title) {
-        await enrichImported(result.offer);
+        await enrichImported(result.offer, applied.form.import_snapshot);
       }
     } catch (e: unknown) {
       toast.error(errorMessage(e));
@@ -363,7 +366,7 @@ function AdminDeals() {
       ...(networkForm
         ? {
             shipping_info: form.shipping_info || null,
-            notice: formProgram?.disclosure_text ?? null,
+            affiliate_program_id: form.affiliate_program_id || null,
           }
         : {}),
     };

@@ -30,6 +30,10 @@ export interface AmazonPreviewResponse {
 // puede rondar los 15s del timeout por defecto del cliente; se amplía aquí
 // en vez de subir el límite global.
 const PREVIEW_FROM_URL_TIMEOUT_MS = 45_000;
+// La IA del autocompletado de redes (sin Amazon) puede encadenar varios modelos
+// gratuitos que caducan antes de llegar al de reserva: se le da algo más de margen.
+// Si aun así no llega, el panel resume la descripción del catálogo.
+const ENRICH_TIMEOUT_MS = 60_000;
 
 export const productsApi = {
   /** Genera una preview de producto a partir de una URL de Amazon o ASIN con opción de elegir motor de IA. */
@@ -44,7 +48,7 @@ export const productsApi = {
     apiClient.post<ProductEnrichResponse>(
       "/products/enrich",
       { ...req, ...(provider ? { provider } : {}) },
-      { signal: AbortSignal.timeout(PREVIEW_FROM_URL_TIMEOUT_MS) },
+      { signal: AbortSignal.timeout(ENRICH_TIMEOUT_MS) },
     ),
 };
 
@@ -63,4 +67,6 @@ export interface ProductEnrichResponse {
   telegram_text: string;
   category_id: string | null;
   subcategory_id: string | null;
+  /** false: la IA no escribió los textos; solo trae el resumen de la descripción. */
+  copy_ok: boolean;
 }

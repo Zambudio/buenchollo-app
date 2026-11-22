@@ -142,6 +142,7 @@ async function setup(page: Page) {
           telegram_text: "FIXTURE monitor QHD a buen precio",
           category_id: null,
           subcategory_id: null,
+          copy_ok: true,
         },
       });
     }

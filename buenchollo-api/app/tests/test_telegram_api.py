@@ -254,3 +254,59 @@ def test_notify_del_panel_envia_tambien_la_version_whatsapp_al_canal_admin(clien
     assert whatsapp == {
         "text": "🔥 *Monitor editado*", "entities": [], "image_url": "https://img/x.jpg", "chat_id": "-100admin",
     }
+
+
+# ── Aviso del programa: lo decide el servidor, no el navegador ───────────────
+
+class _FakeProgram:
+    def __init__(self, disclosure_text):
+        self.disclosure_text = disclosure_text
+
+
+def _patch_program(monkeypatch, program):
+    async def fake_get_program(self, program_id):
+        return program
+
+    monkeypatch.setattr(
+        "app.modules.affiliates.infrastructure.repository.AffiliateRepository.get_program", fake_get_program
+    )
+
+
+_PROGRAM_ID = "7c6a3048-c2d4-434e-833e-b9e97ba2b54d"
+
+
+def test_generate_ignora_el_aviso_que_manda_el_navegador(client, monkeypatch):
+    # Una pestaña abierta desde antes de vaciar el aviso lo seguía enviando.
+    _override_settings()
+    _patch_generator(monkeypatch, None)
+    _patch_program(monkeypatch, _FakeProgram(None))
+
+    r = client.post(
+        "/v1/telegram/generate",
+        json={**_GENERATE_BASE, "affiliate_program_id": _PROGRAM_ID, "notice": "Enlace de afiliado: podemos recibir…"},
+    )
+
+    assert r.status_code == 200, r.text
+    assert "podemos recibir" not in r.json()["text"]
+
+
+def test_generate_usa_el_aviso_guardado_del_programa(client, monkeypatch):
+    _override_settings()
+    _patch_generator(monkeypatch, None)
+    _patch_program(monkeypatch, _FakeProgram("Aviso exigido por la tienda"))
+
+    r = client.post("/v1/telegram/generate", json={**_GENERATE_BASE, "affiliate_program_id": _PROGRAM_ID})
+
+    assert r.status_code == 200, r.text
+    assert "ℹ️ Aviso exigido por la tienda" in r.json()["text"]
+
+
+def test_generate_sin_programa_no_lleva_aviso(client, monkeypatch):
+    _override_settings()
+    _patch_generator(monkeypatch, None)
+
+    r = client.post("/v1/telegram/generate", json={**_GENERATE_BASE, "notice": "Texto viejo"})
+
+    assert r.status_code == 200, r.text
+    assert "Texto viejo" not in r.json()["text"]
+    assert "ℹ️" not in r.json()["text"]

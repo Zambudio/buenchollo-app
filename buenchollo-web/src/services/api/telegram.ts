@@ -14,9 +14,9 @@ export interface TelegramGenerateRequest {
   description?: string | null;
   affiliate_url?: string;
   expires_at?: string | null;
-  /** Redes de afiliación: línea de envío y aviso adicional del programa. */
+  /** Redes de afiliación: línea de envío y programa (el servidor lee su aviso adicional). */
   shipping_info?: string | null;
-  notice?: string | null;
+  affiliate_program_id?: string | null;
   /** Chollo ya guardado: la IA reescribe la línea ✏️ a partir de `copy_context`. */
   ai_copy?: boolean;
   provider?: AiProvider | null;

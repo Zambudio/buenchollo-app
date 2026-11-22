@@ -29,7 +29,13 @@ Desde **Admin → Chollos**, el panel «Autocompletar desde Amazon, Awin o Trade
    Con el producto importado, el editor pide a la IA (`POST /v1/products/enrich`, solo
    admin, 10/min) la descripción corta, la descripción larga, el post de Telegram y la
    categoría, igual que en Amazon. Solo rellena lo vacío o lo que sigue como vino del
-   catálogo; si la IA falla, la importación ya está hecha y solo avisa.
+   catálogo, y descarta la respuesta si el formulario ya es otro (la IA tarda hasta 60 s).
+   A diferencia de Amazon, **no inventa nada si la IA cae**: el enriquecedor marca sus
+   textos de rescate (`copy_fallback`), la API responde `copy_ok: false` y el panel solo
+   resume la descripción del catálogo (frases completas, 500 caracteres); sin
+   clasificación de la IA no hay categoría («Varios» no se pone sola). Si la llamada
+   falla o caduca, el panel resume igualmente. Los datos de la tienda van al prompt
+   delimitados (`<<< >>>`) y marcados como datos, no instrucciones.
 4. Publicar (estado activo, o Telegram) exige pasar las reglas del backend
    (`POST /v1/affiliates/readiness`, `PublicationGuard`). Un borrador siempre se guarda.
 
@@ -56,14 +62,15 @@ bajada según el historial de Tradedoubler), `store_strikethrough_verified` y
 El post de Telegram añade la línea de envío y, solo si el programa lo tiene, el aviso
 adicional del programa (`disclosure_text`). Desde el 2026-11-22 va vacío por defecto (el
 aviso genérico «Enlace de afiliado: podemos recibir…» se retiró de las publicaciones,
-migración `20261122120000`); se rellena solo si unas condiciones exigen un texto propio.
-Los chollos de Amazon no cambian.
+migración `20261122120000`, sin vuelta atrás en el `downgrade`); se rellena solo si unas
+condiciones exigen un texto propio. **Lo decide el servidor**: el panel envía
+`affiliate_program_id` a `/telegram/generate` y la API lee el aviso de la BD; el antiguo
+campo `notice` del cliente se ignora (una pestaña abierta antes de un cambio lo seguía
+metiendo). Los chollos de Amazon no cambian.
 
 Los feeds de Awin pueden traer términos técnicos partidos (Coolmod: «PC Ie», «NV Me»,
 «5600M Hz», «AS Rock»). `fix_split_terms` (`affiliates/domain/offers.py`) recompone solo
-los casos inequívocos en el título y la descripción al leer el feed. Si la IA no responde
-al importar, la descripción larga es un resumen por frases (500 caracteres), nunca la
-ficha entera de la tienda.
+los casos inequívocos en el título y la descripción al leer el feed.
 
 ## 3. Credenciales (solo en `buenchollo-api/.env` del NAS)
 

@@ -1,7 +1,18 @@
 # PROJECT_STATUS — BuenCholloTech
-*Actualización de producción: 2026-11-22 — `main` con la PR #107 (iconos de Xiaomi, AliExpress y Steam en el enlace; Samsung y WhatsApp guardados) sobre la #106 (icono del enlace por tienda), la #105 (aviso genérico fuera de los posts de redes, términos partidos del feed de Coolmod) y la #104 (Coolmod activo en Awin e IA al importar). API y scheduler reiniciados en el NAS; Alembic `20261122120000`.*
+*Actualización de producción: 2026-11-22 — `main` con la PR #108 (aviso del post decidido por el servidor, IA del autocompletado de redes sin textos de rescate y correcciones de la revisión independiente) sobre las #104 a #107 (Coolmod activo en Awin con IA al importar, aviso genérico fuera, términos del feed corregidos e iconos premium por tienda). API y scheduler reiniciados en el NAS; Alembic `20261122120000`.*
 
 > Bitácora cronológica inversa. Estado operativo vigente: [`docs/project/11-current-state.md`](docs/project/11-current-state.md); pendientes abiertos: [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md).
+
+## 2026-11-22 · Revisión independiente de los cambios del día y dos arreglos
+
+- **Aviso del post**: lo decide el servidor. `/telegram/generate` recibe `affiliate_program_id` y lee el aviso de la BD; el `notice` que mande el navegador se ignora. Un post de Coolmod salió con el aviso ya retirado porque el panel llevaba abierto desde antes del cambio.
+- **IA del autocompletado de redes**: si cae, ya no se aplican sus textos de rescate (título recortado y «Varios»). La API responde `copy_ok: false`; el panel solo resume la descripción del catálogo y no pone categoría. Si la llamada caduca (ahora 60 s) o falla, también resume. La respuesta se descarta si el formulario ya es otro chollo.
+- **Revisión independiente** (PR #104 a #107) y correcciones:
+  - `downgrade` de la migración del aviso sin vuelta atrás: rellenaba programas que nunca lo tuvieron.
+  - Rollback si falla la lectura de la tienda en `/notify`, para que el registro de la publicación no se pierda.
+  - Datos de la tienda delimitados en el prompt (inyección de instrucciones).
+  - El resumen nunca pasa de 500 caracteres.
+  - Una frase de esta bitácora que no cuadraba con el código.
 
 ## 2026-11-22 · Iconos premium de tiendas y WhatsApp registrados
 
@@ -11,7 +22,7 @@
 
 ## 2026-11-22 · Icono del enlace de compra según la tienda
 
-- El 🛒 de los posts de Telegram era siempre el emoji premium de Amazon, también en Coolmod. Ahora `link_icon_for` (`post_generator.py`) elige por la tienda del chollo (publicación desde el panel con `deal_id`; el enlace de Awin no dice la tienda) o, si no se conoce, por el dominio del enlace de cada línea: Amazon conserva su logo y el resto usa el genérico (`5271604874419647061`) hasta tener icono propio en `STORE_LINK_ICONS`. En el resumen semanal cada línea se decide por su enlace (Amazon, su logo; el resto, el genérico). Proceso para añadir iconos: [`docs/guides/TELEGRAM-EMOJIS.md`](docs/guides/TELEGRAM-EMOJIS.md).
+- El 🛒 de los posts de Telegram era siempre el emoji premium de Amazon, también en Coolmod. Ahora `link_icon_for` (`post_generator.py`) elige por la tienda del chollo (publicación desde el panel con `deal_id`; el enlace de Awin no dice la tienda) o, si no se conoce, por el dominio del enlace de cada línea: Amazon conserva su logo y el resto usa el genérico (`5271604874419647061`) hasta tener icono propio en `STORE_LINK_ICONS`. En el resumen semanal cada línea se decide por el dominio de su enlace (Amazon, AliExpress y Steam con su logo; el resto, el genérico). Proceso para añadir iconos: [`docs/guides/TELEGRAM-EMOJIS.md`](docs/guides/TELEGRAM-EMOJIS.md).
 
 ## 2026-11-22 · Posts de redes sin aviso genérico y catálogo de Coolmod más limpio
 

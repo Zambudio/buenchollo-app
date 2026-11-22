@@ -30,7 +30,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.get_bind().execute(
-        sa.text("UPDATE affiliate_programs SET disclosure_text = :text WHERE disclosure_text IS NULL"),
-        {"text": _DISCLOSURE},
-    )
+    # Sin vuelta atrás a propósito: no se sabe qué programas llevaban el texto
+    # sembrado y cuáles estaban ya vacíos o se vaciaron a mano. Rellenar todos
+    # los vacíos volvería a meter el aviso genérico en los posts.
+    pass
