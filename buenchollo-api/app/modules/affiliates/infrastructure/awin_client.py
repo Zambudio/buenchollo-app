@@ -25,7 +25,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from app.core.config import Settings
-from app.modules.affiliates.domain.offers import html_to_text, normalize_product_url, parse_money
+from app.modules.affiliates.domain.offers import fix_split_terms, html_to_text, normalize_product_url, parse_money
 from app.modules.affiliates.infrastructure.http import MinuteRateLimiter, NetworkError, SafeHttp
 
 API_BASE = "https://api.awin.com"
@@ -267,7 +267,7 @@ def map_feed_row(row: dict) -> dict | None:
     columna admiten las variantes conocidas; lo ausente queda en None."""
     product_key = _first(row, "aw_product_id", "product_id")
     merchant_product_id = _first(row, "merchant_product_id")
-    title = html_to_text(_first(row, "product_name"), 300)
+    title = fix_split_terms(html_to_text(_first(row, "product_name"), 300))
     if not (product_key or merchant_product_id) or not title:
         return None
     merchant_url = _https_or_none(_first(row, "merchant_deep_link", "deep_link"))
@@ -281,7 +281,7 @@ def map_feed_row(row: dict) -> dict | None:
         "title": title,
         "brand": (_first(row, "brand_name") or "")[:120] or None,
         "model": (_first(row, "model_number", "product_model") or "")[:120] or None,
-        "description": html_to_text(_first(row, "description", "product_short_description"), 4000),
+        "description": fix_split_terms(html_to_text(_first(row, "description", "product_short_description"), 4000)),
         "ean": (_first(row, "ean", "product_GTIN", "upc") or "")[:32] or None,
         "mpn": (_first(row, "mpn") or "")[:64] or None,
         "colour": (_first(row, "colour") or "")[:64] or None,

@@ -191,6 +191,31 @@ def html_to_text(value: str | None, max_len: int = 4000) -> str | None:
     return text[:max_len].rstrip()
 
 
+# Algunos feeds (Coolmod en Awin) parten las palabras con mayúsculas mezcladas:
+# «PC Ie», «NV Me», «5600M Hz». Solo casos inequívocos; el resto no se toca.
+_SPLIT_TERMS = (
+    (re.compile(r"\bPC Ie\b"), "PCIe"),
+    (re.compile(r"\bNV Me\b"), "NVMe"),
+    (re.compile(r"\bH GiG\b"), "HGiG"),
+    (re.compile(r"\bAS Rock\b"), "ASRock"),
+    (re.compile(r"\bG\.S Kill\b"), "G.Skill"),
+    (re.compile(r"\bWi Fi\b"), "WiFi"),
+    (re.compile(r"(\d)M Hz\b"), r"\1MHz"),
+    (re.compile(r"(\d)G Hz\b"), r"\1GHz"),
+    (re.compile(r"(\d)K Hz\b"), r"\1kHz"),
+    (re.compile(r"(\d)M Ah\b"), r"\1mAh"),
+)
+
+
+def fix_split_terms(value: str | None) -> str | None:
+    """Recompone términos técnicos que el proveedor entrega partidos."""
+    if not value:
+        return value
+    for pattern, replacement in _SPLIT_TERMS:
+        value = pattern.sub(replacement, value)
+    return value
+
+
 def short_summary(description: str | None, max_len: int = 160) -> str | None:
     """Resumen corto con frases completas del propio texto del proveedor (no
     inventa nada; si no cabe una frase, corta por palabra)."""

@@ -81,6 +81,7 @@ En Awin (*Advertisers → My Programmes → <tienda> → Terms*) o Tradedoubler 
 2. **Uso de imágenes** de producto: ¿se pueden usar las del feed en web y en Telegram?
    (MediaMarkt/Tradedoubler las restringe: leerlo con calma).
 3. **Aviso de afiliación** obligatorio o texto concreto → «Aviso adicional del programa».
+   Si las condiciones no lo exigen, se deja **vacío** (no hay aviso genérico en los posts).
 4. Exclusiones: Marketplace / vendedores externos, categorías, cupones, precios que no
    se pueden anunciar. Anotarlas en «Notas»/restricciones.
 5. Antigüedad máxima del precio si la exigen (por defecto 24 h).
@@ -181,7 +182,7 @@ Sobre el borrador del §6:
    recomendado ni «precio original» del feed. Pasar el caso al agente `price-validator`
    si hay dudas.
 3. Cuando el bloque marque «Lista para publicar», publicar en la web. Telegram: primero el
-   canal Admin, revisar el post (línea de envío y aviso del programa) y luego el público.
+   canal Admin, revisar el post (línea de envío y, si lo hay, aviso del programa) y luego el público.
 4. Recordatorio: los chollos de redes **no se pueden programar** todavía (TD-48);
    se publican a mano.
 

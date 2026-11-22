@@ -1,7 +1,14 @@
 # PROJECT_STATUS — BuenCholloTech
-*Actualización de producción: 2026-11-21 — `main` en `9ac3387` (PR #91 a #102): rótulo de neón del Black Friday, botón del Canal de WhatsApp, fuera «Más populares», títulos normalizados, novedades desde la última visita, «Top de la semana», resumen semanal con collage y preguntas frecuentes en `/preguntas-frecuentes`. Web: Workers Builds en verde en `9ac3387`. API: responden `/health`, `GET /v1/deals/weekly-top`, `GET /v1/deals/new-count` y `/v1/telegram/weekly-digest` (401 sin admin); el commit exacto del NAS y los pasos del despliegue no constan aquí. Sin migraciones nuevas: Alembic `20261120130000`.*
+*Actualización de producción: 2026-11-22 — `main` con la PR #105 (aviso genérico fuera de los posts de redes, términos partidos del feed de Coolmod y resumen de la descripción si falla la IA) sobre la #104 (Coolmod activo en Awin e IA al importar). API reiniciada en el NAS; Alembic `20261122120000`.*
 
 > Bitácora cronológica inversa. Estado operativo vigente: [`docs/project/11-current-state.md`](docs/project/11-current-state.md); pendientes abiertos: [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md).
+
+## 2026-11-22 · Posts de redes sin aviso genérico y catálogo de Coolmod más limpio
+
+- **Aviso de afiliación**: el post de Telegram de los chollos de Awin/Tradedoubler añadía «Enlace de afiliado: podemos recibir una comisión…», sembrado por defecto en todos los programas. La migración `20261122120000` lo vacía donde seguía el texto sembrado; el campo «Aviso adicional del programa» queda para la tienda que exija un texto propio.
+- **Términos partidos del feed**: Coolmod entrega «PC Ie», «NV Me», «5600M Hz», «AS Rock», «G.S Kill», «H GiG»… (comprobado en el CSV original). `fix_split_terms` los recompone al leer el feed; la sincronización siguiente corrige el catálogo.
+- **Descripción al importar**: si la IA no responde, la descripción larga es un resumen por frases (500 caracteres) en lugar de la ficha completa de la tienda. Con IA, se mantiene el resumen en viñetas (probado en producción con el Samsung M70H).
+- **Enlace afiliado verificado**: `tidd.ly` (Link Builder de Awin) → `awin1.com` con el programa 124624 y nuestro ID de publisher → ficha exacta en coolmod.com con `awc` (atribución).
 
 ## 2026-11-21 · Coolmod activo en Awin y textos con IA para las redes
 
