@@ -1,7 +1,13 @@
 # PROJECT_STATUS — BuenCholloTech
-*Actualización de producción: 2026-11-22 — `main` con la PR #106 (icono del enlace por tienda en los posts) sobre la #105 (aviso genérico fuera de los posts de redes, términos partidos del feed de Coolmod) y la #104 (Coolmod activo en Awin e IA al importar). API y scheduler reiniciados en el NAS; Alembic `20261122120000`.*
+*Actualización de producción: 2026-11-22 — `main` con la PR #107 (iconos de Xiaomi, AliExpress y Steam en el enlace; Samsung y WhatsApp guardados) sobre la #106 (icono del enlace por tienda), la #105 (aviso genérico fuera de los posts de redes, términos partidos del feed de Coolmod) y la #104 (Coolmod activo en Awin e IA al importar). API y scheduler reiniciados en el NAS; Alembic `20261122120000`.*
 
 > Bitácora cronológica inversa. Estado operativo vigente: [`docs/project/11-current-state.md`](docs/project/11-current-state.md); pendientes abiertos: [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md).
+
+## 2026-11-22 · Iconos premium de tiendas y WhatsApp registrados
+
+- **En uso en el enlace de compra (🛒)**: Xiaomi, AliExpress y Steam, además de Amazon y el genérico.
+- **Guardados para más adelante** (TD-64): Samsung, cuyo logo son dos emojis y el 🛒 es uno solo, y WhatsApp, para enlazar el Canal desde los posts.
+- Registro completo de `custom_emoji_id` en [`docs/guides/TELEGRAM-EMOJIS.md`](docs/guides/TELEGRAM-EMOJIS.md).
 
 ## 2026-11-22 · Icono del enlace de compra según la tienda
 

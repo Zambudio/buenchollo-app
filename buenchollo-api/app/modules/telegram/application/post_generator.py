@@ -27,7 +27,17 @@ AMAZON_LINK_ICON = "5346056560537779652"
 GENERIC_LINK_ICON = "5271604874419647061"   # tiendas sin icono propio (Coolmod...)
 STORE_LINK_ICONS: dict[str, str] = {
     "amazon": AMAZON_LINK_ICON,
+    "xiaomi": "5262875916031244720",
+    "aliexpress": "5373265917092316632",
+    "steam": "5373144051690258848",       # dominio store.steampowered.com
 }
+
+# Iconos guardados para más adelante (todavía no se usan en los posts):
+# - Samsung: el logo ocupa DOS emojis (izquierda, derecha). El 🛒 es un solo
+#   carácter, así que necesita que el post escriba dos emojis base seguidos.
+# - WhatsApp: para enlazar el Canal de WhatsApp desde las publicaciones.
+SAMSUNG_LINK_ICON_PARTS: tuple[str, str] = ("5307876255486453093", "5309981060044433947")
+WHATSAPP_ICON = "5334998226636390258"
 _AMAZON_HOST_RE = re.compile(r"(^|\.)(amazon\.[a-z.]+|amzn\.[a-z]+|link\.amazon)$")
 _URL_RE = re.compile(r"https?://([^/\s?#]+)", re.I)
 

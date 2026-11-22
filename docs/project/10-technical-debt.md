@@ -80,6 +80,12 @@
   (`components/layout/Header.tsx`: publicar, notificaciones, avatar y menú) no cabe y
   produce unos 30 px de desplazamiento lateral en toda la web. A 360 px o más no ocurre.
   Detectado al corregir el desborde de la ficha del chollo (2026-11-21).
+- **TD-64 — Icono de Samsung (dos emojis) y de WhatsApp sin usar en los posts.** Los
+  `custom_emoji_id` están guardados (`SAMSUNG_LINK_ICON_PARTS`, `WHATSAPP_ICON` en
+  `telegram/application/post_generator.py`). Samsung necesita que el post escriba dos
+  emojis base en el enlace y que `build_entities` asigne las dos mitades; hasta entonces usa
+  el genérico. WhatsApp espera a decidir cómo se enlaza el Canal desde los posts. Detalle en
+  `docs/guides/TELEGRAM-EMOJIS.md` (2026-11-22).
 
 ## 🟡 Baja — dependencias (2026-11-18)
 
