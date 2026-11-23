@@ -15,7 +15,8 @@ def _original(**kw):
         description="Auriculares gaming", affiliate_url="https://amzn.to/x", expires_at="2026-11-01T22:59:00Z",
     )
     base.update(kw)
-    return GEN.generate_text(**base)
+    # Publicación antigua (con líneas de precio en el texto).
+    return GEN.generate_text(price_in_image=False, **base)
 
 
 def test_cambia_precio_ahorro_y_quita_una_fecha_de_fin_ya_pasada():
@@ -31,7 +32,7 @@ def test_cambia_precio_ahorro_y_quita_una_fecha_de_fin_ya_pasada():
     assert "🛒 https://amzn.to/x\n\n✏️Auriculares gaming\n\n" in text
     assert text == GEN.generate_text(
         title="JBL Quantum 360", current_price=59.90, previous_price=99.99, discount_pct=40,
-        description="Auriculares gaming", affiliate_url="https://amzn.to/x",
+        description="Auriculares gaming", affiliate_url="https://amzn.to/x", price_in_image=False,
     )
 
 
@@ -70,4 +71,25 @@ def test_fecha_de_fin_futura_se_actualiza():
 def test_texto_sin_linea_de_precio_devuelve_none():
     assert reprice_publication_text(
         "Mensaje libre sin formato", price=Decimal("1"), previous_price=None, discount_pct=None, expires_at=None, now=NOW
+    ) is None
+
+
+def test_texto_sin_lineas_de_precio_solo_corrige_la_fecha_de_fin():
+    # Desde 2026-11-23 el precio va en la tarjeta de oferta: el texto no lo lleva.
+    text = GEN.generate_text(
+        title="JBL Quantum 360", current_price=69.90, previous_price=99.99, discount_pct=30,
+        description="Auriculares gaming", affiliate_url="https://amzn.to/x",
+        expires_at="2026-11-01T22:59:00Z", price_in_image=True,
+    )
+    out = reprice_publication_text(
+        text, price=Decimal("59.90"), previous_price=Decimal("99.99"), discount_pct=40, expires_at=None, now=NOW
+    )
+    assert out is not None
+    assert "💶" not in out and "Finaliza" not in out
+    assert out.startswith("🍄 JBL Quantum 360\n\n")
+
+
+def test_texto_libre_sin_formato_estandar_no_se_reutiliza():
+    assert reprice_publication_text(
+        "texto libre", price=Decimal("1"), previous_price=None, discount_pct=None, expires_at=None, now=NOW
     ) is None

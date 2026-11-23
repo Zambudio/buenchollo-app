@@ -19,10 +19,12 @@ post en el canal público.
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from decimal import Decimal
 
 from app.core.config import get_settings
 from app.modules.telegram.application.deal_card import DealCardData, build_deal_card
+from app.modules.telegram.application.post_generator import strip_price_lines, with_price_lines
 
 logger = logging.getLogger(__name__)
 
@@ -81,21 +83,41 @@ def render_card(bot, image_url: str | None, data: DealCardData | None) -> bytes 
         return None
 
 
+def caption_for(text: str, *, card_sent: bool, data: DealCardData | None) -> str:
+    """Texto del post según la imagen: con tarjeta, sin las líneas de precio y
+    ahorro (ya están en la imagen); sin ella, con esas líneas aunque la plantilla
+    las omitiera, para que ningún post salga sin precio."""
+    if card_sent:
+        return strip_price_lines(text)
+    if data is None:
+        return text
+    return with_price_lines(text, data.current_price, data.previous_price, data.discount)
+
+
 def send_deal_post(
     bot,
     *,
     text: str,
-    entities: list[dict],
+    entities_for: Callable[[str], list[dict]],
     image_url: str | None,
     chat_id: str | None,
     card: bytes | None,
-) -> bool:
-    """Publica el post con la tarjeta si la hay; si no, con la foto original."""
+    data: DealCardData | None = None,
+) -> str | None:
+    """Publica el post con la tarjeta si la hay; si no, con la foto original.
+
+    Devuelve el texto que salió (para registrarlo y para la copia de WhatsApp)
+    o None si no se pudo publicar. `entities_for` calcula las entidades del
+    texto final (cambia según lleve o no las líneas de precio)."""
     if card:
-        if bot.send_photo_bytes(card, chat_id=chat_id, caption=text, entities=entities):
-            return True
+        caption = caption_for(text, card_sent=True, data=data)
+        if bot.send_photo_bytes(card, chat_id=chat_id, caption=caption, entities=entities_for(caption)):
+            return caption
         if getattr(bot, "last_delivery_unknown", False):
             logger.warning("Telegram no respondió al enviar la tarjeta; se da por enviada para no duplicar")
-            return True
+            return caption
         logger.warning("Telegram rechazó la tarjeta (%s); se envía la foto original", getattr(bot, "last_error", None))
-    return bot.send_preformatted(text=text, entities=entities, image_url=image_url, chat_id=chat_id)
+    caption = caption_for(text, card_sent=False, data=data)
+    if bot.send_preformatted(text=caption, entities=entities_for(caption), image_url=image_url, chat_id=chat_id):
+        return caption
+    return None

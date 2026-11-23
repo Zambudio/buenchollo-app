@@ -14,7 +14,7 @@ def _telegram_text(**overrides) -> str:
         **overrides,
     }
     generator = TelegramPostGenerator(ai_service=object())
-    return generator.generate_text(**data)
+    return generator.generate_text(price_in_image=False, **data)
 
 
 def test_sustituye_los_emojis_premium_por_emojis_estandar():

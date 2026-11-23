@@ -231,8 +231,11 @@ async def test_fallo_preparando_la_publicacion_no_corta_los_demas_avisos():
 
     assert sent == 2
     assert first.admin_notified_at == NOW and second.admin_notified_at == NOW
-    # solo la del segundo (publicación + versión WhatsApp)
-    assert [call.kwargs["text"] for call in bot.send_preformatted.call_args_list] == ["🍄 Dos", "🔥 *Dos*"]
+    # solo la del segundo (publicación + versión WhatsApp); sin tarjeta, el post
+    # lleva el precio aunque la plantilla no lo trajera
+    texts = [call.kwargs["text"] for call in bot.send_preformatted.call_args_list]
+    assert len(texts) == 2
+    assert texts[0].startswith("🍄 Dos\n\n💶 Precio:") and texts[1].startswith("🔥 *Dos*")
 
 
 # --- antigüedad mínima (10 días) ---
