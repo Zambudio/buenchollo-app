@@ -184,7 +184,7 @@ def test_store_key():
 def test_known_store_logos_exist_and_fit_the_pill(store):
     logo = deal_card._store_logo(deal_card.store_key(store))
     assert logo is not None
-    assert logo.width <= 220 and logo.height <= 42
+    assert logo.width <= 260 and logo.height <= 56
 
 
 def test_store_without_logo_falls_back_to_name():

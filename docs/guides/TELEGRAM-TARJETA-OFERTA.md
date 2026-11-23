@@ -47,6 +47,8 @@ bloquea una publicación. Los fallos se registran como `warning` en los logs de 
 - Logo del canal a 340 px de ancho (260 en la especificación).
 - «Ahorras X €» a 40 px con relleno 18/28 (34 y 16/24); se reduce si un importe largo no cabe.
 - Logo de la tienda en la pastilla en lugar del punto y el nombre (si hay logo).
+- Logo de la tienda hasta 260 × 56 px (la pastilla crece si hace falta).
+- Precio anterior: números `#334155` y raya roja fina semitransparente (`#dc2626` al 75 %, 3 px) en lugar de la raya gris de 4 px, que tapaba los números.
 
 ## ⚠️ Al añadir una tienda nueva
 
