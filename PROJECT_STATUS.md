@@ -3,6 +3,12 @@
 
 > Bitácora cronológica inversa. Estado operativo vigente: [`docs/project/11-current-state.md`](docs/project/11-current-state.md); pendientes abiertos: [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md).
 
+## 2026-11-23 · Tarjeta de oferta «Simple claro» (en pruebas, sin integrar)
+
+- `telegram/application/deal_card.py`: genera con Pillow la imagen 1200 × 800 de cada chollo (foto, insignia de descuento, tienda, precio actual, anterior tachado, «Ahorras X €» y logo) según `_handoff/plantilla-telegram-oferta/ESPECIFICACION.md`. Cuadra con los PNG de referencia (~1 % de píxeles distintos). Devuelve `None` (se publicará la foto original) sin precio anterior, con anterior ≤ actual, con imagen ilegible o si falla. 43 tests en `test_deal_card.py`.
+- Logo provisional en `app/assets/images/logo-bctech.png`.
+- **Pendiente**: integrarlo en la publicación (panel, programadas, avisos de bajada) y que el descargador de imágenes conserve cookies entre redirecciones (Coolmod redirige en bucle sin ellas).
+
 ## 2026-11-23 · Collage del resumen semanal más ancho
 
 - El resumen del domingo 22 salió en el chat del móvil con la imagen recortada arriba (cabecera) y abajo (fila 9-10): Telegram recorta la vertical 5:6 (1080×1296) cuando la publicación lleva pie de foto. Pasa a 1280×1152 (10:9, algo más ancha que alta), con el mismo diseño (`weekly_collage.py`).
