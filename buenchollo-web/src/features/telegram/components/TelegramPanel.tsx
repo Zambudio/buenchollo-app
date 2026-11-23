@@ -361,6 +361,7 @@ export function TelegramPanel({
         // Tarjeta de oferta: la API compone la imagen con estos datos y la foto elegida.
         current_price: dealData.current_price,
         previous_price: dealData.previous_price ?? null,
+        discount_percentage: dealData.discount_percentage ?? null,
         store_name: dealData.store_name ?? null,
       });
       toast.success("✅ Publicado en Telegram", {

@@ -220,12 +220,19 @@ async def _saved_deal(db: AsyncSession, deal_id: UUID | None):
 
 
 def _notify_card_data(payload: TelegramNotifyRequest, deal) -> DealCardData | None:
-    """Datos de la tarjeta: lo que manda el panel (lo que muestra el post) y,
-    lo que falte, del chollo guardado."""
+    """Datos de la tarjeta. Si el panel manda el precio, mandan sus precios
+    (lo que muestra el post), también un «antes» vacío: nunca se completa con el
+    del chollo guardado, o la imagen enseñaría una rebaja que el post no tiene.
+    Sin precios en el envío (versiones antiguas del panel), los del chollo."""
     store = payload.store_name or store_name_of(deal)
-    current = payload.current_price if payload.current_price is not None else getattr(deal, "current_price", None)
-    previous = payload.previous_price if payload.previous_price is not None else getattr(deal, "previous_price", None)
-    return card_data(current, previous, store)
+    if payload.current_price is not None:
+        return card_data(payload.current_price, payload.previous_price, store, payload.discount_percentage)
+    return card_data(
+        getattr(deal, "current_price", None),
+        getattr(deal, "previous_price", None),
+        store,
+        getattr(deal, "discount_percentage", None),
+    )
 
 
 @router.post("/notify")

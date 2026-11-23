@@ -209,3 +209,30 @@ def test_notify_publica_con_la_tarjeta_usando_precio_y_tienda_del_panel(monkeypa
     assert post.kwargs["chat_id"] == "-100main"
     assert post.args[0][:2] == b"\xff\xd8"
     assert whatsapp.kwargs["chat_id"] == "-100admin" and whatsapp.args[0] == post.args[0]
+
+
+def test_card_data_takes_the_post_discount():
+    assert card_data(80, 100, "Amazon", 12).discount == 12
+    assert card_data(80, 100, "Amazon", 0).discount is None  # se calcula
+    assert card_data(80, 100, "Amazon", None).discount is None
+
+
+def test_whatsapp_copy_does_not_resend_after_an_unknown_delivery():
+    bot = FakeBot(photo_ok=False, unknown=True)
+    assert send_whatsapp_copy(bot, chat_id="admin", telegram_text="🍄 Chollo", image_url="u", image_bytes=b"T")
+    assert [c[0] for c in bot.calls] == ["bytes"]
+
+
+def test_notify_card_uses_only_the_panel_prices():
+    # Antes vacío en el panel: no se completa con el del chollo guardado.
+    from app.modules.telegram.api.router import _notify_card_data
+    from app.modules.telegram.api.schemas import TelegramNotifyRequest
+
+    deal = SimpleNamespace(current_price=Decimal("80"), previous_price=Decimal("100"),
+                           discount_percentage=20, store=SimpleNamespace(name="Amazon"))
+    payload = TelegramNotifyRequest(text="x", current_price=80, previous_price=None)
+    assert _notify_card_data(payload, deal) == DealCardData(80.0, None, "Amazon")
+    payload = TelegramNotifyRequest(text="x", current_price=80, previous_price=100, discount_percentage=19)
+    assert _notify_card_data(payload, deal).discount == 19
+    # Panel antiguo sin precios: los del chollo, con su descuento.
+    assert _notify_card_data(TelegramNotifyRequest(text="x"), deal) == DealCardData(80.0, 100.0, "Amazon", 20)

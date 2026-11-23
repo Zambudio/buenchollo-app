@@ -32,8 +32,11 @@ def send_whatsapp_copy(
         text = (whatsapp_text or "").strip() or to_whatsapp_text(telegram_text)
         if not text:
             return False
-        if image_bytes and bot.send_photo_bytes(image_bytes, chat_id=chat_id, caption=text):
-            return True
+        if image_bytes:
+            if bot.send_photo_bytes(image_bytes, chat_id=chat_id, caption=text):
+                return True
+            if getattr(bot, "last_delivery_unknown", False):
+                return True  # pudo llegar: no se duplica en el canal Admin
         if bot.send_preformatted(text=text, entities=[], image_url=image_url, chat_id=chat_id):
             return True
         if image_url and bot.send_preformatted(text=text, entities=[], image_url=None, chat_id=chat_id):

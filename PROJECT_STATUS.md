@@ -1,13 +1,16 @@
 # PROJECT_STATUS — BuenCholloTech
-*Actualización de producción: 2026-11-23 — `main` con la PR #110 (collage del resumen semanal 1280×1152) sobre la #108 (aviso del post decidido por el servidor, IA del autocompletado de redes sin textos de rescate y correcciones de la revisión independiente) y las #104 a #107. API y scheduler reiniciados en el NAS; Alembic `20261122120000`.*
+*Actualización de producción: 2026-11-23 — `main` con la tarjeta de oferta en todas las publicaciones de Telegram (ADR-021) sobre el collage del resumen semanal 1280×1152 (#110). API y scheduler reiniciados en el NAS; sin migraciones nuevas (Alembic `20261122120000`).*
 
 > Bitácora cronológica inversa. Estado operativo vigente: [`docs/project/11-current-state.md`](docs/project/11-current-state.md); pendientes abiertos: [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md).
 
-## 2026-11-23 · Tarjeta de oferta «Simple claro» (en pruebas, sin integrar)
+## 2026-11-23 · Tarjeta de oferta «Simple claro» en todas las publicaciones
 
-- `telegram/application/deal_card.py`: genera con Pillow la imagen 1200 × 800 de cada chollo (foto, insignia de descuento, tienda, precio actual, anterior tachado, «Ahorras X €» y logo) según `_handoff/plantilla-telegram-oferta/ESPECIFICACION.md`. Cuadra con los PNG de referencia (~1 % de píxeles distintos). Devuelve `None` (se publicará la foto original) sin precio anterior, con anterior ≤ actual, con imagen ilegible o si falla. 43 tests en `test_deal_card.py`.
-- Logo provisional en `app/assets/images/logo-bctech.png`.
-- **Pendiente**: integrarlo en la publicación (panel, programadas, avisos de bajada) y que el descargador de imágenes conserve cookies entre redirecciones (Coolmod redirige en bucle sin ellas).
+- **Imagen de cada chollo en Telegram** ([ADR-021](docs/adr/ADR-021-tarjeta-oferta-telegram.md), guía [`TELEGRAM-TARJETA-OFERTA.md`](docs/guides/TELEGRAM-TARJETA-OFERTA.md)): tarjeta 1200 × 800 generada con Pillow según el diseño de `_handoff/plantilla-telegram-oferta/` (foto, insignia de descuento, logo de la tienda, precio, anterior tachado, «Ahorras X €» y logo del canal). Cuadra con las referencias (~1 % de píxeles distintos). Ajustes pedidos: logo del canal a 340 px, ahorro más grande y logo de tienda en la pastilla (Amazon y Coolmod en `app/assets/images/stores/`).
+- **Un punto único** (`deal_photo.py`) para todos los envíos: panel, programadas, republicación al canal Admin y copia de WhatsApp. El panel envía precio, descuento y tienda; si no, los del chollo guardado.
+- **Nunca bloquea**: sin precio anterior, foto ilegible, fallo de composición o rechazo de Telegram → foto original. `DEAL_CARD_ENABLED=false` la apaga.
+- **Revisión independiente** y correcciones: una conexión caída ya no da un post por publicado; un «antes» vacío en el panel no se completa con el del chollo; la insignia lleva el mismo % que el texto; la copia de WhatsApp no se duplica; cookies solo en el mismo host; claves de tienda sin acentos.
+- **Descargador de imágenes**: conserva cookies entre redirecciones del mismo host (las fotos de Coolmod no bajaban).
+- ⚠️ **Tiendas nuevas**: logo, color e icono del enlace antes del primer chollo (lista en la guía y en el runbook de afiliación).
 
 ## 2026-11-23 · Collage del resumen semanal más ancho
 

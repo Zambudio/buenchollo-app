@@ -201,3 +201,9 @@ def test_unreadable_store_logo_falls_back_to_name(tmp_path, monkeypatch):
         assert build_deal_card(DealCardData(99, 159, "Rota"), _photo()) is not None
     finally:
         deal_card._store_logo.cache_clear()
+
+
+
+def test_store_key_drops_accents():
+    assert deal_card.store_key("Worten Móvil") == "wortenmovil"
+    assert deal_card.store_key("Fnac España") == "fnacespana"

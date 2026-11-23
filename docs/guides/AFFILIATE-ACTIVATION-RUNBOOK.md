@@ -186,6 +186,17 @@ Sobre el borrador del §6:
 4. Recordatorio: los chollos de redes **no se pueden programar** todavía (TD-48);
    se publican a mano.
 
+## 8 bis. ⚠️ Publicaciones de la tienda nueva (imagen y logo)
+
+Cada chollo sale en Telegram con la **tarjeta de oferta** (imagen con el logo de la
+tienda). Antes de publicar el primero de una tienda nueva, sigue la lista de
+[`TELEGRAM-TARJETA-OFERTA.md`](TELEGRAM-TARJETA-OFERTA.md) («Al añadir una tienda nueva»):
+
+1. Su logo en `buenchollo-api/app/assets/images/stores/<clave>.png` (PNG transparente).
+2. Su color en `STORE_COLORS` si no hay logo, y su icono del enlace en `STORE_LINK_ICONS`.
+3. Que la API pueda descargar sus fotos (si no, sale la foto original por URL).
+4. Una publicación de prueba en el canal Admin, vista en el móvil.
+
 ## 9. Cerrar la activación (documentar y commitear)
 
 Por cada tienda activada:

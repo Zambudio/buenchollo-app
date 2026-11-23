@@ -202,7 +202,7 @@ class ScheduledPublicationWorker:
         para la copia de WhatsApp. En un hilo: descarga, Pillow y HTTP bloquean."""
         deal = getattr(scheduled, "deal", None)
         store = store_name_of(deal)
-        data = card_data(scheduled.offer_price, scheduled.regular_price, store)
+        data = card_data(scheduled.offer_price, scheduled.regular_price, store, scheduled.discount_percentage)
         self._card = await asyncio.to_thread(render_card, self.bot, scheduled.image_url, data)
         return await asyncio.to_thread(
             send_deal_post,

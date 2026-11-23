@@ -35,15 +35,22 @@ def store_name_of(deal) -> str | None:
     return name if isinstance(name, str) and name.strip() else None
 
 
-def card_data(current_price: Number, previous_price: Number, store: str | None) -> DealCardData | None:
-    """Datos de la tarjeta, o None si falta o no se entiende el precio actual."""
+def card_data(
+    current_price: Number, previous_price: Number, store: str | None, discount: Number = None
+) -> DealCardData | None:
+    """Datos de la tarjeta, o None si falta o no se entiende el precio actual.
+
+    `discount` es el porcentaje que lleva el texto del post: la insignia muestra
+    el mismo (si no viene o no es positivo, se calcula de los precios)."""
     try:
         if current_price is None:
             return None
+        pct = int(discount) if discount is not None and int(discount) > 0 else None
         return DealCardData(
             current_price=float(current_price),
             previous_price=float(previous_price) if previous_price is not None else None,
             store=store.strip() if isinstance(store, str) else "",
+            discount=pct,
         )
     except (TypeError, ValueError):
         return None
@@ -51,7 +58,12 @@ def card_data(current_price: Number, previous_price: Number, store: str | None) 
 
 def deal_card_data(deal) -> DealCardData | None:
     """Datos de la tarjeta de un chollo (`Deal`) con su tienda ya cargada."""
-    return card_data(getattr(deal, "current_price", None), getattr(deal, "previous_price", None), store_name_of(deal))
+    return card_data(
+        getattr(deal, "current_price", None),
+        getattr(deal, "previous_price", None),
+        store_name_of(deal),
+        getattr(deal, "discount_percentage", None),
+    )
 
 
 def render_card(bot, image_url: str | None, data: DealCardData | None) -> bytes | None:

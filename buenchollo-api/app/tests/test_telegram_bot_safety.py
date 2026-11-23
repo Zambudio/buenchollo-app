@@ -3,6 +3,7 @@ imágenes no puede apuntar a la red interna (SSRF)."""
 import logging
 from unittest.mock import MagicMock, patch
 
+import pytest
 import requests
 
 from app.modules.telegram.infrastructure import telegram_bot as tb
@@ -106,3 +107,39 @@ def test_la_cookie_de_una_redireccion_se_envia_en_el_siguiente_salto():
     ):
         assert TelegramBot._download_image("https://cdn.example.com/foto.png") == (b"img", "image/jpeg")
     assert sent == [{}, {"bm": "1"}]
+
+
+def test_las_cookies_no_pasan_a_otro_host():
+    jar = requests.cookies.RequestsCookieJar()
+    jar.set("sesion", "1", domain="cdn.example.com", path="/")
+    redirect = _response(status=302, redirect=True, headers={"location": "https://otro.example.org/foto.png"})
+    redirect.cookies = jar
+    ok = _response(chunks=[b"img"], headers={"content-type": "image/jpeg"})
+    sent = []
+
+    def fake_get(url, **kwargs):
+        sent.append(dict(kwargs["cookies"]))
+        return redirect if len(sent) == 1 else ok
+
+    with (
+        patch.object(tb, "resolves_to_private_ip", return_value=False),
+        patch.object(tb.requests, "get", side_effect=fake_get),
+    ):
+        assert TelegramBot._download_image("https://cdn.example.com/foto.png") is not None
+    assert sent == [{}, {}]
+
+
+@pytest.mark.parametrize(
+    ("error", "unknown"),
+    [
+        (requests.exceptions.ReadTimeout("sin respuesta"), True),  # la petición salió
+        (requests.exceptions.ChunkedEncodingError("cortada"), True),
+        (requests.exceptions.ConnectTimeout("no conecta"), False),  # no llegó a salir
+        (requests.exceptions.ConnectionError("DNS"), False),
+    ],
+)
+def test_entrega_dudosa_solo_si_la_peticion_pudo_llegar(error, unknown):
+    bot = TelegramBot("tok")
+    with patch.object(tb.requests, "post", side_effect=error):
+        assert bot.send_photo_bytes(b"jpg", chat_id="-100") is False
+    assert bot.last_delivery_unknown is unknown

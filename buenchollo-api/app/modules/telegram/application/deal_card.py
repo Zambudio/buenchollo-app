@@ -20,6 +20,7 @@ from __future__ import annotations
 import io
 import logging
 import math
+import unicodedata
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -124,8 +125,8 @@ def price_size(integer_part: str) -> int:
 
 def store_key(store: str) -> str:
     """Clave de la tienda: minúsculas, sin espacios ni signos («El Corte Inglés» → «elcorteingles»)."""
-    key = "".join(ch for ch in store.lower() if ch.isalnum())
-    return key.replace("é", "e")
+    plain = unicodedata.normalize("NFKD", store.lower())
+    return "".join(ch for ch in plain if ch.isascii() and ch.isalnum())
 
 
 def store_color(store: str) -> tuple[int, int, int]:

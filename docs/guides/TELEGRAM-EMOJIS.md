@@ -3,7 +3,8 @@
 Los posts del canal llevan **emojis premium** (custom emoji): el texto usa un emoji normal
 (🍄, 💶, 🛒…) y la API de Telegram lo sustituye por el premium mediante una entidad
 `custom_emoji` con su `custom_emoji_id`. Quien no tiene Telegram Premium ve el emoji normal.
-Código: `buenchollo-api/app/modules/telegram/application/post_generator.py`.
+Código: `buenchollo-api/app/modules/telegram/application/post_generator.py`. La imagen de
+cada post (tarjeta de oferta) está en [`TELEGRAM-TARJETA-OFERTA.md`](TELEGRAM-TARJETA-OFERTA.md).
 
 ## Iconos fijos
 
