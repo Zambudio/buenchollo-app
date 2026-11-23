@@ -167,7 +167,7 @@ async def test_publica_collage_con_el_texto_en_un_mensaje_y_luego_whatsapp():
     assert bot.sent[0]["entities"] == [{"type": "bold"}]
     assert bot.sent[1]["entities"] == [] and bot.sent[1]["text"].startswith("*📅")
     with Image.open(io.BytesIO(bot.photos[0])) as collage:
-        assert (collage.format, collage.size) == ("JPEG", (1080, 1296))
+        assert (collage.format, collage.size) == ("JPEG", (1280, 1152))
 
 
 @pytest.mark.asyncio
@@ -282,7 +282,7 @@ def test_precios_largos_caben_en_la_tarjeta():
 
     items = [CollageItem(i, None, "12.999,00 €", 42, "Televisor OLED de 77 pulgadas " * 3) for i in range(1, 11)]
     with Image.open(io.BytesIO(build_collage(items, "T", "S"))) as img:
-        assert img.size == (1080, 1296)
+        assert img.size == (1280, 1152)
 
 
 def test_imagenes_gigantes_se_omiten():
@@ -299,7 +299,7 @@ def test_collage_con_fuente_de_la_web_y_huecos_sin_imagen():
     assert "Space Grotesk" in " ".join(_font(30).getname())
     items = [CollageItem(i, _png() if i % 2 else None, "1.299,00 €", 42 if i % 3 else None) for i in range(1, 8)]
     with Image.open(io.BytesIO(build_collage(items, "LOS CHOLLOS DE LA SEMANA", "16–22 de noviembre"))) as img:
-        assert img.size == (1080, 1296)
+        assert img.size == (1280, 1152)
 
 
 @pytest.mark.asyncio
