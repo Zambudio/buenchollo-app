@@ -162,3 +162,12 @@ def test_no_card_if_composition_fails(monkeypatch):
 def test_card_without_logo_still_renders(monkeypatch):
     monkeypatch.setattr(deal_card, "_logo", lambda: None)
     assert build_deal_card(DealCardData(99, 159, "Amazon"), _photo()) is not None
+
+
+@pytest.mark.parametrize("savings", [10, 340, 1234.56, 12345.67])
+def test_savings_pill_always_fits_the_column(savings):
+    text = f"Ahorras {format_price_es(savings)} €"
+    size = deal_card._fitting_savings_size(text)
+    assert deal_card._font(size).getlength(text) + 2 * deal_card._SAVINGS_PAD_X <= 400
+    if savings < 1000:
+        assert size == deal_card._SAVINGS_SIZE

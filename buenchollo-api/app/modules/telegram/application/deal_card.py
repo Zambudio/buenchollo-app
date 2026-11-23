@@ -51,6 +51,9 @@ _COL_X, _COL_W = 768, 400
 _COL_TOP, _COL_BOTTOM = 44, 764
 _LOGO_W = 340  # 260 en la especificación; ampliado a petición (2026-11-23)
 _BLOCK_GAP = 30
+# «Ahorras X €»: 34 px y relleno 16/24 en la especificación; ampliado a petición (2026-11-23).
+_SAVINGS_SIZE = 40
+_SAVINGS_PAD_Y, _SAVINGS_PAD_X = 18, 28
 _LINE = 1.276  # alto de línea «normal» de Space Grotesk (ascendente + descendente)
 
 # Tamaño de la parte entera del precio según sus caracteres (con el punto de miles).
@@ -227,6 +230,14 @@ def _fitting_price_size(integer: str, decimals: str) -> int:
     return size
 
 
+def _fitting_savings_size(text: str) -> int:
+    """Tamaño del «Ahorras X €»; se reduce si un importe largo no cupiera en la columna."""
+    size = _SAVINGS_SIZE
+    while size > 24 and _font(size).getlength(text) + 2 * _SAVINGS_PAD_X > _COL_W:
+        size -= 2
+    return size
+
+
 def _compose(data: DealCardData, product: Image.Image, discount: int, savings: float) -> Image.Image:
     canvas = Image.new("RGBA", (WIDTH, HEIGHT), (*_BG, 255))
     draw = ImageDraw.Draw(canvas)
@@ -254,7 +265,9 @@ def _compose(data: DealCardData, product: Image.Image, discount: int, savings: f
     price_h = max(0.85 * size, dec_h)
     now_h = label_h + 4 + price_h
     before_h = label_h + 4 + _line_height(46)
-    savings_h = 16 + _line_height(34) + 16
+    savings_text = f"Ahorras {format_price_es(savings)} €"
+    savings_size = _fitting_savings_size(savings_text)
+    savings_h = _SAVINGS_PAD_Y + _line_height(savings_size) + _SAVINGS_PAD_Y
     group_h = pill_h + now_h + before_h + savings_h + 3 * _BLOCK_GAP
     y = _COL_TOP + (logo_top - _COL_TOP - group_h) / 2
 
@@ -295,12 +308,12 @@ def _compose(data: DealCardData, product: Image.Image, discount: int, savings: f
     y += before_h + _BLOCK_GAP
 
     # Ahorras X €.
-    savings_font = _font(34, "Bold")
-    savings_text = f"Ahorras {format_price_es(savings)} €"
-    savings_w = 24 + savings_font.getlength(savings_text) + 24
+    savings_font = _font(savings_size, "Bold")
+    savings_w = _SAVINGS_PAD_X + savings_font.getlength(savings_text) + _SAVINGS_PAD_X
     draw.rounded_rectangle((_COL_X, y, _COL_X + savings_w, y + savings_h), radius=18, fill=_DARK)
     draw.text(
-        (_COL_X + 24, _baseline(y + 16, 34, _line_height(34))), savings_text,
+        (_COL_X + _SAVINGS_PAD_X, _baseline(y + _SAVINGS_PAD_Y, savings_size, _line_height(savings_size))),
+        savings_text,
         font=savings_font, fill=_WHITE, anchor="ls",
     )
     return canvas
