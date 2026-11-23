@@ -177,8 +177,11 @@ async def test_actualiza_precio_descuento_y_texto_si_variacion_es_hasta_diez_por
     assert scheduled.status == ScheduledDealStatus.PUBLISHED
     assert scheduled.offer_price == Decimal("108.00")
     assert scheduled.discount_percentage == 14
-    assert "108,00" in scheduled.telegram_text
+    # El texto nuevo no lleva el precio (va en la tarjeta); este bot no envía
+    # tarjetas, así que el post sale con la foto original y el precio añadido.
+    assert "💶" not in scheduled.telegram_text
     assert len(bot.posts) == 1
+    assert "108,00" in bot.posts[0]["text"]
 
 
 @pytest.mark.asyncio

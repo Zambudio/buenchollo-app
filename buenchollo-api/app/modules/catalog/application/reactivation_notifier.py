@@ -158,18 +158,27 @@ class ReactivationNotifier:
         aviso a los siguientes ni deshaga el antispam de los ya avisados."""
         try:
             text, image_url = self._republishable(deal, publication, now)
-            entities = self.generator.build_entities(text, store_name=store_name_of(deal))
+            store = store_name_of(deal)
+            data = deal_card_data(deal)
         except Exception:
             logger.exception("No se pudo preparar la publicación corregida de %s", deal.slug)
             return
         # Tarjeta de oferta con el precio nuevo (si no se puede, la foto original).
-        card = await run_in_threadpool(render_card, self.bot, image_url, deal_card_data(deal))
-        if not await self._call(send_deal_post, self.bot, text=text, entities=entities,
-                                image_url=image_url, chat_id=self.admin_chat_id, card=card):
+        card = await run_in_threadpool(render_card, self.bot, image_url, data)
+        try:
+            sent_text = await run_in_threadpool(
+                send_deal_post, self.bot, text=text,
+                entities_for=lambda t: self.generator.build_entities(t, store_name=store),
+                image_url=image_url, chat_id=self.admin_chat_id, card=card, data=data,
+            )
+        except Exception:
+            logger.exception("Fallo enviando al canal Admin")
+            sent_text = None
+        if sent_text is None:
             logger.warning("No se pudo enviar al canal Admin la publicación corregida de %s", deal.slug)
             return
         await self._call(send_whatsapp_copy, self.bot, chat_id=self.admin_chat_id,
-                         telegram_text=text, image_url=image_url, image_bytes=card)
+                         telegram_text=sent_text, image_url=image_url, image_bytes=card)
 
     def _republishable(self, deal, publication, now: datetime) -> tuple[str, str | None]:
         """Última publicación registrada con el precio corregido; si no existe (o

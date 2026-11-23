@@ -3,6 +3,11 @@
 
 > Bitácora cronológica inversa. Estado operativo vigente: [`docs/project/11-current-state.md`](docs/project/11-current-state.md); pendientes abiertos: [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md).
 
+## 2026-11-23 · Posts sin líneas de precio (van en la tarjeta)
+
+- El texto de los posts deja de repetir «💶 Precio …» y «💰 Ahorro …», que ya muestra la tarjeta de oferta: la plantilla no las escribe si habrá tarjeta, y al enviar se quitan con tarjeta o se añaden si al final sale la foto original (ningún post sin precio). Republicar un texto sin precio solo corrige la fecha de fin. Limpieza de los textos de los chollos programados pendientes en la BD.
+- Ajustes de la tarjeta: logo de la tienda más grande (hasta 260 × 56) y precio anterior legible (números más oscuros y raya roja fina semitransparente).
+
 ## 2026-11-23 · Tarjeta de oferta «Simple claro» en todas las publicaciones
 
 - **Imagen de cada chollo en Telegram** ([ADR-021](docs/adr/ADR-021-tarjeta-oferta-telegram.md), guía [`TELEGRAM-TARJETA-OFERTA.md`](docs/guides/TELEGRAM-TARJETA-OFERTA.md)): tarjeta 1200 × 800 generada con Pillow según el diseño de `_handoff/plantilla-telegram-oferta/` (foto, insignia de descuento, logo de la tienda, precio, anterior tachado, «Ahorras X €» y logo del canal). Cuadra con las referencias (~1 % de píxeles distintos). Ajustes pedidos: logo del canal a 340 px, ahorro más grande y logo de tienda en la pastilla (Amazon y Coolmod en `app/assets/images/stores/`).

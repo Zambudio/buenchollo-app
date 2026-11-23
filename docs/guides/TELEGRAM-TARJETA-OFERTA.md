@@ -29,6 +29,22 @@ Sin precio anterior, con anterior ≤ actual, si la foto no se descarga o no se 
 la composición, si Telegram rechaza la tarjeta o con `DEAL_CARD_ENABLED=false`. Nunca
 bloquea una publicación. Los fallos se registran como `warning` en los logs de la API.
 
+## Texto del post: sin precio ni ahorro (2026-11-23)
+
+La tarjeta ya muestra el precio, el anterior y el ahorro, así que el texto no repite las
+líneas «💶 Precio …» y «💰 Ahorro …»:
+
+- **Plantilla** (`TelegramPostGenerator.generate_text`): no las escribe cuando la tarjeta
+  las va a mostrar (`card_shows_price`: hay rebaja y `DEAL_CARD_ENABLED`). Sin rebaja
+  (sin tarjeta) sí las escribe.
+- **Al enviar** (`deal_photo.send_deal_post`): con tarjeta se quitan siempre, aunque el
+  texto sea antiguo o se escribiera a mano; si al final sale la foto original, se añaden
+  tras el título si faltan (`with_price_lines`): ningún post sale sin precio. Se registra
+  el texto que salió de verdad, y la copia de WhatsApp lleva el mismo criterio.
+- **Republicación**: un texto sin línea de precio se reutiliza tal cual (solo se corrige la
+  fecha de fin); el precio nuevo va en la tarjeta.
+- Los chollos programados antes del cambio se limpiaron en la BD el 2026-11-23.
+
 ## Datos
 
 - **Panel**: la web envía `current_price`, `previous_price`, `discount_percentage` y
@@ -47,6 +63,8 @@ bloquea una publicación. Los fallos se registran como `warning` en los logs de 
 - Logo del canal a 340 px de ancho (260 en la especificación).
 - «Ahorras X €» a 40 px con relleno 18/28 (34 y 16/24); se reduce si un importe largo no cabe.
 - Logo de la tienda en la pastilla en lugar del punto y el nombre (si hay logo).
+- Logo de la tienda hasta 260 × 56 px (la pastilla crece si hace falta).
+- Precio anterior: números `#334155` y raya roja fina semitransparente (`#dc2626` al 75 %, 3 px) en lugar de la raya gris de 4 px, que tapaba los números.
 
 ## ⚠️ Al añadir una tienda nueva
 

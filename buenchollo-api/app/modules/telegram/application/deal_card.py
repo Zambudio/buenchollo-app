@@ -39,6 +39,10 @@ _BG = (226, 232, 240)  # #e2e8f0
 _WHITE = (255, 255, 255)
 _INK = (15, 23, 42)  # #0f172a
 _MUTED = (71, 85, 105)  # #475569
+# Precio anterior: números más oscuros que la especificación (#475569) y raya roja
+# semitransparente y fina, para que el precio se lea aunque esté tachado (2026-11-23).
+_BEFORE_INK = (51, 65, 85)  # #334155
+_STRIKE = (220, 38, 38, 190)  # #dc2626 al 75 %
 _PRICE = (215, 82, 25)  # #d75219
 _GREEN = (22, 163, 74)  # #16a34a
 _DARK = (11, 17, 32)  # #0b1120
@@ -82,7 +86,7 @@ LOGO_PATH = _ASSETS / "images" / "logo-bctech.png"
 # Logo de cada tienda: `<clave>.png` (ver `store_key`), PNG con fondo transparente.
 # Sin fichero, la pastilla muestra el punto de color y el nombre.
 STORE_LOGOS_DIR = _ASSETS / "images" / "stores"
-_STORE_LOGO_MAX = (220, 42)  # la pastilla crece si el logo pasa de 38 px de alto
+_STORE_LOGO_MAX = (260, 56)  # la pastilla crece si el logo pasa de 38 px de alto
 
 
 @dataclass(frozen=True)
@@ -338,9 +342,15 @@ def _compose(data: DealCardData, product: Image.Image, discount: int, savings: f
     before_font = _font(46, "SemiBold")
     before_text = f"{format_price_es(data.previous_price)} €"
     base = _baseline(y + label_h + 4, 46, _line_height(46))
-    draw.text((_COL_X, base), before_text, font=before_font, fill=_MUTED, anchor="ls")
+    draw.text((_COL_X, base), before_text, font=before_font, fill=_BEFORE_INK, anchor="ls")
     strike_y = base - 0.30 * 46
-    draw.rectangle((_COL_X, strike_y - 2, _COL_X + before_font.getlength(before_text), strike_y + 2), fill=_MUTED)
+    strike = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    ImageDraw.Draw(strike).rounded_rectangle(
+        (_COL_X - 2, strike_y - 1.5, _COL_X + before_font.getlength(before_text) + 2, strike_y + 1.5),
+        radius=1.5, fill=_STRIKE,
+    )
+    canvas.alpha_composite(strike)
+    draw = ImageDraw.Draw(canvas)
     y += before_h + _BLOCK_GAP
 
     # Ahorras X €.

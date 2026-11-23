@@ -62,8 +62,10 @@ class ScheduledPublicationWorker:
         self.generator = TelegramPostGenerator()
         # Registro de lo enviado (telegram_publications); opcional en tests.
         self.publications = publications
-        # Tarjeta de oferta del último post enviado (la reutiliza la copia de WhatsApp).
+        # Tarjeta de oferta y texto del último post enviado (los reutilizan el
+        # registro y la copia de WhatsApp).
         self._card: bytes | None = None
+        self._sent_text: str | None = None
 
     async def process_due(self, now: datetime | None = None) -> int:
         """Una transacción por programación (como en scheduled_tasks, finding 8):
@@ -204,15 +206,17 @@ class ScheduledPublicationWorker:
         store = store_name_of(deal)
         data = card_data(scheduled.offer_price, scheduled.regular_price, store, scheduled.discount_percentage)
         self._card = await asyncio.to_thread(render_card, self.bot, scheduled.image_url, data)
-        return await asyncio.to_thread(
+        self._sent_text = await asyncio.to_thread(
             send_deal_post,
             self.bot,
             text=scheduled.telegram_text,
-            entities=self.generator.build_entities(scheduled.telegram_text, store_name=store),
+            entities_for=lambda text: self.generator.build_entities(text, store_name=store),
             image_url=scheduled.image_url,
             chat_id=chat_id,
             card=self._card,
+            data=data,
         )
+        return self._sent_text is not None
 
     async def _send_whatsapp_copy(self, scheduled: ScheduledDeal) -> None:
         """Después de registrar: el segundo envío pisa `bot.last_message_id`.
@@ -221,7 +225,7 @@ class ScheduledPublicationWorker:
             send_whatsapp_copy,
             self.bot,
             chat_id=self.admin_chat_id,
-            telegram_text=scheduled.telegram_text,
+            telegram_text=self._sent_text or scheduled.telegram_text,
             image_url=scheduled.image_url,
             image_bytes=self._card,
         )
@@ -240,7 +244,7 @@ class ScheduledPublicationWorker:
         await self.publications.record(
             deal_id=getattr(scheduled, "deal_id", None),
             channel_id=channel_id,
-            text=scheduled.telegram_text,
+            text=self._sent_text or scheduled.telegram_text,
             image_url=scheduled.image_url,
             message_id=getattr(self.bot, "last_message_id", None),
         )

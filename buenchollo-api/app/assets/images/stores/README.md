@@ -5,7 +5,7 @@ el nombre en minúsculas, sin espacios ni signos (`deal_card.store_key`). Ejempl
 `amazon.png`, `coolmod.png`, `pccomponentes.png`, `mediamarkt.png`,
 `elcorteingles.png`.
 
-La tarjeta recorta los márgenes transparentes y lo encaja en 220 × 42 px dentro de la
+La tarjeta recorta los márgenes transparentes y lo encaja en 260 × 56 px dentro de la
 pastilla blanca. Mejor un PNG ancho (≥ 400 px) para que se vea nítido. Si una tienda no
 tiene logo, la pastilla muestra el punto de color y el nombre.
 

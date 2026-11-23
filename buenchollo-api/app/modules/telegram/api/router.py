@@ -263,23 +263,31 @@ async def notify_deal(
 
     # Flujo panel: texto pre-formateado con custom entities
     card: bytes | None = None
+    sent_text: str | None = None
     if payload.text:
         generator = TelegramPostGenerator()
         deal = await _saved_deal(db, payload.deal_id)
         store_name = payload.store_name or store_name_of(deal)
-        entities = payload.entities or generator.build_entities(payload.text, store_name=store_name)
-        card = await run_in_threadpool(
-            render_card, bot, payload.image_url, _notify_card_data(payload, deal)
-        )
-        ok = await run_in_threadpool(
+        data = _notify_card_data(payload, deal)
+
+        def entities_for(text: str) -> list[dict]:
+            # Las entidades que mande el panel solo valen para su texto tal cual.
+            if payload.entities and text == payload.text:
+                return payload.entities
+            return generator.build_entities(text, store_name=store_name)
+
+        card = await run_in_threadpool(render_card, bot, payload.image_url, data)
+        sent_text = await run_in_threadpool(
             send_deal_post,
             bot,
             text=payload.text,
-            entities=entities,
+            entities_for=entities_for,
             image_url=payload.image_url,
             chat_id=channel_id,
             card=card,
+            data=data,
         )
+        ok = sent_text is not None
 
     # Flujo rápido: construir mensaje en MarkdownV2
     else:
@@ -306,7 +314,7 @@ async def notify_deal(
             db,
             TelegramPublicationRepository(db),
             DealRepository(db),
-            text=payload.text,
+            text=sent_text or payload.text,
             channel_id=channel_id,
             kind=channel_kind(channel_id, settings),
             source="panel",
@@ -323,7 +331,7 @@ async def notify_deal(
             send_whatsapp_copy,
             bot,
             chat_id=settings.telegram_admin_channel_id,
-            telegram_text=payload.text,
+            telegram_text=sent_text or payload.text,
             image_url=payload.image_url,
             whatsapp_text=payload.whatsapp_text,
             image_bytes=card,

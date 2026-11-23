@@ -157,7 +157,8 @@ def test_generate_con_ai_copy_usa_el_texto_de_la_ia(client, monkeypatch):
     assert body["ai_copy"] == "Gimbal de bolsillo con sensor de 1 pulgada."
     assert "✏️Gimbal de bolsillo con sensor de 1 pulgada." in body["text"]
     assert "Captura cada momento" not in body["text"]
-    assert "269,00 €" in body["text"]
+    # Hay rebaja: el precio va en la tarjeta de oferta, no en el texto.
+    assert "💶" not in body["text"]
     assert calls == {"title": "DJI Osmo Pocket 3", "details": "Sensor 1''", "provider": "openai"}
 
 
@@ -310,3 +311,15 @@ def test_generate_sin_programa_no_lleva_aviso(client, monkeypatch):
     assert r.status_code == 200, r.text
     assert "Texto viejo" not in r.json()["text"]
     assert "ℹ️" not in r.json()["text"]
+
+
+
+def test_generate_sin_rebaja_mantiene_el_precio_en_el_texto(client, monkeypatch):
+    # Sin precio anterior no hay tarjeta: el precio sigue en el texto.
+    _override_settings()
+    _patch_generator(monkeypatch, None)
+
+    r = client.post("/v1/telegram/generate", json={**_GENERATE_BASE, "previous_price": None})
+
+    assert r.status_code == 200, r.text
+    assert "💶 Precio: 269,00 €" in r.json()["text"]
