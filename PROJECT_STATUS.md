@@ -1,5 +1,5 @@
 # PROJECT_STATUS — BuenCholloTech
-*Actualización de producción: 2026-11-23 — `main` con la PR #109 (collage del resumen semanal 1280×1152) sobre la #108 (aviso del post decidido por el servidor, IA del autocompletado de redes sin textos de rescate y correcciones de la revisión independiente) y las #104 a #107. API y scheduler reiniciados en el NAS; Alembic `20261122120000`.*
+*Actualización de producción: 2026-11-23 — `main` con la PR #110 (collage del resumen semanal 1280×1152) sobre la #108 (aviso del post decidido por el servidor, IA del autocompletado de redes sin textos de rescate y correcciones de la revisión independiente) y las #104 a #107. API y scheduler reiniciados en el NAS; Alembic `20261122120000`.*
 
 > Bitácora cronológica inversa. Estado operativo vigente: [`docs/project/11-current-state.md`](docs/project/11-current-state.md); pendientes abiertos: [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md).
 
