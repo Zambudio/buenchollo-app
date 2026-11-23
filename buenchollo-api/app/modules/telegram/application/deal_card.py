@@ -49,7 +49,7 @@ _PRODUCT_MAX = (612, 648)  # foto contenida (88 % de la tarjeta)
 _BADGE_ORIGIN = (56, 56)
 _COL_X, _COL_W = 768, 400
 _COL_TOP, _COL_BOTTOM = 44, 764
-_LOGO_W = 260
+_LOGO_W = 340  # 260 en la especificación; ampliado a petición (2026-11-23)
 _BLOCK_GAP = 30
 _LINE = 1.276  # alto de línea «normal» de Space Grotesk (ascendente + descendente)
 
