@@ -1,7 +1,7 @@
 # ✅ 11 · Estado actual verificado
 
 > Fotografía del estado funcional y operativo de BuenCholloTech.
-> Última revisión: **2026-11-22** (`main` con la PR #108; Alembic `20261122120000`, en producción).
+> Última revisión: **2026-11-23** (`main` con las PR #110 y #111; Alembic `20261122120000`, sin migraciones nuevas, en producción).
 > La cronología completa está en [`PROJECT_STATUS.md`](../../PROJECT_STATUS.md);
 > los pendientes, en [`10-technical-debt.md`](10-technical-debt.md); la auditoría
 > más reciente, en [`12-auditoria-tecnica-2026-11.md`](12-auditoria-tecnica-2026-11.md).

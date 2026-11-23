@@ -84,7 +84,7 @@ Motor de *matching* de alta velocidad en backend. Notifica a usuarios según cri
 <td width="50%">
 
 ### ✈️ Distribución Multicanal a Telegram
-Integración nativa con **Telegram Bot API**. Permite previsualizar, publicar o programar el mensaje; el enlace general pasa por **`/telegram`** para medir su tráfico sin alterar el enlace afiliado de compra.
+Integración nativa con **Telegram Bot API**. Permite previsualizar, publicar o programar el mensaje; el enlace general pasa por **`/telegram`** para medir su tráfico sin alterar el enlace afiliado de compra. Cada chollo sale con una **tarjeta de oferta** generada con Pillow (foto, descuento, logo de la tienda, precio y ahorro) y los domingos se publica el resumen **«Los chollos de la semana»** con un collage de los 10 mejores.
 
 </td>
 </tr>

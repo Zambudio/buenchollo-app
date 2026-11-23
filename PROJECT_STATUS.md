@@ -1,10 +1,11 @@
 # PROJECT_STATUS — BuenCholloTech
-*Actualización de producción: 2026-11-23 — `main` con la tarjeta de oferta en todas las publicaciones de Telegram (ADR-021) sobre el collage del resumen semanal 1280×1152 (#110). API y scheduler reiniciados en el NAS; sin migraciones nuevas (Alembic `20261122120000`).*
+*Actualización de producción: 2026-11-23 — `main` con la tarjeta de oferta en todas las publicaciones de Telegram (#111, ADR-021) sobre el collage del resumen semanal 1280×1152 (#110). API y scheduler reiniciados en el NAS; sin migraciones nuevas (Alembic `20261122120000`).*
 
 > Bitácora cronológica inversa. Estado operativo vigente: [`docs/project/11-current-state.md`](docs/project/11-current-state.md); pendientes abiertos: [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md).
 
 ## 2026-11-23 · Tarjeta de oferta «Simple claro» en todas las publicaciones
 
+- **Desplegado** (PR #111, merge `dac0931`): web y API; API y scheduler reiniciados en el NAS. Sin migraciones (Alembic `20261122120000`).
 - **Imagen de cada chollo en Telegram** ([ADR-021](docs/adr/ADR-021-tarjeta-oferta-telegram.md), guía [`TELEGRAM-TARJETA-OFERTA.md`](docs/guides/TELEGRAM-TARJETA-OFERTA.md)): tarjeta 1200 × 800 generada con Pillow según el diseño de `_handoff/plantilla-telegram-oferta/` (foto, insignia de descuento, logo de la tienda, precio, anterior tachado, «Ahorras X €» y logo del canal). Cuadra con las referencias (~1 % de píxeles distintos). Ajustes pedidos: logo del canal a 340 px, ahorro más grande y logo de tienda en la pastilla (Amazon y Coolmod en `app/assets/images/stores/`).
 - **Un punto único** (`deal_photo.py`) para todos los envíos: panel, programadas, republicación al canal Admin y copia de WhatsApp. El panel envía precio, descuento y tienda; si no, los del chollo guardado.
 - **Nunca bloquea**: sin precio anterior, foto ilegible, fallo de composición o rechazo de Telegram → foto original. `DEAL_CARD_ENABLED=false` la apaga.
@@ -14,6 +15,7 @@
 
 ## 2026-11-23 · Collage del resumen semanal más ancho
 
+- **Desplegado** (PR #110, merge `ce22e74`).
 - El resumen del domingo 22 salió en el chat del móvil con la imagen recortada arriba (cabecera) y abajo (fila 9-10): Telegram recorta la vertical 5:6 (1080×1296) cuando la publicación lleva pie de foto. Pasa a 1280×1152 (10:9, algo más ancha que alta), con el mismo diseño (`weekly_collage.py`).
 
 ## 2026-11-22 · Revisión independiente de los cambios del día y dos arreglos
