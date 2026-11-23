@@ -13,6 +13,7 @@ Runbooks vigentes para operar el proyecto. La operativa general (instalar, confi
 | Entender cómo funcionan Awin y Tradedoubler | [`AFFILIATE-NETWORKS.md`](AFFILIATE-NETWORKS.md) |
 | Activar una tienda de Awin o Tradedoubler cuando la aprueben | [`AFFILIATE-ACTIVATION-RUNBOOK.md`](AFFILIATE-ACTIVATION-RUNBOOK.md) |
 | Cambiar o añadir los emojis premium de los posts (icono de cada tienda) | [`TELEGRAM-EMOJIS.md`](TELEGRAM-EMOJIS.md) |
+| Entender o ajustar la imagen de cada chollo (tarjeta de oferta) y preparar una tienda nueva | [`TELEGRAM-TARJETA-OFERTA.md`](TELEGRAM-TARJETA-OFERTA.md) |
 
 ---
 

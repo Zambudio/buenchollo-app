@@ -13,6 +13,7 @@ from app.modules.products.domain.entities import ProductPreview
 from app.modules.products.infrastructure.amazon_client import AmazonProductClient
 from app.modules.scheduled_deals.domain.models import ScheduledDeal, ScheduledDealStatus
 from app.modules.scheduled_deals.infrastructure.repository import ScheduledDealRepository
+from app.modules.telegram.application.deal_photo import card_data, render_card, send_deal_post, store_name_of
 from app.modules.telegram.application.post_generator import TelegramPostGenerator
 from app.modules.telegram.application.whatsapp_copy import send_whatsapp_copy
 from app.modules.telegram.infrastructure.telegram_bot import TelegramBot
@@ -31,6 +32,14 @@ class PublicationBot(Protocol):
     ) -> bool: ...
 
     def send_admin_notification(self, text: str, chat_id: str | None = None) -> bool: ...
+
+    # Tarjeta de oferta (deal_photo.py). Un bot sin ellas publica la foto original.
+    def download_image(self, url: str) -> bytes | None: ...
+
+    def send_photo_bytes(
+        self, content: bytes, chat_id: str | None = None, caption: str = "",
+        entities: list[dict] | None = None,
+    ) -> bool: ...
 
 
 class ScheduledPublicationWorker:
@@ -53,6 +62,8 @@ class ScheduledPublicationWorker:
         self.generator = TelegramPostGenerator()
         # Registro de lo enviado (telegram_publications); opcional en tests.
         self.publications = publications
+        # Tarjeta de oferta del último post enviado (la reutiliza la copia de WhatsApp).
+        self._card: bytes | None = None
 
     async def process_due(self, now: datetime | None = None) -> int:
         """Una transacción por programación (como en scheduled_tasks, finding 8):
@@ -154,13 +165,7 @@ class ScheduledPublicationWorker:
             await self._send_telegram_only(scheduled)
             return
 
-        entities = self.generator.build_entities(scheduled.telegram_text)
-        published_to_telegram = self.bot.send_preformatted(
-            text=scheduled.telegram_text,
-            entities=entities,
-            image_url=scheduled.image_url,
-            chat_id=destination_channel_id,
-        )
+        published_to_telegram = await self._send_post(scheduled, destination_channel_id)
         if not published_to_telegram:
             last_err = getattr(self.bot, "last_error", None)
             detail = f": {last_err}" if last_err else ""
@@ -183,18 +188,31 @@ class ScheduledPublicationWorker:
         destination = scheduled.telegram_channel_id or self.main_channel_id
         if not destination:
             raise RuntimeError("TELEGRAM_MAIN_CHANNEL_ID no configurado")
-        if not self.bot.send_preformatted(
-            text=scheduled.telegram_text,
-            entities=self.generator.build_entities(scheduled.telegram_text),
-            image_url=scheduled.image_url,
-            chat_id=destination,
-        ):
+        if not await self._send_post(scheduled, destination):
             raise RuntimeError("Telegram rechazo la publicacion")
         await self._record(scheduled, destination)
         await self._send_whatsapp_copy(scheduled)
         scheduled.status = ScheduledDealStatus.PUBLISHED
         scheduled.cancellation_reason = None
         await self.repo.update(scheduled)
+
+    async def _send_post(self, scheduled: ScheduledDeal, chat_id: str) -> bool:
+        """Publica con la tarjeta de oferta (precio de la programación, ya
+        verificado) o, si no se puede, con la foto original. La tarjeta se guarda
+        para la copia de WhatsApp. En un hilo: descarga, Pillow y HTTP bloquean."""
+        deal = getattr(scheduled, "deal", None)
+        store = store_name_of(deal)
+        data = card_data(scheduled.offer_price, scheduled.regular_price, store, scheduled.discount_percentage)
+        self._card = await asyncio.to_thread(render_card, self.bot, scheduled.image_url, data)
+        return await asyncio.to_thread(
+            send_deal_post,
+            self.bot,
+            text=scheduled.telegram_text,
+            entities=self.generator.build_entities(scheduled.telegram_text, store_name=store),
+            image_url=scheduled.image_url,
+            chat_id=chat_id,
+            card=self._card,
+        )
 
     async def _send_whatsapp_copy(self, scheduled: ScheduledDeal) -> None:
         """Después de registrar: el segundo envío pisa `bot.last_message_id`.
@@ -205,6 +223,7 @@ class ScheduledPublicationWorker:
             chat_id=self.admin_chat_id,
             telegram_text=scheduled.telegram_text,
             image_url=scheduled.image_url,
+            image_bytes=self._card,
         )
 
     async def _record(self, scheduled: ScheduledDeal, channel_id: str) -> None:

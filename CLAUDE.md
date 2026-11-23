@@ -165,6 +165,8 @@ Para conectar por SSH al NAS y reiniciar o reconstruir `buenchollo-api` (Docker,
 
 Cuando una tienda de **Awin o Tradedoubler** apruebe la solicitud de afiliación, sigue [`docs/guides/AFFILIATE-ACTIVATION-RUNBOOK.md`](docs/guides/AFFILIATE-ACTIVATION-RUNBOOK.md): estado actual, script de comprobación de solo lectura y pasos de activación, validación, publicación y cierre.
 
+⚠️ **Al añadir cualquier tienda nueva, ten en cuenta sus publicaciones de Telegram**: cada chollo sale con la tarjeta de oferta, que lleva el logo de la tienda (`buenchollo-api/app/assets/images/stores/<clave>.png`), su color y su icono del enlace. Lista completa en [`docs/guides/TELEGRAM-TARJETA-OFERTA.md`](docs/guides/TELEGRAM-TARJETA-OFERTA.md) («Al añadir una tienda nueva»).
+
 ---
 
 ## Workflows disponibles (`.agents/workflows/`)

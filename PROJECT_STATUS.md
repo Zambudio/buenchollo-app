@@ -1,7 +1,20 @@
 # PROJECT_STATUS — BuenCholloTech
-*Actualización de producción: 2026-11-22 — `main` con la PR #108 (aviso del post decidido por el servidor, IA del autocompletado de redes sin textos de rescate y correcciones de la revisión independiente) sobre las #104 a #107 (Coolmod activo en Awin con IA al importar, aviso genérico fuera, términos del feed corregidos e iconos premium por tienda). API y scheduler reiniciados en el NAS; Alembic `20261122120000`.*
+*Actualización de producción: 2026-11-23 — `main` con la tarjeta de oferta en todas las publicaciones de Telegram (ADR-021) sobre el collage del resumen semanal 1280×1152 (#110). API y scheduler reiniciados en el NAS; sin migraciones nuevas (Alembic `20261122120000`).*
 
 > Bitácora cronológica inversa. Estado operativo vigente: [`docs/project/11-current-state.md`](docs/project/11-current-state.md); pendientes abiertos: [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md).
+
+## 2026-11-23 · Tarjeta de oferta «Simple claro» en todas las publicaciones
+
+- **Imagen de cada chollo en Telegram** ([ADR-021](docs/adr/ADR-021-tarjeta-oferta-telegram.md), guía [`TELEGRAM-TARJETA-OFERTA.md`](docs/guides/TELEGRAM-TARJETA-OFERTA.md)): tarjeta 1200 × 800 generada con Pillow según el diseño de `_handoff/plantilla-telegram-oferta/` (foto, insignia de descuento, logo de la tienda, precio, anterior tachado, «Ahorras X €» y logo del canal). Cuadra con las referencias (~1 % de píxeles distintos). Ajustes pedidos: logo del canal a 340 px, ahorro más grande y logo de tienda en la pastilla (Amazon y Coolmod en `app/assets/images/stores/`).
+- **Un punto único** (`deal_photo.py`) para todos los envíos: panel, programadas, republicación al canal Admin y copia de WhatsApp. El panel envía precio, descuento y tienda; si no, los del chollo guardado.
+- **Nunca bloquea**: sin precio anterior, foto ilegible, fallo de composición o rechazo de Telegram → foto original. `DEAL_CARD_ENABLED=false` la apaga.
+- **Revisión independiente** y correcciones: una conexión caída ya no da un post por publicado; un «antes» vacío en el panel no se completa con el del chollo; la insignia lleva el mismo % que el texto; la copia de WhatsApp no se duplica; cookies solo en el mismo host; claves de tienda sin acentos.
+- **Descargador de imágenes**: conserva cookies entre redirecciones del mismo host (las fotos de Coolmod no bajaban).
+- ⚠️ **Tiendas nuevas**: logo, color e icono del enlace antes del primer chollo (lista en la guía y en el runbook de afiliación).
+
+## 2026-11-23 · Collage del resumen semanal más ancho
+
+- El resumen del domingo 22 salió en el chat del móvil con la imagen recortada arriba (cabecera) y abajo (fila 9-10): Telegram recorta la vertical 5:6 (1080×1296) cuando la publicación lleva pie de foto. Pasa a 1280×1152 (10:9, algo más ancha que alta), con el mismo diseño (`weekly_collage.py`).
 
 ## 2026-11-22 · Revisión independiente de los cambios del día y dos arreglos
 

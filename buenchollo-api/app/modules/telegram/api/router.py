@@ -16,7 +16,8 @@ from app.modules.deals.application.deal_service import _GUARD_FIELDS
 from app.modules.affiliates.application.programs import PublicationBlocked, PublicationGuard
 from app.modules.affiliates.domain.offers import NETWORK_TRACKING_HOSTS
 from app.modules.affiliates.infrastructure.repository import AffiliateRepository
-from app.modules.stores.domain.models import Store
+from app.modules.telegram.application.deal_card import DealCardData
+from app.modules.telegram.application.deal_photo import card_data, render_card, send_deal_post, store_name_of
 from app.modules.telegram.application.post_generator import TelegramPostGenerator
 from app.modules.telegram.application.whatsapp_copy import send_whatsapp_copy
 from app.modules.telegram.application.whatsapp_formatter import to_whatsapp_text
@@ -200,20 +201,15 @@ async def _ensure_network_deal_publishable(db: AsyncSession, payload: TelegramNo
     await PublicationGuard(AffiliateRepository(db)).ensure_publishable(data)
 
 
-async def _deal_store_name(db: AsyncSession, deal_id: UUID | None) -> str | None:
-    """Tienda del chollo, para el icono del enlace (🛒). None si no se conoce:
-    el icono se deduce entonces del dominio del enlace. Es cosmético: un fallo
-    aquí nunca impide publicar."""
+async def _saved_deal(db: AsyncSession, deal_id: UUID | None):
+    """Chollo guardado (con su tienda), para el icono del enlace (🛒) y la
+    tarjeta de oferta. Es cosmético: un fallo aquí nunca impide publicar."""
     if deal_id is None:
         return None
     try:
-        deal = await DealRepository(db).get_by_id(str(deal_id))
-        if deal is None or not deal.store_id:
-            return None
-        store = await db.get(Store, deal.store_id)
-        return store.name if store else None
+        return await DealRepository(db).get_by_id(str(deal_id))
     except Exception:  # noqa: BLE001
-        logger.warning("No se pudo leer la tienda del chollo %s para el icono del enlace", deal_id)
+        logger.warning("No se pudo leer el chollo %s para la imagen y el icono del enlace", deal_id)
         # Una consulta fallida deja la transacción abortada: sin rollback, el
         # registro de la publicación (`record_safely`) fallaría después.
         try:
@@ -221,6 +217,22 @@ async def _deal_store_name(db: AsyncSession, deal_id: UUID | None) -> str | None
         except Exception:  # noqa: BLE001
             pass
         return None
+
+
+def _notify_card_data(payload: TelegramNotifyRequest, deal) -> DealCardData | None:
+    """Datos de la tarjeta. Si el panel manda el precio, mandan sus precios
+    (lo que muestra el post), también un «antes» vacío: nunca se completa con el
+    del chollo guardado, o la imagen enseñaría una rebaja que el post no tiene.
+    Sin precios en el envío (versiones antiguas del panel), los del chollo."""
+    store = payload.store_name or store_name_of(deal)
+    if payload.current_price is not None:
+        return card_data(payload.current_price, payload.previous_price, store, payload.discount_percentage)
+    return card_data(
+        getattr(deal, "current_price", None),
+        getattr(deal, "previous_price", None),
+        store,
+        getattr(deal, "discount_percentage", None),
+    )
 
 
 @router.post("/notify")
@@ -250,17 +262,23 @@ async def notify_deal(
         raise TelegramChannelNotConfigured()
 
     # Flujo panel: texto pre-formateado con custom entities
+    card: bytes | None = None
     if payload.text:
         generator = TelegramPostGenerator()
-        entities = payload.entities or generator.build_entities(
-            payload.text, store_name=await _deal_store_name(db, payload.deal_id)
+        deal = await _saved_deal(db, payload.deal_id)
+        store_name = payload.store_name or store_name_of(deal)
+        entities = payload.entities or generator.build_entities(payload.text, store_name=store_name)
+        card = await run_in_threadpool(
+            render_card, bot, payload.image_url, _notify_card_data(payload, deal)
         )
         ok = await run_in_threadpool(
-            bot.send_preformatted,
+            send_deal_post,
+            bot,
             text=payload.text,
             entities=entities,
             image_url=payload.image_url,
             chat_id=channel_id,
+            card=card,
         )
 
     # Flujo rápido: construir mensaje en MarkdownV2
@@ -308,6 +326,7 @@ async def notify_deal(
             telegram_text=payload.text,
             image_url=payload.image_url,
             whatsapp_text=payload.whatsapp_text,
+            image_bytes=card,
         )
 
     await audit_log(

@@ -244,6 +244,9 @@ class Settings(BaseSettings):
     public_site_url: str = "https://buenchollotech.com"
     # Resumen «Los chollos de la semana» al canal Admin (domingos 22:30, Madrid).
     weekly_digest_enabled: bool = True
+    # Imagen de cada chollo en Telegram: tarjeta «Simple claro» (deal_card.py) en
+    # lugar de la foto tal cual. false → se publica la foto original como antes.
+    deal_card_enabled: bool = True
 
     # Dominios extra (CSV) permitidos para enlaces de afiliado manuales del
     # blog, además de los ya soportados por defecto (ver domain/affiliate_domains.py).

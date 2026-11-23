@@ -339,6 +339,7 @@ function AdminDeals() {
           expires_at: d.expires_at,
           images: allImages,
           image_url: allImages[0] ?? null,
+          store_name: amazonStore?.name ?? "Amazon",
         },
         true,
       );
@@ -383,6 +384,7 @@ function AdminDeals() {
         initial_text: editing ? form.telegram_post : null,
         images: allImages,
         image_url: allImages[0] ?? null,
+        store_name: stores.find((s) => s.id === form.store_id)?.name ?? null,
       },
       !editing && !networkForm,
     );

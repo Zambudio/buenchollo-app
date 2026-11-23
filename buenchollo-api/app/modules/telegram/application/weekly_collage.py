@@ -1,10 +1,11 @@
-"""Collage del resumen semanal: una imagen vertical con lo que se lee de un
+"""Collage del resumen semanal: una imagen con lo que se lee de un
 vistazo en el móvil (foto, número del top, precio y descuento, todo grande).
 Los títulos y los enlaces van en el texto de la publicación.
 
-Proporción 5:6 (1080×1296): Telegram recorta en el chat las fotos más altas
-que ~3:4, y una 2:3 obligaba a abrirla para verla entera. Así se ve completa
-y a todo el ancho del mensaje.
+Proporción 10:9 (1280×1152), algo más ancha que alta: en el chat del móvil
+Telegram recortaba arriba y abajo la vertical 5:6 (1080×1296) cuando la
+publicación lleva pie de foto (2026-11-23), y antes una 2:3 obligaba a abrirla.
+Así se ve completa y a todo el ancho del mensaje.
 
 Usa Space Grotesk, la tipografía de la web (`app/assets/fonts`). Si no se
 pudiera cargar, cae a la fuente escalable de Pillow (sin «€» ni «–»).
@@ -20,7 +21,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 logger = logging.getLogger(__name__)
 
-WIDTH, HEIGHT = 1080, 1296
+WIDTH, HEIGHT = 1280, 1152
 HEADER = 118
 PADDING = 22
 GAP = 12
@@ -107,7 +108,7 @@ def _wrap(draw: ImageDraw.ImageDraw, text: str, font, width: float, max_lines: i
 
 
 def build_collage(items: list[CollageItem], title: str, subtitle: str) -> bytes:
-    """JPEG 1080×1296: cabecera y 2 columnas × 5 filas de tarjetas horizontales."""
+    """JPEG 1280×1152: cabecera y 2 columnas × 5 filas de tarjetas horizontales."""
     canvas = Image.new("RGB", (WIDTH, HEIGHT), _NIGHT)
     draw = ImageDraw.Draw(canvas)
 
