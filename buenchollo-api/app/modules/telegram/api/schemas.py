@@ -82,6 +82,10 @@ class TelegramNotifyRequest(BaseModel):
     deal_id: UUID | None = None
     # Versión WhatsApp editada en el panel; si falta se deriva de `text`.
     whatsapp_text: str | None = Field(default=None, max_length=10_000)
+    # Tarjeta de oferta (imagen): tienda del chollo. Con `current_price` y
+    # `previous_price` (abajo) manda lo que muestra el post; lo que falte se
+    # toma del chollo guardado (`deal_id`).
+    store_name: str | None = Field(default=None, max_length=80)
 
     # Flujo rápido (legado, se usa si text es None)
     title: str | None = None

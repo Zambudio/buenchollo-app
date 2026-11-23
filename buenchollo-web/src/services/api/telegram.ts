@@ -42,6 +42,8 @@ export interface TelegramNotifyRequest {
   deal_id?: string | null;
   /** Versión WhatsApp editada; la API la envía también al canal Admin. */
   whatsapp_text?: string | null;
+  /** Tarjeta de oferta (imagen): tienda; con `current_price` y `previous_price`. */
+  store_name?: string | null;
   // Flujo rápido (checkbox al guardar)
   title?: string;
   current_price?: number;

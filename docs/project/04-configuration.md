@@ -103,6 +103,7 @@ de los identificadores seudónimos, no descifra datos anteriores.
 | `TELEGRAM_BOT_TOKEN` | Token del bot (BotFather) |
 | `TELEGRAM_MAIN_CHANNEL_ID` | ID del canal público (`-100…`) |
 | `TELEGRAM_ADMIN_CHANNEL_ID` | ID de chat privado del admin o canal de pruebas; recibe cancelaciones automáticas |
+| `DEAL_CARD_ENABLED` | `true` (por defecto): la imagen de cada chollo es la tarjeta de oferta ([ADR-021](../adr/ADR-021-tarjeta-oferta-telegram.md)); `false`: la foto del producto tal cual |
 
 El worker se ejecuta en marcas exactas de cinco minutos. Precomprueba las ofertas
 del siguiente intervalo y vuelve a verificarlas en la hora programada antes de

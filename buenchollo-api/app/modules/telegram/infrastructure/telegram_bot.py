@@ -76,6 +76,10 @@ class TelegramBot:
         Defensa SSRF: cada salto de redirección se valida (sin IPs internas) y la
         descarga se corta al superar el límite de Telegram. Si no se puede, el
         caller cae al envío por URL, que descarga Telegram desde sus servidores.
+
+        Las cookies que pone un salto se envían en el siguiente: algunas CDN
+        (Coolmod) redirigen a la misma URL para fijar una cookie y, sin ella,
+        entran en bucle.
         """
         headers = {
             "User-Agent": (
@@ -85,16 +89,24 @@ class TelegramBot:
             "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
         }
         current = url
+        cookies = requests.cookies.RequestsCookieJar()
         try:
             for _ in range(MAX_IMAGE_REDIRECTS + 1):
                 if not cls._is_downloadable(current):
                     logger.warning("Imagen para Telegram rechazada: destino no permitido")
                     return None
                 with requests.get(
-                    current, headers=headers, timeout=12, stream=True, allow_redirects=False
+                    current, headers=headers, timeout=12, stream=True, allow_redirects=False,
+                    cookies=cookies,
                 ) as resp:
                     if resp.is_redirect:
-                        current = urljoin(current, resp.headers.get("location", ""))
+                        target = urljoin(current, resp.headers.get("location", ""))
+                        # Las cookies solo acompañan a saltos dentro del mismo host.
+                        if urlparse(target).hostname == urlparse(current).hostname:
+                            cookies.update(resp.cookies)
+                        else:
+                            cookies = requests.cookies.RequestsCookieJar()
+                        current = target
                         continue
                     if not resp.ok:
                         return None
@@ -192,8 +204,10 @@ class TelegramBot:
         semanal), con pie de foto y entidades (emojis premium, negrita, enlaces)."""
         self.last_error = None
         self.last_message_id = None
-        # True si no hubo respuesta (tiempo agotado, conexión cortada): la foto
-        # pudo llegar igualmente, así que quien llama no debe reenviarla.
+        # True si la petición salió pero no hubo respuesta (tiempo de lectura
+        # agotado, respuesta cortada): la foto pudo llegar, así que quien llama no
+        # debe reenviarla. Si ni siquiera conectó (DNS, conexión rechazada,
+        # tiempo de conexión), no llegó: False y se puede reintentar.
         self.last_delivery_unknown = False
         chat = self._resolve_chat(chat_id)
         data: dict[str, Any] = {"chat_id": chat, "caption": caption}
@@ -214,7 +228,9 @@ class TelegramBot:
             return False
         except Exception as exc:
             self.last_error = self._redact(exc)
-            self.last_delivery_unknown = True
+            self.last_delivery_unknown = isinstance(
+                exc, (requests.exceptions.ReadTimeout, requests.exceptions.ChunkedEncodingError)
+            )
             logger.error("Telegram sendPhoto (imagen generada) falló: %s", self.last_error)
             return False
 

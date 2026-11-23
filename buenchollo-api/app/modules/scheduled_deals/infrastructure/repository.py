@@ -4,6 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.modules.deals.domain.models import Deal
 from app.modules.scheduled_deals.domain.models import ScheduledDeal, ScheduledDealStatus
 
 
@@ -14,7 +15,8 @@ class ScheduledDealRepository:
     @staticmethod
     def _base_query():
         return select(ScheduledDeal).options(
-            selectinload(ScheduledDeal.deal),
+            # La tienda del chollo: icono del enlace y tarjeta de oferta al publicar.
+            selectinload(ScheduledDeal.deal).selectinload(Deal.store),
             selectinload(ScheduledDeal.category),
         )
 
