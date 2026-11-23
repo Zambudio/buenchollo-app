@@ -171,3 +171,33 @@ def test_savings_pill_always_fits_the_column(savings):
     assert deal_card._font(size).getlength(text) + 2 * deal_card._SAVINGS_PAD_X <= 400
     if savings < 1000:
         assert size == deal_card._SAVINGS_SIZE
+
+
+# ── Logo de la tienda ────────────────────────────────────────────────────────
+
+def test_store_key():
+    assert deal_card.store_key("El Corte Inglés") == "elcorteingles"
+    assert deal_card.store_key("PcComponentes") == "pccomponentes"
+
+
+@pytest.mark.parametrize("store", ["Amazon", "Coolmod"])
+def test_known_store_logos_exist_and_fit_the_pill(store):
+    logo = deal_card._store_logo(deal_card.store_key(store))
+    assert logo is not None
+    assert logo.width <= 220 and logo.height <= 42
+
+
+def test_store_without_logo_falls_back_to_name():
+    assert deal_card._store_logo(deal_card.store_key("Tienda Inventada")) is None
+    assert build_deal_card(DealCardData(99, 159, "Tienda Inventada"), _photo()) is not None
+
+
+def test_unreadable_store_logo_falls_back_to_name(tmp_path, monkeypatch):
+    (tmp_path / "rota.png").write_bytes(b"no es un png")
+    monkeypatch.setattr(deal_card, "STORE_LOGOS_DIR", tmp_path)
+    deal_card._store_logo.cache_clear()
+    try:
+        assert deal_card._store_logo("rota") is None
+        assert build_deal_card(DealCardData(99, 159, "Rota"), _photo()) is not None
+    finally:
+        deal_card._store_logo.cache_clear()

@@ -78,6 +78,10 @@ _ASSETS = Path(__file__).resolve().parents[3] / "assets"
 _FONT_PATH = _ASSETS / "fonts" / "SpaceGrotesk-latin.woff2"
 # Provisional (sacado de una captura): sustituir por el logo original en alta.
 LOGO_PATH = _ASSETS / "images" / "logo-bctech.png"
+# Logo de cada tienda: `<clave>.png` (ver `store_key`), PNG con fondo transparente.
+# Sin fichero, la pastilla muestra el punto de color y el nombre.
+STORE_LOGOS_DIR = _ASSETS / "images" / "stores"
+_STORE_LOGO_MAX = (220, 42)  # la pastilla crece si el logo pasa de 38 px de alto
 
 
 @dataclass(frozen=True)
@@ -118,10 +122,14 @@ def price_size(integer_part: str) -> int:
     return _PRICE_SIZES.get(len(integer_part), _PRICE_SIZE_LONG)
 
 
-def store_color(store: str) -> tuple[int, int, int]:
+def store_key(store: str) -> str:
+    """Clave de la tienda: minúsculas, sin espacios ni signos («El Corte Inglés» → «elcorteingles»)."""
     key = "".join(ch for ch in store.lower() if ch.isalnum())
-    key = key.replace("é", "e")
-    return STORE_COLORS.get(key, DEFAULT_STORE_COLOR)
+    return key.replace("é", "e")
+
+
+def store_color(store: str) -> tuple[int, int, int]:
+    return STORE_COLORS.get(store_key(store), DEFAULT_STORE_COLOR)
 
 
 def card_is_applicable(data: DealCardData) -> bool:
@@ -158,6 +166,24 @@ def _logo() -> Image.Image | None:
         return logo.resize((_LOGO_W, height), Image.LANCZOS)
     except Exception:
         logger.warning("Logo de la tarjeta de oferta no disponible; se omite")
+        return None
+
+
+@lru_cache(maxsize=32)
+def _store_logo(key: str) -> Image.Image | None:
+    """Logo de la tienda recortado a su contenido y contenido en 200 × 34, o None."""
+    path = STORE_LOGOS_DIR / f"{key}.png"
+    if not key or not path.is_file():
+        return None
+    try:
+        with Image.open(path) as img:
+            logo = img.convert("RGBA")
+        bbox = logo.getbbox()
+        if bbox:
+            logo = logo.crop(bbox)
+        return ImageOps.contain(logo, _STORE_LOGO_MAX, method=Image.LANCZOS)
+    except Exception:
+        logger.warning("Logo de la tienda %s no legible; se usa el nombre", key)
         return None
 
 
@@ -260,7 +286,10 @@ def _compose(data: DealCardData, product: Image.Image, discount: int, savings: f
     size = _fitting_price_size(integer, decimals)
     dec_size = round(size * 0.38)
     label_h = _line_height(22)
+    store_logo = _store_logo(store_key(data.store))
     pill_h = 12 + _line_height(26) + 12
+    if store_logo is not None:
+        pill_h = max(pill_h, store_logo.height + 20)
     dec_h = 0.08 * dec_size + 0.85 * dec_size + 4 + 0.85 * dec_size
     price_h = max(0.85 * size, dec_h)
     now_h = label_h + 4 + price_h
@@ -271,16 +300,22 @@ def _compose(data: DealCardData, product: Image.Image, discount: int, savings: f
     group_h = pill_h + now_h + before_h + savings_h + 3 * _BLOCK_GAP
     y = _COL_TOP + (logo_top - _COL_TOP - group_h) / 2
 
-    # Tienda.
-    store_font = _font(26, "SemiBold")
-    pill_w = 22 + 14 + 12 + store_font.getlength(data.store) + 22
-    draw.rounded_rectangle((_COL_X, y, _COL_X + pill_w, y + pill_h), radius=pill_h / 2, fill=_WHITE)
-    dot_cy = y + pill_h / 2
-    draw.ellipse((_COL_X + 22, dot_cy - 7, _COL_X + 36, dot_cy + 7), fill=store_color(data.store))
-    draw.text(
-        (_COL_X + 48, _baseline(y + 12, 26, _line_height(26))), data.store,
-        font=store_font, fill=_INK, anchor="ls",
-    )
+    # Tienda: su logo si lo tenemos; si no, punto de color + nombre.
+    if store_logo is not None:
+        pill_w = 26 + store_logo.width + 26
+        draw.rounded_rectangle((_COL_X, y, _COL_X + pill_w, y + pill_h), radius=pill_h / 2, fill=_WHITE)
+        canvas.alpha_composite(store_logo, (_COL_X + 26, round(y + (pill_h - store_logo.height) / 2)))
+        draw = ImageDraw.Draw(canvas)
+    else:
+        store_font = _font(26, "SemiBold")
+        pill_w = 22 + 14 + 12 + store_font.getlength(data.store) + 22
+        draw.rounded_rectangle((_COL_X, y, _COL_X + pill_w, y + pill_h), radius=pill_h / 2, fill=_WHITE)
+        dot_cy = y + pill_h / 2
+        draw.ellipse((_COL_X + 22, dot_cy - 7, _COL_X + 36, dot_cy + 7), fill=store_color(data.store))
+        draw.text(
+            (_COL_X + 48, _baseline(y + 12, 26, _line_height(26))), data.store,
+            font=store_font, fill=_INK, anchor="ls",
+        )
     y += pill_h + _BLOCK_GAP
 
     # AHORA + precio.
