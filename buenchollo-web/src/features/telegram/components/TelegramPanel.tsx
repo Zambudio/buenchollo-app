@@ -55,6 +55,8 @@ interface TelegramPanelProps {
     image_url?: string | null;
     /** Chollo ya guardado: se registra la publicación y se ofrece la última enviada. */
     deal_id?: string | null;
+    /** Tienda, para la tarjeta de oferta (imagen). Sin ella, la API usa la del chollo guardado. */
+    store_name?: string | null;
     /** Borrador ya preparado (Editar chollo): se carga tal cual, sin regenerar. */
     initial_text?: string | null;
   };
@@ -356,6 +358,10 @@ export function TelegramPanel({
         deal_id: dealData.deal_id ?? null,
         affiliate_url: dealData.affiliate_url,
         whatsapp_text: whatsapp,
+        // Tarjeta de oferta: la API compone la imagen con estos datos y la foto elegida.
+        current_price: dealData.current_price,
+        previous_price: dealData.previous_price ?? null,
+        store_name: dealData.store_name ?? null,
       });
       toast.success("✅ Publicado en Telegram", {
         description: result.whatsapp_sent

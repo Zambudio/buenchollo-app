@@ -23,6 +23,7 @@ from decimal import Decimal
 from starlette.concurrency import run_in_threadpool
 
 from app.modules.telegram.application.post_generator import _format_price_es
+from app.modules.telegram.application.deal_photo import deal_card_data, render_card, send_deal_post, store_name_of
 from app.modules.telegram.application.whatsapp_copy import send_whatsapp_copy
 from app.modules.telegram.application.reprice import reprice_publication_text
 
@@ -157,16 +158,18 @@ class ReactivationNotifier:
         aviso a los siguientes ni deshaga el antispam de los ya avisados."""
         try:
             text, image_url = self._republishable(deal, publication, now)
-            entities = self.generator.build_entities(text)
+            entities = self.generator.build_entities(text, store_name=store_name_of(deal))
         except Exception:
             logger.exception("No se pudo preparar la publicación corregida de %s", deal.slug)
             return
-        if not await self._call(self.bot.send_preformatted, text=text, entities=entities,
-                                image_url=image_url, chat_id=self.admin_chat_id):
+        # Tarjeta de oferta con el precio nuevo (si no se puede, la foto original).
+        card = await run_in_threadpool(render_card, self.bot, image_url, deal_card_data(deal))
+        if not await self._call(send_deal_post, self.bot, text=text, entities=entities,
+                                image_url=image_url, chat_id=self.admin_chat_id, card=card):
             logger.warning("No se pudo enviar al canal Admin la publicación corregida de %s", deal.slug)
             return
         await self._call(send_whatsapp_copy, self.bot, chat_id=self.admin_chat_id,
-                         telegram_text=text, image_url=image_url)
+                         telegram_text=text, image_url=image_url, image_bytes=card)
 
     def _republishable(self, deal, publication, now: datetime) -> tuple[str, str | None]:
         """Última publicación registrada con el precio corregido; si no existe (o

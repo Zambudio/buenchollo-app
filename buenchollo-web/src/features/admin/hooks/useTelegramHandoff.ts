@@ -11,6 +11,8 @@ export type TelegramPanelData = TelegramGenerateRequest & {
   images?: string[];
   image_url?: string | null;
   deal_id?: string | null;
+  /** Tienda, para la tarjeta de oferta (imagen). Sin ella, la API usa la del chollo guardado. */
+  store_name?: string | null;
   /** Borrador ya preparado en Editar chollo: el panel lo carga sin regenerar. */
   initial_text?: string | null;
 };

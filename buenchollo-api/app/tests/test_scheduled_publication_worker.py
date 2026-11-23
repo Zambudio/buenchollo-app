@@ -387,3 +387,69 @@ async def test_omite_la_programacion_bloqueada_por_otro_proceso():
         "second": ScheduledDealStatus.PUBLISHED,
     }
     assert len(bot.posts) == 1
+
+
+# ── Tarjeta de oferta (imagen «Simple claro») ────────────────────────────────
+
+class CardBot(FakeBot):
+    """Bot que sabe descargar la foto y enviar imágenes generadas."""
+
+    def __init__(self, card_ok=True):
+        super().__init__()
+        self.card_ok = card_ok
+        self.cards = []
+
+    def download_image(self, url):
+        import io
+
+        from PIL import Image
+
+        out = io.BytesIO()
+        Image.new("RGB", (300, 300), (200, 30, 30)).save(out, format="PNG")
+        return out.getvalue()
+
+    def send_photo_bytes(self, content, chat_id=None, caption="", entities=None):
+        self.cards.append({"content": content, "chat_id": chat_id, "caption": caption, "entities": entities})
+        return self.card_ok
+
+
+@pytest.mark.asyncio
+async def test_publica_con_la_tarjeta_de_oferta_y_la_copia_de_whatsapp_tambien():
+    scheduled = scheduled_deal()
+    scheduled.deal.store = SimpleNamespace(name="Amazon")
+    bot = CardBot()
+    worker, _ = worker_for(scheduled, ProductPreview(current_price=100.0, in_stock=True), bot)
+
+    await worker.process_due(datetime.now(timezone.utc))
+
+    assert scheduled.status == ScheduledDealStatus.PUBLISHED
+    assert bot.posts == []  # sin la foto original
+    post, whatsapp = bot.cards
+    assert post["chat_id"] == "-100-destination" and post["entities"]
+    assert post["content"][:2] == b"\xff\xd8"  # JPEG
+    assert whatsapp["chat_id"] == "123-admin" and whatsapp["content"] == post["content"]
+
+
+@pytest.mark.asyncio
+async def test_sin_precio_anterior_publica_la_foto_original():
+    scheduled = scheduled_deal()
+    scheduled.regular_price = None
+    bot = CardBot()
+    worker, _ = worker_for(scheduled, ProductPreview(current_price=100.0, in_stock=True), bot)
+
+    await worker.process_due(datetime.now(timezone.utc))
+
+    assert scheduled.status == ScheduledDealStatus.PUBLISHED
+    assert bot.cards == [] and len(bot.posts) == 1
+
+
+@pytest.mark.asyncio
+async def test_si_telegram_rechaza_la_tarjeta_se_publica_con_la_foto_original():
+    scheduled = scheduled_deal()
+    bot = CardBot(card_ok=False)
+    worker, _ = worker_for(scheduled, ProductPreview(current_price=100.0, in_stock=True), bot)
+
+    await worker.process_due(datetime.now(timezone.utc))
+
+    assert scheduled.status == ScheduledDealStatus.PUBLISHED
+    assert len(bot.posts) == 1 and bot.posts[0]["image_url"] == "https://images.test/product.jpg"

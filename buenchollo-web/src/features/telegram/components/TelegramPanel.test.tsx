@@ -369,6 +369,34 @@ describe("TelegramPanel · registro de publicaciones", () => {
     });
   });
 
+  it("envía precio actual, anterior y tienda para la tarjeta de oferta", async () => {
+    renderWithProviders(
+      <TelegramPanel
+        dealData={{
+          deal_id: "deal-1",
+          title: "Chollo de prueba",
+          current_price: 18.51,
+          previous_price: 29.99,
+          store_name: "Amazon",
+          affiliate_url: "https://amazon.es/dp/B0D9WH9WLD",
+        }}
+        onClose={vi.fn()}
+      />,
+    );
+    await screen.findByDisplayValue(/Chollo de prueba/);
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /PUBLICAR AHORA/ })).toBeEnabled(),
+    );
+    await userEvent.click(screen.getByRole("button", { name: /PUBLICAR AHORA/ }));
+
+    await waitFor(() => expect(mocks.notify).toHaveBeenCalled());
+    expect(mocks.notify.mock.calls[0]?.[0]).toMatchObject({
+      current_price: 18.51,
+      previous_price: 29.99,
+      store_name: "Amazon",
+    });
+  });
+
   it("muestra la última publicación del chollo y permite reutilizar su texto", async () => {
     mocks.listPublications.mockResolvedValue([
       {

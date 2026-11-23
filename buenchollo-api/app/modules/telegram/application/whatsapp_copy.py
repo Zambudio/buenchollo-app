@@ -20,15 +20,20 @@ def send_whatsapp_copy(
     telegram_text: str,
     image_url: str | None = None,
     whatsapp_text: str | None = None,
+    image_bytes: bytes | None = None,
 ) -> bool:
-    """Envía en texto plano (sin entidades: los `*` quedan para WhatsApp). Si la
-    foto falla (p. ej. pie de foto demasiado largo), reintenta solo con texto."""
+    """Envía en texto plano (sin entidades: los `*` quedan para WhatsApp), con la
+    tarjeta de oferta (`image_bytes`) si la hay o la foto original. Si la imagen
+    falla (p. ej. pie de foto demasiado largo), reintenta con la foto original y
+    luego solo con texto."""
     if not chat_id:
         return False
     try:
         text = (whatsapp_text or "").strip() or to_whatsapp_text(telegram_text)
         if not text:
             return False
+        if image_bytes and bot.send_photo_bytes(image_bytes, chat_id=chat_id, caption=text):
+            return True
         if bot.send_preformatted(text=text, entities=[], image_url=image_url, chat_id=chat_id):
             return True
         if image_url and bot.send_preformatted(text=text, entities=[], image_url=None, chat_id=chat_id):

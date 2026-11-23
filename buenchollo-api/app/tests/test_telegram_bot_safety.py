@@ -85,3 +85,24 @@ def test_imagen_valida_se_descarga():
         patch.object(tb.requests, "get", return_value=ok),
     ):
         assert TelegramBot._download_image("https://cdn.example.com/foto.webp") == (b"abcdef", "image/webp")
+
+
+def test_la_cookie_de_una_redireccion_se_envia_en_el_siguiente_salto():
+    # Coolmod: 307 a la misma URL fijando una cookie; sin ella, bucle de redirecciones.
+    jar = requests.cookies.RequestsCookieJar()
+    jar.set("bm", "1", domain="cdn.example.com", path="/")
+    redirect = _response(status=307, redirect=True, headers={"location": "https://cdn.example.com/foto.png"})
+    redirect.cookies = jar
+    ok = _response(chunks=[b"img"], headers={"content-type": "image/jpeg"})
+    sent = []
+
+    def fake_get(url, **kwargs):
+        sent.append(dict(kwargs["cookies"]))
+        return redirect if len(sent) == 1 else ok
+
+    with (
+        patch.object(tb, "resolves_to_private_ip", return_value=False),
+        patch.object(tb.requests, "get", side_effect=fake_get),
+    ):
+        assert TelegramBot._download_image("https://cdn.example.com/foto.png") == (b"img", "image/jpeg")
+    assert sent == [{}, {"bm": "1"}]

@@ -76,6 +76,10 @@ class TelegramBot:
         Defensa SSRF: cada salto de redirección se valida (sin IPs internas) y la
         descarga se corta al superar el límite de Telegram. Si no se puede, el
         caller cae al envío por URL, que descarga Telegram desde sus servidores.
+
+        Las cookies que pone un salto se envían en el siguiente: algunas CDN
+        (Coolmod) redirigen a la misma URL para fijar una cookie y, sin ella,
+        entran en bucle.
         """
         headers = {
             "User-Agent": (
@@ -85,15 +89,18 @@ class TelegramBot:
             "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
         }
         current = url
+        cookies = requests.cookies.RequestsCookieJar()
         try:
             for _ in range(MAX_IMAGE_REDIRECTS + 1):
                 if not cls._is_downloadable(current):
                     logger.warning("Imagen para Telegram rechazada: destino no permitido")
                     return None
                 with requests.get(
-                    current, headers=headers, timeout=12, stream=True, allow_redirects=False
+                    current, headers=headers, timeout=12, stream=True, allow_redirects=False,
+                    cookies=cookies,
                 ) as resp:
                     if resp.is_redirect:
+                        cookies.update(resp.cookies)
                         current = urljoin(current, resp.headers.get("location", ""))
                         continue
                     if not resp.ok:
