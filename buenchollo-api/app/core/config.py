@@ -253,6 +253,9 @@ class Settings(BaseSettings):
     # API con inicio de sesión de Instagram; el job lo renueva y guarda en BD.
     instagram_enabled: bool = False
     instagram_access_token: str = ""
+    # Id de la cuenta profesional (obligatorio con token de usuario del sistema,
+    # «EAA…»; con token de Instagram se obtiene de /me).
+    instagram_user_id: str = ""
     instagram_graph_version: str = "v23.0"
     # Hashtags fijos, sin «#» (en un .env, «#» empieza un comentario).
     instagram_hashtags: str = "chollos ofertas tecnologia chollostecnologicos buenchollotech"

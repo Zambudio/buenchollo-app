@@ -19,6 +19,9 @@ import requests
 logger = logging.getLogger(__name__)
 
 GRAPH_HOST = "https://graph.instagram.com"
+# Tokens de Facebook (usuario del sistema de un porfolio empresarial, «EAA…»):
+# misma API de publicación, pero en graph.facebook.com y sin renovación.
+FACEBOOK_GRAPH_HOST = "https://graph.facebook.com"
 _TIMEOUT = (10, 30)
 _TOKEN_ERROR_CODES = {190}  # token caducado, revocado o inválido
 
@@ -46,14 +49,28 @@ class RefreshedToken:
 class InstagramGraphClient:
     def __init__(self, access_token: str, version: str = "v23.0", http=None):
         self._token = access_token
-        self._base = f"{GRAPH_HOST}/{version.strip('/')}" if version else GRAPH_HOST
+        # Los tokens del inicio de sesión de Instagram empiezan por «IG»; el resto
+        # (usuario del sistema de Meta Business) van contra graph.facebook.com.
+        self.instagram_login = access_token.startswith("IG")
+        host = GRAPH_HOST if self.instagram_login else FACEBOOK_GRAPH_HOST
+        self._base = f"{host}/{version.strip('/')}" if version else host
         self._http = http or requests
+
+    @property
+    def refreshable(self) -> bool:
+        """Solo los de Instagram caducan a los 60 días y se renuevan; los de
+        usuario del sistema se generan sin caducidad."""
+        return self.instagram_login
 
     # ── Llamadas ────────────────────────────────────────────────────────────
 
     def me(self) -> dict:
         """`user_id` (el que publica) y `username` de la cuenta del token."""
         return self._request("GET", f"{self._base}/me", params={"fields": "user_id,username"})
+
+    def account_info(self, user_id: str) -> dict:
+        """Usuario de una cuenta profesional conocida (`INSTAGRAM_USER_ID`)."""
+        return self._request("GET", f"{self._base}/{user_id}", params={"fields": "id,username"})
 
     def create_image_container(self, user_id: str, image_url: str, caption: str) -> str:
         data = self._request(
