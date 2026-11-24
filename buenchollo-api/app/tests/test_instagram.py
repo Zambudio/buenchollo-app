@@ -32,7 +32,7 @@ POST = (
 def _settings(**kw):
     base = dict(
         instagram_enabled=True, instagram_access_token="tok-1", telegram_main_channel_id="-100main", telegram_enabled=True,
-        public_api_url="https://api.example.com", instagram_hashtags="chollos webcams",
+        public_api_url="https://api.example.com", instagram_hashtags="chollos webcams", instagram_user_id="",
     )
     return Settings(**{**base, **kw})
 
@@ -156,11 +156,11 @@ class _Resp:
 def test_cliente_manda_el_token_en_cabecera_y_no_en_la_url():
     http = MagicMock()
     http.request.return_value = _Resp(200, {"id": "c1"})
-    InstagramGraphClient("secreto", http=http).create_image_container("u1", "https://img", "texto")
+    InstagramGraphClient("IGsecreto", http=http).create_image_container("u1", "https://img", "texto")
     args, kwargs = http.request.call_args
     assert args == ("POST", "https://graph.instagram.com/v23.0/u1/media")
-    assert kwargs["headers"] == {"Authorization": "Bearer secreto"}
-    assert "secreto" not in str(kwargs["params"]) and kwargs["json"] == {"image_url": "https://img", "caption": "texto"}
+    assert kwargs["headers"] == {"Authorization": "Bearer IGsecreto"}
+    assert "IGsecreto" not in str(kwargs["params"]) and kwargs["json"] == {"image_url": "https://img", "caption": "texto"}
 
 
 def test_cliente_interpreta_errores_de_meta():
@@ -223,7 +223,8 @@ class _JobSession:
 
 
 class _Client:
-    def __init__(self, statuses=("FINISHED",), fail=None):
+    def __init__(self, statuses=("FINISHED",), fail=None, refreshable=True):
+        self.refreshable = refreshable
         self.calls = []
         self.statuses = list(statuses)
         self.fail = fail or {}
@@ -236,6 +237,10 @@ class _Client:
         self.calls.append("me")
         self._maybe_fail("me")
         return {"user_id": "178", "username": "buenchollotech"}
+
+    def account_info(self, user_id):
+        self.calls.append(("info", user_id))
+        return {"id": user_id, "username": "buenchollotech"}
 
     def create_image_container(self, user_id, image_url, caption):
         self.calls.append(("create", user_id, image_url))
@@ -432,3 +437,31 @@ def test_el_estado_exige_admin():
     from app.main import app
 
     assert TestClient(app).get("/v1/instagram/status").status_code in (401, 403)
+
+
+# ── Token de usuario del sistema (Meta Business, «EAA…») ─────────────────────
+
+def test_token_de_facebook_va_contra_graph_facebook_y_no_se_renueva():
+    http = MagicMock()
+    http.request.return_value = _Resp(200, {"id": "c1"})
+    client = InstagramGraphClient("EAAsecreto", http=http)
+    client.create_image_container("178", "https://img", "t")
+    assert http.request.call_args.args[1] == "https://graph.facebook.com/v23.0/178/media"
+    assert not client.refreshable
+    assert InstagramGraphClient("IGsecreto").refreshable
+
+
+@pytest.mark.asyncio
+async def test_con_instagram_user_id_no_usa_me_ni_renueva():
+    post = _post()
+    repo = _Repo([post])
+    client = _Client(refreshable=False)
+    publisher, _ = _publisher(repo, client, _settings(instagram_user_id="17841480234900028"))
+
+    assert await publisher.run(NOW) == 1
+    assert client.calls[0] == ("info", "17841480234900028")
+    assert repo.acc.user_id == "17841480234900028" and repo.acc.username == "buenchollotech"
+    # Una semana después: un token sin caducidad no se renueva.
+    client.calls.clear()
+    await publisher.run(NOW + timedelta(days=8))
+    assert "refresh" not in client.calls

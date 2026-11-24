@@ -34,34 +34,44 @@ El enlace de la bio es **`https://buenchollotech.com/instagram`**: redirige a la
 `utm_source=instagram&utm_medium=social&utm_campaign=bio` y la analítica lo cuenta como fuente **Instagram**
 (también las visitas con referer `instagram.com`). Migración `20261124120000`.
 
-## Configuración (una vez)
+## Configuración (hecha el 2026-11-24)
 
-Requisitos: cuenta de Instagram **profesional** (Empresa o Creador). No hace falta página de Facebook: se usa la
-«API de Instagram con inicio de sesión de Instagram».
+Meta ya no ofrece la «configuración de la API con inicio de sesión de Instagram» a las apps nuevas: obliga al
+**inicio de sesión unificado**, que exige un porfolio empresarial. Lo que hay montado:
 
-1. **App de Meta**: en [developers.facebook.com/apps](https://developers.facebook.com/apps) → *Crear app* → caso de
-   uso **«Administrar mensajes y contenido en Instagram»** (tipo Empresa). Se queda en modo desarrollo: al publicar
-   solo en nuestra cuenta no hace falta la revisión de Meta.
-2. **Rol de evaluador**: en la app → *Roles de la app* → añadir la cuenta de Instagram como **Instagram Tester**, y
-   aceptar la invitación desde Instagram (*Configuración → Apps y sitios web → Invitaciones de evaluador*).
-3. **Token**: en la app → *Instagram → Configuración de la API con inicio de sesión de Instagram* → *Generar tokens de
-   acceso* → añadir la cuenta e iniciar sesión (con los permisos `instagram_business_basic` e
-   `instagram_business_content_publish`). Copiar el token (larga duración, 60 días).
-4. **NAS**: en `buenchollo-api/.env` (lo edita el administrador; el token no se pega en el chat ni en el repo):
-   ```env
-   INSTAGRAM_ENABLED=true
-   INSTAGRAM_ACCESS_TOKEN=<token>
-   ```
-   y reiniciar: `docker restart buenchollo-api buenchollo-scheduler`.
-5. **Comprobar**: `GET /v1/instagram/status` (admin) debe mostrar `connected: true` y el usuario de la cuenta a los
-   2 min (el job lee la cuenta con `/me`).
+- **App de Meta** «BuenCholloTech Publicador» (id `1600101988548764`, modo desarrollo), caso de uso «Administrar
+  mensajes y contenido en Instagram», con `instagram_business_basic` e `instagram_business_content_publish`.
+- **Porfolio empresarial** «Buenchollotech» (id `2027078151294511`, sin verificar: no hace falta para publicar en
+  nuestra cuenta) con la app y la cuenta de Instagram **@buenchollotech** (id `17841480234900028`), que además es
+  evaluadora de la app.
+- **Usuario del sistema** `bct-publicador` del porfolio, con acceso a la app y acceso total a la cuenta de
+  Instagram. Su token (`EAA…`, caducidad «Nunca», permisos `instagram_basic` e `instagram_content_publish`) es el
+  de `INSTAGRAM_ACCESS_TOKEN`.
+
+Con un token `EAA…` el cliente usa `graph.facebook.com` (misma API de publicación) y no lo renueva; con uno de
+Instagram (`IG…`) usa `graph.instagram.com` y lo renueva cada semana.
+
+### Regenerar el token
+
+Meta Business Suite → Configuración del porfolio «Buenchollotech» → Usuarios del sistema → `bct-publicador` →
+**Generar identificador**: app «BuenCholloTech Publicador», caducidad «Nunca», permisos `instagram_basic` e
+`instagram_content_publish`. Pegarlo en `buenchollo-api/.env` del NAS (lo edita el administrador; el token no se
+pega en el chat ni en el repo):
+
+```env
+INSTAGRAM_ENABLED=true
+INSTAGRAM_USER_ID=17841480234900028
+INSTAGRAM_ACCESS_TOKEN=<token>
+```
+
+y reiniciar: `docker restart buenchollo-api buenchollo-scheduler`. Comprobar con `GET /v1/instagram/status` (admin):
+`connected: true` y el usuario de la cuenta a los 2 min.
 
 ### Token
 
-El del `.env` solo **siembra** la tabla `instagram_account`; el job lo renueva cada 7 días (dura 60) y guarda el
-vigente. Si se cambia en el `.env`, se detecta (hash) y se usa el nuevo. Si deja de valer (revocado, contraseña
-cambiada, sin permisos), la cola se para y llega un aviso al canal Admin (como mucho cada 12 h): generar uno nuevo
-(paso 3) y ponerlo en el `.env`.
+El del `.env` solo **siembra** la tabla `instagram_account`; si se cambia en el `.env`, se detecta (hash) y se usa
+el nuevo. Si deja de valer (revocado, permisos retirados), la cola se para y llega un aviso al canal Admin (como
+mucho cada 12 h): regenerarlo como arriba.
 
 Las tablas `instagram_posts` e `instagram_account` tienen RLS activado sin políticas: el token nunca es legible por
 PostgREST.
@@ -71,7 +81,8 @@ PostgREST.
 | Variable | Por defecto | Uso |
 |---|---|---|
 | `INSTAGRAM_ENABLED` | `false` | Interruptor general (encolar y publicar) |
-| `INSTAGRAM_ACCESS_TOKEN` | — | Token de larga duración (solo siembra la BD) |
+| `INSTAGRAM_ACCESS_TOKEN` | — | Token del usuario del sistema (`EAA…`) o de Instagram (`IG…`); solo siembra la BD |
+| `INSTAGRAM_USER_ID` | — | Id de la cuenta profesional (`17841480234900028`); obligatorio con token `EAA…` |
 | `INSTAGRAM_GRAPH_VERSION` | `v23.0` | Versión de la Graph API |
 | `INSTAGRAM_HASHTAGS` | `chollos ofertas tecnologia chollostecnologicos buenchollotech` | Hashtags fijos, sin `#` (en un `.env` empieza un comentario) |
 | `PUBLIC_API_URL` | `https://api.buenchollotech.com` | Base de la URL de la imagen que descarga Instagram |

@@ -117,12 +117,17 @@ class InstagramPublisher:
         client = self.client_factory(account.access_token, self.settings.instagram_graph_version)
         refreshing = False
         try:
-            if not account.user_id:
-                me = await asyncio.to_thread(client.me)
-                account.user_id = str(me.get("user_id") or me.get("id") or "") or None
-                account.username = me.get("username")
+            configured_id = (self.settings.instagram_user_id or "").strip()
+            if not account.user_id or (configured_id and account.user_id != configured_id):
+                if configured_id:
+                    info = await asyncio.to_thread(client.account_info, configured_id)
+                    account.user_id = configured_id
+                else:
+                    info = await asyncio.to_thread(client.me)
+                    account.user_id = str(info.get("user_id") or info.get("id") or "") or None
+                account.username = info.get("username")
                 logger.info("Instagram conectado como @%s", account.username)
-            elif now - _aware(account.refreshed_at) >= REFRESH_EVERY:
+            elif client.refreshable and now - _aware(account.refreshed_at) >= REFRESH_EVERY:
                 refreshing = True
                 fresh = await asyncio.to_thread(client.refresh_token)
                 account.access_token = fresh.access_token
