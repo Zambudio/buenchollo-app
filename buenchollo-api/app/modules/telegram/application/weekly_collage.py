@@ -2,10 +2,10 @@
 vistazo en el móvil (foto, número del top, precio y descuento, todo grande).
 Los títulos y los enlaces van en el texto de la publicación.
 
-Proporción 10:9 (1280×1152), algo más ancha que alta: en el chat del móvil
-Telegram recortaba arriba y abajo la vertical 5:6 (1080×1296) cuando la
-publicación lleva pie de foto (2026-11-23), y antes una 2:3 obligaba a abrirla.
-Así se ve completa y a todo el ancho del mensaje.
+Formato 1200×800 (3:2), el mismo que la tarjeta de oferta de cada chollo
+(`deal_card.py`): en el canal todas las imágenes salen con el mismo ancho y
+alto (2026-11-24). Antes fue 10:9 y, antes aún, una vertical que Telegram
+recortaba con pie de foto. Diez tarjetas verticales en 5 columnas × 2 filas.
 
 Usa Space Grotesk, la tipografía de la web (`app/assets/fonts`). Si no se
 pudiera cargar, cae a la fuente escalable de Pillow (sin «€» ni «–»).
@@ -21,12 +21,12 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 logger = logging.getLogger(__name__)
 
-WIDTH, HEIGHT = 1280, 1152
-HEADER = 118
-PADDING = 22
+WIDTH, HEIGHT = 1200, 800  # igual que la tarjeta de oferta
+HEADER = 92
+PADDING = 18
 GAP = 12
-COLUMNS = 2
-ROWS = 5
+COLUMNS = 5
+ROWS = 2
 
 # Colores de la marca (tema oscuro de la web).
 _NIGHT = (7, 10, 20)
@@ -108,15 +108,15 @@ def _wrap(draw: ImageDraw.ImageDraw, text: str, font, width: float, max_lines: i
 
 
 def build_collage(items: list[CollageItem], title: str, subtitle: str) -> bytes:
-    """JPEG 1280×1152: cabecera y 2 columnas × 5 filas de tarjetas horizontales."""
+    """JPEG 1200×800: cabecera y 5 columnas × 2 filas de tarjetas verticales."""
     canvas = Image.new("RGB", (WIDTH, HEIGHT), _NIGHT)
     draw = ImageDraw.Draw(canvas)
 
     # Cabecera: solo el título, grande y centrado (un subtítulo no se leería en
     # el móvil). `subtitle` se mantiene en la firma por compatibilidad.
-    size = 72
+    size = 64
     font = _font(size)
-    while size > 40 and draw.textlength(title, font=font) > WIDTH - 2 * PADDING:
+    while size > 36 and draw.textlength(title, font=font) > WIDTH - 2 * PADDING:
         size -= 2
         font = _font(size)
     _text_center(draw, (WIDTH / 2, HEADER / 2 + 4), title, font, (255, 255, 255))
@@ -124,57 +124,58 @@ def build_collage(items: list[CollageItem], title: str, subtitle: str) -> bytes:
     if not items:
         return _jpeg(canvas)
 
-    grid_top = HEADER + 16
+    grid_top = HEADER + 6
     tile_w = (WIDTH - 2 * PADDING - (COLUMNS - 1) * GAP) // COLUMNS
     tile_h = (HEIGHT - grid_top - PADDING - (ROWS - 1) * GAP) // ROWS
-    inner = 12
-    photo_side = tile_h - 2 * inner
+    inner = 10
+    photo_side = tile_w - 2 * inner
 
-    number_font = _font(40)
+    number_font = _font(32)
     for index, item in enumerate(items[: COLUMNS * ROWS]):
         row, col = divmod(index, COLUMNS)
         x = PADDING + col * (tile_w + GAP)
         y = grid_top + row * (tile_h + GAP)
         draw.rounded_rectangle([x, y, x + tile_w, y + tile_h], radius=18, fill=_CARD)
 
-        # Foto del producto a la izquierda, lo más grande posible.
+        # Foto del producto arriba, cuadrada y lo más grande posible.
         box = (photo_side, photo_side)
-        bx0, by0 = x + inner, y + (tile_h - photo_side) // 2
+        bx0, by0 = x + inner, y + inner
         photo = _product_image(item.image, box)
         if photo is not None:
             canvas.paste(photo, (bx0 + (photo_side - photo.width) // 2, by0 + (photo_side - photo.height) // 2), photo)
         else:
-            _text_center(draw, (bx0 + photo_side / 2, by0 + photo_side / 2), "Sin imagen", _font(24, "Medium"), _MUTED)
+            _text_center(draw, (bx0 + photo_side / 2, by0 + photo_side / 2), "Sin imagen", _font(22, "Medium"), _MUTED)
 
-        # A la derecha, solo lo que se lee de un vistazo: precio y descuento en
+        # Debajo, solo lo que se lee de un vistazo: precio y descuento en
         # grande, centrados (el detalle va en el texto de la publicación).
-        tx = bx0 + photo_side + 14
-        tw = x + tile_w - inner - tx
-        size = 62
+        area_top = by0 + photo_side + 4
+        area_h = y + tile_h - inner - area_top
+        tw = tile_w - 2 * inner
+        size = 46
         price_font = _font(size)
-        while size > 30 and draw.textlength(item.price, font=price_font) > tw:
+        while size > 24 and draw.textlength(item.price, font=price_font) > tw:
             size -= 2
             price_font = _font(size)
         chip = f"-{item.discount} %" if item.discount else ""
-        chip_h, chip_size = 58, 40
-        block_h = size + (16 + chip_h if chip else 0)
-        center_x = tx + tw / 2
-        top = y + (tile_h - block_h) / 2
+        chip_h, chip_size = 42, 30
+        block_h = size + (8 + chip_h if chip else 0)
+        center_x = x + tile_w / 2
+        top = area_top + max(0, (area_h - block_h) / 2)
         _text_center(draw, (center_x, top + size / 2), item.price, price_font, _TEXT)
         if chip:
             chip_font = _font(chip_size)
-            chip_w = draw.textlength(chip, font=chip_font) + 32
-            cy = top + size + 16 + chip_h / 2
+            chip_w = draw.textlength(chip, font=chip_font) + 28
+            cy = top + size + 8 + chip_h / 2
             draw.rounded_rectangle(
                 [center_x - chip_w / 2, cy - chip_h / 2, center_x + chip_w / 2, cy + chip_h / 2],
-                radius=14,
+                radius=12,
                 fill=_ORANGE,
             )
             _text_center(draw, (center_x, cy), chip, chip_font, (255, 255, 255))
 
-        # Número del top, grande, sobre la esquina de la foto.
-        r = 32
-        cx, cy = x + 8 + r, y + 8 + r
+        # Número del top sobre la esquina de la foto.
+        r = 26
+        cx, cy = x + 6 + r, y + 6 + r
         draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=_BADGE, outline=_CYAN, width=4)
         _text_center(draw, (cx, cy), str(item.position), number_font, (255, 255, 255))
 

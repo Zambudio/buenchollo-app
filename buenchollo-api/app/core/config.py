@@ -248,6 +248,17 @@ class Settings(BaseSettings):
     # lugar de la foto tal cual. false → se publica la foto original como antes.
     deal_card_enabled: bool = True
 
+    # Instagram (feed): los chollos del canal principal de Telegram se publican
+    # también allí (ver app/modules/instagram). Token de larga duración de la
+    # API con inicio de sesión de Instagram; el job lo renueva y guarda en BD.
+    instagram_enabled: bool = False
+    instagram_access_token: str = ""
+    instagram_graph_version: str = "v23.0"
+    # Hashtags fijos, sin «#» (en un .env, «#» empieza un comentario).
+    instagram_hashtags: str = "chollos ofertas tecnologia chollostecnologicos buenchollotech"
+    # URL pública de esta API: Instagram descarga de aquí la imagen de cada post.
+    public_api_url: str = "https://api.buenchollotech.com"
+
     # Dominios extra (CSV) permitidos para enlaces de afiliado manuales del
     # blog, además de los ya soportados por defecto (ver domain/affiliate_domains.py).
     blog_affiliate_domains: str = ""

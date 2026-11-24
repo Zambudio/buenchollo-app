@@ -105,6 +105,16 @@ de los identificadores seudónimos, no descifra datos anteriores.
 | `TELEGRAM_ADMIN_CHANNEL_ID` | ID de chat privado del admin o canal de pruebas; recibe cancelaciones automáticas |
 | `DEAL_CARD_ENABLED` | `true` (por defecto): la imagen de cada chollo es la tarjeta de oferta ([ADR-021](../adr/ADR-021-tarjeta-oferta-telegram.md)); `false`: la foto del producto tal cual |
 
+**Instagram** ([ADR-022](../adr/ADR-022-publicacion-instagram.md), guía [`INSTAGRAM.md`](../guides/INSTAGRAM.md)):
+
+| Variable | Descripción |
+|---|---|
+| `INSTAGRAM_ENABLED` | `false` por defecto. `true`: los chollos del canal principal se publican también en el feed |
+| `INSTAGRAM_ACCESS_TOKEN` | Token de larga duración de la API con inicio de sesión de Instagram; solo siembra la BD (el scheduler lo renueva) |
+| `INSTAGRAM_GRAPH_VERSION` | Versión de la Graph API (`v23.0`) |
+| `INSTAGRAM_HASHTAGS` | Hashtags fijos sin `#`, separados por espacios |
+| `PUBLIC_API_URL` | URL pública de la API (`https://api.buenchollotech.com`): de aquí descarga Instagram la imagen |
+
 El worker se ejecuta en marcas exactas de cinco minutos. Precomprueba las ofertas
 del siguiente intervalo y vuelve a verificarlas en la hora programada antes de
 publicar. Requiere también `DATABASE_URL`, las credenciales de Amazon y los tres
