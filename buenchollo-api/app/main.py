@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse, PlainTextResponse
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
+from app.core.bootstrap import register_subscribers
 from app.core.config import get_settings
 from app.core.exceptions import DomainError
 from app.core.health import router as health_router
@@ -44,6 +45,8 @@ from app.modules.affiliates.api.router import router as affiliates_router
 from app.modules.instagram.api.router import router as instagram_router
 
 settings = get_settings()
+# Conecta los suscriptores del bus de eventos (Instagram, avisos al admin…).
+register_subscribers()
 configure_logging(settings.log_level, fmt=settings.log_format)
 # Sentry debe inicializarse cuanto antes para capturar errores de arranque.
 # Si SENTRY_DSN está vacío, no se inicializa y la app funciona normal.

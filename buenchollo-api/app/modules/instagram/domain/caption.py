@@ -9,8 +9,6 @@ se conservan (en Instagram sí sirven) y se añaden los fijos de la cuenta.
 
 import re
 
-from app.modules.telegram.application.post_generator import LINK_TEXT
-
 MAX_CAPTION = 2200  # límite de Instagram
 MAX_HASHTAGS = 30  # límite de Instagram
 BIO_LINE = "🔗 Enlace al chollo en nuestra bio"
@@ -31,8 +29,8 @@ _HASHTAG_LINE = re.compile(r"^(#\w+\s*)+$")
 
 def _convert(line: str) -> str | None:
     stripped = line.strip()
-    if stripped.startswith("🛒") or stripped == f"🔗 {LINK_TEXT}":
-        return None  # enlaces: van en la bio
+    if stripped.startswith(("🛒", "🔗")):
+        return None  # enlace de compra y a la web: van en la bio
     for emoji, replacement in _EMOJI_MAP.items():
         if stripped.startswith(emoji):
             stripped = f"{replacement} {stripped[len(emoji):].strip()}"

@@ -18,10 +18,12 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import inspect
 import logging
 from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
 
+from app.core import events
 from app.core.config import Settings
 from app.core.jobs import job_session
 from app.modules.instagram.domain.models import POST_ERROR, POST_PUBLISHED, InstagramAccount, InstagramPost
@@ -60,6 +62,7 @@ class InstagramPublisher:
         settings: Settings,
         *,
         client_factory: Callable[..., InstagramGraphClient] = InstagramGraphClient,
+        # Para tests; None → evento AdminAlert.
         notify: Callable[[str], object] | None = None,
     ):
         self.session = session
@@ -211,6 +214,7 @@ class InstagramPublisher:
 
     async def _fail(self, post: InstagramPost) -> None:
         post.status = POST_ERROR
+        post.image = None  # no se volverá a servir: no se guarda para siempre
         title = post.caption.split("\n", 1)[0][:100]
         logger.error("Instagram: publicación %s descartada: %s", post.id, post.last_error)
         await self._notify(
@@ -218,28 +222,25 @@ class InstagramPublisher:
         )
 
     async def _notify(self, text: str) -> None:
-        if self.notify is None:
-            return
+        """Aviso al administrador. Por defecto va al bus (`AdminAlert`): este
+        módulo no sabe por dónde llega (hoy, el canal Admin de Telegram)."""
         try:
-            await asyncio.to_thread(self.notify, text)
+            if self.notify is None:
+                await events.publish(events.AdminAlert(text))
+            else:
+                result = self.notify(text)
+                if inspect.isawaitable(result):
+                    await result
         except Exception:
-            logger.warning("Instagram: no se pudo avisar al canal Admin", exc_info=True)
+            logger.warning("Instagram: no se pudo avisar al administrador", exc_info=True)
 
 
 async def _run(settings: Settings) -> int:
     if not settings.instagram_enabled or not settings.database_url:
         return 0
-    from app.modules.telegram.infrastructure.telegram_bot import TelegramBot
-
-    def notify(text: str) -> None:
-        if settings.telegram_bot_token and settings.telegram_admin_channel_id:
-            TelegramBot(settings.telegram_bot_token).send_admin_notification(
-                text, chat_id=settings.telegram_admin_channel_id
-            )
-
     async with job_session(settings) as session:
         try:
-            return await InstagramPublisher(session, InstagramRepository(session), settings, notify=notify).run()
+            return await InstagramPublisher(session, InstagramRepository(session), settings).run()
         except Exception:
             await session.rollback()
             logger.exception("Fallo global del job de Instagram")
