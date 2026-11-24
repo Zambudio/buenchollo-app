@@ -138,7 +138,8 @@ def test_notify_del_panel_registra_la_publicacion(monkeypatch):
     finally:
         app.dependency_overrides.clear()
     assert resp.status_code == 200, resp.text
-    assert recorded["deal_id"] == "11111111-1111-4111-8111-111111111111" and recorded["text"] == "🍄 Monitor"
+    # Se registra el texto que salió (sin tarjeta, con el precio añadido si faltaba).
+    assert recorded["deal_id"] == "11111111-1111-4111-8111-111111111111" and recorded["text"].startswith("🍄 Monitor")
     assert recorded["kind"] == "main" and recorded["source"] == "panel" and recorded["message_id"] == 9
 
 
@@ -204,6 +205,7 @@ def test_al_listar_se_ofrece_el_texto_con_el_precio_actual_del_chollo():
 
     old = TelegramPostGenerator(ai_service=object()).generate_text(
         title="Monitor", current_price=99.0, previous_price=150.0, discount_pct=34, affiliate_url="https://amzn.to/x",
+        price_in_image=False,  # publicación antigua, con líneas de precio
     )
     pubs = [SimpleNamespace(text=old), SimpleNamespace(text="texto libre")]
     deal = _deal(current_price=Decimal("79.00"), previous_price=Decimal("150"), discount_percentage=47, expires_at=None)

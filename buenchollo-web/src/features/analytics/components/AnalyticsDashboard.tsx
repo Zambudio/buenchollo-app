@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 import {
   ArrowRight,
+  Camera,
   Eye,
   FileText,
   Globe2,
@@ -38,6 +39,7 @@ const chartConfig = {
 const SOURCE_META = {
   telegram: { label: "Telegram", icon: Send },
   whatsapp: { label: "WhatsApp", icon: MessageCircle },
+  instagram: { label: "Instagram", icon: Camera },
   organic: { label: "Búsqueda orgánica", icon: Search },
   referral: { label: "Otras webs", icon: Globe2 },
   direct: { label: "Directo / desconocido", icon: MousePointerClick },

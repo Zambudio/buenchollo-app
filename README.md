@@ -84,7 +84,7 @@ Motor de *matching* de alta velocidad en backend. Notifica a usuarios según cri
 <td width="50%">
 
 ### ✈️ Distribución Multicanal a Telegram
-Integración nativa con **Telegram Bot API**. Permite previsualizar, publicar o programar el mensaje; el enlace general pasa por **`/telegram`** para medir su tráfico sin alterar el enlace afiliado de compra. Cada chollo sale con una **tarjeta de oferta** generada con Pillow (foto, descuento, logo de la tienda, precio y ahorro) y los domingos se publica el resumen **«Los chollos de la semana»** con un collage de los 10 mejores.
+Integración nativa con **Telegram Bot API**. Permite previsualizar, publicar o programar el mensaje; el enlace general pasa por **`/telegram`** para medir su tráfico sin alterar el enlace afiliado de compra. Cada chollo sale con una **tarjeta de oferta** generada con Pillow (foto, descuento, logo de la tienda, precio y ahorro) y los domingos se publica el resumen **«Los chollos de la semana»** con un collage de los 10 mejores (1200 × 800, el mismo formato que la tarjeta). El texto del post no repite precio ni ahorro: van en la tarjeta. Los chollos del canal principal se publican también en el **feed de Instagram** (misma tarjeta, texto con «enlace en la bio»; [ADR-022](docs/adr/ADR-022-publicacion-instagram.md), guía [`INSTAGRAM.md`](docs/guides/INSTAGRAM.md)), apagado hasta configurar el token.
 
 </td>
 </tr>
@@ -196,7 +196,7 @@ buenchollo-api/app/modules/<dominio>/
 
 ## 📋 ADRs (Architecture Decision Records)
 
-El proyecto cuenta con **19 ADRs formalizados** que documentan el contexto y la justificación de cada hito técnico:
+El proyecto cuenta con **22 ADRs formalizados** que documentan el contexto y la justificación de cada hito técnico:
 
 | # | Título | Decisión | Estado |
 |---|---|---|---|
@@ -219,6 +219,9 @@ El proyecto cuenta con **19 ADRs formalizados** que documentan el contexto y la 
 | [ADR-017](docs/adr/ADR-017-catalogo-permanente.md) | Catálogo permanente | Los chollos ya no se borran; productos, listings y ofertas | ✅ Aceptado |
 | [ADR-018](docs/adr/ADR-018-tops-comunitarios-productos.md) | Tops comunitarios | Votos de producto y clasificación por categoría | ✅ Aceptado |
 | [ADR-019](docs/adr/ADR-019-redes-afiliacion-awin-tradedoubler.md) | Redes de afiliación | Awin y Tradedoubler en el editor de chollos | ✅ Aceptado |
+| [ADR-020](docs/adr/ADR-020-historico-de-precios.md) | Histórico de precios | Histórico propio para todas las tiendas | ✅ Aceptado |
+| [ADR-021](docs/adr/ADR-021-tarjeta-oferta-telegram.md) | Tarjeta de oferta en Telegram | Imagen de cada chollo generada con Pillow | ✅ Aceptado |
+| [ADR-022](docs/adr/ADR-022-publicacion-instagram.md) | Publicación en Instagram | Los chollos del canal salen también en el feed (API oficial) | ✅ Aceptado |
 
 ---
 
@@ -230,7 +233,7 @@ El proyecto cuenta con **19 ADRs formalizados** que documentan el contexto y la 
 | **Backend** | Python 3.11 · FastAPI 0.136 · SQLAlchemy 2.0 Async · asyncpg · Pydantic v2 · SlowAPI | API Gateway asíncrono de alta velocidad |
 | **Persistencia & Auth** | PostgreSQL (Supabase Managed) · Supabase Auth (Google OAuth) · Supabase Storage | Base de datos relacional con RLS, autenticación y storage |
 | **Edge & Cloud** | Cloudflare Workers · Cloudflare Tunnel · Cloudflare WAF | Despliegue global en Edge con túnel Zero-Trust hacia el NAS |
-| **Integraciones** | Amazon Creators API · Keepa API · OpenAI GPT-4o / OmniRoute · Telegram Bot API · Sentry SaaS | Extracción de datos, IA, notificaciones push y telemetría |
+| **Integraciones** | Amazon Creators API · Keepa API · OpenAI GPT-4o / OmniRoute · Telegram Bot API · Instagram Graph API · Sentry SaaS | Extracción de datos, IA, notificaciones push y telemetría |
 | **DevOps & QA** | GitHub Actions · Docker & Compose · Husky · Vitest · Playwright · Alembic | Pipeline CI/CD automatizado, tests y migraciones |
 
 ---

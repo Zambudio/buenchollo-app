@@ -18,6 +18,7 @@ import { Route as CategoriasRouteImport } from './routes/categorias'
 import { Route as ContactoRouteImport } from './routes/contacto'
 import { Route as ExplorarRouteImport } from './routes/explorar'
 import { Route as FavoritosRouteImport } from './routes/favoritos'
+import { Route as InstagramRouteImport } from './routes/instagram'
 import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MisChollosRouteImport } from './routes/mis-chollos'
@@ -98,6 +99,11 @@ const ExplorarRoute = ExplorarRouteImport.update({
 const FavoritosRoute = FavoritosRouteImport.update({
   id: '/favoritos',
   path: '/favoritos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InstagramRoute = InstagramRouteImport.update({
+  id: '/instagram',
+  path: '/instagram',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
@@ -291,6 +297,7 @@ export interface FileRoutesByFullPath {
   '/contacto': typeof ContactoRoute
   '/explorar': typeof ExplorarRoute
   '/favoritos': typeof FavoritosRoute
+  '/instagram': typeof InstagramRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/login': typeof LoginRoute
   '/mis-chollos': typeof MisChollosRoute
@@ -337,6 +344,7 @@ export interface FileRoutesByTo {
   '/contacto': typeof ContactoRoute
   '/explorar': typeof ExplorarRoute
   '/favoritos': typeof FavoritosRoute
+  '/instagram': typeof InstagramRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/login': typeof LoginRoute
   '/mis-chollos': typeof MisChollosRoute
@@ -385,6 +393,7 @@ export interface FileRoutesById {
   '/contacto': typeof ContactoRoute
   '/explorar': typeof ExplorarRoute
   '/favoritos': typeof FavoritosRoute
+  '/instagram': typeof InstagramRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/login': typeof LoginRoute
   '/mis-chollos': typeof MisChollosRoute
@@ -434,6 +443,7 @@ export interface FileRouteTypes {
     | '/contacto'
     | '/explorar'
     | '/favoritos'
+    | '/instagram'
     | '/llms.txt'
     | '/login'
     | '/mis-chollos'
@@ -480,6 +490,7 @@ export interface FileRouteTypes {
     | '/contacto'
     | '/explorar'
     | '/favoritos'
+    | '/instagram'
     | '/llms.txt'
     | '/login'
     | '/mis-chollos'
@@ -527,6 +538,7 @@ export interface FileRouteTypes {
     | '/contacto'
     | '/explorar'
     | '/favoritos'
+    | '/instagram'
     | '/llms.txt'
     | '/login'
     | '/mis-chollos'
@@ -575,6 +587,7 @@ export interface RootRouteChildren {
   ContactoRoute: typeof ContactoRoute
   ExplorarRoute: typeof ExplorarRoute
   FavoritosRoute: typeof FavoritosRoute
+  InstagramRoute: typeof InstagramRoute
   LlmsDottxtRoute: typeof LlmsDottxtRoute
   LoginRoute: typeof LoginRoute
   MisChollosRoute: typeof MisChollosRoute
@@ -661,6 +674,13 @@ declare module '@tanstack/react-router' {
       path: '/favoritos'
       fullPath: '/favoritos'
       preLoaderRoute: typeof FavoritosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/instagram': {
+      id: '/instagram'
+      path: '/instagram'
+      fullPath: '/instagram'
+      preLoaderRoute: typeof InstagramRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/llms.txt': {
@@ -974,6 +994,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactoRoute: ContactoRoute,
   ExplorarRoute: ExplorarRoute,
   FavoritosRoute: FavoritosRoute,
+  InstagramRoute: InstagramRoute,
   LlmsDottxtRoute: LlmsDottxtRoute,
   LoginRoute: LoginRoute,
   MisChollosRoute: MisChollosRoute,

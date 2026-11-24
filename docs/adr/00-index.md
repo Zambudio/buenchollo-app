@@ -140,6 +140,12 @@
   <td>✅ Aceptado</td>
   <td>2026-11-23</td>
 </tr>
+<tr>
+  <td><a href="ADR-022-publicacion-instagram.md">022</a></td>
+  <td>📸 Publicación automática de los chollos en el feed de Instagram</td>
+  <td>✅ Aceptado</td>
+  <td>2026-11-24</td>
+</tr>
 </tbody>
 </table>
 
@@ -152,7 +158,7 @@
 
 | Bloque | ADRs |
 |---|---|
-| 📐 **Arquitectura de Software** | [001](ADR-001-monolito-modular-fastapi.md) · [002](ADR-002-migracion-baas-a-api-gateway.md) · [004](ADR-004-persistencia-sqlalchemy-pgbouncer.md) · [007](ADR-007-di-fastapi-depends.md) · [011](ADR-011-blog-tiptap-editor.md) · [012](ADR-012-motor-tareas-programadas.md) · [013](ADR-013-motor-ia-unificado-omniroute-modelos-gratuitos.md) · [014](ADR-014-analitica-first-party-atribucion-sesiones.md) · [016](ADR-016-propuestas-comunidad-y-afiliados.md) · [017](ADR-017-catalogo-permanente.md) · [018](ADR-018-tops-comunitarios-productos.md) · [019](ADR-019-redes-afiliacion-awin-tradedoubler.md) · [020](ADR-020-historico-de-precios.md) · [021](ADR-021-tarjeta-oferta-telegram.md) |
+| 📐 **Arquitectura de Software** | [001](ADR-001-monolito-modular-fastapi.md) · [002](ADR-002-migracion-baas-a-api-gateway.md) · [004](ADR-004-persistencia-sqlalchemy-pgbouncer.md) · [007](ADR-007-di-fastapi-depends.md) · [011](ADR-011-blog-tiptap-editor.md) · [012](ADR-012-motor-tareas-programadas.md) · [013](ADR-013-motor-ia-unificado-omniroute-modelos-gratuitos.md) · [014](ADR-014-analitica-first-party-atribucion-sesiones.md) · [016](ADR-016-propuestas-comunidad-y-afiliados.md) · [017](ADR-017-catalogo-permanente.md) · [018](ADR-018-tops-comunitarios-productos.md) · [019](ADR-019-redes-afiliacion-awin-tradedoubler.md) · [020](ADR-020-historico-de-precios.md) · [021](ADR-021-tarjeta-oferta-telegram.md) · [022](ADR-022-publicacion-instagram.md) |
 | 🧪 **Calidad del Software** | [008](ADR-008-estrategia-calidad-testing.md) |
 | 🛡️ **Seguridad** | [003](ADR-003-autenticacion-supabase-jwt.md) · [005](ADR-005-validacion-doble-frontera.md) · [006](ADR-006-rls-service-role.md) · [010](ADR-010-validacion-jwt-local.md) · [015](ADR-015-ingesta-imagenes-backend.md) · [016](ADR-016-propuestas-comunidad-y-afiliados.md) |
 | 🤖 **Desarrollo con IA** | [009](ADR-009-uso-de-ia-en-desarrollo.md) · [013](ADR-013-motor-ia-unificado-omniroute-modelos-gratuitos.md) |

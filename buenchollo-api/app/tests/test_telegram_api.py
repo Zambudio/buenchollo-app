@@ -157,7 +157,8 @@ def test_generate_con_ai_copy_usa_el_texto_de_la_ia(client, monkeypatch):
     assert body["ai_copy"] == "Gimbal de bolsillo con sensor de 1 pulgada."
     assert "✏️Gimbal de bolsillo con sensor de 1 pulgada." in body["text"]
     assert "Captura cada momento" not in body["text"]
-    assert "269,00 €" in body["text"]
+    # Hay rebaja: el precio va en la tarjeta de oferta, no en el texto.
+    assert "💶" not in body["text"]
     assert calls == {"title": "DJI Osmo Pocket 3", "details": "Sensor 1''", "provider": "openai"}
 
 
@@ -248,7 +249,7 @@ def test_notify_del_panel_envia_tambien_la_version_whatsapp_al_canal_admin(clien
     )
 
     assert r.status_code == 200, r.text
-    assert r.json() == {"ok": True, "whatsapp_sent": True}
+    assert r.json() == {"ok": True, "whatsapp_sent": True, "instagram_queued": False}
     telegram, whatsapp = (call.kwargs for call in fake_bot.send_preformatted.call_args_list)
     assert telegram["chat_id"] == "-100main" and telegram["entities"]
     assert whatsapp == {
@@ -310,3 +311,50 @@ def test_generate_sin_programa_no_lleva_aviso(client, monkeypatch):
     assert r.status_code == 200, r.text
     assert "Texto viejo" not in r.json()["text"]
     assert "ℹ️" not in r.json()["text"]
+
+
+
+def test_generate_sin_rebaja_mantiene_el_precio_en_el_texto(client, monkeypatch):
+    # Sin precio anterior no hay tarjeta: el precio sigue en el texto.
+    _override_settings()
+    _patch_generator(monkeypatch, None)
+
+    r = client.post("/v1/telegram/generate", json={**_GENERATE_BASE, "previous_price": None})
+
+    assert r.status_code == 200, r.text
+    assert "💶 Precio: 269,00 €" in r.json()["text"]
+
+
+# ── Instagram: el chollo del canal principal se encola para el feed ──────────
+
+@pytest.mark.parametrize("channel, queued", [("-100main", True), ("-100admin", False)])
+def test_notify_encola_instagram_solo_en_el_canal_principal(client, monkeypatch, channel, queued):
+    limiter.reset()
+    _override_settings(
+        telegram_bot_token="tok", telegram_main_channel_id="-100main", telegram_admin_channel_id="-100admin",
+        instagram_enabled=True,
+    )
+    fake_bot = MagicMock()
+    fake_bot.send_preformatted.return_value = True
+    fake_bot.download_image.return_value = None
+    router = "app.modules.telegram.api.router"
+    queue = AsyncMock(return_value=True)
+    TEXT = "🍄 Monitor\n\n🛒 https://amzn.to/x"
+    monkeypatch.setattr(f"{router}.TelegramBot", lambda token: fake_bot)
+    monkeypatch.setattr(f"{router}.record_safely", AsyncMock(return_value=True))
+    monkeypatch.setattr(f"{router}.audit_log", AsyncMock())
+    monkeypatch.setattr(f"{router}.queue_instagram_post", queue)
+
+    r = client.post(
+        "/v1/telegram/notify",
+        json={"text": TEXT, "image_url": "https://img/x.jpg", "channel_id": channel},
+    )
+
+    assert r.status_code == 200, r.text
+    assert r.json()["instagram_queued"] is queued
+    if queued:
+        kwargs = queue.await_args.kwargs
+        assert kwargs["telegram_text"] == TEXT
+        assert kwargs["image_url"] == "https://img/x.jpg" and kwargs["card"] is None
+    else:
+        queue.assert_not_awaited()

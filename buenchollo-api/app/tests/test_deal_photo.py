@@ -51,6 +51,10 @@ def _data():
     return DealCardData(99, 159, "Amazon")
 
 
+def _no_entities(text):
+    return []
+
+
 # ── Datos ────────────────────────────────────────────────────────────────────
 
 def test_card_data_converts_decimals_and_strips_store():
@@ -111,26 +115,26 @@ def test_render_card_disabled_by_setting(monkeypatch):
 
 def test_send_with_card():
     bot = FakeBot()
-    assert send_deal_post(bot, text="post", entities=[], image_url="u", chat_id="c", card=b"T")
+    assert send_deal_post(bot, text="post", entities_for=_no_entities, image_url="u", chat_id="c", card=b"T")
     assert bot.calls == [("bytes", b"T", "post")]
 
 
 def test_send_without_card_uses_the_original_photo():
     bot = FakeBot()
-    assert send_deal_post(bot, text="post", entities=[], image_url="u", chat_id="c", card=None)
+    assert send_deal_post(bot, text="post", entities_for=_no_entities, image_url="u", chat_id="c", card=None)
     assert bot.calls == [("url", "u", "post")]
 
 
 def test_rejected_card_falls_back_to_the_original_photo():
     bot = FakeBot(photo_ok=False)
-    assert send_deal_post(bot, text="post", entities=[], image_url="u", chat_id="c", card=b"T")
+    assert send_deal_post(bot, text="post", entities_for=_no_entities, image_url="u", chat_id="c", card=b"T")
     assert [c[0] for c in bot.calls] == ["bytes", "url"]
 
 
 def test_unknown_delivery_is_not_resent():
     # Sin respuesta de Telegram la foto pudo llegar: no se duplica el post.
     bot = FakeBot(photo_ok=False, unknown=True)
-    assert send_deal_post(bot, text="post", entities=[], image_url="u", chat_id="c", card=b"T")
+    assert send_deal_post(bot, text="post", entities_for=_no_entities, image_url="u", chat_id="c", card=b"T")
     assert [c[0] for c in bot.calls] == ["bytes"]
 
 
@@ -236,3 +240,86 @@ def test_notify_card_uses_only_the_panel_prices():
     assert _notify_card_data(payload, deal).discount == 19
     # Panel antiguo sin precios: los del chollo, con su descuento.
     assert _notify_card_data(TelegramNotifyRequest(text="x"), deal) == DealCardData(80.0, 100.0, "Amazon", 20)
+
+
+
+# ── Líneas de precio del texto (las muestra la tarjeta) ─────────────────────
+
+POST = (
+    "🍄 Webcam UGREEN\n\n"
+    "💶 Precio: 18,51 € (antes 29,99 €)\n💰 Ahorro: 11,48 € | -38 %\n\n"
+    "🛒 https://amzn.to/x\n\n✏️ Buena webcam\n\n🔗 Todos los chollos en nuestra web\n\n"
+)
+POST_SIN_PRECIO = "🍄 Webcam UGREEN\n\n🛒 https://amzn.to/x\n\n✏️ Buena webcam\n\n🔗 Todos los chollos en nuestra web\n\n"
+
+
+def test_with_card_the_price_lines_are_removed():
+    bot = FakeBot()
+    sent = send_deal_post(bot, text=POST, entities_for=_no_entities, image_url="u", chat_id="c",
+                          card=b"T", data=DealCardData(18.51, 29.99, "Amazon", 38))
+    assert sent == POST_SIN_PRECIO
+    assert bot.calls == [("bytes", b"T", POST_SIN_PRECIO)]
+
+
+def test_without_card_a_text_without_price_gets_it_back():
+    bot = FakeBot()
+    sent = send_deal_post(bot, text=POST_SIN_PRECIO, entities_for=_no_entities, image_url="u", chat_id="c",
+                          card=None, data=DealCardData(18.51, 29.99, "Amazon", 38))
+    assert sent == POST
+    assert bot.calls == [("url", "u", POST)]
+
+
+def test_without_card_a_text_with_price_is_kept():
+    bot = FakeBot()
+    sent = send_deal_post(bot, text=POST, entities_for=_no_entities, image_url="u", chat_id="c",
+                          card=None, data=DealCardData(18.51, 29.99, "Amazon", 38))
+    assert sent == POST
+
+
+def test_rejected_card_sends_the_original_photo_with_the_price():
+    bot = FakeBot(photo_ok=False)
+    sent = send_deal_post(bot, text=POST_SIN_PRECIO, entities_for=_no_entities, image_url="u", chat_id="c",
+                          card=b"T", data=DealCardData(18.51, 29.99, "Amazon", 38))
+    assert sent == POST
+    assert [c[0] for c in bot.calls] == ["bytes", "url"]
+
+
+def test_entities_are_built_for_the_text_that_is_sent():
+    seen = []
+    bot = FakeBot()
+    send_deal_post(bot, text=POST, entities_for=lambda t: seen.append(t) or [], image_url="u", chat_id="c",
+                   card=b"T", data=DealCardData(18.51, 29.99, "Amazon", 38))
+    assert seen == [POST_SIN_PRECIO]
+
+
+def test_failed_post_returns_none():
+    class Down(FakeBot):
+        def send_preformatted(self, text, entities, image_url=None, chat_id=None):
+            return False
+
+    assert send_deal_post(Down(), text=POST, entities_for=_no_entities, image_url="u", chat_id="c", card=None) is None
+
+
+def test_template_omits_the_price_only_when_the_card_shows_it(monkeypatch):
+    from app.modules.telegram.application.post_generator import TelegramPostGenerator
+
+    gen = TelegramPostGenerator(ai_service=object())
+    with_rebate = gen.generate_text(title="W", current_price=18.51, previous_price=29.99, affiliate_url="u")
+    no_rebate = gen.generate_text(title="W", current_price=18.51, previous_price=None, affiliate_url="u")
+    assert "💶" not in with_rebate and "💰" not in with_rebate
+    assert "💶 Precio: 18,51 €" in no_rebate
+    monkeypatch.setenv("DEAL_CARD_ENABLED", "false")
+    get_settings.cache_clear()
+    try:
+        assert "💶 Precio: 18,51 € (antes 29,99 €)" in gen.generate_text(
+            title="W", current_price=18.51, previous_price=29.99, affiliate_url="u"
+        )
+    finally:
+        get_settings.cache_clear()
+
+
+def test_whatsapp_copy_with_card_drops_its_price_lines():
+    bot = FakeBot()
+    wa = "🔥 *Webcam*\n\n🏷️ *Precio: 18,51 €*\n💸 *Ahorro: 11,48 €*\n\n👉 https://amzn.to/x"
+    send_whatsapp_copy(bot, chat_id="admin", telegram_text="x", whatsapp_text=wa, image_bytes=b"T")
+    assert bot.calls[0][2] == "🔥 *Webcam*\n\n👉 https://amzn.to/x"

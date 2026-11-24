@@ -7,10 +7,21 @@ publicación de Telegram, que ya está enviada.
 """
 
 import logging
+import re
 
 from app.modules.telegram.application.whatsapp_formatter import to_whatsapp_text
 
 logger = logging.getLogger(__name__)
+
+_WHATSAPP_PRICE_EMOJIS = ("🏷️", "🏷", "💸", "💶", "💰")
+
+
+def _strip_whatsapp_price_lines(text: str) -> str:
+    kept = "".join(
+        line for line in text.splitlines(keepends=True)
+        if not line.lstrip("* ").startswith(_WHATSAPP_PRICE_EMOJIS)
+    )
+    return re.sub(r"\n{3,}", "\n\n", kept)
 
 
 def send_whatsapp_copy(
@@ -33,7 +44,9 @@ def send_whatsapp_copy(
         if not text:
             return False
         if image_bytes:
-            if bot.send_photo_bytes(image_bytes, chat_id=chat_id, caption=text):
+            # El precio y el ahorro ya van en la tarjeta (🏷️/💸 en WhatsApp).
+            card_text = _strip_whatsapp_price_lines(text)
+            if bot.send_photo_bytes(image_bytes, chat_id=chat_id, caption=card_text):
                 return True
             if getattr(bot, "last_delivery_unknown", False):
                 return True  # pudo llegar: no se duplica en el canal Admin

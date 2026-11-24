@@ -57,6 +57,7 @@ app/
     ├── catalog/           # catálogo permanente: products + product_listings, reglas de oferta, tops y votos (ADR-017, ADR-018)
     ├── submissions/ · affiliates/  # propuestas de usuarios; redes Awin/Tradedoubler (ADR-016, ADR-019)
     ├── telegram/          # publicación al canal, formato emoji premium, hashtags IA
+    ├── instagram/         # publicación en el feed (cola + job del scheduler), token renovado solo (ADR-022)
     ├── alerts/ · notifications/ · emails/ · comments/ · blog/ · analytics/
     ├── scheduled_deals/ · scheduled_tasks/
     ├── categories/
@@ -84,7 +85,8 @@ usa un clon local.
 - **API** FastAPI en el NAS Synology, expuesta en `https://api.buenchollotech.com` vía **Cloudflare Tunnel** (sin abrir puertos, sin DDNS). `APP_ENV=production`, CORS cerrado al dominio.
 - **Cloudflare endurecido**: TLS Full (strict) + HSTS, redirect `www`→raíz, WAF + rate limiting + Bot Fight Mode. Detalle y bitácora en [`docs/guides/Cloudflare.md`](docs/guides/Cloudflare.md).
 - Login Google (Supabase) OK · Panel admin funcionando · CI de `main` en verde · flujo `main`/`develop` operativo.
-- **Awin / Tradedoubler** en producción: **Coolmod (Awin) activo** desde el 2026-11-21 (feed sincronizado, autocompletado con IA al importar); Samsung ES aceptado sin habilitar, Fnac rechazado y el resto pendiente. Alembic `20261122120000`. Para activar otra tienda cuando la aprueben: [`docs/guides/AFFILIATE-ACTIVATION-RUNBOOK.md`](docs/guides/AFFILIATE-ACTIVATION-RUNBOOK.md).
+- **Telegram e Instagram** (2026-11-24): cada chollo sale con la tarjeta de oferta (ADR-021) y el texto ya no repite precio ni ahorro (#112). Publicación automática en el feed de Instagram (ADR-022, #113), apagada hasta configurar `INSTAGRAM_ENABLED` + `INSTAGRAM_ACCESS_TOKEN`; guía [`docs/guides/INSTAGRAM.md`](docs/guides/INSTAGRAM.md). Collage semanal en 1200 × 800. Alembic `20261124130000`.
+- **Awin / Tradedoubler** en producción: **Coolmod (Awin) activo** desde el 2026-11-21 (feed sincronizado, autocompletado con IA al importar); Samsung ES aceptado sin habilitar, Fnac rechazado y el resto pendiente. Para activar otra tienda cuando la aprueben: [`docs/guides/AFFILIATE-ACTIVATION-RUNBOOK.md`](docs/guides/AFFILIATE-ACTIVATION-RUNBOOK.md).
 
 ---
 

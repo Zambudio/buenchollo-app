@@ -22,12 +22,18 @@ def reprice_publication_text(
     expires_at: datetime | None,
     now: datetime,
 ) -> str | None:
-    """Devuelve el texto corregido, o None si no tiene la línea de precio del
-    formato estándar (el llamante genera entonces una publicación nueva)."""
+    """Devuelve el texto corregido, o None si no tiene el formato estándar (el
+    llamante genera entonces una publicación nueva).
+
+    Sin línea de precio (desde 2026-11-23 el precio va en la tarjeta de oferta)
+    solo se corrige la fecha de fin; si el post sale sin tarjeta, `deal_photo`
+    añade el precio actual."""
     lines = text.split("\n")
     index = next((i for i, line in enumerate(lines) if line.startswith(_PRICE)), None)
     if index is None:
-        return None
+        if not lines or not lines[0].startswith("🍄"):
+            return None
+        return _fix_ends(lines, expires_at, now)
 
     price_text = f"{_format_price_es(float(price))} €"
     if previous_price:
@@ -41,6 +47,10 @@ def reprice_publication_text(
         pct = f" | -{discount_pct} %" if discount_pct else ""
         lines.insert(index + 1, f"{_SAVINGS} Ahorro: {_format_price_es(float(previous_price - price))} €{pct}")
 
+    return _fix_ends(lines, expires_at, now)
+
+
+def _fix_ends(lines: list[str], expires_at: datetime | None, now: datetime) -> str:
     ends = next((i for i, line in enumerate(lines) if line.startswith(_ENDS)), None)
     if ends is not None:
         if expires_at is not None and expires_at > now:

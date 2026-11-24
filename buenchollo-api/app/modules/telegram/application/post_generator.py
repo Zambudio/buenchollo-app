@@ -101,6 +101,58 @@ from app.modules.ai.infrastructure.llm_client import OpenAICompatibleLLMClient
 from app.modules.ai.infrastructure.telegram_ai_service import TelegramAIService
 
 
+# ── Líneas de precio ──────────────────────────────────────────────────────────
+
+PRICE_EMOJIS = ("💶", "💰")
+
+
+def card_shows_price(current_price: float | None, previous_price: float | None) -> bool:
+    """La tarjeta de oferta (imagen) muestra el precio: hay rebaja y está activa."""
+    from app.core.config import get_settings
+
+    return bool(
+        get_settings().deal_card_enabled
+        and current_price is not None
+        and previous_price is not None
+        and float(previous_price) > float(current_price)
+    )
+
+
+def price_lines(current_price: float, previous_price: float | None, discount_pct: int | None) -> str:
+    """Bloque «💶 Precio … / 💰 Ahorro …» del post, terminado en línea en blanco."""
+    price_str = f"{_format_price_es(float(current_price))} €"
+    if previous_price:
+        block = f"💶 Precio: {price_str} (antes {_format_price_es(float(previous_price))} €)\n"
+    else:
+        block = f"💶 Precio: {price_str}\n"
+    if previous_price and float(previous_price) > float(current_price):
+        savings = float(previous_price) - float(current_price)
+        pct_str = f" | -{discount_pct} %" if discount_pct else ""
+        block += f"💰 Ahorro: {_format_price_es(savings)} €{pct_str}\n"
+    return block + "\n"
+
+
+_PRICE_LINE_RE = re.compile(r"^[ \t]*(?:💶|💰).*(?:\n|$)", re.M)
+
+
+def strip_price_lines(text: str) -> str:
+    """Quita las líneas 💶/💰 (las muestra la tarjeta) sin dejar huecos dobles."""
+    return re.sub(r"\n{3,}", "\n\n", _PRICE_LINE_RE.sub("", text))
+
+
+def with_price_lines(text: str, current_price: float, previous_price: float | None,
+                     discount_pct: int | None) -> str:
+    """Añade el bloque de precio tras el título si el texto no lo tiene (el post
+    sale sin tarjeta y no puede quedarse sin precio)."""
+    if any(line.lstrip().startswith("💶") for line in text.split("\n")):
+        return text
+    block = price_lines(current_price, previous_price, discount_pct)
+    head, sep, rest = text.partition("\n\n")
+    if not sep:
+        return f"{text.rstrip()}\n\n{block}"
+    return f"{head}\n\n{block}{rest}"
+
+
 class TelegramPostGenerator:
     """Formatea el texto de un chollo para Telegram y sugiere categorías con el motor de IA."""
 
@@ -139,23 +191,19 @@ class TelegramPostGenerator:
         expires_at: str | None = None,
         shipping_info: str | None = None,
         notice: str | None = None,
+        price_in_image: bool | None = None,
     ) -> str:
-        """Construye el texto del post con emojis en el formato estándar de BuenChollo."""
-        price_str = f"{_format_price_es(current_price)} €"
+        """Construye el texto del post con emojis en el formato estándar de BuenChollo.
 
+        Las líneas de precio y ahorro (💶/💰) no se escriben cuando la imagen del
+        post va a ser la tarjeta de oferta, que ya las muestra
+        (`price_in_image`; por defecto, si hay rebaja y la tarjeta está activa).
+        Si al publicar la tarjeta no sale, `deal_photo` las vuelve a añadir."""
         msg = f"🍄 {title}\n\n"
-
-        if previous_price:
-            msg += f"💶 Precio: {price_str} (antes {_format_price_es(previous_price)} €)\n"
-        else:
-            msg += f"💶 Precio: {price_str}\n"
-
-        if previous_price and previous_price > current_price:
-            savings = previous_price - current_price
-            pct_str = f" | -{discount_pct} %" if discount_pct else ""
-            msg += f"💰 Ahorro: {_format_price_es(savings)} €{pct_str}\n\n"
-        else:
-            msg += "\n"
+        if price_in_image is None:
+            price_in_image = card_shows_price(current_price, previous_price)
+        if not price_in_image:
+            msg += price_lines(current_price, previous_price, discount_pct)
 
         if shipping_info and shipping_info.strip():
             msg += f"🚚 {shipping_info.strip()}\n\n"
