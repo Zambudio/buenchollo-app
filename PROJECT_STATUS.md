@@ -1,7 +1,13 @@
 # PROJECT_STATUS — BuenCholloTech
-*Actualización de producción: 2026-11-23 — `main` con la tarjeta de oferta en todas las publicaciones de Telegram (ADR-021) sobre el collage del resumen semanal 1280×1152 (#110). API y scheduler reiniciados en el NAS; sin migraciones nuevas (Alembic `20261122120000`).*
+*Actualización de producción: 2026-11-24 — `main` con la publicación automática en Instagram (ADR-022, apagada hasta configurar el token) y el collage semanal en 1200×800. Alembic `20261124130000`.*
 
 > Bitácora cronológica inversa. Estado operativo vigente: [`docs/project/11-current-state.md`](docs/project/11-current-state.md); pendientes abiertos: [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md).
+
+## 2026-11-24 · Instagram automático y collage semanal en 3:2
+
+- **Instagram** ([ADR-022](docs/adr/ADR-022-publicacion-instagram.md), guía [`INSTAGRAM.md`](docs/guides/INSTAGRAM.md)): los chollos del canal principal de Telegram se publican también en el feed (misma tarjeta, texto sin enlaces con «enlace en la bio» y hashtags). Cola en BD (`instagram_posts`) y job del scheduler cada 2 min; la imagen la sirve la propia API mientras está pendiente; reintentos, aviso al canal Admin y renovación semanal del token. Apagado hasta configurar el token (`INSTAGRAM_ENABLED`). Migraciones `20261124120000` y `20261124130000`.
+- **Medición**: `/instagram` redirige a la portada con `utm_source=instagram` (enlace de la bio) y la analítica tiene la fuente «Instagram».
+- **Collage del resumen semanal**: 1200 × 800, el mismo formato que la tarjeta de cada chollo, para que todo el canal tenga el mismo ancho (5 columnas × 2 filas de tarjetas verticales).
 
 ## 2026-11-23 · Posts sin líneas de precio (van en la tarjeta)
 

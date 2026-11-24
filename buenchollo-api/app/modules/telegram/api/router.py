@@ -32,6 +32,7 @@ from app.modules.telegram.domain.exceptions import (
 )
 from app.modules.telegram.infrastructure.category_repository import JsonCategoryRepository
 from app.modules.telegram.infrastructure.telegram_bot import TelegramBot
+from app.modules.instagram.application.queue import is_main_channel, queue_instagram_post
 from app.modules.telegram.api.schemas import (
     TelegramCategoryAddRequest,
     TelegramCategoriesResponse,
@@ -264,6 +265,7 @@ async def notify_deal(
     # Flujo panel: texto pre-formateado con custom entities
     card: bytes | None = None
     sent_text: str | None = None
+    deal = None
     if payload.text:
         generator = TelegramPostGenerator()
         deal = await _saved_deal(db, payload.deal_id)
@@ -337,15 +339,33 @@ async def notify_deal(
             image_bytes=card,
         )
 
+    # Instagram: mismo chollo, misma imagen y texto adaptado (solo canal principal).
+    instagram_queued = False
+    if payload.text and is_main_channel(channel_id, settings):
+        instagram_queued = await queue_instagram_post(
+            db,
+            settings,
+            deal_id=getattr(deal, "id", None),
+            telegram_text=sent_text or payload.text,
+            card=card,
+            image_url=payload.image_url,
+            download=bot.download_image,
+        )
+
     await audit_log(
         db,
         user_id=str(current_user.id),
         action="telegram.notify",
         target_type="channel",
         target_id=channel_id,
-        payload={"title": payload.title, "has_text": bool(payload.text), "whatsapp_sent": whatsapp_sent},
+        payload={
+            "title": payload.title,
+            "has_text": bool(payload.text),
+            "whatsapp_sent": whatsapp_sent,
+            "instagram_queued": instagram_queued,
+        },
     )
-    return {"ok": True, "whatsapp_sent": whatsapp_sent}
+    return {"ok": True, "whatsapp_sent": whatsapp_sent, "instagram_queued": instagram_queued}
 
 
 @router.get("/publications", response_model=list[TelegramPublicationResponse])

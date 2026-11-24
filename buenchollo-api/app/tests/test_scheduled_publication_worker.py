@@ -456,3 +456,30 @@ async def test_si_telegram_rechaza_la_tarjeta_se_publica_con_la_foto_original():
 
     assert scheduled.status == ScheduledDealStatus.PUBLISHED
     assert len(bot.posts) == 1 and bot.posts[0]["image_url"] == "https://images.test/product.jpg"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("channel, queued", [(None, True), ("-100-destination", False)])
+async def test_encola_instagram_solo_si_sale_en_el_canal_principal(monkeypatch, channel, queued):
+    from unittest.mock import AsyncMock
+
+    from app.core.config import Settings
+    from app.modules.scheduled_deals.application import publication_worker as pw
+
+    queue = AsyncMock(return_value=True)
+    monkeypatch.setattr(pw, "queue_instagram_post", queue)
+    scheduled = scheduled_deal()
+    scheduled.telegram_channel_id = channel
+    scheduled.deal_id = "deal-1"
+    worker, bot = worker_for(scheduled, ProductPreview(current_price=100.0, in_stock=True))
+    worker.settings = Settings(instagram_enabled=True, telegram_enabled=True, telegram_main_channel_id="-100-main")
+
+    await worker.process_due(datetime.now(timezone.utc))
+
+    assert scheduled.status == ScheduledDealStatus.PUBLISHED
+    assert queue.await_count == (1 if queued else 0)
+    if queued:
+        kwargs = queue.await_args.kwargs
+        assert kwargs["deal_id"] == "deal-1"
+        assert kwargs["telegram_text"] == bot.posts[0]["text"]
+        assert kwargs["image_url"] == "https://images.test/product.jpg"

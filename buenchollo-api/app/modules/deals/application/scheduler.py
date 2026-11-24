@@ -17,6 +17,7 @@ from app.modules.analytics.application.cleanup import run_analytics_cleanup
 from app.modules.emails.application.digest_worker import run_due_alert_digest
 from app.modules.affiliates.application.feed_sync_job import run_awin_feed_sync
 from app.modules.telegram.application.weekly_digest import run_weekly_deals_digest
+from app.modules.instagram.application.publisher import run_instagram_queue
 
 from app.core.jobs import SCHEDULER_TIMEZONE
 
@@ -109,5 +110,16 @@ def build_deals_scheduler(settings: Settings) -> tuple[BackgroundScheduler, Deal
         max_instances=1,
         coalesce=True,
         misfire_grace_time=3600,
+    )
+    # Cola de Instagram: publica en el feed lo que ha salido en el canal
+    # principal de Telegram y renueva el token. Sin INSTAGRAM_ENABLED no hace nada.
+    scheduler.add_job(
+        run_instagram_queue,
+        "cron",
+        minute="*/2",
+        args=[settings],
+        id="publish_instagram_queue",
+        max_instances=1,
+        coalesce=True,
     )
     return scheduler, cleaner
