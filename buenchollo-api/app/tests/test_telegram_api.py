@@ -332,7 +332,7 @@ def test_notify_encola_instagram_solo_en_el_canal_principal(client, monkeypatch,
     limiter.reset()
     _override_settings(
         telegram_bot_token="tok", telegram_main_channel_id="-100main", telegram_admin_channel_id="-100admin",
-        instagram_enabled=True,
+        instagram_enabled=True, instagram_channels="main",
     )
     fake_bot = MagicMock()
     fake_bot.send_preformatted.return_value = True

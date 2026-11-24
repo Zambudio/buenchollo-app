@@ -17,7 +17,7 @@ from app.modules.telegram.application.deal_photo import card_data, render_card, 
 from app.modules.telegram.application.post_generator import TelegramPostGenerator
 from app.modules.telegram.application.whatsapp_copy import send_whatsapp_copy
 from app.modules.telegram.infrastructure.telegram_bot import TelegramBot
-from app.modules.instagram.application.queue import is_main_channel, queue_instagram_post
+from app.modules.instagram.application.queue import goes_to_instagram, queue_instagram_post
 
 logger = logging.getLogger(__name__)
 
@@ -237,8 +237,8 @@ class ScheduledPublicationWorker:
         )
 
     async def _queue_instagram(self, scheduled: ScheduledDeal, channel_id: str) -> None:
-        """Encola la versión de Instagram si salió en el canal principal. Nunca lanza."""
-        if self.settings is None or not is_main_channel(channel_id, self.settings):
+        """Encola la versión de Instagram si el canal está en INSTAGRAM_CHANNELS. Nunca lanza."""
+        if self.settings is None or not goes_to_instagram(channel_id, self.settings):
             return
         await queue_instagram_post(
             self.session,

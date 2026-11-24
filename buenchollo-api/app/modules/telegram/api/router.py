@@ -32,7 +32,7 @@ from app.modules.telegram.domain.exceptions import (
 )
 from app.modules.telegram.infrastructure.category_repository import JsonCategoryRepository
 from app.modules.telegram.infrastructure.telegram_bot import TelegramBot
-from app.modules.instagram.application.queue import is_main_channel, queue_instagram_post
+from app.modules.instagram.application.queue import goes_to_instagram, queue_instagram_post
 from app.modules.telegram.api.schemas import (
     TelegramCategoryAddRequest,
     TelegramCategoriesResponse,
@@ -339,9 +339,9 @@ async def notify_deal(
             image_bytes=card,
         )
 
-    # Instagram: mismo chollo, misma imagen y texto adaptado (solo canal principal).
+    # Instagram: mismo chollo, misma imagen y texto adaptado (canales de INSTAGRAM_CHANNELS).
     instagram_queued = False
-    if payload.text and is_main_channel(channel_id, settings):
+    if payload.text and goes_to_instagram(channel_id, settings):
         instagram_queued = await queue_instagram_post(
             db,
             settings,
