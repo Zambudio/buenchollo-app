@@ -17,6 +17,7 @@ class Deal(Base):
     __table_args__ = (
         Index("ix_deals_status_published_at", "status", "published_at"),
         Index("ix_deals_status_temperature", "status", "temperature"),
+        Index("ix_deals_status_first_published_at", "status", "first_published_at"),
     )
 
     id: Mapped[str] = mapped_column(Uuid(as_uuid=False), primary_key=True, default=lambda: str(uuid.uuid4()))
@@ -93,6 +94,11 @@ class Deal(Base):
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     scheduled_for: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), default=lambda: datetime.now(timezone.utc))
+    # Primera vez que el chollo salió publicado. A diferencia de `published_at`
+    # (que se renueva al reactivarlo), no cambia nunca: decide qué chollos son
+    # «de la semana». La rellena un trigger de la BD (deals_set_first_published_at)
+    # al pasar a `active`, cubra el camino que cubra (ORM o API de Supabase).
+    first_published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), default=lambda: datetime.now(timezone.utc))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), default=lambda: datetime.now(timezone.utc))
 

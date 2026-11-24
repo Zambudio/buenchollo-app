@@ -1,6 +1,6 @@
 """«Los chollos de la semana»: resumen de los domingos a las 22:30 (Madrid).
 
-Toma los chollos activos publicados (o reactivados) en los 7 días naturales
+Toma los chollos activos publicados por primera vez en los 7 días naturales
 anteriores (hora de Madrid) con más descuento y envía al canal Admin de
 Telegram dos mensajes: la publicación de Telegram (un collage vertical con la
 foto, el número, el precio y el descuento de cada chollo, y el texto con los

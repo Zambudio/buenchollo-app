@@ -1,7 +1,7 @@
 """Caso de uso: el ranking de la semana.
 
-Los chollos activos con más descuento publicados o reactivados en la semana
-(`deals.domain.week`). Lo usan el lateral «Top de la semana» de la portada y el
+Los chollos activos con más descuento publicados por primera vez en la
+semana (`deals.domain.week`): un chollo antiguo que se reactiva no cuenta. Lo usan el lateral «Top de la semana» de la portada y el
 resumen «Los chollos de la semana» de los domingos, así que ambos muestran
 siempre la misma lista. Se calcula en cada petición: cada chollo nuevo con
 buen descuento entra al momento y los que dejan de estar en oferta salen solos.
