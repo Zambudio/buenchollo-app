@@ -87,6 +87,18 @@
   el genérico. WhatsApp espera a decidir cómo se enlaza el Canal desde los posts. Detalle en
   `docs/guides/TELEGRAM-EMOJIS.md` (2026-11-22).
 
+- **TD-65 — Historias de Instagram.** Solo se publica en el feed. Las historias (p. ej. «Los chollos de la
+  semana») necesitan una imagen 9:16 propia y otro tipo de contenedor (`media_type=STORIES`). Pendiente de
+  producto (2026-11-24).
+- **TD-66 — Cuenta de Meta en modo desarrollo y porfolio sin verificar.** Basta para publicar en @buenchollotech;
+  si se quisiera publicar en cuentas ajenas haría falta la revisión de Meta y verificar el porfolio
+  «Buenchollotech». El token de usuario del sistema no caduca: si se revoca, llega un `AdminAlert` y se regenera
+  como indica `docs/guides/INSTAGRAM.md` (2026-11-24).
+- **TD-67 — Los tests leen el `.env` real.** `Settings` carga `buenchollo-api/.env`, que en el share es el de
+  producción: un test que construya `Settings()` sin fijar un valor hereda el de prod (p. ej. `INSTAGRAM_*`,
+  `APP_ENV`; por eso fallan en local `test_config_cors.py::test_asterisco` y `test_robots_txt`). Los tests de
+  Instagram fijan sus valores; lo correcto sería un `env_file` vacío en tests (2026-11-24).
+
 ## 🟡 Baja — dependencias (2026-11-18)
 
 - **TD-50 — `picomatch` con aviso high sin versión corregida (GHSA-fc5q-39xc-vjpf).**

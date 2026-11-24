@@ -99,6 +99,7 @@ El dominio no depende de FastAPI, SQLAlchemy, ni ningún framework externo.
 - `require_admin` en `core/security.py` — consulta directa a `user_roles`, sin `has_role()`.
 - `SUPABASE_KEY` debe ser siempre la `service_role key`.
 - Conexión BD: `statement_cache_size=0` obligatorio para compatibilidad con PgBouncer.
+- Entre módulos, sin dependencias directas: para reaccionar a lo que hace otro módulo, emitir/escuchar un evento de `app/core/events.py` y registrar el suscriptor en `app/core/bootstrap.py` (ADR-023). Ej.: Telegram emite `DealPostPublished`, Instagram lo escucha.
 
 ### 4. Base de datos
 - SQLAlchemy async con asyncpg.

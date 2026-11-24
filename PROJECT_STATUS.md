@@ -1,7 +1,14 @@
 # PROJECT_STATUS — BuenCholloTech
-*Actualización de producción: 2026-11-24 — `main` con la publicación automática en Instagram (ADR-022, apagada hasta configurar el token) y el collage semanal en 1200×800. Alembic `20261124130000`.*
+*Actualización de producción: 2026-11-24 — `main` con Instagram activo en @buenchollotech (ADR-022), bus de eventos entre módulos (ADR-023) y collage semanal en 1200×800. Alembic `20261124130000`.*
 
 > Bitácora cronológica inversa. Estado operativo vigente: [`docs/project/11-current-state.md`](docs/project/11-current-state.md); pendientes abiertos: [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md).
+
+## 2026-11-24 · Instagram activo, bus de eventos y revisión
+
+- **Instagram en marcha** (guía [`INSTAGRAM.md`](docs/guides/INSTAGRAM.md), sección «Puesta en marcha»): app de Meta «BuenCholloTech Publicador», porfolio empresarial «Buenchollotech», @buenchollotech evaluadora y en el porfolio, y usuario del sistema `bct-publicador` cuyo token (sin caducidad) está en el `.env` del NAS. Primer post: OBSBOT Tiny 3.
+- **Token de usuario del sistema** (PR #114): Meta ya no da el inicio de sesión de Instagram a apps nuevas; con tokens `EAA…` el cliente usa `graph.facebook.com`, sin renovación, y `INSTAGRAM_USER_ID` fija la cuenta.
+- **`INSTAGRAM_CHANNELS`** (PR #115): las programadas salen en el canal Admin, no en el principal; en producción cuentan los dos (`main,admin`).
+- **Revisión de código** ([ADR-023](docs/adr/ADR-023-bus-de-eventos-entre-modulos.md)): bus de eventos en `app/core/events.py` y raíz de composición en `app/core/bootstrap.py`. Telegram (panel y worker) emite `DealPostPublished` y no conoce a Instagram; Instagram avisa con `AdminAlert` y no importa nada de Telegram. Un post fallido ya no guarda su JPEG. `/notify` deja de devolver `instagram_queued`. Deuda nueva: TD-65 a TD-67.
 
 ## 2026-11-24 · Instagram automático y collage semanal en 3:2
 

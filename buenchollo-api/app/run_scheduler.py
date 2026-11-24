@@ -12,6 +12,7 @@ import logging
 import signal
 import threading
 
+from app.core.bootstrap import register_subscribers
 from app.core.config import get_settings
 from app.core.logging import configure_logging
 from app.modules.deals.application.scheduler import build_deals_scheduler
@@ -22,6 +23,8 @@ logger = logging.getLogger(__name__)
 def main() -> None:
     settings = get_settings()
     configure_logging(settings.log_level, fmt=settings.log_format)
+    # Las publicaciones programadas emiten eventos (Instagram se suscribe).
+    register_subscribers()
     scheduler, _cleaner = build_deals_scheduler(settings)
     scheduler.start()
     logger.info(

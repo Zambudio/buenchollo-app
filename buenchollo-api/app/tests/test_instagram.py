@@ -470,3 +470,48 @@ async def test_con_instagram_user_id_no_usa_me_ni_renueva():
     client.calls.clear()
     await publisher.run(NOW + timedelta(days=8))
     assert "refresh" not in client.calls
+
+
+# ── Suscriptor del bus y avisos ──────────────────────────────────────────────
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("channel, enabled, queued", [
+    ("-100main", True, True), ("-100admin", True, False), ("-100main", False, False),
+])
+async def test_el_suscriptor_solo_encola_los_canales_de_instagram(monkeypatch, channel, enabled, queued):
+    from app.core.events import DealPostPublished
+    from app.modules.instagram.application import subscriber
+
+    queue = AsyncMock(return_value=True)
+    monkeypatch.setattr(subscriber, "queue_instagram_post", queue)
+    monkeypatch.setattr(subscriber, "get_settings", lambda: _settings(instagram_enabled=enabled))
+
+    await subscriber.on_deal_post_published(
+        DealPostPublished(session="S", channel_id=channel, text=POST, deal_id="d1", card=b"C", image_url="u")
+    )
+
+    assert queue.await_count == (1 if queued else 0)
+    if queued:
+        args, kwargs = queue.await_args
+        assert args[0] == "S" and kwargs["telegram_text"] == POST and kwargs["card"] == b"C"
+
+
+@pytest.mark.asyncio
+async def test_sin_notify_los_avisos_van_al_bus(monkeypatch):
+    from app.core import events
+
+    alerts = []
+
+    async def fake_publish(event):
+        alerts.append(event)
+
+    monkeypatch.setattr(events, "publish", fake_publish)
+    post = _post(created_at=NOW - timedelta(hours=25))
+    publisher = pub.InstagramPublisher(
+        _JobSession(), _Repo([post], _account()), _settings(), client_factory=lambda t, v: _Client()
+    )
+
+    await publisher.run(NOW)
+
+    assert [type(a).__name__ for a in alerts] == ["AdminAlert"] and "Webcam" in alerts[0].text
+    assert post.status == "error" and post.image is None  # el JPEG no se guarda para siempre
