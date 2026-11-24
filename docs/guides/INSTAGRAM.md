@@ -2,9 +2,11 @@
 
 > Decisión: [ADR-022](../adr/ADR-022-publicacion-instagram.md). Código: `buenchollo-api/app/modules/instagram/`.
 
-Cada chollo que sale en el **canal principal de Telegram** (desde el panel o programado) se publica también en el
-**feed de Instagram**: la misma imagen (tarjeta de oferta 1200 × 800, que encaja en el feed) y el texto adaptado.
-No se publican en Instagram los envíos al canal Admin (republicaciones, versión WhatsApp, resumen semanal).
+Cada chollo que sale en los canales de Telegram de `INSTAGRAM_CHANNELS` (desde el panel o programado) se publica
+también en el **feed de Instagram**: la misma imagen (tarjeta de oferta 1200 × 800, que encaja en el feed) y el texto adaptado.
+Hoy `INSTAGRAM_CHANNELS=main,admin`: las publicaciones programadas salen en el canal Admin («BuenChollo Admin») y
+de ahí pasan al público, así que cuentan los dos. Nunca van a Instagram la versión WhatsApp, las republicaciones por
+bajada de precio ni el resumen semanal (no pasan por la cola).
 
 ## Cómo funciona
 
@@ -83,6 +85,7 @@ PostgREST.
 | `INSTAGRAM_ENABLED` | `false` | Interruptor general (encolar y publicar) |
 | `INSTAGRAM_ACCESS_TOKEN` | — | Token del usuario del sistema (`EAA…`) o de Instagram (`IG…`); solo siembra la BD |
 | `INSTAGRAM_USER_ID` | — | Id de la cuenta profesional (`17841480234900028`); obligatorio con token `EAA…` |
+| `INSTAGRAM_CHANNELS` | `main` | Canales de Telegram cuyos chollos van a Instagram: `main`, `admin` o `main,admin` (en prod, `main,admin`) |
 | `INSTAGRAM_GRAPH_VERSION` | `v23.0` | Versión de la Graph API |
 | `INSTAGRAM_HASHTAGS` | `chollos ofertas tecnologia chollostecnologicos buenchollotech` | Hashtags fijos, sin `#` (en un `.env` empieza un comentario) |
 | `PUBLIC_API_URL` | `https://api.buenchollotech.com` | Base de la URL de la imagen que descarga Instagram |

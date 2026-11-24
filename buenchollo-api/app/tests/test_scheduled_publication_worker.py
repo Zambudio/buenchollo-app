@@ -472,7 +472,7 @@ async def test_encola_instagram_solo_si_sale_en_el_canal_principal(monkeypatch, 
     scheduled.telegram_channel_id = channel
     scheduled.deal_id = "deal-1"
     worker, bot = worker_for(scheduled, ProductPreview(current_price=100.0, in_stock=True))
-    worker.settings = Settings(instagram_enabled=True, telegram_enabled=True, telegram_main_channel_id="-100-main")
+    worker.settings = Settings(instagram_enabled=True, instagram_channels="main", telegram_enabled=True, telegram_main_channel_id="-100-main")
 
     await worker.process_due(datetime.now(timezone.utc))
 

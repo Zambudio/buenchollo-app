@@ -112,6 +112,7 @@ de los identificadores seudónimos, no descifra datos anteriores.
 | `INSTAGRAM_ENABLED` | `false` por defecto. `true`: los chollos del canal principal se publican también en el feed |
 | `INSTAGRAM_ACCESS_TOKEN` | Token de larga duración de la API con inicio de sesión de Instagram; solo siembra la BD (el scheduler lo renueva) |
 | `INSTAGRAM_USER_ID` | Id de la cuenta profesional de Instagram; obligatorio con token de usuario del sistema (`EAA…`) |
+| `INSTAGRAM_CHANNELS` | Canales de Telegram cuyos chollos van también a Instagram: `main`, `admin` o ambos (prod: `main,admin`) |
 | `INSTAGRAM_GRAPH_VERSION` | Versión de la Graph API (`v23.0`) |
 | `INSTAGRAM_HASHTAGS` | Hashtags fijos sin `#`, separados por espacios |
 | `PUBLIC_API_URL` | URL pública de la API (`https://api.buenchollotech.com`): de aquí descarga Instagram la imagen |

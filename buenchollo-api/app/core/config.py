@@ -257,6 +257,8 @@ class Settings(BaseSettings):
     # «EAA…»; con token de Instagram se obtiene de /me).
     instagram_user_id: str = ""
     instagram_graph_version: str = "v23.0"
+    # Canales de Telegram cuyos chollos van también a Instagram: main y/o admin.
+    instagram_channels: str = "main"
     # Hashtags fijos, sin «#» (en un .env, «#» empieza un comentario).
     instagram_hashtags: str = "chollos ofertas tecnologia chollostecnologicos buenchollotech"
     # URL pública de esta API: Instagram descarga de aquí la imagen de cada post.

@@ -24,7 +24,8 @@ comparten memoria ni disco de trabajo.
 
 1. **API de Instagram con inicio de sesión de Instagram** (`graph.instagram.com`), sin página de Facebook, con una app
    de Meta en modo desarrollo (solo publicamos en nuestra cuenta, sin revisión de Meta).
-2. **Cola en la BD** (`instagram_posts`): al publicar en el **canal principal** de Telegram, el panel y el worker de
+2. **Cola en la BD** (`instagram_posts`): al publicar un chollo en los canales de Telegram de `INSTAGRAM_CHANNELS`
+   (en producción el principal y el Admin, donde salen las programadas), el panel y el worker de
    programadas encolan el texto adaptado y el JPEG. Un job del scheduler (cada 2 min) los publica. Telegram nunca
    espera a Instagram ni falla por él, y la cola funciona igual venga el post de la API o del scheduler.
 3. **La imagen se sirve desde la propia API** (`GET /v1/instagram/media/{id}.jpg`, pública): id aleatorio, solo

@@ -1,7 +1,7 @@
 """Encola en Instagram el chollo que acaba de salir en el canal principal.
 
 Lo llaman el panel (`/v1/telegram/notify`) y las publicaciones programadas,
-solo cuando el destino es el canal principal (no el Admin ni otros canales).
+solo si el canal de destino está en `INSTAGRAM_CHANNELS` (`goes_to_instagram`).
 La imagen es la misma tarjeta de oferta (1200×800, encaja en el feed); si el
 post salió con la foto original, se centra esa foto en un lienzo blanco del
 mismo tamaño (Instagram rechaza proporciones extremas). Nunca lanza: Telegram
@@ -51,9 +51,20 @@ def fit_photo(raw: bytes | None) -> bytes | None:
         return None
 
 
-def is_main_channel(channel_id: str | None, settings: Settings) -> bool:
-    main = (settings.telegram_main_channel_id or "").strip()
-    return bool(main) and str(channel_id or "").strip() == main
+def goes_to_instagram(channel_id: str | None, settings: Settings) -> bool:
+    """Si un chollo publicado en ese canal de Telegram va también a Instagram.
+
+    `INSTAGRAM_CHANNELS` dice qué canales cuentan: `main` (canal público) y/o
+    `admin` (canal Admin, donde hoy salen las publicaciones programadas)."""
+    target = str(channel_id or "").strip()
+    if not target:
+        return False
+    ids = {
+        "main": (settings.telegram_main_channel_id or "").strip(),
+        "admin": (settings.telegram_admin_channel_id or "").strip(),
+    }
+    kinds = {k.strip().lower() for k in (settings.instagram_channels or "").split(",")}
+    return any(ids.get(kind) == target for kind in kinds if ids.get(kind))
 
 
 async def queue_instagram_post(

@@ -12,7 +12,7 @@ from PIL import Image
 
 from app.core.config import Settings
 from app.modules.instagram.application import publisher as pub
-from app.modules.instagram.application.queue import fit_photo, is_main_channel, queue_instagram_post
+from app.modules.instagram.application.queue import fit_photo, goes_to_instagram, queue_instagram_post
 from app.modules.instagram.domain.caption import BIO_LINE, MAX_CAPTION, to_instagram_caption
 from app.modules.instagram.domain.models import InstagramAccount, InstagramPost
 from app.modules.instagram.infrastructure.graph_client import InstagramApiError, InstagramGraphClient
@@ -31,7 +31,7 @@ POST = (
 
 def _settings(**kw):
     base = dict(
-        instagram_enabled=True, instagram_access_token="tok-1", telegram_main_channel_id="-100main", telegram_enabled=True,
+        instagram_enabled=True, instagram_access_token="tok-1", telegram_main_channel_id="-100main", telegram_admin_channel_id="-100admin", telegram_enabled=True, instagram_channels="main",
         public_api_url="https://api.example.com", instagram_hashtags="chollos webcams", instagram_user_id="",
     )
     return Settings(**{**base, **kw})
@@ -76,9 +76,14 @@ def test_fit_photo_centra_en_1200x800():
 
 def test_solo_el_canal_principal():
     s = _settings()
-    assert is_main_channel("-100main", s)
-    assert not is_main_channel("-100admin", s)
-    assert not is_main_channel("-100main", _settings(telegram_main_channel_id=""))
+    assert goes_to_instagram("-100main", s)
+    assert not goes_to_instagram("-100admin", s)
+    assert not goes_to_instagram("-100otro", s)
+    assert not goes_to_instagram("-100main", _settings(telegram_main_channel_id=""))
+    both = _settings(instagram_channels="main, admin")
+    assert goes_to_instagram("-100main", both) and goes_to_instagram("-100admin", both)
+    assert goes_to_instagram("-100admin", _settings(instagram_channels="admin"))
+    assert not goes_to_instagram("-100main", _settings(instagram_channels="admin"))
 
 
 class _Session:
