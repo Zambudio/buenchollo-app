@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Protocol
 
+from app.core import events
 from app.core.config import Settings
 from app.core.jobs import job_session
 from app.modules.deals.infrastructure.repository import DealRepository
@@ -17,7 +18,6 @@ from app.modules.telegram.application.deal_photo import card_data, render_card, 
 from app.modules.telegram.application.post_generator import TelegramPostGenerator
 from app.modules.telegram.application.whatsapp_copy import send_whatsapp_copy
 from app.modules.telegram.infrastructure.telegram_bot import TelegramBot
-from app.modules.instagram.application.queue import is_main_channel, queue_instagram_post
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +53,6 @@ class ScheduledPublicationWorker:
         main_channel_id: str,
         admin_chat_id: str,
         publications=None,
-        settings: Settings | None = None,
     ):
         self.session = session
         self.repo = repo
@@ -64,8 +63,6 @@ class ScheduledPublicationWorker:
         self.generator = TelegramPostGenerator()
         # Registro de lo enviado (telegram_publications); opcional en tests.
         self.publications = publications
-        # Para la cola de Instagram (None en tests que no la usan).
-        self.settings = settings
         # Tarjeta de oferta y texto del último post enviado (los reutilizan el
         # registro y la copia de WhatsApp).
         self._card: bytes | None = None
@@ -186,7 +183,7 @@ class ScheduledPublicationWorker:
         # Después de actualizar el deal: el registro guarda el precio publicado.
         await self._record(scheduled, destination_channel_id)
         await self._send_whatsapp_copy(scheduled)
-        await self._queue_instagram(scheduled, destination_channel_id)
+        await self._announce(scheduled, destination_channel_id)
         scheduled.status = ScheduledDealStatus.PUBLISHED
         scheduled.cancellation_reason = None
         await self.repo.update(scheduled)
@@ -199,7 +196,7 @@ class ScheduledPublicationWorker:
             raise RuntimeError("Telegram rechazo la publicacion")
         await self._record(scheduled, destination)
         await self._send_whatsapp_copy(scheduled)
-        await self._queue_instagram(scheduled, destination)
+        await self._announce(scheduled, destination)
         scheduled.status = ScheduledDealStatus.PUBLISHED
         scheduled.cancellation_reason = None
         await self.repo.update(scheduled)
@@ -236,19 +233,17 @@ class ScheduledPublicationWorker:
             image_bytes=self._card,
         )
 
-    async def _queue_instagram(self, scheduled: ScheduledDeal, channel_id: str) -> None:
-        """Encola la versión de Instagram si salió en el canal principal. Nunca lanza."""
-        if self.settings is None or not is_main_channel(channel_id, self.settings):
-            return
-        await queue_instagram_post(
-            self.session,
-            self.settings,
+    async def _announce(self, scheduled: ScheduledDeal, channel_id: str) -> None:
+        """Avisa de la publicación (otras redes se suscriben). Nunca lanza."""
+        await events.publish(events.DealPostPublished(
+            session=self.session,
+            channel_id=channel_id,
+            text=self._sent_text or scheduled.telegram_text,
             deal_id=getattr(scheduled, "deal_id", None),
-            telegram_text=self._sent_text or scheduled.telegram_text,
             card=self._card,
             image_url=scheduled.image_url,
             download=getattr(self.bot, "download_image", None),
-        )
+        ))
 
     async def _record(self, scheduled: ScheduledDeal, channel_id: str) -> None:
         if self.publications is None:
@@ -302,7 +297,6 @@ async def _run(settings: Settings) -> int:
                 publications=PublicationRecorder(
                     TelegramPublicationRepository(session), DealRepository(session), settings, "scheduled"
                 ),
-                settings=settings,
             )
             count = await worker.process_due()
             await session.commit()

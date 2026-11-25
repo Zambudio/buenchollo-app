@@ -56,3 +56,21 @@ def test_endpoint_no_lo_captura_la_ruta_por_slug(integration_client):
     assert resp.status_code == 200 and resp.json() == []
     assert repo.args is not None  # consultó el ranking (25 candidatos para poder filtrar)
     assert too_many.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_la_semana_se_mide_por_la_primera_publicacion_no_por_la_reactivacion():
+    """Un chollo antiguo reactivado (published_at renovado) no es «de la semana»."""
+    from app.modules.deals.infrastructure.repository import DealRepository
+
+    class Session:
+        statement = None
+
+        async def execute(self, statement):
+            Session.statement = statement
+            return SimpleNamespace(scalars=lambda: SimpleNamespace(all=lambda: []))
+
+    await DealRepository(Session()).get_top_discount_active_since(datetime(2026, 11, 18, tzinfo=timezone.utc))
+    where = str(Session.statement.whereclause)
+    assert "deals.first_published_at >=" in where
+    assert "deals.published_at >=" not in where

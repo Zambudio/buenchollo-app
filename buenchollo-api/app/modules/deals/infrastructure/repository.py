@@ -76,11 +76,12 @@ class DealRepository:
         return int(result.scalar() or 0)
 
     async def get_top_discount_active_since(self, since, limit: int = 10) -> list[Deal]:
-        """Los activos publicados (o reactivados) desde `since` con más
-        descuento: el resumen semanal «chollos de la semana»."""
+        """Los activos publicados por primera vez desde `since` con más
+        descuento: el ranking «chollos de la semana». Un chollo antiguo que se
+        reactiva (vuelve a estar en oferta) no cuenta como de la semana."""
         result = await self.session.execute(
             self._base_deal_query()
-            .where(Deal.status == "active", Deal.published_at >= since, Deal.current_price > 0)
+            .where(Deal.status == "active", Deal.first_published_at >= since, Deal.current_price > 0)
             .order_by(
                 # El mismo descuento que muestra el resumen: el guardado o, si
                 # falta, el calculado con el precio anterior.

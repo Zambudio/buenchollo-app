@@ -12,7 +12,7 @@ from PIL import Image
 
 from app.core.config import Settings
 from app.modules.instagram.application import publisher as pub
-from app.modules.instagram.application.queue import fit_photo, is_main_channel, queue_instagram_post
+from app.modules.instagram.application.queue import fit_photo, goes_to_instagram, queue_instagram_post
 from app.modules.instagram.domain.caption import BIO_LINE, MAX_CAPTION, to_instagram_caption
 from app.modules.instagram.domain.models import InstagramAccount, InstagramPost
 from app.modules.instagram.infrastructure.graph_client import InstagramApiError, InstagramGraphClient
@@ -31,8 +31,8 @@ POST = (
 
 def _settings(**kw):
     base = dict(
-        instagram_enabled=True, instagram_access_token="tok-1", telegram_main_channel_id="-100main", telegram_enabled=True,
-        public_api_url="https://api.example.com", instagram_hashtags="chollos webcams",
+        instagram_enabled=True, instagram_access_token="tok-1", telegram_main_channel_id="-100main", telegram_admin_channel_id="-100admin", telegram_enabled=True, instagram_channels="main",
+        public_api_url="https://api.example.com", instagram_hashtags="chollos webcams", instagram_user_id="",
     )
     return Settings(**{**base, **kw})
 
@@ -76,9 +76,14 @@ def test_fit_photo_centra_en_1200x800():
 
 def test_solo_el_canal_principal():
     s = _settings()
-    assert is_main_channel("-100main", s)
-    assert not is_main_channel("-100admin", s)
-    assert not is_main_channel("-100main", _settings(telegram_main_channel_id=""))
+    assert goes_to_instagram("-100main", s)
+    assert not goes_to_instagram("-100admin", s)
+    assert not goes_to_instagram("-100otro", s)
+    assert not goes_to_instagram("-100main", _settings(telegram_main_channel_id=""))
+    both = _settings(instagram_channels="main, admin")
+    assert goes_to_instagram("-100main", both) and goes_to_instagram("-100admin", both)
+    assert goes_to_instagram("-100admin", _settings(instagram_channels="admin"))
+    assert not goes_to_instagram("-100main", _settings(instagram_channels="admin"))
 
 
 class _Session:
@@ -156,11 +161,11 @@ class _Resp:
 def test_cliente_manda_el_token_en_cabecera_y_no_en_la_url():
     http = MagicMock()
     http.request.return_value = _Resp(200, {"id": "c1"})
-    InstagramGraphClient("secreto", http=http).create_image_container("u1", "https://img", "texto")
+    InstagramGraphClient("IGsecreto", http=http).create_image_container("u1", "https://img", "texto")
     args, kwargs = http.request.call_args
     assert args == ("POST", "https://graph.instagram.com/v23.0/u1/media")
-    assert kwargs["headers"] == {"Authorization": "Bearer secreto"}
-    assert "secreto" not in str(kwargs["params"]) and kwargs["json"] == {"image_url": "https://img", "caption": "texto"}
+    assert kwargs["headers"] == {"Authorization": "Bearer IGsecreto"}
+    assert "IGsecreto" not in str(kwargs["params"]) and kwargs["json"] == {"image_url": "https://img", "caption": "texto"}
 
 
 def test_cliente_interpreta_errores_de_meta():
@@ -223,7 +228,8 @@ class _JobSession:
 
 
 class _Client:
-    def __init__(self, statuses=("FINISHED",), fail=None):
+    def __init__(self, statuses=("FINISHED",), fail=None, refreshable=True):
+        self.refreshable = refreshable
         self.calls = []
         self.statuses = list(statuses)
         self.fail = fail or {}
@@ -236,6 +242,10 @@ class _Client:
         self.calls.append("me")
         self._maybe_fail("me")
         return {"user_id": "178", "username": "buenchollotech"}
+
+    def account_info(self, user_id):
+        self.calls.append(("info", user_id))
+        return {"id": user_id, "username": "buenchollotech"}
 
     def create_image_container(self, user_id, image_url, caption):
         self.calls.append(("create", user_id, image_url))
@@ -432,3 +442,76 @@ def test_el_estado_exige_admin():
     from app.main import app
 
     assert TestClient(app).get("/v1/instagram/status").status_code in (401, 403)
+
+
+# ── Token de usuario del sistema (Meta Business, «EAA…») ─────────────────────
+
+def test_token_de_facebook_va_contra_graph_facebook_y_no_se_renueva():
+    http = MagicMock()
+    http.request.return_value = _Resp(200, {"id": "c1"})
+    client = InstagramGraphClient("EAAsecreto", http=http)
+    client.create_image_container("178", "https://img", "t")
+    assert http.request.call_args.args[1] == "https://graph.facebook.com/v23.0/178/media"
+    assert not client.refreshable
+    assert InstagramGraphClient("IGsecreto").refreshable
+
+
+@pytest.mark.asyncio
+async def test_con_instagram_user_id_no_usa_me_ni_renueva():
+    post = _post()
+    repo = _Repo([post])
+    client = _Client(refreshable=False)
+    publisher, _ = _publisher(repo, client, _settings(instagram_user_id="17841480234900028"))
+
+    assert await publisher.run(NOW) == 1
+    assert client.calls[0] == ("info", "17841480234900028")
+    assert repo.acc.user_id == "17841480234900028" and repo.acc.username == "buenchollotech"
+    # Una semana después: un token sin caducidad no se renueva.
+    client.calls.clear()
+    await publisher.run(NOW + timedelta(days=8))
+    assert "refresh" not in client.calls
+
+
+# ── Suscriptor del bus y avisos ──────────────────────────────────────────────
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("channel, enabled, queued", [
+    ("-100main", True, True), ("-100admin", True, False), ("-100main", False, False),
+])
+async def test_el_suscriptor_solo_encola_los_canales_de_instagram(monkeypatch, channel, enabled, queued):
+    from app.core.events import DealPostPublished
+    from app.modules.instagram.application import subscriber
+
+    queue = AsyncMock(return_value=True)
+    monkeypatch.setattr(subscriber, "queue_instagram_post", queue)
+    monkeypatch.setattr(subscriber, "get_settings", lambda: _settings(instagram_enabled=enabled))
+
+    await subscriber.on_deal_post_published(
+        DealPostPublished(session="S", channel_id=channel, text=POST, deal_id="d1", card=b"C", image_url="u")
+    )
+
+    assert queue.await_count == (1 if queued else 0)
+    if queued:
+        args, kwargs = queue.await_args
+        assert args[0] == "S" and kwargs["telegram_text"] == POST and kwargs["card"] == b"C"
+
+
+@pytest.mark.asyncio
+async def test_sin_notify_los_avisos_van_al_bus(monkeypatch):
+    from app.core import events
+
+    alerts = []
+
+    async def fake_publish(event):
+        alerts.append(event)
+
+    monkeypatch.setattr(events, "publish", fake_publish)
+    post = _post(created_at=NOW - timedelta(hours=25))
+    publisher = pub.InstagramPublisher(
+        _JobSession(), _Repo([post], _account()), _settings(), client_factory=lambda t, v: _Client()
+    )
+
+    await publisher.run(NOW)
+
+    assert [type(a).__name__ for a in alerts] == ["AdminAlert"] and "Webcam" in alerts[0].text
+    assert post.status == "error" and post.image is None  # el JPEG no se guarda para siempre

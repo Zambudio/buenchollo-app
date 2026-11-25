@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Request, Response
 from starlette.concurrency import run_in_threadpool
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core import events
 from app.core.audit import audit_log
 from app.core.config import Settings, get_settings
 from app.core.database import get_db
@@ -32,7 +33,6 @@ from app.modules.telegram.domain.exceptions import (
 )
 from app.modules.telegram.infrastructure.category_repository import JsonCategoryRepository
 from app.modules.telegram.infrastructure.telegram_bot import TelegramBot
-from app.modules.instagram.application.queue import is_main_channel, queue_instagram_post
 from app.modules.telegram.api.schemas import (
     TelegramCategoryAddRequest,
     TelegramCategoriesResponse,
@@ -339,18 +339,17 @@ async def notify_deal(
             image_bytes=card,
         )
 
-    # Instagram: mismo chollo, misma imagen y texto adaptado (solo canal principal).
-    instagram_queued = False
-    if payload.text and is_main_channel(channel_id, settings):
-        instagram_queued = await queue_instagram_post(
-            db,
-            settings,
+    # Otras redes (Instagram…) se suscriben a este evento; Telegram no las conoce.
+    if payload.text:
+        await events.publish(events.DealPostPublished(
+            session=db,
+            channel_id=channel_id,
+            text=sent_text or payload.text,
             deal_id=getattr(deal, "id", None),
-            telegram_text=sent_text or payload.text,
             card=card,
             image_url=payload.image_url,
             download=bot.download_image,
-        )
+        ))
 
     await audit_log(
         db,
@@ -362,10 +361,9 @@ async def notify_deal(
             "title": payload.title,
             "has_text": bool(payload.text),
             "whatsapp_sent": whatsapp_sent,
-            "instagram_queued": instagram_queued,
         },
     )
-    return {"ok": True, "whatsapp_sent": whatsapp_sent, "instagram_queued": instagram_queued}
+    return {"ok": True, "whatsapp_sent": whatsapp_sent}
 
 
 @router.get("/publications", response_model=list[TelegramPublicationResponse])

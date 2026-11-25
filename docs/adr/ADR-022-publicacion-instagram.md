@@ -2,7 +2,7 @@
 
 ## Estado
 
-Aceptado · 2026-11-24 · código en producción; se activa con `INSTAGRAM_ENABLED=true` cuando haya token.
+Aceptado · 2026-11-24 · en producción y activo desde el 2026-11-24 (primer post: OBSBOT Tiny 3).
 
 ## Contexto
 
@@ -22,10 +22,15 @@ comparten memoria ni disco de trabajo.
 
 ## Decisión
 
-1. **API de Instagram con inicio de sesión de Instagram** (`graph.instagram.com`), sin página de Facebook, con una app
-   de Meta en modo desarrollo (solo publicamos en nuestra cuenta, sin revisión de Meta).
-2. **Cola en la BD** (`instagram_posts`): al publicar en el **canal principal** de Telegram, el panel y el worker de
-   programadas encolan el texto adaptado y el JPEG. Un job del scheduler (cada 2 min) los publica. Telegram nunca
+1. **API de Instagram (Graph API)** con una app de Meta en modo desarrollo (solo publicamos en nuestra cuenta, sin
+   revisión de Meta). Meta ya no ofrece el «inicio de sesión de Instagram» a apps nuevas (exige el inicio de sesión
+   unificado, con porfolio empresarial), así que el token es de un **usuario del sistema** del porfolio
+   «Buenchollotech» (`EAA…`, sin caducidad) y se usa contra `graph.facebook.com`. El cliente acepta también tokens de
+   Instagram (`IG…`, contra `graph.instagram.com`, renovados cada semana).
+2. **Cola en la BD** (`instagram_posts`): al publicar un chollo en los canales de Telegram de `INSTAGRAM_CHANNELS`
+   (en producción el principal y el Admin, donde salen las programadas), Telegram emite `DealPostPublished` por el
+   bus de eventos ([ADR-023](ADR-023-bus-de-eventos-entre-modulos.md)) y el suscriptor de Instagram
+   encola el texto adaptado y el JPEG. Un job del scheduler (cada 2 min) los publica. Telegram nunca
    espera a Instagram ni falla por él, y la cola funciona igual venga el post de la API o del scheduler.
 3. **La imagen se sirve desde la propia API** (`GET /v1/instagram/media/{id}.jpg`, pública): id aleatorio, solo
    mientras está pendiente y 48 h como mucho, sin caché; se borra de la BD al publicarse. Sin almacenamiento externo.
@@ -35,11 +40,13 @@ comparten memoria ni disco de trabajo.
    hashtags (los de categoría y los fijos de `INSTAGRAM_HASHTAGS`).
 6. **Fallos**: hasta 5 intentos en 24 h y aviso al canal Admin. Si `media_publish` no responde, se da por publicado y se
    avisa (como en Telegram: antes un aviso que un duplicado).
-7. **Token**: `INSTAGRAM_ACCESS_TOKEN` siembra `instagram_account`; el job lo renueva cada 7 días y guarda el vigente
-   en la BD (RLS sin políticas). Un token nuevo en el `.env` se detecta por su hash. Va en la cabecera
-   `Authorization`, nunca en URLs ni logs.
+7. **Token**: `INSTAGRAM_ACCESS_TOKEN` siembra `instagram_account` (RLS sin políticas); `INSTAGRAM_USER_ID` fija la
+   cuenta. Un token nuevo en el `.env` se detecta por su hash. Los de Instagram se renuevan cada 7 días; los de
+   usuario del sistema no caducan. Va en la cabecera `Authorization`, nunca en URLs ni logs.
 8. **Medición**: la bio enlaza a `/instagram` (redirige con `utm_source=instagram`) y la analítica first-party tiene
    la fuente `instagram`, como ya ocurría con WhatsApp.
+9. **Desacoplado**: `instagram` no importa nada de `telegram` (los avisos van como `AdminAlert` por el bus) y
+   Telegram no sabe que Instagram existe.
 
 ## Consecuencias
 

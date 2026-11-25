@@ -249,7 +249,7 @@ def test_notify_del_panel_envia_tambien_la_version_whatsapp_al_canal_admin(clien
     )
 
     assert r.status_code == 200, r.text
-    assert r.json() == {"ok": True, "whatsapp_sent": True, "instagram_queued": False}
+    assert r.json() == {"ok": True, "whatsapp_sent": True}
     telegram, whatsapp = (call.kwargs for call in fake_bot.send_preformatted.call_args_list)
     assert telegram["chat_id"] == "-100main" and telegram["entities"]
     assert whatsapp == {
@@ -325,36 +325,33 @@ def test_generate_sin_rebaja_mantiene_el_precio_en_el_texto(client, monkeypatch)
     assert "💶 Precio: 269,00 €" in r.json()["text"]
 
 
-# ── Instagram: el chollo del canal principal se encola para el feed ──────────
+# ── Otras redes: /notify anuncia el chollo publicado por el bus de eventos ───
 
-@pytest.mark.parametrize("channel, queued", [("-100main", True), ("-100admin", False)])
-def test_notify_encola_instagram_solo_en_el_canal_principal(client, monkeypatch, channel, queued):
+def test_notify_anuncia_el_chollo_publicado_sin_conocer_a_los_suscriptores(client, monkeypatch):
+    from app.core import events
+
     limiter.reset()
-    _override_settings(
-        telegram_bot_token="tok", telegram_main_channel_id="-100main", telegram_admin_channel_id="-100admin",
-        instagram_enabled=True,
-    )
+    _override_settings(telegram_bot_token="tok", telegram_main_channel_id="-100main")
     fake_bot = MagicMock()
     fake_bot.send_preformatted.return_value = True
     fake_bot.download_image.return_value = None
     router = "app.modules.telegram.api.router"
-    queue = AsyncMock(return_value=True)
-    TEXT = "🍄 Monitor\n\n🛒 https://amzn.to/x"
     monkeypatch.setattr(f"{router}.TelegramBot", lambda token: fake_bot)
     monkeypatch.setattr(f"{router}.record_safely", AsyncMock(return_value=True))
     monkeypatch.setattr(f"{router}.audit_log", AsyncMock())
-    monkeypatch.setattr(f"{router}.queue_instagram_post", queue)
+    published = []
+
+    async def fake_publish(event):
+        published.append(event)
+
+    monkeypatch.setattr(events, "publish", fake_publish)
+    text = "🍄 Monitor\n\n🛒 https://amzn.to/x"
 
     r = client.post(
-        "/v1/telegram/notify",
-        json={"text": TEXT, "image_url": "https://img/x.jpg", "channel_id": channel},
+        "/v1/telegram/notify", json={"text": text, "image_url": "https://img/x.jpg", "channel_id": "-100main"}
     )
 
     assert r.status_code == 200, r.text
-    assert r.json()["instagram_queued"] is queued
-    if queued:
-        kwargs = queue.await_args.kwargs
-        assert kwargs["telegram_text"] == TEXT
-        assert kwargs["image_url"] == "https://img/x.jpg" and kwargs["card"] is None
-    else:
-        queue.assert_not_awaited()
+    (event,) = [e for e in published if isinstance(e, events.DealPostPublished)]
+    assert (event.channel_id, event.text, event.image_url, event.card) == ("-100main", text, "https://img/x.jpg", None)
+    assert event.download == fake_bot.download_image

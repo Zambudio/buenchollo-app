@@ -118,8 +118,8 @@ correr con esquema obsoleto.
   (ejemplo: `20261122120000`, que vacía el aviso de afiliación genérico; un
   `downgrade` que rellenase todos los vacíos metería el aviso donde nunca
   estuvo).
-- **Cabeza actual**: `alembic heads` en `buenchollo-api/` (a 2026-11-22,
-  `20261122120000`, también en producción). La cadena es lineal: cada
+- **Cabeza actual**: `alembic heads` en `buenchollo-api/` (a 2026-11-25,
+  `20261124150000`, `deals.first_published_at`, ya en `main`). La cadena es lineal: cada
   migración nueva revisa la cabeza anterior.
 - **Tablas legacy sin modelo** (`user_roles`, `import_logs`) viven en el
   set `_LEGACY_TABLES_NOT_MODELED` de `alembic/env.py`. Si en el futuro se

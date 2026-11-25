@@ -55,6 +55,9 @@ app/
 │   ├── security_headers.py        CSP, X-Frame, HSTS en prod
 │   ├── sentry.py                  LoggingIntegration + before_send
 │   ├── audit.py                   Audit log para acciones admin
+│   ├── events.py                  Bus de eventos en proceso (ADR-023)
+│   ├── bootstrap.py               Registra los suscriptores del bus (API y scheduler)
+│   ├── jobs.py                    Sesión de BD de los jobs de fondo
 │   ├── health.py                  /health y /health/ready
 │   └── logging.py                 JSON con request_id
 │
@@ -74,8 +77,8 @@ app/
 
 ```
 affiliates · ai · alerts · analytics · blog · blog_comments · categories ·
-comments · deals · emails · notifications · products · scheduled_deals ·
-scheduled_tasks · stores · submissions · telegram · users
+comments · deals · emails · instagram · notifications · products ·
+scheduled_deals · scheduled_tasks · stores · submissions · telegram · users
 ```
 
 ### 🔄 Flujo de dependencias
@@ -95,6 +98,11 @@ scheduled_tasks · stores · submissions · telegram · users
 ```
 
 > 🔴 **Regla**: el dominio **no depende** de FastAPI ni SQLAlchemy.
+
+> 🔀 **Entre módulos**: un módulo no importa la aplicación ni la infraestructura de otro para reaccionar a lo que
+> hace. Emite un evento (`app/core/events.py`) y quien quiera se suscribe en `app/core/bootstrap.py`. Ejemplo:
+> `telegram` emite `DealPostPublished` e `instagram` lo escucha; los avisos al administrador van como `AdminAlert`.
+> Detalle: [ADR-023](../adr/ADR-023-bus-de-eventos-entre-modulos.md).
 
 ### 📜 Reglas de los routers
 
