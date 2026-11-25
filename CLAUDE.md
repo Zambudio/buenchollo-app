@@ -60,6 +60,7 @@ app/
     ├── submissions/       # propuestas de chollos de usuarios: check-link, imágenes (Pillow→WebP), moderación admin
     ├── affiliates/        # canonicalización/reescritores de URL + Awin/Tradedoubler: registro de programas, feeds, importación al editor y reglas de publicación (ADR-019)
     ├── telegram/          # publicación al canal, formato emoji premium, hashtags IA
+    ├── instagram/         # publicación en el feed (cola + job del scheduler), token renovado solo (ADR-022)
     ├── alerts/            # alertas de usuario y matching puro (`matches_alert`)
     ├── notifications/     # notificaciones in-app
     ├── emails/            # SMTP, plantillas Jinja, bienvenida y resumen nocturno de alertas
@@ -185,13 +186,14 @@ Cuando una tienda de **Awin o Tradedoubler** apruebe la solicitud de afiliación
 
 ---
 
-## Estado actual (2026-11-18)
+## Estado actual (2026-11-25)
 
 - **Web en producción** en `https://buenchollotech.com` (frontend TanStack Start SSR como **Cloudflare Worker**; deploy automático al hacer push a `main` vía Workers Builds).
 - **API** FastAPI en el NAS Synology, expuesta en `https://api.buenchollotech.com` vía **Cloudflare Tunnel** (sin abrir puertos, sin DDNS). `APP_ENV=production`, CORS cerrado al dominio.
 - **Cloudflare endurecido**: TLS Full (strict) + HSTS, redirect `www`→raíz, WAF + rate limiting + Bot Fight Mode. Detalle y bitácora en [`docs/guides/Cloudflare.md`](docs/guides/Cloudflare.md).
 - Login Google (Supabase) OK · Panel admin funcionando · CI de `main` en verde · flujo `main`/`develop` operativo.
-- Funcionalidad viva: chollos y catálogo permanente con revisión diaria de precios, propuestas de usuarios, tops comunitarios con votos y banner en portada, alertas (in-app y resumen por correo), blog, Telegram con registro de publicaciones. Historial en [`PROJECT_STATUS.md`](PROJECT_STATUS.md).
+- Funcionalidad viva: chollos y catálogo permanente con revisión diaria de precios e histórico, propuestas de usuarios, tops comunitarios con votos y banner en portada, alertas (in-app y resumen por correo), blog, Telegram con registro de publicaciones, icono de compra por tienda y versión WhatsApp, tarjeta de oferta en cada chollo (ADR-021; el texto del post ya no repite precio ni ahorro), resumen semanal de los domingos con collage 1200 × 800, resumen y «Top de la semana» solo con chollos publicados por primera vez esa semana, publicación automática en el feed de Instagram (ADR-022, activa en @buenchollotech con token de usuario del sistema y `INSTAGRAM_CHANNELS`; Telegram e Instagram desacoplados por el bus de eventos, ADR-023; guía [`docs/guides/INSTAGRAM.md`](docs/guides/INSTAGRAM.md)). Historial en [`PROJECT_STATUS.md`](PROJECT_STATUS.md).
+- **Awin / Tradedoubler**: Coolmod (Awin) activo con autocompletado con IA al importar; el aviso del post lo decide el servidor y el aviso genérico se retiró (migración `20261122120000`). Alembic `20261124150000` (`deals.first_published_at`). Activar otra tienda: [`docs/guides/AFFILIATE-ACTIVATION-RUNBOOK.md`](docs/guides/AFFILIATE-ACTIVATION-RUNBOOK.md).
 - **Deuda técnica**: registro vivo y completo en [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md). Lo más urgente: rotar el token del Cloudflare Tunnel (TD-21) y que el NAS ejecute la copia de trabajo del share (TD-31: mantenerla en `main`).
 
 ---

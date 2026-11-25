@@ -1,7 +1,11 @@
 # PROJECT_STATUS — BuenCholloTech
-*Actualización de producción: 2026-11-24 — `main` con Instagram activo en @buenchollotech (ADR-022), bus de eventos entre módulos (ADR-023) y collage semanal en 1200×800. Alembic `20261124130000`.*
+*Actualización de producción: 2026-11-24 — `main` con Instagram activo en @buenchollotech (ADR-022), bus de eventos entre módulos (ADR-023), collage semanal en 1200×800 y el «Top de la semana» solo con chollos publicados por primera vez esa semana (#117). Alembic `20261124150000`.*
 
 > Bitácora cronológica inversa. Estado operativo vigente: [`docs/project/11-current-state.md`](docs/project/11-current-state.md); pendientes abiertos: [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md).
+
+## 2026-11-24 · «Top de la semana» solo con chollos nuevos
+
+- **En `main`** (PR #117, merge `e1e9ae6`). `published_at` se renueva al reactivar un chollo antiguo (revisión nocturna, alta del mismo producto, programada), así que el lateral «Top de la semana» y el resumen de los domingos colaban chollos de hace meses. Nueva columna `deals.first_published_at` (migración `20261124150000`): la rellena un trigger al pasar a `active` y el histórico toma la fecha más antigua conocida. `get_top_discount_active_since` filtra por ella.
 
 ## 2026-11-24 · Instagram activo, bus de eventos y revisión
 
@@ -12,17 +16,20 @@
 
 ## 2026-11-24 · Instagram automático y collage semanal en 3:2
 
+- **En `main`** (PR #113, merge `dcb2919`). Migraciones `20261124120000` y `20261124130000`.
 - **Instagram** ([ADR-022](docs/adr/ADR-022-publicacion-instagram.md), guía [`INSTAGRAM.md`](docs/guides/INSTAGRAM.md)): los chollos del canal principal de Telegram se publican también en el feed (misma tarjeta, texto sin enlaces con «enlace en la bio» y hashtags). Cola en BD (`instagram_posts`) y job del scheduler cada 2 min; la imagen la sirve la propia API mientras está pendiente; reintentos, aviso al canal Admin y renovación semanal del token. Apagado hasta configurar el token (`INSTAGRAM_ENABLED`). Migraciones `20261124120000` y `20261124130000`.
 - **Medición**: `/instagram` redirige a la portada con `utm_source=instagram` (enlace de la bio) y la analítica tiene la fuente «Instagram».
 - **Collage del resumen semanal**: 1200 × 800, el mismo formato que la tarjeta de cada chollo, para que todo el canal tenga el mismo ancho (5 columnas × 2 filas de tarjetas verticales).
 
 ## 2026-11-23 · Posts sin líneas de precio (van en la tarjeta)
 
+- **En `main`** (PR #112, merge `63bbfae`). Sin migraciones.
 - El texto de los posts deja de repetir «💶 Precio …» y «💰 Ahorro …», que ya muestra la tarjeta de oferta: la plantilla no las escribe si habrá tarjeta, y al enviar se quitan con tarjeta o se añaden si al final sale la foto original (ningún post sin precio). Republicar un texto sin precio solo corrige la fecha de fin. Limpieza de los textos de los chollos programados pendientes en la BD.
 - Ajustes de la tarjeta: logo de la tienda más grande (hasta 260 × 56) y precio anterior legible (números más oscuros y raya roja fina semitransparente).
 
 ## 2026-11-23 · Tarjeta de oferta «Simple claro» en todas las publicaciones
 
+- **Desplegado** (PR #111, merge `dac0931`): web y API; API y scheduler reiniciados en el NAS. Sin migraciones (Alembic `20261122120000`).
 - **Imagen de cada chollo en Telegram** ([ADR-021](docs/adr/ADR-021-tarjeta-oferta-telegram.md), guía [`TELEGRAM-TARJETA-OFERTA.md`](docs/guides/TELEGRAM-TARJETA-OFERTA.md)): tarjeta 1200 × 800 generada con Pillow según el diseño de `_handoff/plantilla-telegram-oferta/` (foto, insignia de descuento, logo de la tienda, precio, anterior tachado, «Ahorras X €» y logo del canal). Cuadra con las referencias (~1 % de píxeles distintos). Ajustes pedidos: logo del canal a 340 px, ahorro más grande y logo de tienda en la pastilla (Amazon y Coolmod en `app/assets/images/stores/`).
 - **Un punto único** (`deal_photo.py`) para todos los envíos: panel, programadas, republicación al canal Admin y copia de WhatsApp. El panel envía precio, descuento y tienda; si no, los del chollo guardado.
 - **Nunca bloquea**: sin precio anterior, foto ilegible, fallo de composición o rechazo de Telegram → foto original. `DEAL_CARD_ENABLED=false` la apaga.
@@ -32,6 +39,7 @@
 
 ## 2026-11-23 · Collage del resumen semanal más ancho
 
+- **Desplegado** (PR #110, merge `ce22e74`).
 - El resumen del domingo 22 salió en el chat del móvil con la imagen recortada arriba (cabecera) y abajo (fila 9-10): Telegram recorta la vertical 5:6 (1080×1296) cuando la publicación lleva pie de foto. Pasa a 1280×1152 (10:9, algo más ancha que alta), con el mismo diseño (`weekly_collage.py`).
 
 ## 2026-11-22 · Revisión independiente de los cambios del día y dos arreglos

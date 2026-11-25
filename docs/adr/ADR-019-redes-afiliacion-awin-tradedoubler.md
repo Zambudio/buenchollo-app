@@ -56,3 +56,13 @@ impone condiciones (imágenes, canales, avisos).
   redes se publican a mano tras revisar.
 - La migración `20261108120000` es aditiva; el downgrade elimina el registro, el catálogo
   local y la procedencia de los chollos.
+
+### Seguimiento (2026-11-22)
+
+- Primera validación en vivo con Coolmod (Awin): el parser del feed lee bien las columnas
+  reales; los términos que el feed entrega partidos se recomponen con `fix_split_terms`.
+  Tradedoubler sigue sin validar (TD-46).
+- El aviso sembrado en todos los programas se retiró de los posts (migración
+  `20261122120000`, sin `downgrade` a propósito): «Aviso adicional del programa» solo se
+  rellena si las condiciones de la tienda lo exigen, y el servidor lo lee de la BD a partir
+  de `affiliate_program_id` (el cliente no puede imponerlo).

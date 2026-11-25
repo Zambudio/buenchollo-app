@@ -57,6 +57,7 @@ app/
     ├── catalog/           # catálogo permanente: products + product_listings, reglas de oferta, tops y votos (ADR-017, ADR-018)
     ├── submissions/ · affiliates/  # propuestas de usuarios; redes Awin/Tradedoubler (ADR-016, ADR-019)
     ├── telegram/          # publicación al canal, formato emoji premium, hashtags IA
+    ├── instagram/         # publicación en el feed (cola + job del scheduler), token renovado solo (ADR-022)
     ├── alerts/ · notifications/ · emails/ · comments/ · blog/ · analytics/
     ├── scheduled_deals/ · scheduled_tasks/
     ├── categories/
@@ -84,7 +85,8 @@ usa un clon local.
 - **API** FastAPI en el NAS Synology, expuesta en `https://api.buenchollotech.com` vía **Cloudflare Tunnel** (sin abrir puertos, sin DDNS). `APP_ENV=production`, CORS cerrado al dominio.
 - **Cloudflare endurecido**: TLS Full (strict) + HSTS, redirect `www`→raíz, WAF + rate limiting + Bot Fight Mode. Detalle y bitácora en [`docs/guides/Cloudflare.md`](docs/guides/Cloudflare.md).
 - Login Google (Supabase) OK · Panel admin funcionando · CI de `main` en verde · flujo `main`/`develop` operativo.
-- **Awin / Tradedoubler** en producción sin tiendas aprobadas aún; para activar una tienda cuando la aprueben: [`docs/guides/AFFILIATE-ACTIVATION-RUNBOOK.md`](docs/guides/AFFILIATE-ACTIVATION-RUNBOOK.md).
+- **Telegram e Instagram** (2026-11-24): cada chollo sale con la tarjeta de oferta (ADR-021) y el texto ya no repite precio ni ahorro (#112). Publicación automática en el feed de Instagram (ADR-022, #113), activa en @buenchollotech con token de usuario del sistema de Meta (#114) y canales de origen en `INSTAGRAM_CHANNELS` (#115); Telegram e Instagram se comunican por el bus de eventos (ADR-023, #116). Guía [`docs/guides/INSTAGRAM.md`](docs/guides/INSTAGRAM.md). Collage semanal en 1200 × 800; el «Top de la semana» y el resumen del domingo solo cuentan chollos publicados por primera vez esa semana (#117). Alembic `20261124150000`.
+- **Awin / Tradedoubler** en producción: **Coolmod (Awin) activo** desde el 2026-11-21 (feed sincronizado, autocompletado con IA al importar); Samsung ES aceptado sin habilitar, Fnac rechazado y el resto pendiente. Para activar otra tienda cuando la aprueben: [`docs/guides/AFFILIATE-ACTIVATION-RUNBOOK.md`](docs/guides/AFFILIATE-ACTIVATION-RUNBOOK.md).
 
 ---
 
