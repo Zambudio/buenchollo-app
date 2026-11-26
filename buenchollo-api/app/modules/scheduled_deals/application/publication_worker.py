@@ -53,6 +53,7 @@ class ScheduledPublicationWorker:
         main_channel_id: str,
         admin_chat_id: str,
         publications=None,
+        whatsapp_copy: bool = True,
     ):
         self.session = session
         self.repo = repo
@@ -63,6 +64,8 @@ class ScheduledPublicationWorker:
         self.generator = TelegramPostGenerator()
         # Registro de lo enviado (telegram_publications); opcional en tests.
         self.publications = publications
+        # Copia «versión WhatsApp» al canal Admin; sobra con el Canal automático.
+        self.whatsapp_copy = whatsapp_copy
         # Tarjeta de oferta y texto del último post enviado (los reutilizan el
         # registro y la copia de WhatsApp).
         self._card: bytes | None = None
@@ -224,6 +227,8 @@ class ScheduledPublicationWorker:
     async def _send_whatsapp_copy(self, scheduled: ScheduledDeal) -> None:
         """Después de registrar: el segundo envío pisa `bot.last_message_id`.
         En un hilo: son hasta tres peticiones HTTP bloqueantes."""
+        if not self.whatsapp_copy:
+            return
         await asyncio.to_thread(
             send_whatsapp_copy,
             self.bot,
@@ -297,6 +302,7 @@ async def _run(settings: Settings) -> int:
                 publications=PublicationRecorder(
                     TelegramPublicationRepository(session), DealRepository(session), settings, "scheduled"
                 ),
+                whatsapp_copy=not settings.whatsapp_enabled,
             )
             count = await worker.process_due()
             await session.commit()

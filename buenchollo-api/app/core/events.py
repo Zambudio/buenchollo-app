@@ -47,6 +47,19 @@ class DealPostPublished:
 
 
 @dataclass(frozen=True)
+class WhatsAppPostRequested:
+    """Publicación para el Canal de WhatsApp que no sale de `DealPostPublished`
+    (hoy, el resumen semanal). Quien escucha abre su propia sesión de BD."""
+
+    telegram_text: str
+    whatsapp_text: str | None = None
+    image: bytes | None = None
+    # Quitar las líneas de precio y ahorro (solo si la imagen es la tarjeta de oferta).
+    strip_prices: bool = False
+    deal_id: str | None = None
+
+
+@dataclass(frozen=True)
 class AdminAlert:
     """Aviso para el administrador (hoy, al canal Admin de Telegram)."""
 

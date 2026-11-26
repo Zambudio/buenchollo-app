@@ -228,7 +228,8 @@ def test_whatsapp_text_requiere_admin():
 def test_notify_del_panel_envia_tambien_la_version_whatsapp_al_canal_admin(client, monkeypatch):
     limiter.reset()
     _override_settings(
-        telegram_bot_token="tok", telegram_main_channel_id="-100main", telegram_admin_channel_id="-100admin"
+        telegram_bot_token="tok", telegram_main_channel_id="-100main", telegram_admin_channel_id="-100admin",
+        whatsapp_enabled=False,
     )
     fake_bot = MagicMock()
     fake_bot.send_preformatted.return_value = True
@@ -255,6 +256,37 @@ def test_notify_del_panel_envia_tambien_la_version_whatsapp_al_canal_admin(clien
     assert whatsapp == {
         "text": "🔥 *Monitor editado*", "entities": [], "image_url": "https://img/x.jpg", "chat_id": "-100admin",
     }
+
+
+def test_con_whatsapp_automatico_no_manda_la_copia_al_admin(client, monkeypatch):
+    limiter.reset()
+    _override_settings(
+        telegram_bot_token="tok", telegram_main_channel_id="-100main", telegram_admin_channel_id="-100admin",
+        whatsapp_enabled=True,
+    )
+    fake_bot = MagicMock()
+    fake_bot.send_preformatted.return_value = True
+    fake_bot.last_message_id = 7
+    router = "app.modules.telegram.api.router"
+    published = []
+
+    async def fake_publish(event):
+        published.append(event)
+
+    monkeypatch.setattr(f"{router}.TelegramBot", lambda token: fake_bot)
+    monkeypatch.setattr(f"{router}.record_safely", AsyncMock(return_value=True))
+    monkeypatch.setattr(f"{router}.audit_log", AsyncMock())
+    monkeypatch.setattr(f"{router}.events.publish", fake_publish)
+
+    r = client.post(
+        "/v1/telegram/notify",
+        json={"text": "🍄 Monitor\n\n🛒 https://amzn.to/x", "channel_id": "-100main", "whatsapp_text": "🔥 *Editado*"},
+    )
+
+    assert r.status_code == 200, r.text
+    assert r.json() == {"ok": True, "whatsapp_sent": False}
+    assert [c.kwargs["chat_id"] for c in fake_bot.send_preformatted.call_args_list] == ["-100main"]
+    assert published[0].whatsapp_text == "🔥 *Editado*"  # la versión editada llega a la cola de WhatsApp
 
 
 # ── Aviso del programa: lo decide el servidor, no el navegador ───────────────

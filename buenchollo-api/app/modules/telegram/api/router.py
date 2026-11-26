@@ -22,7 +22,7 @@ from app.modules.telegram.application.deal_photo import card_data, render_card, 
 from app.modules.telegram.application.post_generator import TelegramPostGenerator
 from app.modules.telegram.application.whatsapp_copy import send_whatsapp_copy
 from app.modules.telegram.application.whatsapp_formatter import to_whatsapp_text
-from app.modules.telegram.application.weekly_digest import build_weekly_digest_service
+from app.modules.telegram.application.weekly_digest import announce_to_whatsapp, build_weekly_digest_service
 from app.modules.telegram.application.publications import channel_kind, record_safely, with_current_price
 from app.modules.telegram.infrastructure.publication_repository import TelegramPublicationRepository
 from app.modules.telegram.domain.exceptions import (
@@ -328,7 +328,8 @@ async def notify_deal(
         )
 
     whatsapp_sent = False
-    if payload.text:
+    # Con el Canal de WhatsApp automático (WHATSAPP_ENABLED) la copia al Admin sobra.
+    if payload.text and not settings.whatsapp_enabled:
         whatsapp_sent = await run_in_threadpool(
             send_whatsapp_copy,
             bot,
@@ -428,10 +429,12 @@ async def send_weekly_digest(
     settings: Settings = Depends(get_settings),
     current_user=Depends(require_admin),
 ):
-    """Envía ahora el resumen semanal al canal Admin (versiones Telegram y WhatsApp)."""
+    """Envía ahora el resumen semanal al canal Admin y, con WHATSAPP_ENABLED, al Canal de WhatsApp."""
     service = build_weekly_digest_service(db, settings)
     digest = await service.preview()
     sent = await run_in_threadpool(service.send, digest)
+    if sent:
+        await announce_to_whatsapp(service, digest, settings)
     await audit_log(
         db,
         user_id=str(current_user.id),

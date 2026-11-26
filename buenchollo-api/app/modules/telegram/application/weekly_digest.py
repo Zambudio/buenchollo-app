@@ -232,7 +232,12 @@ class WeeklyDigestService:
         admin_chat_id: str,
         site_url: str,
         guard=None,
+        whatsapp_copy: bool = True,
     ):
+        # Copia «versión WhatsApp» al canal Admin; con el Canal automático
+        # (WHATSAPP_ENABLED) el resumen va a WhatsApp por la cola (`announce_to_whatsapp`).
+        self.whatsapp_copy = whatsapp_copy
+        self.last_image: bytes | None = None
         self.deal_repo = deal_repo
         self.bot = bot
         self.build_entities = build_entities
@@ -276,6 +281,7 @@ class WeeklyDigestService:
         if not digest.telegram_text or not self.admin_chat_id:
             return False
         image = self.collage(digest)
+        self.last_image = image
         sent = False
         if image and digest.caption_fits:
             sent = self.bot.send_photo_bytes(
@@ -305,6 +311,8 @@ class WeeklyDigestService:
         if not sent:
             logger.error("Telegram rechazó el resumen semanal: %s", getattr(self.bot, "last_error", None))
             return False
+        if not self.whatsapp_copy:
+            return True
         send_whatsapp_copy(
             self.bot,
             chat_id=self.admin_chat_id,
@@ -329,7 +337,22 @@ def build_weekly_digest_service(session, settings: Settings) -> WeeklyDigestServ
         admin_chat_id=settings.telegram_admin_channel_id,
         site_url=settings.public_site_url,
         guard=PublicationGuard(AffiliateRepository(session)),
+        whatsapp_copy=not settings.whatsapp_enabled,
     )
+
+
+async def announce_to_whatsapp(service: WeeklyDigestService, digest: WeeklyDigest, settings: Settings) -> None:
+    """Con el Canal de WhatsApp automático, el resumen (collage y texto completo)
+    va también allí. Lo encola el módulo `whatsapp` (bus de eventos). Nunca lanza."""
+    if not settings.whatsapp_enabled or not digest.telegram_text:
+        return
+    from app.core import events
+
+    await events.publish(events.WhatsAppPostRequested(
+        telegram_text=digest.full_text or digest.telegram_text,
+        whatsapp_text=digest.whatsapp_text,
+        image=service.last_image,
+    ))
 
 
 async def _run(settings: Settings) -> bool:
@@ -347,6 +370,8 @@ async def _run(settings: Settings) -> bool:
         return False
     sent = service.send(digest)
     logger.info("Resumen semanal enviado al canal Admin: %s (%d chollos)", sent, digest.count)
+    if sent:
+        await announce_to_whatsapp(service, digest, settings)
     return sent
 
 

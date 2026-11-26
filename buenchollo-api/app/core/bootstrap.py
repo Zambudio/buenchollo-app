@@ -15,7 +15,9 @@ def register_subscribers() -> None:
     from app.modules.instagram.application.subscriber import on_deal_post_published
     from app.modules.telegram.application.admin_alerts import send_admin_alert
     from app.modules.whatsapp.application.subscriber import on_deal_post_published as queue_for_whatsapp
+    from app.modules.whatsapp.application.subscriber import on_whatsapp_post_requested
 
     events.subscribe(events.DealPostPublished, on_deal_post_published)
     events.subscribe(events.DealPostPublished, queue_for_whatsapp)
+    events.subscribe(events.WhatsAppPostRequested, on_whatsapp_post_requested)
     events.subscribe(events.AdminAlert, send_admin_alert)

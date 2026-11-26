@@ -39,4 +39,5 @@ def build_reactivation_notifier(session: AsyncSession, settings: Settings) -> Re
         site_url=settings.public_site_url,
         publications=TelegramPublicationRepository(session),
         generator=TelegramPostGenerator(settings=settings),
+        whatsapp_copy=not settings.whatsapp_enabled,
     )

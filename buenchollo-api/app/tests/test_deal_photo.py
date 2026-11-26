@@ -196,7 +196,7 @@ def test_notify_publica_con_la_tarjeta_usando_precio_y_tienda_del_panel(monkeypa
     app.dependency_overrides[get_db] = _db
     app.dependency_overrides[get_settings] = lambda: Settings(
         telegram_enabled=True, telegram_bot_token="tok", telegram_main_channel_id="-100main",
-        telegram_admin_channel_id="-100admin",
+        telegram_admin_channel_id="-100admin", whatsapp_enabled=False,
     )
     try:
         resp = TestClient(app).post(
