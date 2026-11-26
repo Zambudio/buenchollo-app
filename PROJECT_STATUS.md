@@ -1,7 +1,13 @@
 # PROJECT_STATUS — BuenCholloTech
-*Actualización de producción: 2026-11-24 — `main` con Instagram activo en @buenchollotech (ADR-022), bus de eventos entre módulos (ADR-023), collage semanal en 1200×800 y el «Top de la semana» solo con chollos publicados por primera vez esa semana (#117). Alembic `20261124150000`.*
+*Actualización de producción: 2026-11-26 — `main` con Facebook automático en la página «Buenchollo Tech» (ADR-025), Canal de WhatsApp automático (ADR-024), Instagram (ADR-022) e iconos de las cuatro redes en la web.*
 
 > Bitácora cronológica inversa. Estado operativo vigente: [`docs/project/11-current-state.md`](docs/project/11-current-state.md); pendientes abiertos: [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md).
+
+## 2026-11-26 · Facebook automático e iconos de redes en la web
+
+- **Facebook activo** (PR #122, [ADR-025](docs/adr/ADR-025-publicacion-pagina-facebook.md), guía [`FACEBOOK.md`](docs/guides/FACEBOOK.md)): módulo `facebook` con el mismo patrón que Instagram (suscriptor de `DealPostPublished` → cola `facebook_posts` → job `publish_facebook_queue` cada 2 min). Sube la tarjeta en multipart a `/{page_id}/photos` con el token de página que da el usuario del sistema `bct-publicador`. Texto con emojis estándar, enlace de compra, aviso de afiliado (`FACEBOOK_DISCLOSURE`) y `/facebook` (fuente «Facebook» en la analítica; migración `20261127120000`).
+- **Puesta en marcha**: página en el porfolio, asignada a `bct-publicador`, caso de uso de páginas en la app y token nuevo (5 permisos). Backup previo `bct-prod-20261126T211138Z.dump`; API y scheduler recreados con `up --force-recreate` (`docker restart` no recarga el `.env`). Primer post publicado: HyperX Cloud III S.
+- **Web** (PR #124): iconos de Facebook, Instagram, Telegram y WhatsApp (solo icono) en la barra de navegación, en lugar de los botones de Telegram y WhatsApp, y en el pie.
 
 ## 2026-11-26 · Canal de WhatsApp: activo, sin copia al Admin y revisión de código
 
