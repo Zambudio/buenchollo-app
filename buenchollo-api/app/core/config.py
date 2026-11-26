@@ -264,6 +264,23 @@ class Settings(BaseSettings):
     # URL pública de esta API: Instagram descarga de aquí la imagen de cada post.
     public_api_url: str = "https://api.buenchollotech.com"
 
+    # Canal de WhatsApp: los chollos de los canales de Telegram de
+    # WHATSAPP_CHANNELS se publican también allí a través de la pasarela
+    # `whatsapp-gateway` (contenedor propio, vinculado a la cuenta que
+    # administra el Canal). Ver app/modules/whatsapp y docs/guides/WHATSAPP.md.
+    whatsapp_enabled: bool = False
+    whatsapp_gateway_url: str = "http://buenchollo-whatsapp:3000"
+    whatsapp_gateway_token: str = ""
+    # Enlace de invitación del Canal (https://whatsapp.com/channel/…) o su JID (…@newsletter).
+    whatsapp_channel: str = ""
+    # Canales de Telegram cuyos chollos van también a WhatsApp: main y/o admin.
+    whatsapp_channels: str = "main,admin"
+    # Ritmo: mínimo entre publicaciones y tope diario (hora de Madrid).
+    whatsapp_min_interval_minutes: int = 20
+    whatsapp_daily_limit: int = 15
+    # Solo lo lee la pasarela (mismo .env): vincular con número en vez de QR.
+    whatsapp_pairing_phone: str = ""
+
     # Dominios extra (CSV) permitidos para enlaces de afiliado manuales del
     # blog, además de los ya soportados por defecto (ver domain/affiliate_domains.py).
     blog_affiliate_domains: str = ""

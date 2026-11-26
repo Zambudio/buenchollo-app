@@ -42,6 +42,8 @@ class DealPostPublished:
     card: bytes | None = None
     image_url: str | None = None
     download: Callable[[str], bytes | None] | None = None
+    # Versión WhatsApp editada a mano en el panel (si la hay).
+    whatsapp_text: str | None = None
 
 
 @dataclass(frozen=True)

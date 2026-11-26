@@ -152,6 +152,12 @@
   <td>✅ Aceptado</td>
   <td>2026-11-24</td>
 </tr>
+<tr>
+  <td><a href="ADR-024-publicacion-canal-whatsapp.md">024</a></td>
+  <td>💬 Publicación automática en el Canal de WhatsApp (pasarela Baileys)</td>
+  <td>✅ Aceptado</td>
+  <td>2026-11-26</td>
+</tr>
 </tbody>
 </table>
 
