@@ -1,7 +1,6 @@
-import { TELEGRAM_URL, WHATSAPP_URL } from "@/lib/site";
 import { Link } from "@tanstack/react-router";
-import { Compass, House, Newspaper, Send, Trophy } from "lucide-react";
-import { WhatsAppIcon } from "./WhatsAppIcon";
+import { Compass, House, Newspaper, Trophy } from "lucide-react";
+import { SocialLinks } from "./SocialLinks";
 import { NewDealsBadge } from "@/features/deals/components/NewDealsBadge";
 
 const LINKS = [
@@ -32,26 +31,7 @@ export function CategoryBar() {
             </Link>
           ))}
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <a
-            href={TELEGRAM_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="site-nav-channel flex items-center gap-1.5 my-2 text-xs sm:text-sm font-semibold px-3 sm:px-3.5 py-1.5 transition-colors"
-          >
-            <Send className="size-3.5" aria-hidden="true" />
-            Telegram
-          </a>
-          <a
-            href={WHATSAPP_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="site-nav-channel flex items-center gap-1.5 my-2 text-xs sm:text-sm font-semibold px-3 sm:px-3.5 py-1.5 transition-colors"
-          >
-            <WhatsAppIcon className="size-3.5" />
-            WhatsApp
-          </a>
-        </div>
+        <SocialLinks className="shrink-0 my-1.5" />
       </div>
     </nav>
   );
