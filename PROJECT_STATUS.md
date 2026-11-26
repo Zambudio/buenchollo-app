@@ -3,7 +3,14 @@
 
 > Bitácora cronológica inversa. Estado operativo vigente: [`docs/project/11-current-state.md`](docs/project/11-current-state.md); pendientes abiertos: [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md).
 
-## 2026-11-26 · Canal de WhatsApp automático (pendiente de activar)
+## 2026-11-26 · Canal de WhatsApp: activo, sin copia al Admin y revisión de código
+
+- **Activo en producción** (PRs #118-#120): backup previo `bct-prod-20261126T195210Z.dump`, Alembic `20261126120000`, contenedor `buenchollo-whatsapp` levantado y vinculado a la cuenta propietaria del Canal «Buenchollo Tech» (`WHATSAPP_CHANNEL=120363409389054215@newsletter`). Primera publicación: GL.iNet Flint 2, con su tarjeta.
+- **#119**: por enlace de invitación WhatsApp no da el rol de la cuenta; la pasarela lo pide por JID.
+- **#120**: sin copia «versión WhatsApp» al canal Admin cuando la publicación va sola al Canal; el resumen del domingo también va al Canal (`WhatsAppPostRequested`).
+- **Revisión de código** (ver ADR-024 § Revisión): duplicados comprobados dentro del savepoint; copia al Admin solo si el canal no va a WhatsApp (`app/core/channels.py`); el panel dice «Saldrá en el Canal de WhatsApp» (`whatsapp_queued`) en vez de un falso error; resumen semanal sin repetir y respetando `WHATSAPP_CHANNELS`; la pasarela espera el acuse de WhatsApp (502 rechazo, 504 sin acuse) y limita la subida a 75 s; la pasarela solo recibe su token (no el `.env`); rol del Canal comprobado cada 6 h; token o Canal mal configurados avisan una vez sin gastar intentos; `whatsapp` ya no importa el formato de Telegram.
+
+## 2026-11-26 · Canal de WhatsApp automático
 
 - **En `develop`**: publicación automática en el Canal de WhatsApp ([ADR-024](docs/adr/ADR-024-publicacion-canal-whatsapp.md), guía [`WHATSAPP.md`](docs/guides/WHATSAPP.md)). Copiar a mano imagen y texto desde el canal Admin era lento; WhatsApp no tiene API oficial para Canales.
 - **Pasarela** `whatsapp-gateway/` (contenedor `buenchollo-whatsapp`, Node 22 + Baileys 7.0.0-rc14 fijada): se vincula a la cuenta del Canal como dispositivo, sin navegador ni puerto publicado; `/status`, `/channel` y `/send` con token. Sube las imágenes por la ruta propia de Canales (Baileys aún no lo hace bien, issue #2199).

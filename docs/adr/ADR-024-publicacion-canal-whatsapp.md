@@ -36,7 +36,22 @@ scheduler cada minuto.
   librería. Si la imagen falla dos veces, el chollo sale solo con texto.
 - **Sin duplicados**: el mismo chollo no se encola dos veces en 24 h; un tiempo agotado tras enviar cuenta como
   publicado y se avisa (como en Telegram e Instagram).
-- La copia manual al canal Admin de Telegram se mantiene como respaldo.
+- **Solo cuenta lo que WhatsApp confirma**: la pasarela espera el acuse del mensaje; la subida de la imagen tiene un
+  tope (75 s) menor que la espera de la API (120 s), para que un fallo de subida no se confunda con «quizá publicado».
+- **Copia manual al canal Admin**: solo para lo que no sale solo en WhatsApp (canales fuera de `WHATSAPP_CHANNELS`).
+  Las republicaciones por bajada de precio no se publican solas en WhatsApp porque piden revisión.
+- **Desacoplado**: `telegram` pasa la versión WhatsApp ya hecha en el evento y la regla «¿este canal publica en
+  WhatsApp?» vive en `app/core/channels.py`; `whatsapp` no importa nada de `telegram`.
+- **Mínimo privilegio**: la pasarela recibe solo su token y el teléfono de vinculación, no el `.env` de la API.
+
+## Revisión de código (2026-11-26)
+
+Tras activarlo se revisó todo el cambio y se corrigió: la comprobación de duplicados fuera del savepoint (podía abortar
+la transacción de Telegram), la copia al Admin apagada también para canales que no van a WhatsApp, el aviso falso de
+error en el panel, el resumen semanal sin control de duplicados ni de canal, el «publicado» sin acuse de WhatsApp, la
+subida que podía superar la espera de la API, el `.env` completo dentro de la pasarela, el rol del Canal comprobado una
+sola vez, los errores de configuración que gastaban intentos de cada post y la dependencia de `whatsapp` con el formato
+de Telegram. Queda como decisión (no como fallo) que las republicaciones por bajada de precio no lleguen a WhatsApp.
 
 ## Consecuencias
 

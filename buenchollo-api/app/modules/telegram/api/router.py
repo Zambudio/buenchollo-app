@@ -7,6 +7,7 @@ from starlette.concurrency import run_in_threadpool
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import events
+from app.core.channels import whatsapp_publishes
 from app.core.audit import audit_log
 from app.core.config import Settings, get_settings
 from app.core.database import get_db
@@ -328,8 +329,9 @@ async def notify_deal(
         )
 
     whatsapp_sent = False
-    # Con el Canal de WhatsApp automático (WHATSAPP_ENABLED) la copia al Admin sobra.
-    if payload.text and not settings.whatsapp_enabled:
+    # Si este canal sale solo en el Canal de WhatsApp, la copia al Admin sobra.
+    whatsapp_queued = bool(payload.text) and whatsapp_publishes(channel_id, settings)
+    if payload.text and not whatsapp_queued:
         whatsapp_sent = await run_in_threadpool(
             send_whatsapp_copy,
             bot,
@@ -350,7 +352,7 @@ async def notify_deal(
             card=card,
             image_url=payload.image_url,
             download=bot.download_image,
-            whatsapp_text=payload.whatsapp_text,
+            whatsapp_text=(payload.whatsapp_text or "").strip() or to_whatsapp_text(sent_text or payload.text),
         ))
 
     await audit_log(
@@ -363,9 +365,10 @@ async def notify_deal(
             "title": payload.title,
             "has_text": bool(payload.text),
             "whatsapp_sent": whatsapp_sent,
+            "whatsapp_queued": whatsapp_queued,
         },
     )
-    return {"ok": True, "whatsapp_sent": whatsapp_sent}
+    return {"ok": True, "whatsapp_sent": whatsapp_sent, "whatsapp_queued": whatsapp_queued}
 
 
 @router.get("/publications", response_model=list[TelegramPublicationResponse])

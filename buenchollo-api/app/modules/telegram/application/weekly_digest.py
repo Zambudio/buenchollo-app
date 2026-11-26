@@ -20,6 +20,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
+from app.core.channels import whatsapp_publishes
 from app.core.config import Settings
 from app.core.jobs import job_session
 from app.modules.deals.application.weekly_top import weekly_top
@@ -337,14 +338,15 @@ def build_weekly_digest_service(session, settings: Settings) -> WeeklyDigestServ
         admin_chat_id=settings.telegram_admin_channel_id,
         site_url=settings.public_site_url,
         guard=PublicationGuard(AffiliateRepository(session)),
-        whatsapp_copy=not settings.whatsapp_enabled,
+        whatsapp_copy=not whatsapp_publishes(settings.telegram_admin_channel_id, settings),
     )
 
 
 async def announce_to_whatsapp(service: WeeklyDigestService, digest: WeeklyDigest, settings: Settings) -> None:
     """Con el Canal de WhatsApp automático, el resumen (collage y texto completo)
     va también allí. Lo encola el módulo `whatsapp` (bus de eventos). Nunca lanza."""
-    if not settings.whatsapp_enabled or not digest.telegram_text:
+    # Sale en el canal Admin: va a WhatsApp solo si ese canal cuenta (WHATSAPP_CHANNELS).
+    if not whatsapp_publishes(settings.telegram_admin_channel_id, settings) or not digest.telegram_text:
         return
     from app.core import events
 

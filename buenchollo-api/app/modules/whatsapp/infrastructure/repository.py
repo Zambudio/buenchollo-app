@@ -31,6 +31,16 @@ class WhatsAppRepository:
         )
         return rows.first() is not None
 
+    async def has_recent_text(self, text: str, since: datetime) -> bool:
+        """Mismo texto (pendiente o publicado) desde `since`: para lo que no es
+        de un chollo concreto, como el resumen semanal."""
+        rows = await self.session.execute(
+            select(WhatsAppPost.id)
+            .where(WhatsAppPost.text == text, WhatsAppPost.status != POST_ERROR, WhatsAppPost.created_at >= since)
+            .limit(1)
+        )
+        return rows.first() is not None
+
     async def next_due(self, now: datetime) -> WhatsAppPost | None:
         """La pendiente más antigua que ya puede salir, bloqueada (SKIP LOCKED)."""
         rows = await self.session.execute(

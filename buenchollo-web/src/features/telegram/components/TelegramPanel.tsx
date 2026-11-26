@@ -20,6 +20,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { whatsappNotice } from "../whatsapp-notice";
 import { toast } from "sonner";
 import {
   telegramApi,
@@ -365,9 +366,7 @@ export function TelegramPanel({
         store_name: dealData.store_name ?? null,
       });
       toast.success("✅ Publicado en Telegram", {
-        description: result.whatsapp_sent
-          ? "La versión WhatsApp está en el canal Admin, lista para copiar"
-          : "La versión WhatsApp no llegó al canal Admin (¿canal sin configurar?)",
+        description: whatsappNotice(result),
         duration: 15_000,
         action: whatsapp
           ? { label: "Copiar WhatsApp", onClick: () => void handleCopyWhatsAppText(whatsapp) }
@@ -559,8 +558,9 @@ export function TelegramPanel({
               </button>
             </div>
             <p className="font-mono text-[10px] text-muted-foreground">
-              Al publicar se envía también al canal Admin de Telegram para copiarla desde el móvil.
-              «Compartir» abre WhatsApp con imagen y texto; elige tu Canal.
+              Al publicar sale sola en el Canal de WhatsApp (si la publicación automática está
+              activa para este canal) o llega al canal Admin de Telegram para copiarla. «Compartir»
+              abre WhatsApp con imagen y texto; elige tu Canal.
             </p>
           </div>
 

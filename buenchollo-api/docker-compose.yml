@@ -54,12 +54,15 @@ services:
     build: ../whatsapp-gateway
     container_name: buenchollo-whatsapp
     restart: always
-    # Lee WHATSAPP_GATEWAY_TOKEN y WHATSAPP_PAIRING_PHONE del mismo .env (Synology
-    # no interpola ${...}); sin token se queda en espera y no conecta.
-    env_file:
-      - .env
+    # Solo sus dos variables, no todo el .env: este contenedor ejecuta una
+    # librería de terceros y no necesita la BD ni el resto de secretos.
+    # `docker-compose` (CLI, como se despliega por SSH) las toma del .env del
+    # proyecto. Si no se sustituyen (p. ej. desde la interfaz de Container
+    # Manager), el token queda vacío y la pasarela se queda en espera sin conectar.
     environment:
       - DATA_DIR=/data
+      - WHATSAPP_GATEWAY_TOKEN=${WHATSAPP_GATEWAY_TOKEN:-}
+      - WHATSAPP_PAIRING_PHONE=${WHATSAPP_PAIRING_PHONE:-}
     volumes:
       - ../whatsapp-gateway/data:/data
 
