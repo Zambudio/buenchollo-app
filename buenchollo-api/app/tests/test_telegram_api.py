@@ -250,7 +250,7 @@ def test_notify_del_panel_envia_tambien_la_version_whatsapp_al_canal_admin(clien
     )
 
     assert r.status_code == 200, r.text
-    assert r.json() == {"ok": True, "whatsapp_sent": True}
+    assert r.json() == {"ok": True, "whatsapp_sent": True, "whatsapp_queued": False}
     telegram, whatsapp = (call.kwargs for call in fake_bot.send_preformatted.call_args_list)
     assert telegram["chat_id"] == "-100main" and telegram["entities"]
     assert whatsapp == {
@@ -284,7 +284,7 @@ def test_con_whatsapp_automatico_no_manda_la_copia_al_admin(client, monkeypatch)
     )
 
     assert r.status_code == 200, r.text
-    assert r.json() == {"ok": True, "whatsapp_sent": False}
+    assert r.json() == {"ok": True, "whatsapp_sent": False, "whatsapp_queued": True}
     assert [c.kwargs["chat_id"] for c in fake_bot.send_preformatted.call_args_list] == ["-100main"]
     assert published[0].whatsapp_text == "🔥 *Editado*"  # la versión editada llega a la cola de WhatsApp
 

@@ -17,6 +17,7 @@ from datetime import datetime, timedelta, timezone
 
 from PIL import Image, ImageOps
 
+from app.core.channels import whatsapp_publishes
 from app.core.config import Settings
 from app.modules.whatsapp.domain.models import WhatsAppPost
 from app.modules.whatsapp.domain.text import channel_text
@@ -58,15 +59,7 @@ def goes_to_whatsapp(channel_id: str | None, settings: Settings) -> bool:
     """Si un chollo publicado en ese canal de Telegram va también al Canal de
     WhatsApp. `WHATSAPP_CHANNELS`: `main` (canal público) y/o `admin` (canal
     Admin, donde salen las publicaciones programadas)."""
-    target = str(channel_id or "").strip()
-    if not target:
-        return False
-    ids = {
-        "main": (settings.telegram_main_channel_id or "").strip(),
-        "admin": (settings.telegram_admin_channel_id or "").strip(),
-    }
-    kinds = {k.strip().lower() for k in (settings.whatsapp_channels or "").split(",")}
-    return any(ids.get(kind) == target for kind in kinds if ids.get(kind))
+    return whatsapp_publishes(channel_id, settings)
 
 
 async def queue_whatsapp_post(
@@ -87,10 +80,6 @@ async def queue_whatsapp_post(
         return False
     now = now or datetime.now(timezone.utc)
     try:
-        repo = WhatsAppRepository(session)
-        if deal_id and await repo.has_recent_for_deal(str(deal_id), now - DEDUP_WINDOW):
-            logger.info("WhatsApp: el chollo %s ya está en el Canal (o en cola); no se repite", deal_id)
-            return False
         image = card
         if image is None and image_url and download is not None:
             image = await asyncio.to_thread(lambda: to_jpeg(download(image_url)))
@@ -98,7 +87,19 @@ async def queue_whatsapp_post(
         text = channel_text(telegram_text, edited=whatsapp_text, with_card=with_card)
         if not text:
             return False
+        repo = WhatsAppRepository(session)
+        # Todo lo que toca la BD va en el savepoint: un fallo aquí (p. ej. tabla
+        # sin migrar) no puede abortar la transacción de Telegram que la prestó.
         async with session.begin_nested():
+            since = now - DEDUP_WINDOW
+            if deal_id:
+                repeated = await repo.has_recent_for_deal(str(deal_id), since)
+            else:
+                # Sin chollo (p. ej. el resumen semanal): el mismo texto no se repite.
+                repeated = await repo.has_recent_text(text, since)
+            if repeated:
+                logger.info("WhatsApp: ya está en el Canal (o en cola) en las últimas 24 h; no se repite")
+                return False
             await repo.add_post(
                 WhatsAppPost(
                     deal_id=str(deal_id) if deal_id else None,

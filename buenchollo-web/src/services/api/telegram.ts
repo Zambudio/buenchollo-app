@@ -32,6 +32,12 @@ export interface TelegramGenerateResponse {
   whatsapp_text?: string;
 }
 
+export interface TelegramNotifyResponse {
+  ok: boolean;
+  whatsapp_sent?: boolean;
+  whatsapp_queued?: boolean;
+}
+
 export interface TelegramNotifyRequest {
   // Flujo panel (texto ya editado)
   text?: string;
@@ -40,7 +46,7 @@ export interface TelegramNotifyRequest {
   channel_id?: string;
   /** Chollo al que pertenece, para registrar la publicación. */
   deal_id?: string | null;
-  /** Versión WhatsApp editada; la API la envía también al canal Admin. */
+  /** Versión WhatsApp editada: va al Canal de WhatsApp (automático) o al canal Admin. */
   whatsapp_text?: string | null;
   /** Tarjeta de oferta (imagen): tienda; con `current_price` y `previous_price`. */
   store_name?: string | null;
@@ -114,7 +120,11 @@ export const telegramApi = {
       .then((r) => r.text);
   },
 
-  notify(data: TelegramNotifyRequest): Promise<{ ok: boolean; whatsapp_sent?: boolean }> {
-    return apiClient.post<{ ok: boolean; whatsapp_sent?: boolean }>("/telegram/notify", data);
+  /**
+   * `whatsapp_queued`: sale sola en el Canal de WhatsApp (publicación automática).
+   * `whatsapp_sent`: la copia «versión WhatsApp» llegó al canal Admin.
+   */
+  notify(data: TelegramNotifyRequest): Promise<TelegramNotifyResponse> {
+    return apiClient.post<TelegramNotifyResponse>("/telegram/notify", data);
   },
 };

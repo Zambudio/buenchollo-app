@@ -9,8 +9,8 @@ Ritmo, para que el Canal se comporte como una persona y no como un bot:
 Lo que no cabe espera al siguiente hueco; a las 12 h se descarta y se avisa.
 
 Fallos:
-  · pasarela caída o WhatsApp sin vincular → no cuenta como intento; aviso al
-    canal Admin como mucho cada 6 h;
+  · pasarela caída, WhatsApp sin vincular o mala configuración (token, Canal,
+    rol) → no cuenta como intento; un aviso al canal Admin como mucho cada 6 h;
   · error al publicar → hasta 5 intentos; desde el 3.º, solo texto (si la imagen
     es lo que falla, el chollo sale igual con su enlace);
   · tiempo agotado después de enviar → se da por publicado y se avisa para
@@ -49,7 +49,9 @@ ADMIN_ROLES = {"OWNER", "ADMIN"}
 _JID = re.compile(r"^\d+@newsletter$")
 
 # Estado en memoria del proceso del scheduler (vive mientras el contenedor).
-_resolved_jid: dict[str, str] = {}
+# Canal resuelto y comprobado: (JID, cuándo); el rol se vuelve a mirar cada 6 h.
+_resolved_jid: dict[str, tuple[str, datetime]] = {}
+ROLE_RECHECK = timedelta(hours=6)
 _last_alert: dict[str, datetime] = {}
 
 
@@ -148,6 +150,14 @@ class WhatsAppPublisher:
             if exc.offline:
                 await self._offline(str(exc), now)
                 return 0
+            if exc.config:
+                await self._alert(
+                    "config",
+                    "⚠️ WhatsApp: la pasarela rechaza el token. WHATSAPP_GATEWAY_TOKEN debe ser el mismo "
+                    "en la API y en buenchollo-whatsapp.",
+                    now,
+                )
+                return 0
             post.attempts += 1
             post.last_error = str(exc)[:500]
             logger.warning("WhatsApp: intento %d fallido para %s: %s", post.attempts, post.id, exc)
@@ -163,15 +173,23 @@ class WhatsAppPublisher:
         if not configured:
             await self._alert("config", "⚠️ WhatsApp: falta WHATSAPP_CHANNEL (enlace o JID del Canal).", now)
             return None
-        if configured in _resolved_jid:
-            return _resolved_jid[configured]
-        if _JID.match(configured):
-            info = await asyncio.to_thread(self.client.channel, jid=configured)
-        else:
-            info = await asyncio.to_thread(self.client.channel, invite=invite_code(configured))
+        cached = _resolved_jid.get(configured)
+        if cached and now - cached[1] < ROLE_RECHECK:
+            return cached[0]
+        try:
+            if _JID.match(configured):
+                info = await asyncio.to_thread(self.client.channel, jid=configured)
+            else:
+                info = await asyncio.to_thread(self.client.channel, invite=invite_code(configured))
+        except GatewayError as exc:
+            if exc.offline or exc.config:
+                raise
+            await self._alert("config", f"⚠️ WhatsApp: no se encuentra el Canal de WHATSAPP_CHANNEL ({exc}).", now)
+            return None
         role = str(info.get("role") or "").upper()
         jid = info.get("jid")
         if not jid or role not in ADMIN_ROLES:
+            _resolved_jid.pop(configured, None)
             await self._alert(
                 "role",
                 f"⚠️ WhatsApp: la cuenta vinculada no administra el Canal «{info.get('name') or configured}» "
@@ -179,7 +197,7 @@ class WhatsAppPublisher:
                 now,
             )
             return None
-        _resolved_jid[configured] = jid
+        _resolved_jid[configured] = (jid, now)
         logger.info("WhatsApp: publicando en el Canal «%s» (%s) como %s", info.get("name"), jid, role)
         return jid
 
