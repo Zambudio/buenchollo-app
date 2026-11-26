@@ -3,10 +3,10 @@
 > Código: `buenchollo-api/app/modules/facebook/`. Mismo patrón que Instagram ([INSTAGRAM.md](INSTAGRAM.md)):
 > suscriptor de `DealPostPublished` en el bus de eventos, cola en BD y job del scheduler.
 >
-> **Estado:** código listo y apagado (`FACEBOOK_ENABLED=false`) hasta tener el token de la página.
+> **Estado:** página en el porfolio, asignada a `bct-publicador` y caso de uso de páginas en la app (2026-11-26).
 
 Cada chollo que sale en los canales de Telegram de `FACEBOOK_CHANNELS` (panel o programado) se publica también
-en la página **Buenchollo Tech** (id `61596676873757`): la misma imagen (tarjeta de oferta) y el texto adaptado.
+en la página **Buenchollo Tech** (id de la API `1407115035828198`; el de la URL del perfil, 61596676873757, no sirve): la misma imagen (tarjeta de oferta) y el texto adaptado.
 
 ## Cómo funciona
 
@@ -43,7 +43,7 @@ Se reutiliza lo de Instagram: porfolio «Buenchollotech», app «BuenCholloTech 
 
 ```env
 FACEBOOK_ENABLED=true
-FACEBOOK_PAGE_ID=61596676873757
+FACEBOOK_PAGE_ID=1407115035828198
 FACEBOOK_ACCESS_TOKEN=<token>
 FACEBOOK_CHANNELS=main,admin
 ```
@@ -57,7 +57,7 @@ y reiniciar: `docker restart buenchollo-api buenchollo-scheduler`. Comprobar con
 |---|---|---|
 | `FACEBOOK_ENABLED` | `false` | Interruptor general (encolar y publicar) |
 | `FACEBOOK_ACCESS_TOKEN` | — | Token del usuario del sistema (`EAA…`) con permisos de página |
-| `FACEBOOK_PAGE_ID` | — | Id de la página (`61596676873757`) |
+| `FACEBOOK_PAGE_ID` | — | Id de la página (`1407115035828198`) |
 | `FACEBOOK_GRAPH_VERSION` | `v23.0` | Versión de la Graph API |
 | `FACEBOOK_CHANNELS` | `main` | Canales de Telegram que cuentan: `main`, `admin` o `main,admin` (en prod, `main,admin`) |
 | `FACEBOOK_HASHTAGS` | `chollos ofertas tecnologia` | Hashtags fijos, sin `#` |
