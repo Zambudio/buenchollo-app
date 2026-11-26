@@ -55,7 +55,10 @@ y comentan, y el sistema notifica vía **alertas personalizadas** y un
 | 📊 `analytics` | Analítica first-party, atribución por sesión, contador de blog y exclusión de dispositivo |
 | 📝 `blog` / `blog_comments` | Artículos, categorías editoriales, votos y comentarios del blog |
 | 📦 `products` | Preview de URL Amazon (extracción ASIN + enriquecimiento IA con copywriting y categorías) |
-| ✈️ `telegram` | Publicación al canal con formato emoji premium, hashtags IA y programación de deals; versión para el Canal de WhatsApp (se comparte a mano) |
+| ✈️ `telegram` | Publicación al canal con formato emoji premium, hashtags IA y programación de deals; versión para el Canal de WhatsApp (copia al canal Admin solo si no sale sola en el Canal) |
+| 📸 `instagram` | Publicación automática en el feed de Instagram: cola y job del scheduler ([ADR-022](../adr/ADR-022-publicacion-instagram.md)) |
+| 💬 `whatsapp` | Publicación automática en el Canal de WhatsApp vía `whatsapp-gateway`, con ritmo ([ADR-024](../adr/ADR-024-publicacion-canal-whatsapp.md)) |
+| 👍 `facebook` | Publicación automática en la página de Facebook: cola y job del scheduler; solo en `develop` y apagado por defecto ([`FACEBOOK.md`](../guides/FACEBOOK.md)) |
 | 🗓️ `scheduled_deals` | Cola y calendario de publicaciones web/Telegram, con edición previa integral |
 | ⏱️ `scheduled_tasks` | Motor registrable de mantenimiento y revisión periódica de precios |
 | 🏷️ `categories` | Catálogo maestro (admin) |

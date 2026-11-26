@@ -1,7 +1,12 @@
 # PROJECT_STATUS — BuenCholloTech
-*Actualización de producción: 2026-11-24 — `main` con Instagram activo en @buenchollotech (ADR-022), bus de eventos entre módulos (ADR-023), collage semanal en 1200×800 y el «Top de la semana» solo con chollos publicados por primera vez esa semana (#117). Alembic `20261124150000`.*
+*Actualización de producción: 2026-11-26 — `main` con el Canal de WhatsApp automático activo (ADR-024, PR #118-#121), además de Instagram (ADR-022) y el bus de eventos (ADR-023). Alembic `20261126120000`. En `develop`: módulo Facebook apagado (Alembic `20261127120000`).*
 
 > Bitácora cronológica inversa. Estado operativo vigente: [`docs/project/11-current-state.md`](docs/project/11-current-state.md); pendientes abiertos: [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md).
+
+## 2026-11-26 · Página de Facebook (en `develop`, apagada)
+
+- **En `develop`** (commit `da8c3f7`), sin pasar a `main`: módulo `facebook` con el patrón de Instagram. Suscriptor de `DealPostPublished` → cola `facebook_posts` (migración `20261127120000`, que añade también la fuente `facebook` a la analítica) → job `publish_facebook_queue` cada 2 min, que sube la foto a la página con el token de página obtenido con el del usuario del sistema del porfolio. Reintentos, `AdminAlert` y sin duplicar si Meta no confirma. `GET /v1/facebook/status` (admin); ruta web `/facebook` con `utm_source=facebook`.
+- **Estado**: apagado (`FACEBOOK_ENABLED=false`) hasta tener el token de la página. Pasos de activación en [`FACEBOOK.md`](docs/guides/FACEBOOK.md).
 
 ## 2026-11-26 · Canal de WhatsApp: activo, sin copia al Admin y revisión de código
 

@@ -77,7 +77,7 @@ app/
 
 ```
 affiliates · ai · alerts · analytics · blog · blog_comments · categories ·
-comments · deals · emails · instagram · notifications · products ·
+comments · deals · emails · facebook · instagram · notifications · products ·
 scheduled_deals · scheduled_tasks · stores · submissions · telegram · users ·
 whatsapp
 ```
@@ -102,7 +102,7 @@ whatsapp
 
 > 🔀 **Entre módulos**: un módulo no importa la aplicación ni la infraestructura de otro para reaccionar a lo que
 > hace. Emite un evento (`app/core/events.py`) y quien quiera se suscribe en `app/core/bootstrap.py`. Ejemplo:
-> `telegram` emite `DealPostPublished` e `instagram` y `whatsapp` lo escuchan; los avisos al administrador van como `AdminAlert`.
+> `telegram` emite `DealPostPublished` e `instagram`, `whatsapp` y `facebook` lo escuchan; los avisos al administrador van como `AdminAlert`.
 > Detalle: [ADR-023](../adr/ADR-023-bus-de-eventos-entre-modulos.md).
 
 ### 📜 Reglas de los routers
@@ -137,7 +137,8 @@ src/
 │   ├── publicar.tsx               ➕ Proponer un chollo (2 pasos)
 │   ├── mis-chollos.tsx            📋 Propuestas del usuario y su estado
 │   ├── blog.tsx / blog_.$slug.tsx 📰 Blog público
-│   └── telegram.tsx               📈 Entrada atribuida desde Telegram
+│   └── telegram.tsx · whatsapp.tsx · instagram.tsx · facebook.tsx
+│                                  📈 Entradas atribuidas por canal (utm_source)
 │
 ├── 🎨 features/                   Dominios funcionales
 │   ├── deals/components/          DealCard · Comments · ShareBox

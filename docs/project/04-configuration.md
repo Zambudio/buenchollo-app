@@ -117,6 +117,31 @@ de los identificadores seudónimos, no descifra datos anteriores.
 | `INSTAGRAM_HASHTAGS` | Hashtags fijos sin `#`, separados por espacios |
 | `PUBLIC_API_URL` | URL pública de la API (`https://api.buenchollotech.com`): de aquí descarga Instagram la imagen |
 
+**Canal de WhatsApp** ([ADR-024](../adr/ADR-024-publicacion-canal-whatsapp.md), guía [`WHATSAPP.md`](../guides/WHATSAPP.md)):
+
+| Variable | Descripción |
+|---|---|
+| `WHATSAPP_ENABLED` | `false` por defecto (en producción `true` desde el 2026-11-26) |
+| `WHATSAPP_GATEWAY_URL` | URL interna de la pasarela (`http://buenchollo-whatsapp:3000`) |
+| `WHATSAPP_GATEWAY_TOKEN` | Secreto compartido API ↔ pasarela (≥ 24 caracteres) |
+| `WHATSAPP_CHANNEL` | Enlace de invitación del Canal o su JID (`…@newsletter`) |
+| `WHATSAPP_CHANNELS` | Canales de Telegram cuyos chollos van también al Canal: `main`, `admin` o ambos |
+| `WHATSAPP_MIN_INTERVAL_MINUTES` | Minutos mínimos entre dos publicaciones (`20`) |
+| `WHATSAPP_DAILY_LIMIT` | Máximo de publicaciones al día, hora de Madrid (`15`) |
+| `WHATSAPP_PAIRING_PHONE` | Opcional: vincular con número de teléfono en vez de QR |
+
+**Página de Facebook** (solo en `develop`; guía [`FACEBOOK.md`](../guides/FACEBOOK.md)):
+
+| Variable | Descripción |
+|---|---|
+| `FACEBOOK_ENABLED` | `false` por defecto: interruptor general (encolar y publicar) |
+| `FACEBOOK_ACCESS_TOKEN` | Token del usuario del sistema del porfolio (`EAA…`) con permisos de página; no se guarda en BD |
+| `FACEBOOK_PAGE_ID` | Id de la página |
+| `FACEBOOK_GRAPH_VERSION` | Versión de la Graph API (`v23.0`) |
+| `FACEBOOK_CHANNELS` | Canales de Telegram que cuentan: `main` (por defecto), `admin` o ambos |
+| `FACEBOOK_HASHTAGS` | Hashtags fijos sin `#`, separados por espacios |
+| `FACEBOOK_DISCLOSURE` | Aviso de afiliación al pie; vacío = sin aviso |
+
 El worker se ejecuta en marcas exactas de cinco minutos. Precomprueba las ofertas
 del siguiente intervalo y vuelve a verificarlas en la hora programada antes de
 publicar. Requiere también `DATABASE_URL`, las credenciales de Amazon y los tres
