@@ -439,3 +439,106 @@ def test_el_estado_exige_admin():
 
     response = TestClient(app).get("/v1/whatsapp/status")
     assert response.status_code in {401, 403}
+
+
+# ── Resumen semanal y otras publicaciones (WhatsAppPostRequested) ────────────
+
+@pytest.mark.asyncio
+async def test_el_resumen_semanal_se_encola_con_su_collage_y_sin_quitar_precios(monkeypatch):
+    from contextlib import asynccontextmanager
+
+    from app.core.events import WhatsAppPostRequested
+    from app.modules.whatsapp.application import subscriber
+
+    session = MagicMock()
+    session.commit = AsyncMock()
+
+    @asynccontextmanager
+    async def fake_job_session(settings):
+        yield session
+
+    queue = AsyncMock(return_value=True)
+    monkeypatch.setattr(subscriber, "queue_whatsapp_post", queue)
+    monkeypatch.setattr(subscriber, "job_session", fake_job_session)
+    monkeypatch.setattr(subscriber, "get_settings", lambda: _settings(database_url="postgresql+asyncpg://x/y"))
+
+    await subscriber.on_whatsapp_post_requested(
+        WhatsAppPostRequested(telegram_text="TOP", whatsapp_text="*TOP*", image=b"COLLAGE")
+    )
+
+    kwargs = queue.await_args.kwargs
+    assert kwargs["card"] == b"COLLAGE" and kwargs["whatsapp_text"] == "*TOP*" and kwargs["strip_prices"] is False
+    session.commit.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_strip_prices_false_conserva_los_precios_aunque_haya_imagen():
+    session = _queue_session()
+    await queue_whatsapp_post(
+        session, _settings(), deal_id=None, telegram_text=POST, card=b"COLLAGE", image_url=None,
+        strip_prices=False, now=NOW,
+    )
+    assert "29,99" in session.add.call_args.args[0].text
+
+
+@pytest.mark.asyncio
+async def test_resumen_semanal_avisa_a_whatsapp_solo_si_esta_activo(monkeypatch):
+    from app.core import events
+    from app.modules.telegram.application.weekly_digest import announce_to_whatsapp
+
+    seen = []
+
+    async def fake_publish(event):
+        seen.append(event)
+
+    monkeypatch.setattr(events, "publish", fake_publish)
+    service = MagicMock(last_image=b"IMG")
+    digest = MagicMock(telegram_text="pie", full_text="completo", whatsapp_text="*wa*")
+
+    await announce_to_whatsapp(service, digest, _settings(whatsapp_enabled=False))
+    assert seen == []
+    await announce_to_whatsapp(service, digest, _settings())
+    assert seen[0].telegram_text == "completo" and seen[0].image == b"IMG" and seen[0].whatsapp_text == "*wa*"
+
+
+# ── Sin copia «versión WhatsApp» al canal Admin con el Canal automático ──────
+
+@pytest.mark.asyncio
+async def test_programadas_sin_copia_al_admin(monkeypatch):
+    from app.modules.scheduled_deals.application import publication_worker as pw
+
+    copy = MagicMock()
+    monkeypatch.setattr(pw, "send_whatsapp_copy", copy)
+    worker = pw.ScheduledPublicationWorker(None, None, None, MagicMock(), "-100main", "-100admin", whatsapp_copy=False)
+    await worker._send_whatsapp_copy(MagicMock(telegram_text="t", image_url=None))
+    copy.assert_not_called()
+
+    worker.whatsapp_copy = True
+    await worker._send_whatsapp_copy(MagicMock(telegram_text="t", image_url=None))
+    copy.assert_called_once()
+
+
+def test_resumen_semanal_sin_copia_al_admin(monkeypatch):
+    from app.modules.telegram.application import weekly_digest as wd
+
+    copy = MagicMock()
+    monkeypatch.setattr(wd, "send_whatsapp_copy", copy)
+    bot = MagicMock()
+    bot.send_photo_bytes.return_value = True
+    service = wd.WeeklyDigestService(MagicMock(), bot, lambda t: [], "-100admin", "https://x", whatsapp_copy=False)
+    monkeypatch.setattr(service, "collage", lambda digest: b"IMG")
+    digest = MagicMock(telegram_text="pie", caption_fits=True)
+
+    assert service.send(digest) is True
+    copy.assert_not_called()
+    assert service.last_image == b"IMG"
+
+
+def test_las_factorias_apagan_la_copia_con_whatsapp_activo():
+    from app.modules.scheduled_tasks.application.factory import build_reactivation_notifier
+    from app.modules.telegram.application.weekly_digest import build_weekly_digest_service
+
+    session = MagicMock()
+    assert build_reactivation_notifier(session, _settings()).whatsapp_copy is False
+    assert build_reactivation_notifier(session, _settings(whatsapp_enabled=False)).whatsapp_copy is True
+    assert build_weekly_digest_service(session, _settings()).whatsapp_copy is False

@@ -106,7 +106,10 @@ def build_admin_message(deal, event: OfferEvent, site_url: str, last: LastPublic
 
 
 class ReactivationNotifier:
-    def __init__(self, bot, admin_chat_id: str, matcher, deal_repo, site_url: str, *, publications, generator):
+    def __init__(
+        self, bot, admin_chat_id: str, matcher, deal_repo, site_url: str, *, publications, generator,
+        whatsapp_copy: bool = True,
+    ):
         self.bot = bot
         self.admin_chat_id = admin_chat_id
         self.matcher = matcher
@@ -114,6 +117,8 @@ class ReactivationNotifier:
         self.site_url = site_url
         self.publications = publications
         self.generator = generator
+        # Copia «versión WhatsApp» al canal Admin; se apaga con el Canal automático.
+        self.whatsapp_copy = whatsapp_copy
 
     async def notify(self, events: list[OfferEvent], now: datetime) -> int:
         """Devuelve cuántos avisos llegaron al canal Admin."""
@@ -176,6 +181,8 @@ class ReactivationNotifier:
             sent_text = None
         if sent_text is None:
             logger.warning("No se pudo enviar al canal Admin la publicación corregida de %s", deal.slug)
+            return
+        if not self.whatsapp_copy:
             return
         await self._call(send_whatsapp_copy, self.bot, chat_id=self.admin_chat_id,
                          telegram_text=sent_text, image_url=image_url, image_bytes=card)

@@ -71,6 +71,9 @@ def test_bootstrap_conecta_instagram_whatsapp_y_los_avisos_al_admin(clean_bus):
     register_subscribers()  # idempotente
 
     assert events.subscribers(events.DealPostPublished) == [on_deal_post_published, queue_for_whatsapp]
+    from app.modules.whatsapp.application.subscriber import on_whatsapp_post_requested
+
+    assert events.subscribers(events.WhatsAppPostRequested) == [on_whatsapp_post_requested]
     assert events.subscribers(events.AdminAlert) == [send_admin_alert]
 
 

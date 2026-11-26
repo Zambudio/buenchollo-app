@@ -80,6 +80,7 @@ async def queue_whatsapp_post(
     image_url: str | None,
     download: Callable[[str], bytes | None] | None = None,
     now: datetime | None = None,
+    strip_prices: bool | None = None,
 ) -> bool:
     """Deja el post en la cola (`whatsapp_posts`). True si se encoló."""
     if not settings.whatsapp_enabled or not (telegram_text or whatsapp_text):
@@ -93,7 +94,8 @@ async def queue_whatsapp_post(
         image = card
         if image is None and image_url and download is not None:
             image = await asyncio.to_thread(lambda: to_jpeg(download(image_url)))
-        text = channel_text(telegram_text, edited=whatsapp_text, with_card=card is not None)
+        with_card = card is not None if strip_prices is None else strip_prices
+        text = channel_text(telegram_text, edited=whatsapp_text, with_card=with_card)
         if not text:
             return False
         async with session.begin_nested():

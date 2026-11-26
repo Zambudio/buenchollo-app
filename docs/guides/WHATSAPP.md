@@ -3,12 +3,13 @@
 > Decisión: [ADR-024](../adr/ADR-024-publicacion-canal-whatsapp.md). Código: `buenchollo-api/app/modules/whatsapp/`
 > (cola y job) y `whatsapp-gateway/` (pasarela).
 >
-> **Estado:** listo para activar; falta vincular la cuenta y poner las variables en el `.env` del NAS.
+> **Estado:** activo desde el 2026-11-26 en el Canal «Buenchollo Tech» (`120363409389054215@newsletter`), cuenta propietaria vinculada.
 
 Cada chollo que sale en los canales de Telegram de `WHATSAPP_CHANNELS` (panel o programado) se publica también en
 el **Canal de WhatsApp** (`https://whatsapp.com/channel/0029VbD7ZIt4dTnQlrLmfs0Y`): la misma tarjeta de oferta y el
-texto de la «versión WhatsApp» (emojis estándar, `*negritas*`, enlace visible a `/whatsapp`). La copia al canal Admin
-de Telegram sigue saliendo igual, por si hay que publicar a mano.
+texto de la «versión WhatsApp» (emojis estándar, `*negritas*`, enlace visible a `/whatsapp`). Con el Canal automático
+activo ya no se manda la copia «versión WhatsApp» al canal Admin de Telegram. El resumen del domingo también va solo al
+Canal (collage y texto completo); las republicaciones por bajada de precio no (piden revisión antes de reenviar).
 
 WhatsApp no tiene API oficial para Canales. La pasarela se vincula a la cuenta que administra el Canal como un
 **dispositivo vinculado** más (lo mismo que WhatsApp Web) con [Baileys](https://github.com/WhiskeySockets/Baileys),
