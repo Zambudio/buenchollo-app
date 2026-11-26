@@ -9,6 +9,7 @@ import {
   MousePointerClick,
   Search,
   Send,
+  ThumbsUp,
   Users,
 } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
@@ -40,6 +41,7 @@ const SOURCE_META = {
   telegram: { label: "Telegram", icon: Send },
   whatsapp: { label: "WhatsApp", icon: MessageCircle },
   instagram: { label: "Instagram", icon: Camera },
+  facebook: { label: "Facebook", icon: ThumbsUp },
   organic: { label: "Búsqueda orgánica", icon: Search },
   referral: { label: "Otras webs", icon: Globe2 },
   direct: { label: "Directo / desconocido", icon: MousePointerClick },

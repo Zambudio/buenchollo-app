@@ -21,7 +21,7 @@ class AnalyticsEvent(Base):
     __tablename__ = "analytics_events"
     __table_args__ = (
         CheckConstraint(
-            "source IN ('telegram', 'whatsapp', 'instagram', 'organic', 'referral', 'direct')",
+            "source IN ('telegram', 'whatsapp', 'instagram', 'facebook', 'organic', 'referral', 'direct')",
             name="ck_analytics_events_source",
         ),
         CheckConstraint("char_length(path) BETWEEN 1 AND 500", name="ck_analytics_events_path"),
