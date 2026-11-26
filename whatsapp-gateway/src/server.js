@@ -162,8 +162,10 @@ async function channelInfo(url) {
   requireOpen()
   const invite = (url.searchParams.get('invite') || '').trim().split('/').pop()
   const jid = (url.searchParams.get('jid') || '').trim()
-  const meta = jid ? await sock.newsletterMetadata('jid', jid) : await sock.newsletterMetadata('invite', invite)
+  let meta = jid ? await sock.newsletterMetadata('jid', jid) : await sock.newsletterMetadata('invite', invite)
   if (!meta) throw Object.assign(new Error('Canal no encontrado'), { status: 404 })
+  // Por enlace de invitación WhatsApp no devuelve el rol de quien pregunta: se pide por JID.
+  if (!meta.viewer_metadata && meta.id) meta = (await sock.newsletterMetadata('jid', meta.id)) || meta
   return {
     jid: meta.id,
     name: meta.thread_metadata?.name?.text ?? null,
