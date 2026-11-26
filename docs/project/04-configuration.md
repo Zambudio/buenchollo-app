@@ -117,6 +117,18 @@ de los identificadores seudónimos, no descifra datos anteriores.
 | `INSTAGRAM_HASHTAGS` | Hashtags fijos sin `#`, separados por espacios |
 | `PUBLIC_API_URL` | URL pública de la API (`https://api.buenchollotech.com`): de aquí descarga Instagram la imagen |
 
+**Facebook** ([ADR-025](../adr/ADR-025-publicacion-pagina-facebook.md), guía [`FACEBOOK.md`](../guides/FACEBOOK.md)):
+
+| Variable | Descripción |
+|---|---|
+| `FACEBOOK_ENABLED` | `false` por defecto. `true`: los chollos de `FACEBOOK_CHANNELS` se publican también en la página |
+| `FACEBOOK_ACCESS_TOKEN` | Token del usuario del sistema `bct-publicador` (`EAA…`, sin caducidad) con permisos de página; de él sale el de la página |
+| `FACEBOOK_PAGE_ID` | Id de la página para la API (`1407115035828198`; no el de la URL del perfil) |
+| `FACEBOOK_CHANNELS` | Canales de Telegram que cuentan: `main`, `admin` o ambos (prod: `main,admin`) |
+| `FACEBOOK_GRAPH_VERSION` | Versión de la Graph API (`v23.0`) |
+| `FACEBOOK_HASHTAGS` | Hashtags fijos sin `#`, separados por espacios |
+| `FACEBOOK_DISCLOSURE` | Aviso de afiliado al pie de cada post (vacío = sin aviso) |
+
 El worker se ejecuta en marcas exactas de cinco minutos. Precomprueba las ofertas
 del siguiente intervalo y vuelve a verificarlas en la hora programada antes de
 publicar. Requiere también `DATABASE_URL`, las credenciales de Amazon y los tres

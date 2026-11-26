@@ -59,6 +59,7 @@ app/
     ├── telegram/          # publicación al canal, formato emoji premium, hashtags IA
     ├── instagram/         # publicación en el feed (cola + job del scheduler), token renovado solo (ADR-022)
     ├── whatsapp/          # publicación en el Canal de WhatsApp vía whatsapp-gateway (cola con ritmo + job, ADR-024)
+    ├── facebook/          # publicación en la página de Facebook (cola + job del scheduler, token de página, ADR-025)
     ├── alerts/ · notifications/ · emails/ · comments/ · blog/ · analytics/
     ├── scheduled_deals/ · scheduled_tasks/
     ├── categories/
