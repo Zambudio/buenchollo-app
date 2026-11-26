@@ -3,6 +3,13 @@
 
 > Bitácora cronológica inversa. Estado operativo vigente: [`docs/project/11-current-state.md`](docs/project/11-current-state.md); pendientes abiertos: [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md).
 
+## 2026-11-26 · Canal de WhatsApp automático (pendiente de activar)
+
+- **En `develop`**: publicación automática en el Canal de WhatsApp ([ADR-024](docs/adr/ADR-024-publicacion-canal-whatsapp.md), guía [`WHATSAPP.md`](docs/guides/WHATSAPP.md)). Copiar a mano imagen y texto desde el canal Admin era lento; WhatsApp no tiene API oficial para Canales.
+- **Pasarela** `whatsapp-gateway/` (contenedor `buenchollo-whatsapp`, Node 22 + Baileys 7.0.0-rc14 fijada): se vincula a la cuenta del Canal como dispositivo, sin navegador ni puerto publicado; `/status`, `/channel` y `/send` con token. Sube las imágenes por la ruta propia de Canales (Baileys aún no lo hace bien, issue #2199).
+- **Módulo `whatsapp`** en la API: suscriptor de `DealPostPublished` → cola `whatsapp_posts` (migración `20261126120000`) → job `publish_whatsapp_queue` cada minuto con ritmo de persona (≥ 20 min entre publicaciones, ≤ 15 al día, margen aleatorio). Avisos al canal Admin si se desvincula, si falla o si no confirma. El panel pasa a la cola la versión WhatsApp editada a mano.
+- **Para activarlo**: variables `WHATSAPP_*` en el `.env` del NAS, levantar la pasarela, recrear API y scheduler y escanear el QR (`whatsapp-gateway/data/qr.png`). Pasos en la guía.
+
 ## 2026-11-24 · «Top de la semana» solo con chollos nuevos
 
 - **En `main`** (PR #117, merge `e1e9ae6`). `published_at` se renueva al reactivar un chollo antiguo (revisión nocturna, alta del mismo producto, programada), así que el lateral «Top de la semana» y el resumen de los domingos colaban chollos de hace meses. Nueva columna `deals.first_published_at` (migración `20261124150000`): la rellena un trigger al pasar a `active` y el histórico toma la fecha más antigua conocida. `get_top_discount_active_since` filtra por ella.

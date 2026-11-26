@@ -61,6 +61,7 @@ app/
     ├── affiliates/        # canonicalización/reescritores de URL + Awin/Tradedoubler: registro de programas, feeds, importación al editor y reglas de publicación (ADR-019)
     ├── telegram/          # publicación al canal, formato emoji premium, hashtags IA
     ├── instagram/         # publicación en el feed (cola + job del scheduler), token renovado solo (ADR-022)
+    ├── whatsapp/          # publicación en el Canal de WhatsApp vía whatsapp-gateway (cola con ritmo + job, ADR-024)
     ├── alerts/            # alertas de usuario y matching puro (`matches_alert`)
     ├── notifications/     # notificaciones in-app
     ├── emails/            # SMTP, plantillas Jinja, bienvenida y resumen nocturno de alertas

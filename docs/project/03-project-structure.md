@@ -78,7 +78,8 @@ app/
 ```
 affiliates · ai · alerts · analytics · blog · blog_comments · categories ·
 comments · deals · emails · instagram · notifications · products ·
-scheduled_deals · scheduled_tasks · stores · submissions · telegram · users
+scheduled_deals · scheduled_tasks · stores · submissions · telegram · users ·
+whatsapp
 ```
 
 ### 🔄 Flujo de dependencias
@@ -101,7 +102,7 @@ scheduled_deals · scheduled_tasks · stores · submissions · telegram · users
 
 > 🔀 **Entre módulos**: un módulo no importa la aplicación ni la infraestructura de otro para reaccionar a lo que
 > hace. Emite un evento (`app/core/events.py`) y quien quiera se suscribe en `app/core/bootstrap.py`. Ejemplo:
-> `telegram` emite `DealPostPublished` e `instagram` lo escucha; los avisos al administrador van como `AdminAlert`.
+> `telegram` emite `DealPostPublished` e `instagram` y `whatsapp` lo escuchan; los avisos al administrador van como `AdminAlert`.
 > Detalle: [ADR-023](../adr/ADR-023-bus-de-eventos-entre-modulos.md).
 
 ### 📜 Reglas de los routers

@@ -18,6 +18,7 @@ from app.modules.emails.application.digest_worker import run_due_alert_digest
 from app.modules.affiliates.application.feed_sync_job import run_awin_feed_sync
 from app.modules.telegram.application.weekly_digest import run_weekly_deals_digest
 from app.modules.instagram.application.publisher import run_instagram_queue
+from app.modules.whatsapp.application.publisher import run_whatsapp_queue
 
 from app.core.jobs import SCHEDULER_TIMEZONE
 
@@ -119,6 +120,17 @@ def build_deals_scheduler(settings: Settings) -> tuple[BackgroundScheduler, Deal
         minute="*/2",
         args=[settings],
         id="publish_instagram_queue",
+        max_instances=1,
+        coalesce=True,
+    )
+    # Cola del Canal de WhatsApp: una publicación como mucho por minuto, con
+    # intervalo mínimo y tope diario (WHATSAPP_*). Sin WHATSAPP_ENABLED no hace nada.
+    scheduler.add_job(
+        run_whatsapp_queue,
+        "cron",
+        minute="*",
+        args=[settings],
+        id="publish_whatsapp_queue",
         max_instances=1,
         coalesce=True,
     )

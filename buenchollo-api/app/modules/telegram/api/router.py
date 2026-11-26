@@ -349,6 +349,7 @@ async def notify_deal(
             card=card,
             image_url=payload.image_url,
             download=bot.download_image,
+            whatsapp_text=payload.whatsapp_text,
         ))
 
     await audit_log(

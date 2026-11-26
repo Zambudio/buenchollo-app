@@ -1,0 +1,20 @@
+{
+  "name": "buenchollo-whatsapp-gateway",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Pasarela mínima para publicar en el Canal de WhatsApp de BuenCholloTech (Baileys)",
+  "type": "module",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "baileys": "7.0.0-rc14",
+    "pino": "9.7.0",
+    "qrcode": "1.5.4"
+  }
+}

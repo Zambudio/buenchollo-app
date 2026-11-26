@@ -44,6 +44,25 @@ services:
     healthcheck:
       disable: true
 
+  # Pasarela del Canal de WhatsApp (docs/guides/WHATSAPP.md): va vinculada a la
+  # cuenta que administra el Canal como un dispositivo más (Baileys, sin
+  # navegador). Sin puerto publicado: solo la usan la API y el scheduler por la
+  # red interna (http://buenchollo-whatsapp:3000) con WHATSAPP_GATEWAY_TOKEN.
+  # La sesión vinculada vive en ../whatsapp-gateway/data (fuera de git); el QR
+  # para vincular se deja en ../whatsapp-gateway/data/qr.png.
+  buenchollo-whatsapp:
+    build: ../whatsapp-gateway
+    container_name: buenchollo-whatsapp
+    restart: always
+    # Lee WHATSAPP_GATEWAY_TOKEN y WHATSAPP_PAIRING_PHONE del mismo .env (Synology
+    # no interpola ${...}); sin token se queda en espera y no conecta.
+    env_file:
+      - .env
+    environment:
+      - DATA_DIR=/data
+    volumes:
+      - ../whatsapp-gateway/data:/data
+
   # Copia de seguridad diaria de la base de datos (AUD-03): pg_dump validado,
   # 14 días de retención en ./backups (fuera de git). Ver
   # docs/guides/BACKUP-RESTORE.md para restaurar. La copia fuera del NAS es

@@ -35,7 +35,8 @@
 - **Blog** con categorías, comentarios, votos, RSS, sitemap y contador público de lecturas.
 - **Cuenta**: confirmación por correo en el registro, recuperación de contraseña, correo de bienvenida idempotente, perfil, Google OAuth y páginas legales.
 - **Atribución**: las rutas `/telegram` y `/whatsapp` fijan `utm_source=telegram` / `utm_source=whatsapp` y redirigen a la portada; cada canal sale como fuente propia en la analítica. El enlace afiliado de compra no cambia.
-- **Versión WhatsApp**: cada publicación de Telegram (panel, programadas y avisos de bajada) envía un segundo mensaje al canal Admin con la versión para el Canal de WhatsApp (emojis estándar, enlace `/whatsapp`), lista para copiarla a mano: WhatsApp no tiene API oficial para Canales.
+- **Versión WhatsApp**: cada publicación de Telegram (panel, programadas y avisos de bajada) envía un segundo mensaje al canal Admin con la versión para el Canal de WhatsApp (emojis estándar, enlace `/whatsapp`), lista para copiarla a mano: WhatsApp no tiene API oficial para Canales. Se mantiene como respaldo de la publicación automática.
+- **Canal de WhatsApp automático** (2026-11-26, [ADR-024](../adr/ADR-024-publicacion-canal-whatsapp.md), **pendiente de activar** en el NAS): los chollos de los canales de Telegram de `WHATSAPP_CHANNELS` se encolan en `whatsapp_posts` por el bus de eventos y el job `publish_whatsapp_queue` (cada minuto) los publica en el Canal con la tarjeta y la versión WhatsApp a través del contenedor `buenchollo-whatsapp` (`whatsapp-gateway/`, Baileys vinculado como dispositivo). Ritmo: una por paso, ≥ 20 min entre dos y ≤ 15 al día; margen aleatorio de 45-180 s; sin repetir un chollo en 24 h; si la imagen falla dos veces sale solo el texto. Estado en `GET /v1/whatsapp/status`. Guía: [`WHATSAPP.md`](../guides/WHATSAPP.md).
 
 ### Administración
 
@@ -61,7 +62,7 @@
 
 ### Módulos del backend
 
-`affiliates`, `ai`, `alerts`, `analytics`, `blog`, `blog_comments`, `catalog`, `categories`, `comments`, `deals`, `emails`, `instagram`, `notifications`, `products`, `scheduled_deals`, `scheduled_tasks`, `stores`, `submissions`, `telegram` y `users`.
+`affiliates`, `ai`, `alerts`, `analytics`, `blog`, `blog_comments`, `catalog`, `categories`, `comments`, `deals`, `emails`, `instagram`, `notifications`, `products`, `scheduled_deals`, `scheduled_tasks`, `stores`, `submissions`, `telegram`, `users` y `whatsapp`.
 
 Los módulos no se importan entre sí para reaccionar a lo que hace otro: bus de eventos en `app/core/events.py`, suscriptores en `app/core/bootstrap.py` ([ADR-023](../adr/ADR-023-bus-de-eventos-entre-modulos.md)). Los routers de negocio cuelgan de `/v1`; `/health` y `/health/ready` quedan fuera. El frontend solo accede a datos de negocio por la API; las excepciones deliberadas son Supabase Auth y Storage.
 
