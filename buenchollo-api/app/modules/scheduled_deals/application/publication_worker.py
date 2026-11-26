@@ -2,9 +2,11 @@ import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal, ROUND_HALF_UP
+from collections.abc import Callable
 from typing import Protocol
 
 from app.core import events
+from app.core.channels import whatsapp_publishes
 from app.core.config import Settings
 from app.core.jobs import job_session
 from app.modules.deals.infrastructure.repository import DealRepository
@@ -17,6 +19,7 @@ from app.modules.scheduled_deals.infrastructure.repository import ScheduledDealR
 from app.modules.telegram.application.deal_photo import card_data, render_card, send_deal_post, store_name_of
 from app.modules.telegram.application.post_generator import TelegramPostGenerator
 from app.modules.telegram.application.whatsapp_copy import send_whatsapp_copy
+from app.modules.telegram.application.whatsapp_formatter import to_whatsapp_text
 from app.modules.telegram.infrastructure.telegram_bot import TelegramBot
 
 logger = logging.getLogger(__name__)
@@ -53,7 +56,7 @@ class ScheduledPublicationWorker:
         main_channel_id: str,
         admin_chat_id: str,
         publications=None,
-        whatsapp_copy: bool = True,
+        whatsapp_auto: Callable[[str], bool] | None = None,
     ):
         self.session = session
         self.repo = repo
@@ -64,8 +67,9 @@ class ScheduledPublicationWorker:
         self.generator = TelegramPostGenerator()
         # Registro de lo enviado (telegram_publications); opcional en tests.
         self.publications = publications
-        # Copia «versión WhatsApp» al canal Admin; sobra con el Canal automático.
-        self.whatsapp_copy = whatsapp_copy
+        # Si un canal de Telegram sale solo en el Canal de WhatsApp (entonces la
+        # copia «versión WhatsApp» al canal Admin sobra). None → nunca.
+        self.whatsapp_auto = whatsapp_auto or (lambda channel_id: False)
         # Tarjeta de oferta y texto del último post enviado (los reutilizan el
         # registro y la copia de WhatsApp).
         self._card: bytes | None = None
@@ -185,7 +189,7 @@ class ScheduledPublicationWorker:
         scheduled.deal.published_at = now
         # Después de actualizar el deal: el registro guarda el precio publicado.
         await self._record(scheduled, destination_channel_id)
-        await self._send_whatsapp_copy(scheduled)
+        await self._send_whatsapp_copy(scheduled, destination_channel_id)
         await self._announce(scheduled, destination_channel_id)
         scheduled.status = ScheduledDealStatus.PUBLISHED
         scheduled.cancellation_reason = None
@@ -198,7 +202,7 @@ class ScheduledPublicationWorker:
         if not await self._send_post(scheduled, destination):
             raise RuntimeError("Telegram rechazo la publicacion")
         await self._record(scheduled, destination)
-        await self._send_whatsapp_copy(scheduled)
+        await self._send_whatsapp_copy(scheduled, destination)
         await self._announce(scheduled, destination)
         scheduled.status = ScheduledDealStatus.PUBLISHED
         scheduled.cancellation_reason = None
@@ -224,10 +228,10 @@ class ScheduledPublicationWorker:
         )
         return self._sent_text is not None
 
-    async def _send_whatsapp_copy(self, scheduled: ScheduledDeal) -> None:
+    async def _send_whatsapp_copy(self, scheduled: ScheduledDeal, channel_id: str) -> None:
         """Después de registrar: el segundo envío pisa `bot.last_message_id`.
         En un hilo: son hasta tres peticiones HTTP bloqueantes."""
-        if not self.whatsapp_copy:
+        if self.whatsapp_auto(channel_id):
             return
         await asyncio.to_thread(
             send_whatsapp_copy,
@@ -248,6 +252,7 @@ class ScheduledPublicationWorker:
             card=self._card,
             image_url=scheduled.image_url,
             download=getattr(self.bot, "download_image", None),
+            whatsapp_text=to_whatsapp_text(self._sent_text or scheduled.telegram_text),
         ))
 
     async def _record(self, scheduled: ScheduledDeal, channel_id: str) -> None:
@@ -302,7 +307,7 @@ async def _run(settings: Settings) -> int:
                 publications=PublicationRecorder(
                     TelegramPublicationRepository(session), DealRepository(session), settings, "scheduled"
                 ),
-                whatsapp_copy=not settings.whatsapp_enabled,
+                whatsapp_auto=lambda channel_id: whatsapp_publishes(channel_id, settings),
             )
             count = await worker.process_due()
             await session.commit()

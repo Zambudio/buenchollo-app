@@ -26,6 +26,11 @@ class GatewayError(Exception):
         # La pasarela no responde o WhatsApp no está vinculado: no cuenta como intento.
         self.offline = offline
 
+    @property
+    def config(self) -> bool:
+        """Token distinto entre API y pasarela: problema de configuración, no del post."""
+        return self.status in {401, 403}
+
 
 @dataclass(frozen=True)
 class GatewayStatus:
@@ -55,11 +60,14 @@ class WhatsAppGatewayClient:
         except ValueError:
             detail = ""
         status = response.status_code
+        # 503: WhatsApp no está vinculado (no cuenta como intento).
+        # 504: enviado pero WhatsApp no lo confirmó (resultado desconocido: no repetir).
+        # 500/502: fallo o rechazo al publicar (cuenta como intento).
         return GatewayError(
             f"Pasarela de WhatsApp: HTTP {status} {detail}".strip()[:300],
             status=status,
-            # 503: WhatsApp no está vinculado. Un 500 es un fallo al publicar (cuenta como intento).
             offline=status == 503,
+            unknown=status == 504,
         )
 
     def _get(self, path: str, params: dict | None = None) -> dict:

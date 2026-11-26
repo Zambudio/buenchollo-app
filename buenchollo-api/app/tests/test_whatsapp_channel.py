@@ -56,8 +56,14 @@ def _clean_state():
 
 # ── Texto ────────────────────────────────────────────────────────────────────
 
+def _wa(text):
+    from app.modules.telegram.application.whatsapp_formatter import to_whatsapp_text
+
+    return to_whatsapp_text(text)  # lo que manda Telegram en `whatsapp_text`
+
+
 def test_texto_con_tarjeta_sin_lineas_de_precio_ni_hashtags():
-    text = channel_text(POST, with_card=True)
+    text = channel_text(POST, edited=_wa(POST), with_card=True)
     assert text.startswith("🔥 *Webcam UGREEN 2K*")
     assert "29,99" not in text and "Ahorras" not in text
     assert "👉 https://amzn.to/abc" in text
@@ -66,7 +72,7 @@ def test_texto_con_tarjeta_sin_lineas_de_precio_ni_hashtags():
 
 
 def test_texto_sin_tarjeta_conserva_el_precio():
-    text = channel_text(POST, with_card=False)
+    text = channel_text(POST, edited=_wa(POST), with_card=False)
     assert "🏷️ *29,99 € | -40 %*" in text and "💸 *Ahorras 20 €*" in text
 
 
@@ -114,7 +120,8 @@ def _queue_session(existing=False):
 async def test_encola_con_la_tarjeta_y_un_margen_aleatorio():
     session = _queue_session()
     ok = await queue_whatsapp_post(
-        session, _settings(), deal_id="d1", telegram_text=POST, card=b"CARD", image_url="u", now=NOW
+        session, _settings(), deal_id="d1", telegram_text=POST, whatsapp_text=_wa(POST), card=b"CARD",
+        image_url="u", now=NOW,
     )
     assert ok
     post = session.add.call_args.args[0]
@@ -127,8 +134,8 @@ async def test_encola_con_la_tarjeta_y_un_margen_aleatorio():
 async def test_sin_tarjeta_usa_la_foto_original():
     session = _queue_session()
     ok = await queue_whatsapp_post(
-        session, _settings(), deal_id=None, telegram_text=POST, card=None, image_url="u",
-        download=lambda url: _jpeg(), now=NOW,
+        session, _settings(), deal_id=None, telegram_text=POST, whatsapp_text=_wa(POST), card=None,
+        image_url="u", download=lambda url: _jpeg(), now=NOW,
     )
     post = session.add.call_args.args[0]
     assert ok and post.image[:2] == b"\xff\xd8" and "29,99" in post.text
@@ -475,8 +482,8 @@ async def test_el_resumen_semanal_se_encola_con_su_collage_y_sin_quitar_precios(
 async def test_strip_prices_false_conserva_los_precios_aunque_haya_imagen():
     session = _queue_session()
     await queue_whatsapp_post(
-        session, _settings(), deal_id=None, telegram_text=POST, card=b"COLLAGE", image_url=None,
-        strip_prices=False, now=NOW,
+        session, _settings(), deal_id=None, telegram_text=POST, whatsapp_text=_wa(POST), card=b"COLLAGE",
+        image_url=None, strip_prices=False, now=NOW,
     )
     assert "29,99" in session.add.call_args.args[0].text
 
@@ -496,6 +503,7 @@ async def test_resumen_semanal_avisa_a_whatsapp_solo_si_esta_activo(monkeypatch)
     digest = MagicMock(telegram_text="pie", full_text="completo", whatsapp_text="*wa*")
 
     await announce_to_whatsapp(service, digest, _settings(whatsapp_enabled=False))
+    await announce_to_whatsapp(service, digest, _settings(whatsapp_channels="main"))
     assert seen == []
     await announce_to_whatsapp(service, digest, _settings())
     assert seen[0].telegram_text == "completo" and seen[0].image == b"IMG" and seen[0].whatsapp_text == "*wa*"
@@ -509,12 +517,14 @@ async def test_programadas_sin_copia_al_admin(monkeypatch):
 
     copy = MagicMock()
     monkeypatch.setattr(pw, "send_whatsapp_copy", copy)
-    worker = pw.ScheduledPublicationWorker(None, None, None, MagicMock(), "-100main", "-100admin", whatsapp_copy=False)
-    await worker._send_whatsapp_copy(MagicMock(telegram_text="t", image_url=None))
+    worker = pw.ScheduledPublicationWorker(
+        None, None, None, MagicMock(), "-100main", "-100admin", whatsapp_auto=lambda c: c == "-100admin"
+    )
+    await worker._send_whatsapp_copy(MagicMock(telegram_text="t", image_url=None), "-100admin")
     copy.assert_not_called()
 
-    worker.whatsapp_copy = True
-    await worker._send_whatsapp_copy(MagicMock(telegram_text="t", image_url=None))
+    # Un canal que no publica en WhatsApp conserva la copia manual.
+    await worker._send_whatsapp_copy(MagicMock(telegram_text="t", image_url=None), "-100otro")
     copy.assert_called_once()
 
 
@@ -542,3 +552,90 @@ def test_las_factorias_apagan_la_copia_con_whatsapp_activo():
     assert build_reactivation_notifier(session, _settings()).whatsapp_copy is False
     assert build_reactivation_notifier(session, _settings(whatsapp_enabled=False)).whatsapp_copy is True
     assert build_weekly_digest_service(session, _settings()).whatsapp_copy is False
+    # Con solo `main`, el resumen (que sale en el Admin) no va a WhatsApp: se conserva la copia.
+    assert build_weekly_digest_service(session, _settings(whatsapp_channels="main")).whatsapp_copy is True
+
+
+
+# ── Revisión de código (2026-11-26) ─────────────────────────────────────────
+
+def test_que_canales_publican_en_whatsapp():
+    from app.core.channels import whatsapp_publishes
+
+    assert whatsapp_publishes("-100admin", _settings())
+    assert not whatsapp_publishes("-100admin", _settings(whatsapp_channels="main"))
+    assert not whatsapp_publishes("-100main", _settings(whatsapp_enabled=False))
+    assert not whatsapp_publishes("-100otro", _settings())
+
+
+@pytest.mark.asyncio
+async def test_sin_chollo_no_repite_el_mismo_texto():
+    session = _queue_session(existing=True)
+    ok = await queue_whatsapp_post(session, _settings(), deal_id=None, telegram_text="TOP", card=None, image_url=None)
+    assert ok is False and not session.add.called
+
+
+@pytest.mark.asyncio
+async def test_la_comprobacion_de_duplicados_va_dentro_del_savepoint():
+    """Si la consulta falla (tabla sin migrar), el savepoint la aísla: no se
+    aborta la transacción de Telegram que prestó la sesión."""
+    order = []
+    session = _queue_session()
+
+    class _Tracking(_Nested):
+        async def __aenter__(self):
+            order.append("savepoint")
+            return self
+
+    session.begin_nested.return_value = _Tracking()
+
+    async def execute(*args, **kwargs):
+        order.append("select")
+        raise RuntimeError("relation whatsapp_posts does not exist")
+
+    session.execute = execute
+    assert await queue_whatsapp_post(session, _settings(), deal_id="d1", telegram_text=POST, card=b"C", image_url=None) is False
+    assert order == ["savepoint", "select"]
+
+
+def test_cliente_504_es_resultado_desconocido_y_401_configuracion():
+    http = MagicMock()
+    http.post.return_value = _response(504, {"error": "WhatsApp no confirmó"})
+    with pytest.raises(GatewayError) as err:
+        WhatsAppGatewayClient("http://gw", "t", http=http).send(JID, "x")
+    assert err.value.unknown and not err.value.offline
+    http.post.return_value = _response(401, {"error": "no autorizado"})
+    with pytest.raises(GatewayError) as err:
+        WhatsAppGatewayClient("http://gw", "t", http=http).send(JID, "x")
+    assert err.value.config and not err.value.unknown
+
+
+@pytest.mark.asyncio
+async def test_token_mal_configurado_no_gasta_intentos_y_avisa_una_vez():
+    posts = [_post(id="p1"), _post(id="p2")]
+    client = _Client(fail=[GatewayError("HTTP 401", status=401), GatewayError("HTTP 401", status=401)])
+    publisher, notices = _publisher(_Repo(posts), client)
+    await publisher.run(NOW)
+    await publisher.run(NOW + timedelta(minutes=1))
+    assert [p.attempts for p in posts] == [0, 0] and [p.status for p in posts] == ["pending", "pending"]
+    assert len(notices) == 1 and "WHATSAPP_GATEWAY_TOKEN" in notices[0]
+
+
+@pytest.mark.asyncio
+async def test_canal_inexistente_avisa_sin_gastar_intentos():
+    post = _post()
+    client = _Client()
+    client.channel = MagicMock(side_effect=GatewayError("HTTP 404 Canal no encontrado", status=404))
+    publisher, notices = _publisher(_Repo([post]), client)
+    assert await publisher.run(NOW) == 0
+    assert post.attempts == 0 and "no se encuentra el Canal" in notices[0]
+
+
+@pytest.mark.asyncio
+async def test_el_rol_se_vuelve_a_comprobar_cada_6_horas():
+    client = _Client()
+    posts = [_post(id=f"p{i}") for i in range(3)]
+    for i, moment in enumerate([NOW, NOW + timedelta(hours=1), NOW + timedelta(hours=7)]):
+        publisher, _ = _publisher(_Repo(posts[i:]), client)
+        await publisher.run(moment)
+    assert len(client.channel_calls) == 2

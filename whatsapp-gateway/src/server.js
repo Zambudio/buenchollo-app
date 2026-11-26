@@ -11,6 +11,8 @@
 //   GET  /status                       → estado de la vinculación
 //   GET  /channel?invite=CODIGO        → JID, nombre y rol en un Canal
 //   POST /send {jid, text, image_base64?, width?, height?} → {ok, id}
+//        200 solo con el acuse de WhatsApp; 502 fallo/rechazo (reintentable);
+//        503 sin vincular; 504 enviado pero sin acuse (no reintentar)
 
 import { rm, writeFile } from 'node:fs/promises'
 import http from 'node:http'
@@ -28,7 +30,7 @@ import makeWASocket, {
 import pino from 'pino'
 import QRCode from 'qrcode'
 
-import { isNewsletterJid, sendNewsletterImage } from './newsletter.js'
+import { isNewsletterJid, sendNewsletterImage, sendNewsletterText } from './newsletter.js'
 
 const PORT = Number(process.env.PORT || 3000)
 // Mismo .env que la API (WHATSAPP_*); GATEWAY_TOKEN/PAIRING_PHONE valen para pruebas.
@@ -189,8 +191,7 @@ async function send(body) {
         { encode, newId: () => generateMessageIDV2(sock.user?.id) },
       )
     }
-    const sent = await sock.sendMessage(jid, { text })
-    return sent?.key?.id ?? null
+    return sendNewsletterText(sock, { jid, text }, { newId: () => generateMessageIDV2(sock.user?.id) })
   })
   sending = job.catch(() => {})
   return { ok: true, id: await job }
