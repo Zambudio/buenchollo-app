@@ -5,7 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 
-AnalyticsSource = Literal["telegram", "whatsapp", "instagram", "organic", "referral", "direct"]
+AnalyticsSource = Literal["telegram", "whatsapp", "instagram", "facebook", "organic", "referral", "direct"]
 
 
 class TrackPageViewRequest(BaseModel):

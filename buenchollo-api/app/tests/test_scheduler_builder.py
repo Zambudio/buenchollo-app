@@ -12,10 +12,10 @@ from app.core.config import Settings
 from app.modules.deals.application.scheduler import build_deals_scheduler
 
 
-def test_builder_registra_los_diez_jobs_sin_arrancar():
+def test_builder_registra_los_once_jobs_sin_arrancar():
     scheduler, cleaner = build_deals_scheduler(Settings())
     jobs = scheduler.get_jobs()
-    assert len(jobs) == 10
+    assert len(jobs) == 11
     names = {job.func.__name__ for job in jobs}
     assert names == {
         "mark_expired_deals",
@@ -28,6 +28,7 @@ def test_builder_registra_los_diez_jobs_sin_arrancar():
         "run_weekly_deals_digest",
         "run_instagram_queue",
         "run_whatsapp_queue",
+        "run_facebook_queue",
     }
     assert scheduler.running is False
     assert cleaner is not None

@@ -264,6 +264,21 @@ class Settings(BaseSettings):
     # URL pública de esta API: Instagram descarga de aquí la imagen de cada post.
     public_api_url: str = "https://api.buenchollotech.com"
 
+    # Página de Facebook: los chollos de los canales de Telegram de
+    # FACEBOOK_CHANNELS se publican también allí (ver app/modules/facebook y
+    # docs/guides/FACEBOOK.md). Token del usuario del sistema del porfolio
+    # (EAA…, sin caducidad) con pages_manage_posts; de él sale el de la página.
+    facebook_enabled: bool = False
+    facebook_access_token: str = ""
+    facebook_page_id: str = ""
+    facebook_graph_version: str = "v23.0"
+    # Canales de Telegram cuyos chollos van también a Facebook: main y/o admin.
+    facebook_channels: str = "main"
+    # Hashtags fijos, sin «#» (en un .env, «#» empieza un comentario).
+    facebook_hashtags: str = "chollos ofertas tecnologia"
+    # Aviso de afiliación al pie (en Facebook el enlace de compra se puede pulsar).
+    facebook_disclosure: str = "ℹ️ Enlace de afiliado: si compras, podemos recibir una comisión sin coste extra para ti."
+
     # Canal de WhatsApp: los chollos de los canales de Telegram de
     # WHATSAPP_CHANNELS se publican también allí a través de la pasarela
     # `whatsapp-gateway` (contenedor propio, vinculado a la cuenta que

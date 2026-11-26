@@ -106,6 +106,31 @@ describe("resolveAttribution", () => {
     ).toMatchObject({ source: "instagram", medium: "social" });
   });
 
+  it("cuenta aparte las visitas desde la página de Facebook", () => {
+    expect(
+      resolveAttribution(
+        new URL(
+          "https://buenchollotech.com/?utm_source=facebook&utm_medium=social&utm_campaign=pagina",
+        ),
+        "",
+        "buenchollotech.com",
+      ),
+    ).toEqual({
+      source: "facebook",
+      sourceDetail: "facebook",
+      medium: "social",
+      campaign: "pagina",
+      referrerHost: null,
+    });
+    expect(
+      resolveAttribution(
+        new URL("https://buenchollotech.com/"),
+        "https://l.facebook.com/",
+        "buenchollotech.com",
+      ),
+    ).toMatchObject({ source: "facebook", medium: "social" });
+  });
+
   it("clasifica como orgánica una entrada desde buscadores", () => {
     expect(
       resolveAttribution(

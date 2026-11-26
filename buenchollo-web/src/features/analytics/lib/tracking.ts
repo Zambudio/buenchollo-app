@@ -2,6 +2,7 @@ export type AnalyticsSource =
   | "telegram"
   | "whatsapp"
   | "instagram"
+  | "facebook"
   | "organic"
   | "referral"
   | "direct";
@@ -56,7 +57,12 @@ export function resolveAttribution(url: URL, referrer: string, siteHost: string)
   const utmMedium = url.searchParams.get("utm_medium")?.trim().toLowerCase() ?? "";
   const campaign = url.searchParams.get("utm_campaign")?.trim() || null;
 
-  if (utmSource === "telegram" || utmSource === "whatsapp" || utmSource === "instagram") {
+  if (
+    utmSource === "telegram" ||
+    utmSource === "whatsapp" ||
+    utmSource === "instagram" ||
+    utmSource === "facebook"
+  ) {
     return {
       source: utmSource,
       sourceDetail: utmSource,
@@ -101,6 +107,21 @@ export function resolveAttribution(url: URL, referrer: string, siteHost: string)
       return {
         source: "instagram",
         sourceDetail: "instagram",
+        medium: "social",
+        campaign: null,
+        referrerHost: host,
+      };
+    }
+
+    if (
+      host === "facebook.com" ||
+      host.endsWith(".facebook.com") ||
+      host === "fb.me" ||
+      host === "fb.com"
+    ) {
+      return {
+        source: "facebook",
+        sourceDetail: "facebook",
         medium: "social",
         campaign: null,
         referrerHost: host,

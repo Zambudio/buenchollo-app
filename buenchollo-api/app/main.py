@@ -42,6 +42,7 @@ from app.modules.emails.api.router import router as emails_router
 from app.modules.submissions.api.router import router as submissions_router
 from app.modules.submissions.api.admin_router import router as admin_submissions_router
 from app.modules.affiliates.api.router import router as affiliates_router
+from app.modules.facebook.api.router import router as facebook_router
 from app.modules.instagram.api.router import router as instagram_router
 from app.modules.whatsapp.api.router import router as whatsapp_router
 
@@ -232,6 +233,7 @@ v1.include_router(submissions_router)
 v1.include_router(admin_submissions_router)
 v1.include_router(affiliates_router)
 v1.include_router(instagram_router)
+v1.include_router(facebook_router)
 v1.include_router(whatsapp_router)
 
 app.include_router(v1)

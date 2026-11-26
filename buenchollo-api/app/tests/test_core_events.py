@@ -61,8 +61,9 @@ async def test_sin_suscriptores_no_pasa_nada(clean_bus):
     await events.publish(events.DealPostPublished(session=None, channel_id="c", text="t"))
 
 
-def test_bootstrap_conecta_instagram_whatsapp_y_los_avisos_al_admin(clean_bus):
+def test_bootstrap_conecta_instagram_whatsapp_facebook_y_los_avisos_al_admin(clean_bus):
     from app.core.bootstrap import register_subscribers
+    from app.modules.facebook.application.subscriber import on_deal_post_published as queue_for_facebook
     from app.modules.instagram.application.subscriber import on_deal_post_published
     from app.modules.telegram.application.admin_alerts import send_admin_alert
     from app.modules.whatsapp.application.subscriber import on_deal_post_published as queue_for_whatsapp
@@ -70,7 +71,7 @@ def test_bootstrap_conecta_instagram_whatsapp_y_los_avisos_al_admin(clean_bus):
     register_subscribers()
     register_subscribers()  # idempotente
 
-    assert events.subscribers(events.DealPostPublished) == [on_deal_post_published, queue_for_whatsapp]
+    assert events.subscribers(events.DealPostPublished) == [on_deal_post_published, queue_for_whatsapp, queue_for_facebook]
     from app.modules.whatsapp.application.subscriber import on_whatsapp_post_requested
 
     assert events.subscribers(events.WhatsAppPostRequested) == [on_whatsapp_post_requested]
@@ -96,4 +97,4 @@ print(len(events.subscribers(events.DealPostPublished)), len(events.subscribers(
 """
     result = subprocess.run([sys.executable, "-c", script], cwd=API_ROOT, capture_output=True, text=True, check=False)
     assert result.returncode == 0, result.stderr[-2000:]
-    assert result.stdout.strip().splitlines()[-1] == "2 1"
+    assert result.stdout.strip().splitlines()[-1] == "3 1"

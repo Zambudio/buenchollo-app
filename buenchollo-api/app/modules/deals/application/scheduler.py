@@ -17,6 +17,7 @@ from app.modules.analytics.application.cleanup import run_analytics_cleanup
 from app.modules.emails.application.digest_worker import run_due_alert_digest
 from app.modules.affiliates.application.feed_sync_job import run_awin_feed_sync
 from app.modules.telegram.application.weekly_digest import run_weekly_deals_digest
+from app.modules.facebook.application.publisher import run_facebook_queue
 from app.modules.instagram.application.publisher import run_instagram_queue
 from app.modules.whatsapp.application.publisher import run_whatsapp_queue
 
@@ -131,6 +132,16 @@ def build_deals_scheduler(settings: Settings) -> tuple[BackgroundScheduler, Deal
         minute="*",
         args=[settings],
         id="publish_whatsapp_queue",
+        max_instances=1,
+        coalesce=True,
+    )
+    # Cola de la página de Facebook. Sin FACEBOOK_ENABLED no hace nada.
+    scheduler.add_job(
+        run_facebook_queue,
+        "cron",
+        minute="*/2",
+        args=[settings],
+        id="publish_facebook_queue",
         max_instances=1,
         coalesce=True,
     )
