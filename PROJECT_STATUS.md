@@ -1,5 +1,5 @@
 # PROJECT_STATUS — BuenCholloTech
-*Actualización de producción: 2026-11-26 — `main` con Facebook automático en la página «Buenchollo Tech» (ADR-025), Canal de WhatsApp automático (ADR-024), Instagram (ADR-022) e iconos de las cuatro redes en la web.*
+*Actualización de producción: 2026-11-27 — `main` con Facebook automático en la página «Buenchollo Tech» (ADR-025), Canal de WhatsApp automático (ADR-024), Instagram (ADR-022) e iconos de las cuatro redes en la web. Alembic `20261127120000`; `develop` y `main` alineados.*
 
 > Bitácora cronológica inversa. Estado operativo vigente: [`docs/project/11-current-state.md`](docs/project/11-current-state.md); pendientes abiertos: [`docs/project/10-technical-debt.md`](docs/project/10-technical-debt.md).
 

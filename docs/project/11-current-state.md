@@ -1,7 +1,7 @@
 # ✅ 11 · Estado actual verificado
 
 > Fotografía del estado funcional y operativo de BuenCholloTech.
-> Última revisión: **2026-11-25** (`main` con las PR #104 a #117: Coolmod activo, tarjeta de oferta, posts sin líneas de precio, Instagram activo con token de usuario del sistema e `INSTAGRAM_CHANNELS`, bus de eventos entre módulos y «Top de la semana» solo con chollos publicados por primera vez; Alembic `20261124150000`).
+> Última revisión: **2026-11-27** (`main` con las PR #104 a #125: Coolmod activo, tarjeta de oferta, posts sin líneas de precio, Instagram activo, bus de eventos entre módulos, «Top de la semana» solo con chollos publicados por primera vez, Canal de WhatsApp y página de Facebook automáticos e iconos de las cuatro redes en la web; Alembic `20261127120000`, igual en `develop`).
 > La cronología completa está en [`PROJECT_STATUS.md`](../../PROJECT_STATUS.md);
 > los pendientes, en [`10-technical-debt.md`](10-technical-debt.md); la auditoría
 > más reciente, en [`12-auditoria-tecnica-2026-11.md`](12-auditoria-tecnica-2026-11.md).
@@ -34,7 +34,7 @@
 - **Comunidad**: alertas personalizadas, notificaciones in-app y resumen diario por correo (21:00), comentarios y votos, proponer chollos (`/publicar`, `/mis-chollos`) con comprobación de enlace, prefill de Amazon e imágenes subidas, pegadas o por URL ([ADR-015](../adr/ADR-015-ingesta-imagenes-backend.md), [ADR-016](../adr/ADR-016-propuestas-comunidad-y-afiliados.md)).
 - **Blog** con categorías, comentarios, votos, RSS, sitemap y contador público de lecturas.
 - **Cuenta**: confirmación por correo en el registro, recuperación de contraseña, correo de bienvenida idempotente, perfil, Google OAuth y páginas legales.
-- **Atribución**: las rutas `/telegram` y `/whatsapp` fijan `utm_source=telegram` / `utm_source=whatsapp` y redirigen a la portada; cada canal sale como fuente propia en la analítica. El enlace afiliado de compra no cambia.
+- **Atribución**: las rutas `/telegram`, `/whatsapp`, `/instagram` y `/facebook` fijan `utm_source=telegram` / `whatsapp` / `instagram` / `facebook` y redirigen a la portada; cada canal sale como fuente propia en la analítica. El enlace afiliado de compra no cambia.
 - **Versión WhatsApp**: cada publicación de Telegram (panel, programadas y avisos de bajada) envía un segundo mensaje al canal Admin con la versión para el Canal de WhatsApp (emojis estándar, enlace `/whatsapp`), lista para copiarla a mano: WhatsApp no tiene API oficial para Canales. Con `WHATSAPP_ENABLED=true` (producción desde el 2026-11-26) esa copia solo se envía para lo que no sale solo en el Canal (canales fuera de `WHATSAPP_CHANNELS`): los chollos y el resumen semanal van solos; las republicaciones por bajada de precio solo salen en Telegram (requieren revisión).
 - **Canal de WhatsApp automático** (2026-11-26, [ADR-024](../adr/ADR-024-publicacion-canal-whatsapp.md), **activo** en el Canal «Buenchollo Tech»): los chollos de los canales de Telegram de `WHATSAPP_CHANNELS` se encolan en `whatsapp_posts` por el bus de eventos y el job `publish_whatsapp_queue` (cada minuto) los publica en el Canal con la tarjeta y la versión WhatsApp a través del contenedor `buenchollo-whatsapp` (`whatsapp-gateway/`, Baileys vinculado como dispositivo). Ritmo: una por paso, ≥ 20 min entre dos y ≤ 15 al día; margen aleatorio de 45-180 s; sin repetir un chollo en 24 h; si la imagen falla dos veces sale solo el texto; solo cuenta como publicado lo que WhatsApp acusa. Estado en `GET /v1/whatsapp/status`. Guía: [`WHATSAPP.md`](../guides/WHATSAPP.md).
 
@@ -59,7 +59,7 @@
 - **Redes de afiliación** ([ADR-019](../adr/ADR-019-redes-afiliacion-awin-tradedoubler.md)): **Coolmod (Awin, 124624) activo** desde el 2026-11-21: programa habilitado (web y Telegram), feed 114170 sincronizado (12.995 productos) y enlace afiliado verificado hasta la ficha con atribución. Samsung ES aceptado pero sin habilitar; Fnac ES rechazado; PcComponentes y Miravia pendientes; Tradedoubler (MediaMarkt) sin feeds. Estado por tienda y cómo activar otra: [`AFFILIATE-ACTIVATION-RUNBOOK.md`](../guides/AFFILIATE-ACTIVATION-RUNBOOK.md).
   - **Aviso genérico retirado** (2026-11-22): la migración `20261122120000` vacía el «Enlace de afiliado: podemos recibir una comisión…» sembrado en todos los programas. El campo «Aviso adicional del programa» queda solo para la tienda cuyas condiciones exijan un texto propio.
   - **Términos partidos del feed**: Coolmod entrega «PC Ie», «NV Me», «5600M Hz», «AS Rock»…; `fix_split_terms` (`affiliates/domain/offers.py`) los recompone al leer el feed.
-- Analítica first-party ([ADR-014](../adr/ADR-014-analitica-first-party-atribucion-sesiones.md)): visitas, visitantes únicos, sesiones, procedencia, lecturas del blog y conversión Telegram a blog (fuentes propias para Telegram, WhatsApp e Instagram); exclusión del dispositivo del administrador. Los identificadores se seudonimizan con HMAC (`ANALYTICS_HASH_SECRET`) y la retención máxima configurable es de 25 meses.
+- Analítica first-party ([ADR-014](../adr/ADR-014-analitica-first-party-atribucion-sesiones.md)): visitas, visitantes únicos, sesiones, procedencia, lecturas del blog y conversión Telegram a blog (fuentes propias para Telegram, WhatsApp, Instagram y Facebook); exclusión del dispositivo del administrador. Los identificadores se seudonimizan con HMAC (`ANALYTICS_HASH_SECRET`) y la retención máxima configurable es de 25 meses.
 
 ### Módulos del backend
 
@@ -79,6 +79,8 @@ Los módulos no se importan entre sí para reaccionar a lo que hace otro: bus de
 | IA | `AI_PROVIDER`, `AI_BASE_URL`, `AI_MODEL`, fallbacks y OpenAI opcional |
 | Telegram | token del bot, canales principal y Admin, `TELEGRAM_ENABLED` |
 | Instagram | `INSTAGRAM_ENABLED`, `INSTAGRAM_ACCESS_TOKEN`, `INSTAGRAM_USER_ID`, `INSTAGRAM_CHANNELS`, `PUBLIC_API_URL` ([`INSTAGRAM.md`](../guides/INSTAGRAM.md)) |
+| WhatsApp | `WHATSAPP_ENABLED`, `WHATSAPP_GATEWAY_URL`, `WHATSAPP_GATEWAY_TOKEN`, `WHATSAPP_CHANNEL`, `WHATSAPP_CHANNELS`, `WHATSAPP_MIN_INTERVAL_MINUTES`, `WHATSAPP_DAILY_LIMIT` ([`WHATSAPP.md`](../guides/WHATSAPP.md)) |
+| Facebook | `FACEBOOK_ENABLED`, `FACEBOOK_ACCESS_TOKEN`, `FACEBOOK_PAGE_ID`, `FACEBOOK_CHANNELS` ([`FACEBOOK.md`](../guides/FACEBOOK.md)) |
 | Afiliación | credenciales de Awin y Tradedoubler ([`AFFILIATE-NETWORKS.md`](../guides/AFFILIATE-NETWORKS.md)) |
 | Frontend | `VITE_API_URL`, credenciales públicas de Supabase, `VITE_SENTRY_DSN` opcional |
 
@@ -92,7 +94,7 @@ Cifras vigentes en [`06-testing-and-quality.md`](06-testing-and-quality.md): bac
 
 ## 🗄️ Datos y migraciones
 
-- Alembic tiene una única cabeza (`20261124150000`, columna `deals.first_published_at` con trigger que la rellena al pasar a `active` y relleno del histórico). Las anteriores: `20261124130000` (tablas de Instagram `instagram_posts` e `instagram_account`) y `20261124120000` (fuente `instagram` en la analítica). Detalle: [`MIGRATIONS.md`](../guides/MIGRATIONS.md).
+- Alembic tiene una única cabeza, igual en `main` y `develop`: `20261127120000` (cola `facebook_posts` y fuente `facebook` en la analítica). Antes: `20261126120000` (cola `whatsapp_posts` del Canal de WhatsApp), `20261124150000` (columna `deals.first_published_at` con trigger que la rellena al pasar a `active`), `20261124130000` (tablas de Instagram) y `20261124120000` (fuente `instagram` en la analítica). Detalle: [`MIGRATIONS.md`](../guides/MIGRATIONS.md).
 - Cada tabla nueva de `public` activa RLS en su propia migración; `test_migrations_rls.py` lo comprueba.
 - La API usa la conexión de servicio y las credenciales privilegiadas nunca llegan al navegador.
 - Los buckets de Storage (avatares, imágenes de chollos y blog) tienen políticas propias.

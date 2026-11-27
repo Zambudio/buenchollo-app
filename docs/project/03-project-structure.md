@@ -137,7 +137,8 @@ src/
 │   ├── publicar.tsx               ➕ Proponer un chollo (2 pasos)
 │   ├── mis-chollos.tsx            📋 Propuestas del usuario y su estado
 │   ├── blog.tsx / blog_.$slug.tsx 📰 Blog público
-│   └── telegram.tsx               📈 Entrada atribuida desde Telegram
+│   └── telegram.tsx · whatsapp.tsx · instagram.tsx · facebook.tsx
+│                                  📈 Entradas atribuidas por canal (utm_source)
 │
 ├── 🎨 features/                   Dominios funcionales
 │   ├── deals/components/          DealCard · Comments · ShareBox
@@ -152,6 +153,8 @@ src/
 │
 ├── 🧩 components/
 │   ├── layout/                    Chrome compartido
+│   │                              SocialLinks: iconos de Facebook, Instagram,
+│   │                              Telegram y WhatsApp (barra y pie)
 │   └── ui/                        Primitivos shadcn (no modificar)
 │
 ├── 📡 services/api/               Único cliente HTTP
