@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { TELEGRAM_URL } from "@/lib/site";
+import { SocialLinks } from "./SocialLinks";
 
 export function Footer() {
   return (
@@ -12,6 +13,7 @@ export function Footer() {
           <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
             Chollos y ofertas de tecnología en España, verificados a diario.
           </p>
+          <SocialLinks className="mt-4" />
         </div>
         <div>
           <h4 className="font-mono text-xs uppercase text-cyan-glow mb-3">Navegar</h4>

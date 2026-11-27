@@ -130,17 +130,17 @@ de los identificadores seudónimos, no descifra datos anteriores.
 | `WHATSAPP_DAILY_LIMIT` | Máximo de publicaciones al día, hora de Madrid (`15`) |
 | `WHATSAPP_PAIRING_PHONE` | Opcional: vincular con número de teléfono en vez de QR |
 
-**Página de Facebook** (solo en `develop`; guía [`FACEBOOK.md`](../guides/FACEBOOK.md)):
+**Facebook** ([ADR-025](../adr/ADR-025-publicacion-pagina-facebook.md), guía [`FACEBOOK.md`](../guides/FACEBOOK.md)):
 
 | Variable | Descripción |
 |---|---|
-| `FACEBOOK_ENABLED` | `false` por defecto: interruptor general (encolar y publicar) |
-| `FACEBOOK_ACCESS_TOKEN` | Token del usuario del sistema del porfolio (`EAA…`) con permisos de página; no se guarda en BD |
-| `FACEBOOK_PAGE_ID` | Id de la página |
+| `FACEBOOK_ENABLED` | `false` por defecto. `true`: los chollos de `FACEBOOK_CHANNELS` se publican también en la página |
+| `FACEBOOK_ACCESS_TOKEN` | Token del usuario del sistema `bct-publicador` (`EAA…`, sin caducidad) con permisos de página; de él sale el de la página |
+| `FACEBOOK_PAGE_ID` | Id de la página para la API (`1407115035828198`; no el de la URL del perfil) |
+| `FACEBOOK_CHANNELS` | Canales de Telegram que cuentan: `main`, `admin` o ambos (prod: `main,admin`) |
 | `FACEBOOK_GRAPH_VERSION` | Versión de la Graph API (`v23.0`) |
-| `FACEBOOK_CHANNELS` | Canales de Telegram que cuentan: `main` (por defecto), `admin` o ambos |
 | `FACEBOOK_HASHTAGS` | Hashtags fijos sin `#`, separados por espacios |
-| `FACEBOOK_DISCLOSURE` | Aviso de afiliación al pie; vacío = sin aviso |
+| `FACEBOOK_DISCLOSURE` | Aviso de afiliado al pie de cada post (vacío = sin aviso) |
 
 El worker se ejecuta en marcas exactas de cinco minutos. Precomprueba las ofertas
 del siguiente intervalo y vuelve a verificarlas en la hora programada antes de

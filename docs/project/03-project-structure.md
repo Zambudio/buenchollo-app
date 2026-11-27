@@ -153,6 +153,8 @@ src/
 │
 ├── 🧩 components/
 │   ├── layout/                    Chrome compartido
+│   │                              SocialLinks: iconos de Facebook, Instagram,
+│   │                              Telegram y WhatsApp (barra y pie)
 │   └── ui/                        Primitivos shadcn (no modificar)
 │
 ├── 📡 services/api/               Único cliente HTTP

@@ -3,10 +3,12 @@
 > Código: `buenchollo-api/app/modules/facebook/`. Mismo patrón que Instagram ([INSTAGRAM.md](INSTAGRAM.md)):
 > suscriptor de `DealPostPublished` en el bus de eventos, cola en BD y job del scheduler.
 >
-> **Estado:** código listo y apagado (`FACEBOOK_ENABLED=false`) hasta tener el token de la página.
+> Decisión: [ADR-025](../adr/ADR-025-publicacion-pagina-facebook.md).
+>
+> **Estado:** activo desde el 2026-11-26 en la página «Buenchollo Tech». Primer post: HyperX Cloud III S.
 
 Cada chollo que sale en los canales de Telegram de `FACEBOOK_CHANNELS` (panel o programado) se publica también
-en la página **Buenchollo Tech** (id `61596676873757`): la misma imagen (tarjeta de oferta) y el texto adaptado.
+en la página **Buenchollo Tech** (id de la API `1407115035828198`; el de la URL del perfil, 61596676873757, no sirve): la misma imagen (tarjeta de oferta) y el texto adaptado.
 
 ## Cómo funciona
 
@@ -43,12 +45,13 @@ Se reutiliza lo de Instagram: porfolio «Buenchollotech», app «BuenCholloTech 
 
 ```env
 FACEBOOK_ENABLED=true
-FACEBOOK_PAGE_ID=61596676873757
+FACEBOOK_PAGE_ID=1407115035828198
 FACEBOOK_ACCESS_TOKEN=<token>
 FACEBOOK_CHANNELS=main,admin
 ```
 
-y reiniciar: `docker restart buenchollo-api buenchollo-scheduler`. Comprobar con `GET /v1/facebook/status` (admin):
+y recrear los contenedores (un `docker restart` **no** recarga el `.env`):
+`docker-compose up -d --force-recreate --no-deps buenchollo-api buenchollo-scheduler` (ver [NAS-SSH.md](NAS-SSH.md)). Comprobar con `GET /v1/facebook/status` (admin):
 `page.connected: true` y el nombre de la página.
 
 ## Variables
@@ -57,7 +60,7 @@ y reiniciar: `docker restart buenchollo-api buenchollo-scheduler`. Comprobar con
 |---|---|---|
 | `FACEBOOK_ENABLED` | `false` | Interruptor general (encolar y publicar) |
 | `FACEBOOK_ACCESS_TOKEN` | — | Token del usuario del sistema (`EAA…`) con permisos de página |
-| `FACEBOOK_PAGE_ID` | — | Id de la página (`61596676873757`) |
+| `FACEBOOK_PAGE_ID` | — | Id de la página (`1407115035828198`) |
 | `FACEBOOK_GRAPH_VERSION` | `v23.0` | Versión de la Graph API |
 | `FACEBOOK_CHANNELS` | `main` | Canales de Telegram que cuentan: `main`, `admin` o `main,admin` (en prod, `main,admin`) |
 | `FACEBOOK_HASHTAGS` | `chollos ofertas tecnologia` | Hashtags fijos, sin `#` |
@@ -65,3 +68,18 @@ y reiniciar: `docker restart buenchollo-api buenchollo-scheduler`. Comprobar con
 
 La tabla `facebook_posts` (migración `20261127120000`, que también añade la fuente `facebook` a la analítica) tiene
 RLS sin políticas. El token no se guarda en BD.
+
+## Puesta en marcha (2026-11-26)
+
+1. Código desplegado apagado (PR #122) con la migración `20261127120000`.
+2. Página «Buenchollo Tech» añadida al porfolio «Buenchollotech» y asignada a `bct-publicador` (Contenido e Insights).
+3. Caso de uso «Administrar todo en tu página» en la app, con `pages_manage_posts` y `pages_read_engagement`.
+4. Token nuevo de `bct-publicador` («Nunca», 5 permisos: los 2 de Instagram y los 3 de páginas). Se copió con el botón
+   «Copiar» de Meta y del portapapeles al `.env`, sin mostrarlo. Regenerarlo no revoca el de Instagram.
+5. Primer post: la última publicación de Telegram (HyperX Cloud III S), encolada a mano con su tarjeta regenerada.
+
+## Web
+
+Los iconos de Facebook, Instagram, Telegram y WhatsApp de la barra de navegación y del pie
+(`buenchollo-web/src/components/layout/SocialLinks.tsx`, PR #124) enlazan a los canales propios; las URL están en
+`src/lib/site.ts`.
